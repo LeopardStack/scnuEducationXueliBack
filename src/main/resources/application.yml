@@ -1,0 +1,60 @@
+server:
+  port: 40000
+
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+  redis:
+    host: 192.168.52.133
+    port: 6379
+    password: 12345A
+  servlet:
+    multipart:
+      maxFileSize: 10GB
+      maxRequestSize: 10GB
+  ## mysql
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.52.133:3308/fxlplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    username: root
+    password: 123456
+
+mybatis:
+  mapper-locations: classpath:mapper/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.entity
+  # 开启驼峰命名
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 配置日志
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+# 关闭 MyBatis 的日志
+logging:
+  level:
+    org.mybatis: DEBUG
+
+
+minio:
+  url: http://192.168.52.133:9000/
+  accessKey: SnxU7beOfHZ7AVU4xdxS
+  secretKey: h3KgVWJLK4ejfAhWIe7Llh3AFWMgKuOdpIG02PEE
+  bucketName: miniofilesfxl
+
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: fxl_token
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 300
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false

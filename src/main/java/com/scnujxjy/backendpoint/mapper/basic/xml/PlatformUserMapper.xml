@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.basic.PlatformUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.basic.PlatformUser">
+        <id column="UserID" property="UserID" />
+        <result column="RoleID" property="RoleID" />
+        <result column="AvatarImagePath" property="AvatarImagePath" />
+        <result column="Password" property="Password" />
+        <result column="Username" property="Username" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        UserID, RoleID, AvatarImagePath, Password, Username
+    </sql>
+
+</mapper>

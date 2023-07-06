@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.basic.PermissionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.basic.Permission">
+        <id column="PermissionID" property="PermissionID" />
+        <result column="PermissionName" property="PermissionName" />
+        <result column="Description" property="Description" />
+        <result column="Resource" property="Resource" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        PermissionID, PermissionName, Description, Resource
+    </sql>
+
+</mapper>

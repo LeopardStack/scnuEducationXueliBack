@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.basic.LecturerMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.basic.Lecturer">
+        <id column="UserID" property="UserID" />
+        <result column="Name" property="Name" />
+        <result column="Gender" property="Gender" />
+        <result column="IDCardNumber" property="IDCardNumber" />
+        <result column="Email" property="Email" />
+        <result column="Address" property="Address" />
+        <result column="PhoneNumber" property="PhoneNumber" />
+        <result column="WorkPlace" property="WorkPlace" />
+        <result column="ResearchField" property="ResearchField" />
+        <result column="Title" property="Title" />
+        <result column="Description" property="Description" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        UserID, Name, Gender, IDCardNumber, Email, Address, PhoneNumber, WorkPlace, ResearchField, Title, Description
+    </sql>
+
+</mapper>
