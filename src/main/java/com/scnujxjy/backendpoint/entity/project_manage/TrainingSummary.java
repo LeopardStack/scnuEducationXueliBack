@@ -24,6 +24,19 @@ public class TrainingSummary implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public TrainingSummary() {
+    }
+
+    public TrainingSummary(String fileName, String fileType, String filePath, Long uploader, Date uploadedAt, Long fileSize, Long projectId) {
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.filePath = filePath;
+        this.uploader = uploader;
+        this.uploadedAt = uploadedAt;
+        this.fileSize = fileSize;
+        this.projectId = projectId;
+    }
+
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 

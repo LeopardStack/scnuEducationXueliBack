@@ -29,6 +29,11 @@ public enum ResultCode {
     // 项目错误
     CREATE_PROJECT_FAIL(50001, "创建项目失败"),
     CREATE_PROJECT_FAIL2(50002, "获取所有项目信息失败"),
+    CREATE_PROJECT_FAIL3(50003, "删除项目失败"),
+    PROJECT_MANAGE_BRIEF_GET(50004, "成功获取所有项目信息"),
+    PROJECT_MANAGE_BRIEF_GET2(50005, "成功获取所有项目信息，最新的项目并未上传任何文件"),
+    PROJECT_MANAGE_BRIEF_GET_FAIL(50006, "获取所有项目文件信息失败"),
+    PROJECT_MANAGE_BRIEF_FILE_DELETE_FAIL(50007, "删除文件失败"),
 
 
     // 接口错误：60001-69999

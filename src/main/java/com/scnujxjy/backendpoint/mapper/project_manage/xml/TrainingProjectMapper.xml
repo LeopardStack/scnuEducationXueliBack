@@ -10,11 +10,12 @@
         <result column="created_at" property="createdAt" />
         <result column="deadline" property="deadline" />
         <result column="credit_hours" property="creditHours" />
+        <result column="creator_id" property="creatorId" />
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, name, description, created_at, deadline, credit_hours
+        id, name, description, created_at, deadline, credit_hours, creator_id
     </sql>
 
 </mapper>

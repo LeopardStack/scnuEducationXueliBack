@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author leopard
- * @since 2023-07-02
+ * @since 2023-07-06
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -36,6 +36,8 @@ public class TrainingProject implements Serializable {
     private Date deadline;
 
     private Integer creditHours;
+
+    private Long creatorId;
 
 
 }
