@@ -11,9 +11,8 @@ import com.scnujxjy.backendpoint.service.basic.PermissionService;
 import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.basic.RolePermissionService;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -22,8 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest
+@Slf4j
 public class TestUser1 {
-    private static final Logger logger = LoggerFactory.getLogger(TestUser1.class);
     @Autowired
     private PlatformUserService platformUserService;
     @Autowired
@@ -38,13 +37,13 @@ public class TestUser1 {
     @Test
     public void test1(){
         List<PlatformUser> list = platformUserService.list();
-        logger.info("平台所有用户 " + list);
+        log.info("平台所有用户 " + list);
     }
 
     @Test
     public void addUser(){
         List<PlatformRole> roleList = platformRoleService.list();
-        logger.info("平台所有角色 " + roleList);
+        log.info("平台所有角色 " + roleList);
 
         PlatformUser platformUser = new PlatformUser();
         platformUser.setUsername("leopard");
@@ -53,16 +52,16 @@ public class TestUser1 {
         platformUser.setAvatarImagePath("/path/to/image5");
         try {
             boolean save = platformUserService.save(platformUser);
-            logger.info("是否成功插入 " + save);
+            log.info("是否成功插入 " + save);
         }catch (Exception e){
-            logger.info("插入失败 " + e.toString());
+            log.info("插入失败 " + e.toString());
         }
     }
 
     @Test
     public void changeUserInfo(){
         List<PlatformRole> roleList = platformRoleService.list();
-        logger.info("平台所有角色 " + roleList);
+        log.info("平台所有角色 " + roleList);
 
         PlatformUser platformUser = new PlatformUser();
         platformUser.setUsername("leopard");
@@ -71,9 +70,9 @@ public class TestUser1 {
         platformUser.setAvatarImagePath("/path/to/image5");
         try {
             boolean save = platformUserService.save(platformUser);
-            logger.info("是否成功插入 " + save);
+            log.info("是否成功插入 " + save);
         }catch (Exception e){
-            logger.info("插入失败 " + e.toString());
+            log.info("插入失败 " + e.toString());
         }
     }
 
@@ -98,7 +97,7 @@ public class TestUser1 {
             // 你需要替换 "roleID" 为实际的角色名字列名
             queryWrapper2.eq("RoleID", roleID);
             PlatformRole platformRole = platformRoleService.getOne(queryWrapper2);
-            logger.info("用户角色是 " + platformRole.toString());
+            log.info("用户角色是 " + platformRole.toString());
 
             for(RolePermission rolePermission: rolePermissions){
                 QueryWrapper<Permission> queryWrapper3 = new QueryWrapper<>();
@@ -107,9 +106,9 @@ public class TestUser1 {
                 Permission permission = permissionService.getOne(queryWrapper3);
                 list.add(permission.getResource());
             }
-            logger.info(list.toString());
+            log.info(list.toString());
         }catch (Exception e){
-            logger.error(e.toString());
+            log.error(e.toString());
         }
     }
 
@@ -150,13 +149,13 @@ public class TestUser1 {
         );
 
         boolean b = permissionService.saveBatch(permissions);
-        logger.info("插入结果 " + b);
+        log.info("插入结果 " + b);
     }
 
     @Test
     public void deletePermission(){
         boolean b = permissionService.removeById(1L);
-        logger.info("删除权限 " + "ID is 2L "  + b);
+        log.info("删除权限 " + "ID is 2L "  + b);
     }
 
     /**
@@ -168,7 +167,7 @@ public class TestUser1 {
         queryWrapper.eq("RoleID", 1L);
         queryWrapper.eq("PermissionID", 1L);
         boolean remove = rolePermissionService.remove(queryWrapper);
-        logger.info("删除角色 1L 的权限 1L " + remove);
+        log.info("删除角色 1L 的权限 1L " + remove);
 
     }
 
@@ -235,7 +234,7 @@ public class TestUser1 {
     @Test
     public void getUserPermission(){
         List<UserPermissions> userPermissions = platformUserService.getUserPermissions(4L);
-        logger.info(userPermissions.toString());
+        log.info(userPermissions.toString());
     }
 
     /**
@@ -246,7 +245,7 @@ public class TestUser1 {
         QueryWrapper<RolePermission> rolePermissionQueryWrapper = new QueryWrapper<>();
         rolePermissionQueryWrapper.eq("RoleID", 1L);
         List<RolePermission> rolePermissions = rolePermissionService.list(rolePermissionQueryWrapper);
-        logger.info(rolePermissions.toString());
+        log.info(rolePermissions.toString());
     }
 
 
@@ -282,6 +281,6 @@ public class TestUser1 {
             userRolePermissions.setResources(resources);
             userRolePermissionsArrayList.add(userRolePermissions);
         }
-        logger.info(userRolePermissionsArrayList.toString());
+        log.info(userRolePermissionsArrayList.toString());
     }
 }

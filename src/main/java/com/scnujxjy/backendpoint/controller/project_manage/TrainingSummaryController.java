@@ -21,6 +21,7 @@ import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +59,10 @@ import static com.baomidou.mybatisplus.core.toolkit.Wrappers.lambdaQuery;
  * @author leopard
  * @since 2023-07-02
  */
+@Slf4j
 @RestController
 @RequestMapping("/training-summary")
 public class TrainingSummaryController {
-    private static final Logger logger = LoggerFactory.getLogger(TrainingSummaryController.class);
-
     @Autowired
     private TrainingProjectService trainingProjectService;
 
@@ -185,7 +185,7 @@ public class TrainingSummaryController {
         // Parse the metadata parameter
         JSONObject metadata = JSON.parseObject(metadataJson);
         String projectId = metadata.getString("project_id");
-        logger.info("项目名称为 为 " + projectId + " 上传的文件名称为 " + fileName + " 上传的文件类型为 " + mimeType + "\n上传的文件大小为：" + fileSize);
+        log.info("项目名称为 为 " + projectId + " 上传的文件名称为 " + fileName + " 上传的文件类型为 " + mimeType + "\n上传的文件大小为：" + fileSize);
 
 
         // Upload the file to Minio
@@ -210,7 +210,7 @@ public class TrainingSummaryController {
             );
             trainingSummaryService.save(trainingSummary);
         } catch (Exception e) {
-            logger.error(e.toString());
+            log.error(e.toString());
             return SaResult.error("Failed to upload file to Minio: " + e.getMessage());
         }
         return SaResult.ok("File uploaded successfully");
@@ -224,7 +224,7 @@ public class TrainingSummaryController {
      */
     @RequestMapping("download_project_summary_file")
     public ResponseEntity<Resource> downloadProjectSummaryFile(@RequestParam("fileId") Long fileId) {
-        logger.info("前端传递过来的 fileID " + fileId);
+        log.info("前端传递过来的 fileID " + fileId);
         // 从数据库中获取文件信息
         TrainingSummary trainingSummary = trainingSummaryService.getById(fileId);
         if (trainingSummary == null) {
@@ -235,14 +235,14 @@ public class TrainingSummaryController {
         InputStream fileStream;
         try {
             String fileName = trainingSummary.getFilePath().split("/")[1];
-            logger.info("文件名为 " + fileName);
+            log.info("文件名为 " + fileName);
             fileStream = minioClient.getObject(
                     GetObjectArgs.builder()
                             .bucket(bucketName)
                             .object(fileName)
                             .build());
         } catch (Exception e) {
-            logger.error(e.toString());
+            log.error(e.toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
@@ -267,7 +267,7 @@ public class TrainingSummaryController {
                             .object(fileName)
                             .build());
             trainingSummaryService.removeById(fileId);
-            logger.info("文件删除成功！");
+            log.info("文件删除成功！");
             return SaResult.ok();
         } catch (Exception e) {
             e.printStackTrace();
