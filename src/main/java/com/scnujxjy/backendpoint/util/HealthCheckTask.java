@@ -26,7 +26,7 @@ public class HealthCheckTask {
             // 尝试向Redis执行一个简单的命令
             stringRedisTemplate.opsForValue().get("health_check");
             // 从Redis中获取键为"your_key"的值
-            stringRedisTemplate.opsForValue().set("test", "2023", 30L, TimeUnit.SECONDS);
+            stringRedisTemplate.opsForValue().set("test", "2023", 100L, TimeUnit.SECONDS);
             String test = stringRedisTemplate.opsForValue().get("test");
             logger.info("The value of 'test' is: " + test);
 
@@ -34,7 +34,7 @@ public class HealthCheckTask {
             logger.info("Redis连接成功");
         } catch (Exception e) {
             // 如果有异常则打印连接失败的日志
-            logger.error("Redis连接失败");
+            logger.error("Redis连接失败 " + e.toString());
         }
 
         try {

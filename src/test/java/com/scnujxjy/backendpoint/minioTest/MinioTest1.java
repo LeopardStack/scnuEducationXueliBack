@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.minioTest;
 
 import com.alibaba.fastjson.JSON;
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import io.minio.messages.Item;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -43,15 +49,43 @@ public class MinioTest1 {
         return String.format("%.2f %s", fileSize, units[index]);
     }
 
+    public boolean isUrlValid(String urlStr) {
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
 
-/**
+            int code = connection.getResponseCode();
+            return code == 200;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 验证 Minio 文件下载链接是否有效
+     */
+    @Test
+    public void testURL(){
+        boolean urlValid = isUrlValid("http://192.168.52.111:8001/test2/11/%E5%A4%B4%E5%83%8F.png?X-" +
+                "Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=NPVCI4U2U6P4I9HJZPDG%2F2" +
+                "0230718%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230718T040400Z&X-Amz" +
+                "-Expires=100&X-Amz-SignedHeaders=host&X-Amz-Signature=00079f2c6019be4fc13e" +
+                "c239430aab8837ca30723dac8a0582d4032c97b06ed7");
+        logger.info("URL 是否有效 " + urlValid);
+    }
+
+
+    /**
  * 查询指定 Minio 服务器中的指定 bucket 中有哪些文件（文件名称）以及文件大小
  */
     @Test
     public void test1(){
         try {
-            Iterable<Result<Item>> myObjects = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).build());
-
+            Iterable<Result<Item>> myObjects = minioClient.listObjects(
+                    ListObjectsArgs.builder().bucket(bucketName).recursive(true).build()
+            );
 
             Iterator<Result<Item>> iterator = myObjects.iterator();
             List<Object> items = new ArrayList<>();
@@ -60,35 +94,41 @@ public class MinioTest1 {
                 Item item = iterator.next().get();
                 items.add(JSON.parse(String.format(format, item.objectName(), formatFileSize(item.size()))));
             }
-            logger.info(items.toString());
+            logger.info("所有文件 " + items.toString());
 
-            String url =
-                    minioClient.getPresignedObjectUrl(
-                            GetPresignedObjectUrlArgs.builder()
-                                    .method(Method.GET)
-                                    .bucket(bucketName)
-                                    .object("头像.png")
-                                    .expiry(100, TimeUnit.SECONDS)
-                                    .build());
-            System.out.println(url);
+            String objectName = "11/头像.png";
+            try {
+                minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+                String url =
+                        minioClient.getPresignedObjectUrl(
+                                GetPresignedObjectUrlArgs.builder()
+                                        .method(Method.GET)
+                                        .bucket(bucketName)
+                                        .object(objectName)
+                                        .expiry(100, TimeUnit.SECONDS)
+                                        .build());
+                System.out.println(url);
 
-            logger.info("头像下载地址："+url);
+                logger.info("头像下载地址："+url);
 
-            long offset = 0;
-            Long len = null; // 不设置长度参数会下载整个文件
-            ServerSideEncryptionCustomerKey ssec = null; // 如果没有服务器端加密，可以设置为null
+                long offset = 0;
+                Long len = null; // 不设置长度参数会下载整个文件
+                ServerSideEncryptionCustomerKey ssec = null; // 如果没有服务器端加密，可以设置为null
 
-            try (InputStream stream =
-                         minioClient.getObject(
-                                 GetObjectArgs.builder()
-                                         .bucket(bucketName)
-                                         .object("头像.png")
-                                         .offset(offset)
-                                         .length(len)
-                                         .ssec(ssec)
-                                         .build()
-                         )) {
-                logger.info("文件流：" + stream);
+                try (InputStream stream =
+                             minioClient.getObject(
+                                     GetObjectArgs.builder()
+                                             .bucket(bucketName)
+                                             .object(objectName)
+                                             .offset(offset)
+                                             .length(len)
+                                             .ssec(ssec)
+                                             .build()
+                             )) {
+                    logger.info("文件流：" + stream);
+                }
+            } catch (ErrorResponseException e) {
+                logger.info("文件 " + objectName + " 不存在");
             }
 
         }catch (Exception e){

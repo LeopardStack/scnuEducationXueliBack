@@ -64,11 +64,21 @@
 			<version>2.2</version>
 		</dependency>
 
-		<!--        引入 redis -->
+		<!--        引入 redis 单节点访问-->
+<!--		<dependency>-->
+<!--			<groupId>org.springframework.boot</groupId>-->
+<!--			<artifactId>spring-boot-starter-data-redis</artifactId>-->
+<!--		</dependency>-->
+<!--		集群访问 -->
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
+
 
 		<!--        引入 fastJson 用于将 Java 对象转为 json 字符串 -->
 		<dependency>
@@ -174,6 +184,19 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
+
+		<!-- Spring Boot Starter AMQP -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+
+		<!-- RabbitMQ AMQP client -->
+		<dependency>
+			<groupId>com.rabbitmq</groupId>
+			<artifactId>amqp-client</artifactId>
+		</dependency>
+
 
 
 	</dependencies>
