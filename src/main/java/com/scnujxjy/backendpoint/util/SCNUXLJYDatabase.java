@@ -497,7 +497,7 @@ public class SCNUXLJYDatabase {
                         // System.out.println(" 照片为 " + ksh + ".jpg");
                     }
                     if(imgBY != null && nj != null && nj.length() > 0){
-                        String directoryPath = "./pictures" + "/" + nj + "/" + "export";
+                        String directoryPath = "./xuelistudentpictures" + "/" + nj + "/" + "export";
                         File directory = new File(directoryPath);
                         if (!directory.exists()){
                             // 如果目录不存在则创建

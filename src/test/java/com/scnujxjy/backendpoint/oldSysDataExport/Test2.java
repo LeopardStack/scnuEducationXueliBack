@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees;
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentInfos;
 
 @SpringBootTest
@@ -34,10 +35,20 @@ public class Test2 {
     @Test
     public void test1() {
         ArrayList<HashMap<String, String>> studentInfos = getStudentInfos("2022");
+        ArrayList<HashMap<String, String>> studentInfos1 = getStudentInfos("2021");
+        ArrayList<HashMap<String, String>> studentInfos2 = getStudentInfos("2020");
+        ArrayList<HashMap<String, String>> studentInfos3 = getStudentInfos("2019");
+        ArrayList<HashMap<String, String>> studentInfos4 = getStudentInfos("2018");
+
+        studentInfos.addAll(studentInfos1);
+        studentInfos.addAll(studentInfos2);
+        studentInfos.addAll(studentInfos3);
+        studentInfos.addAll(studentInfos4);
         log.info(String.valueOf(studentInfos.size()));
 
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
 
         for (HashMap<String, String> studentData : studentInfos) {
             StudentStatus studentStatus = new StudentStatus();
@@ -70,8 +81,12 @@ public class Test2 {
                 try {
                     birthDate = dateFormat2.parse(birthDateString);
                 } catch (ParseException e2) {
-                    log.error(birthDateString);
-                    log.error(e2.getMessage());
+                    try {
+                        birthDate = dateFormat3.parse(birthDateString);
+                    } catch (ParseException e3) {
+                        log.error(birthDateString);
+                        log.error(e3.getMessage());
+                    }
                 }
             }
             if (birthDate != null) {
@@ -87,4 +102,6 @@ public class Test2 {
             personalInfoMapper.insert(personalInfo);
         }
     }
+
+
 }
