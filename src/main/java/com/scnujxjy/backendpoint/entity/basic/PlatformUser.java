@@ -1,6 +1,5 @@
 package com.scnujxjy.backendpoint.entity.basic;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -15,16 +14,15 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author leopard
- * @since 2023-07-02
+ * @since 2023-08-02
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("PlatformUser")
 public class PlatformUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "UserID")
+    @TableId(value = "UserID", type = IdType.AUTO)
     private Long UserID;
 
     @TableField("RoleID")

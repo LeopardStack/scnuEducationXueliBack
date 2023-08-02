@@ -1,7 +1,6 @@
 package com.scnujxjy.backendpoint.config;
 
 import cn.dev33.satoken.util.SaResult;
-import com.scnujxjy.backendpoint.util.StpInterfaceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;

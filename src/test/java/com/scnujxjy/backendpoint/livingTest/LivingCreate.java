@@ -1,9 +1,7 @@
 package com.scnujxjy.backendpoint.livingTest;
 
 import com.alibaba.fastjson.JSON;
-import com.scnujxjy.backendpoint.controller.project_manage.TrainingSummaryController;
 import lombok.extern.slf4j.Slf4j;
-import lombok.extern.slf4j.XSlf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.entity.channel.operate.LiveBatchUpdateBarrageRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;

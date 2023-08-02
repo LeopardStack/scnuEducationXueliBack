@@ -57,21 +57,21 @@ public class CodeGenerator {
 
         // 数据源配置
         DataSourceConfig dsc = new DataSourceConfig();
-        dsc.setUrl("jdbc:mysql://192.168.52.133:3308/fxlplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC");
+        dsc.setUrl("jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC");
         dsc.setDriverName("com.mysql.cj.jdbc.Driver");
         dsc.setUsername("root");
-        dsc.setPassword("123456");
+        dsc.setPassword("xhl2023@");
         mpg.setDataSource(dsc);
 
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("mapper.project_manage");
-        pc.setXml("mapper.project_manage.xml");
-        pc.setEntity("entity.project_manage");
-        pc.setService("service.project_manage");
-        pc.setServiceImpl("service.project_manage.impl");
-        pc.setController("controller.project_manage");
+        pc.setMapper("mapper.registration_record_card");
+        pc.setXml("mapper.registration_record_card.xml");
+        pc.setEntity("entity.registration_record_card");
+        pc.setService("service.registration_record_card");
+        pc.setServiceImpl("service.registration_record_card.impl");
+        pc.setController("controller.registration_record_card");
         mpg.setPackageInfo(pc);
 
         // 策略配置

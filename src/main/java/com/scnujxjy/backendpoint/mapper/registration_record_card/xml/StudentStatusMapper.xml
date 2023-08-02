@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.registration_record_card.StudentStatusMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.registration_record_card.StudentStatus">
+        <id column="id" property="id" />
+        <result column="student_number" property="studentNumber" />
+        <result column="grade" property="grade" />
+        <result column="college" property="college" />
+        <result column="teaching_point" property="teachingPoint" />
+        <result column="major_name" property="majorName" />
+        <result column="study_form" property="studyForm" />
+        <result column="level" property="level" />
+        <result column="study_duration" property="studyDuration" />
+        <result column="admission_number" property="admissionNumber" />
+        <result column="academic_status" property="academicStatus" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, student_number, grade, college, teaching_point, major_name, study_form, level, study_duration, admission_number, academic_status
+    </sql>
+
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.teaching_point.TeachingPointAdminInformationMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.teaching_point.TeachingPointAdminInformation">
+        <id column="user_id" property="userId" />
+        <result column="teaching_point_id" property="teachingPointId" />
+        <result column="phone" property="phone" />
+        <result column="id_card_number" property="idCardNumber" />
+        <result column="name" property="name" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        user_id, teaching_point_id, phone, id_card_number, name
+    </sql>
+
+</mapper>

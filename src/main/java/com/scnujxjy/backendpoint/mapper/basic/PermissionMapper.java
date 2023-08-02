@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * </p>
  *
  * @author leopard
- * @since 2023-07-02
+ * @since 2023-08-02
  */
 public interface PermissionMapper extends BaseMapper<Permission> {
 

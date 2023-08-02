@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.mapper.core_data.TeacherInformationMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.core_data.TeacherInformation">
+        <id column="user_id" property="userId" />
+        <result column="name" property="name" />
+        <result column="gender" property="gender" />
+        <result column="birth_date" property="birthDate" />
+        <result column="political_status" property="politicalStatus" />
+        <result column="education" property="education" />
+        <result column="degree" property="degree" />
+        <result column="professional_title" property="professionalTitle" />
+        <result column="title_level" property="titleLevel" />
+        <result column="graduation_school" property="graduationSchool" />
+        <result column="current_position" property="currentPosition" />
+        <result column="college_id" property="collegeId" />
+        <result column="teaching_point" property="teachingPoint" />
+        <result column="administrative_position" property="administrativePosition" />
+        <result column="work_number" property="workNumber" />
+        <result column="id_card_number" property="idCardNumber" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="start_term" property="startTerm" />
+        <result column="teacher_type1" property="teacherType1" />
+        <result column="teacher_type2" property="teacherType2" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        user_id, name, gender, birth_date, political_status, education, degree, professional_title, title_level, graduation_school, current_position, college_id, teaching_point, administrative_position, work_number, id_card_number, phone, email, start_term, teacher_type1, teacher_type2
+    </sql>
+
+</mapper>

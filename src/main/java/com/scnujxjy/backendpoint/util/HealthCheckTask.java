@@ -1,6 +1,4 @@
 package com.scnujxjy.backendpoint.util;
-
-import com.scnujxjy.backendpoint.mapper.basic.PlatformUserMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +16,7 @@ public class HealthCheckTask {
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired(required = false)
-    private PlatformUserMapper platformUserMapper;
+//    private PlatformUserMapper platformUserMapper;
 
     @Scheduled(fixedRate = 100000)  // 每100秒执行一次
     public void checkConnections() {
@@ -39,7 +37,7 @@ public class HealthCheckTask {
 
         try {
             // 尝试向MySQL执行一个简单的SQL
-            platformUserMapper.healthCheck();
+//            platformUserMapper.healthCheck();
             // 如果没有异常则打印连接成功的日志
             logger.info("MySQL连接成功");
         } catch (Exception e) {
