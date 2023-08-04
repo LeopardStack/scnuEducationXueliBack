@@ -1,8 +1,9 @@
 package com.scnujxjy.backendpoint.entity.registration_record_card;
 
+import java.math.BigDecimal;
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
-import com.baomidou.mybatisplus.annotation.Version;
+
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import lombok.Data;
@@ -14,7 +15,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author leopard
- * @since 2023-08-02
+ * @since 2023-08-04
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -29,14 +30,9 @@ public class DegreeInfo implements Serializable {
     private Long id;
 
     /**
-     * 年级
+     * 考生号
      */
-    private String grade;
-
-    /**
-     * 证件号码
-     */
-    private String idNumber;
+    private String admissionNumber;
 
     /**
      * 学号
@@ -44,29 +40,84 @@ public class DegreeInfo implements Serializable {
     private String studentNumber;
 
     /**
-     * 学位外语成绩
+     * 姓名
      */
-    private String foreignLanguageScore;
+    private String name;
 
     /**
-     * 学位外语科目
+     * 姓名拼音
      */
-    private String foreignLanguageSubject;
+    private String namePinyin;
 
     /**
-     * 学位外语通过状态
+     * 性别
      */
-    private String foreignLanguageStatus;
+    private String gender;
 
     /**
-     * 学位外语通过日期
+     * 民族
      */
-    private Date foreignLanguageDate;
+    private String ethnicity;
 
     /**
-     * 学位类型
+     * 政治面貌
      */
-    private String degreeType;
+    private String politicalStatus;
+
+    /**
+     * 出生日期
+     */
+    private Date birthDate;
+
+    /**
+     * 证件类型
+     */
+    private String idType;
+
+    /**
+     * 证件号码
+     */
+    private String idNumber;
+
+    /**
+     * 校长名
+     */
+    private String principalName;
+
+    /**
+     * 证书姓名
+     */
+    private String certificateName;
+
+    /**
+     * 专业名称
+     */
+    private String majorName;
+
+    /**
+     * 入学时间
+     */
+    private Date admissionDate;
+
+    /**
+     * 毕业时间
+     */
+    private Date graduationDate;
+
+    /**
+     * 学制
+     */
+    private String studyPeriod;
+
+    /**
+     * 培养形式
+     */
+    private String studyForm;
+
+    /**
+     * 学位证号
+     */
+    private String degreeCertificateNumber;
 
     /**
      * 学位授予日期
@@ -74,14 +125,54 @@ public class DegreeInfo implements Serializable {
     private Date degreeDate;
 
     /**
-     * 学位证号
+     * 学位类型
      */
-    private String degreeNumber;
+    private String degreeType;
 
     /**
-     * 文号
+     * 学位办理文号
      */
-    private String documentNumber;
+    private String degreeProcessNumber;
+
+    /**
+     * 学位外语通过编号
+     */
+    private String degreeForeignLanguagePassNumber;
+
+    /**
+     * 所属学院
+     */
+    private String college;
+
+    /**
+     * 毕业证号
+     */
+    private String graduationCertificateNumber;
+
+    /**
+     * 平均分
+     */
+    private BigDecimal averageScore;
+
+    /**
+     * 授予学院
+     */
+    private String awardingCollege;
+
+    /**
+     * 学位外语科目
+     */
+    private String degreeForeignLanguageSubject;
+
+    /**
+     * 学位外语通过日期
+     */
+    private Date degreeForeignLanguagePassDate;
+
+    /**
+     * 学位照片链接
+     */
+    private String degreePhotoUrl;
 
 
 }

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,6 +28,7 @@ public class Test1 {
         ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(2020);
         log.info(String.valueOf(studentLuqus.size()));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+        SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
 
         for (HashMap<String, String> studentData : studentLuqus) {
             AdmissionInformation admissionInformation = new AdmissionInformation();
@@ -44,14 +46,33 @@ public class Test1 {
             admissionInformation.setGraduationSchool(studentData.get("BYXX"));
 
             String graduatedDateString = studentData.get("BYRQ");
-            Date graduatedDate = dateFormat.parse(graduatedDateString);
-            admissionInformation.setGraduationDate(graduatedDate);
+            try {
+                Date graduatedDate = dateFormat.parse(graduatedDateString);
+                admissionInformation.setGraduationDate(graduatedDate);
+            }catch (ParseException e){
+                try{
+                    Date graduatedDate = dateFormat1.parse(graduatedDateString);
+                    admissionInformation.setGraduationDate(graduatedDate);
+                }catch (Exception e1){
+                    log.error("毕业日期解析失败 " + graduatedDateString);
+                }
+            }
+
             admissionInformation.setPhoneNumber(studentData.get("LXDH"));
             admissionInformation.setIdCardNumber(studentData.get("SFZH"));
 
             String birthDateString = studentData.get("CSRQ");
-            Date birthDate = dateFormat.parse(birthDateString);
-            admissionInformation.setBirthDate(birthDate);
+            try {
+                Date birthDate = dateFormat.parse(birthDateString);
+                admissionInformation.setBirthDate(birthDate);
+            }catch (ParseException e){
+                try{
+                    Date birthDate = dateFormat1.parse(birthDateString);
+                    admissionInformation.setBirthDate(birthDate);
+                }catch (Exception e1){
+                    log.error("出生日期解析失败 " + birthDateString);
+                }
+            }
             admissionInformation.setAddress(studentData.get("TXDZ"));
             admissionInformation.setPostalCode(studentData.get("YZBM"));
             admissionInformation.setEthnicity(studentData.get("MINZU"));

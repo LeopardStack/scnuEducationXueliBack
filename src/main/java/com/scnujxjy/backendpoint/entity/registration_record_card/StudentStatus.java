@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.entity.registration_record_card;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import java.util.Date;
 import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
@@ -13,7 +14,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author leopard
- * @since 2023-08-02
+ * @since 2023-08-04
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -76,6 +77,11 @@ public class StudentStatus implements Serializable {
      * 学籍状态
      */
     private String academicStatus;
+
+    /**
+     * 入学日期，一般为入学年份 + 03
+     */
+    private Date enrollmentDate;
 
 
 }

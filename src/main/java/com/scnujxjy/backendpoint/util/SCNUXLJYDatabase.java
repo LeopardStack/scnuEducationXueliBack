@@ -537,6 +537,107 @@ public class SCNUXLJYDatabase {
         return ret;
     }
 
+    public ArrayList<HashMap<String, String>> getDegreeData(String sql) {
+        ResultSet rs = null;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                BufferedImage imgXW = null;
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+                    if(name.equals("PICTURE")){
+                        Blob blob = rs.getBlob(i);
+                        if(blob == null){
+                            continue;
+                        }
+                        InputStream is = blob.getBinaryStream();
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[4096];
+                        int len;
+                        while (true) {
+                            try {
+                                if ((len = is.read(buffer)) == -1) {
+                                    break;
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            os.write(buffer, 0, len);
+                        }
+                        byte[] bytes = os.toByteArray();
+
+                        InputStream in = new ByteArrayInputStream(bytes);
+                        try {
+                            imgXW = ImageIO.read(in);
+
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }else{
+                        byte[] columnValue = null;
+                        try {
+                            columnValue = rs.getBytes(i);
+                            if(columnValue == null){
+                                hashMap.put(name, null);
+                                continue;
+                            }
+                            String tmp = new String(columnValue, "GBK");
+                            tmp = tmp.trim();
+                            hashMap.put(name, tmp);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+                }
+
+                String nj = hashMap.get("FZRQ");
+                String sfzh = hashMap.get("SFZH");
+
+                if(imgXW != null && nj != null && sfzh != null){
+                    String directoryPath = "./xueweipictures" + "/" + nj + "/" + hashMap.get("PYXS");
+                    File directory = new File(directoryPath);
+                    if (!directory.exists()){
+                        // 如果目录不存在则创建
+                        boolean result = directory.mkdirs();
+                        if(result) {
+                            System.out.println("Directory was created successfully");
+                        } else {
+                            System.out.println("Directory creation failed");
+                        }
+                    }
+                    if (sfzh.matches(".*[<>:\"/\\\\|?*].*")) {
+                        logger.error("Invalid sfzh: " + sfzh);
+                        sfzh = sfzh.replaceAll("[<>:\"/\\\\|?*]", "_");
+                    }
+
+                    File outputFile = new File(directoryPath + "/" + sfzh + ".jpg");
+
+                    try {
+                        ImageIO.write(imgXW, "jpg", outputFile);
+                        hashMap.put("XWPIC", directoryPath + "/" + sfzh + ".jpg");
+                    } catch (Exception e) {
+                        logger.error("照片写入失败 " + e.toString());
+                    }
+                }
+                else{
+                    logger.error("信息缺失 " + hashMap);
+                }
+//                logger.info("获取数据 " + hashMap);
+                ret.add(hashMap);
+            }
+        }catch (Exception e){
+            logger.error(e.toString());
+        }
+        return ret;
+    }
+
     public ArrayList<HashMap<String, String>> getDataDIYMultiThread(int start, int pageSize, int threadNums, int nj, String picKey) {
         ExecutorService executor = Executors.newFixedThreadPool(threadNums); // 创建一个包含10个线程的线程池
 

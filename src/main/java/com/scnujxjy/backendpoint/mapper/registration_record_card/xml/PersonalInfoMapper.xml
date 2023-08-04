@@ -18,11 +18,12 @@
         <result column="address" property="address" />
         <result column="entrance_photo" property="entrancePhoto" />
         <result column="is_disabled" property="isDisabled" />
+        <result column="grade" property="grade" />
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, gender, birth_date, political_status, ethnicity, native_place, id_type, id_number, postal_code, phone_number, email, address, entrance_photo, is_disabled
+        id, gender, birth_date, political_status, ethnicity, native_place, id_type, id_number, postal_code, phone_number, email, address, entrance_photo, is_disabled, grade
     </sql>
 
 </mapper>

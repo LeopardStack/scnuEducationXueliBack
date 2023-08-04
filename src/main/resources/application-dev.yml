@@ -45,7 +45,8 @@ mybatis-plus:
 # 关闭 MyBatis 的日志
 logging:
   level:
-    org.mybatis: DEBUG
+    org.mybatis: OFF
+#    org.mybatis: DEBUG
 
 
 minio:

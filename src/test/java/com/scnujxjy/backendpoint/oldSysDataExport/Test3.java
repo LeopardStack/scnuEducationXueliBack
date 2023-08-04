@@ -26,7 +26,7 @@ public class Test3 {
      */
     @Test
     public void test1(){
-        ArrayList<HashMap<String, String>> studentFees = getStudentFees("2022");
+        ArrayList<HashMap<String, String>> studentFees = getStudentFees("2018");
         log.info(String.valueOf(studentFees.size()));
 
         for (HashMap<String, String> studentData : studentFees) {

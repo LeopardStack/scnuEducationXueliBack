@@ -10,6 +10,8 @@ public class MyThread extends Thread{
     private static final Logger logger = LoggerFactory.getLogger(MyThread.class);
     public SCNUXLJYDatabase scnuxljyDatabase;
     String query;
+
+    public static int functionSelect=0;
     private ArrayList<HashMap<String, String>> dataDIY;
     public MyThread(String query){
         this.scnuxljyDatabase = new SCNUXLJYDatabase();
@@ -20,8 +22,13 @@ public class MyThread extends Thread{
     public void run() {
         try {
             long startTime1 = System.nanoTime();
-            System.out.println(query + Thread.currentThread().getName());
-            dataDIY = scnuxljyDatabase.getDataDIY(query);
+            System.out.println(query + " " + Thread.currentThread().getName());
+            if(functionSelect == 0) {
+                dataDIY = scnuxljyDatabase.getDataDIY(query);
+            }
+            else if(functionSelect == 1){
+                dataDIY = scnuxljyDatabase.getDegreeData(query);
+            }
             System.out.println(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
 
             // 获取结束时间

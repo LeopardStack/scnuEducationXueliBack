@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * </p>
  *
  * @author leopard
- * @since 2023-08-02
+ * @since 2023-08-04
  */
 public interface DegreeInfoService extends IService<DegreeInfo> {
 

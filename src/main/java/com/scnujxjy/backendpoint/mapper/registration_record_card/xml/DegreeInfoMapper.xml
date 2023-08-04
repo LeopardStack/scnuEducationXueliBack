@@ -5,22 +5,40 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.entity.registration_record_card.DegreeInfo">
         <id column="id" property="id" />
-        <result column="grade" property="grade" />
-        <result column="id_number" property="idNumber" />
+        <result column="admission_number" property="admissionNumber" />
         <result column="student_number" property="studentNumber" />
-        <result column="foreign_language_score" property="foreignLanguageScore" />
-        <result column="foreign_language_subject" property="foreignLanguageSubject" />
-        <result column="foreign_language_status" property="foreignLanguageStatus" />
-        <result column="foreign_language_date" property="foreignLanguageDate" />
-        <result column="degree_type" property="degreeType" />
+        <result column="name" property="name" />
+        <result column="name_pinyin" property="namePinyin" />
+        <result column="gender" property="gender" />
+        <result column="ethnicity" property="ethnicity" />
+        <result column="political_status" property="politicalStatus" />
+        <result column="birth_date" property="birthDate" />
+        <result column="id_type" property="idType" />
+        <result column="id_number" property="idNumber" />
+        <result column="principal_name" property="principalName" />
+        <result column="certificate_name" property="certificateName" />
+        <result column="major_name" property="majorName" />
+        <result column="admission_date" property="admissionDate" />
+        <result column="graduation_date" property="graduationDate" />
+        <result column="study_period" property="studyPeriod" />
+        <result column="study_form" property="studyForm" />
+        <result column="degree_certificate_number" property="degreeCertificateNumber" />
         <result column="degree_date" property="degreeDate" />
-        <result column="degree_number" property="degreeNumber" />
-        <result column="document_number" property="documentNumber" />
+        <result column="degree_type" property="degreeType" />
+        <result column="degree_process_number" property="degreeProcessNumber" />
+        <result column="degree_foreign_language_pass_number" property="degreeForeignLanguagePassNumber" />
+        <result column="college" property="college" />
+        <result column="graduation_certificate_number" property="graduationCertificateNumber" />
+        <result column="average_score" property="averageScore" />
+        <result column="awarding_college" property="awardingCollege" />
+        <result column="degree_foreign_language_subject" property="degreeForeignLanguageSubject" />
+        <result column="degree_foreign_language_pass_date" property="degreeForeignLanguagePassDate" />
+        <result column="degree_photo_url" property="degreePhotoUrl" />
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, grade, id_number, student_number, foreign_language_score, foreign_language_subject, foreign_language_status, foreign_language_date, degree_type, degree_date, degree_number, document_number
+        id, admission_number, student_number, name, name_pinyin, gender, ethnicity, political_status, birth_date, id_type, id_number, principal_name, certificate_name, major_name, admission_date, graduation_date, study_period, study_form, degree_certificate_number, degree_date, degree_type, degree_process_number, degree_foreign_language_pass_number, college, graduation_certificate_number, average_score, awarding_college, degree_foreign_language_subject, degree_foreign_language_pass_date, degree_photo_url
     </sql>
 
 </mapper>

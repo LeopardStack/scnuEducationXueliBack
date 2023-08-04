@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
  * </p>
  *
  * @author leopard
- * @since 2023-08-02
+ * @since 2023-08-04
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -92,6 +92,11 @@ public class PersonalInfo implements Serializable {
      * 是否残疾人
      */
     private String isDisabled;
+
+    /**
+     * 年级
+     */
+    private String grade;
 
 
 }

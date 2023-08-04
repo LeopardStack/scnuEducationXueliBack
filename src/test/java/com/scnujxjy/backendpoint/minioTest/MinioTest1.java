@@ -209,4 +209,47 @@ public class MinioTest1 {
             e.printStackTrace();
         }
     }
+
+    private void uploadDirectory(String bucketName, File dir) throws Exception {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    uploadDirectory(bucketName, file);
+                } else {
+                    uploadFile(bucketName, file);
+                }
+            }
+        }
+    }
+    private static String rootDirPath;
+
+    private void uploadFile(String bucketName, File file) throws Exception {
+        String objectName = file.getAbsolutePath().substring(rootDirPath.length() + 1).replace("\\", "/");
+        minioClient.uploadObject(
+                UploadObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .filename(file.getAbsolutePath())
+                        .build());
+        System.out.println("Uploaded " + file.getPath() + " to " + objectName);
+    }
+
+    /**
+     * 上传学历教育学生照片
+     */
+    @Test
+    public void testUploadPictures(){
+        String bucketName = "xueweipictures";
+        String projectRootPath = System.getProperty("user.dir");
+        File rootDir = new File(projectRootPath, "xueweipictures");
+        rootDirPath = rootDir.getAbsolutePath();
+
+        try {
+            uploadDirectory(bucketName, rootDir);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

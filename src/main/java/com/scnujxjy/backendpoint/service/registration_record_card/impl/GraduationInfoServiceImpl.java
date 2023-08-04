@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * @author leopard
- * @since 2023-08-02
+ * @since 2023-08-04
  */
 @Service
 public class GraduationInfoServiceImpl extends ServiceImpl<GraduationInfoMapper, GraduationInfo> implements GraduationInfoService {
