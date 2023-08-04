@@ -1,10 +1,9 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
-import com.scnujxjy.backendpoint.entity.admission_information.AdmissionInformation;
-import com.scnujxjy.backendpoint.entity.registration_record_card.PersonalInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.StudentStatus;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.PersonalInfoMapper;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfo;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatus;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees;
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentInfos;
 
 @SpringBootTest

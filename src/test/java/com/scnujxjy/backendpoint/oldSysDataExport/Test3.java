@@ -1,9 +1,7 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
-import com.scnujxjy.backendpoint.entity.core_data.PaymentInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.PersonalInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.StudentStatus;
-import com.scnujxjy.backendpoint.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfo;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

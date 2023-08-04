@@ -1,3 +1,3 @@
 spring:
   profiles:
-    active: dev  # 通过此选项就可以选择采用哪个 yml 配置文件
+    active: liweitang  # 通过此选项就可以选择采用哪个 yml 配置文件
