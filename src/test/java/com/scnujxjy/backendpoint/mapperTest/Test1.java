@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.mapperTest;
 
-import com.scnujxjy.backendpoint.mapper.admission_information.AdmissionInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
