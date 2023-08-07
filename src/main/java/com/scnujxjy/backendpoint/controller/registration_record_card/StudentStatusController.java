@@ -82,7 +82,7 @@ public class StudentStatusController {
     public SaResult editById(StudentStatusRO studentStatusRO) {
         // 校验参数
         if (Objects.isNull(studentStatusRO) || Objects.isNull(studentStatusRO.getId())) {
-            throw dataMissError()
+            throw dataMissError();
         }
         // 更新学籍信息
         StudentStatusVO studentStatusVO = studentStatusService.editById(studentStatusRO);
