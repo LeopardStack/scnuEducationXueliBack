@@ -1,12 +1,12 @@
 package com.scnujxjy.backendpoint.dao.entity.registration_record_card;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class PersonalInfo implements Serializable {
+public class PersonalInfoPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

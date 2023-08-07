@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.registration_record_card;
 
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-04
  */
-public interface GraduationInfoMapper extends BaseMapper<GraduationInfo> {
+public interface GraduationInfoMapper extends BaseMapper<GraduationInfoPO> {
 
 }
