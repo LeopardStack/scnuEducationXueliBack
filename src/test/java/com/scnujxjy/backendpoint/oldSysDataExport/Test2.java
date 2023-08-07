@@ -1,16 +1,16 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.scnujxjy.backendpoint.entity.admission_information.AdmissionInformation;
-import com.scnujxjy.backendpoint.entity.registration_record_card.GraduationInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.OriginalEducationInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.PersonalInfo;
-import com.scnujxjy.backendpoint.entity.registration_record_card.StudentStatus;
-import com.scnujxjy.backendpoint.mapper.admission_information.AdmissionInformationMapper;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.GraduationInfoMapper;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.OriginalEducationInfoMapper;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.PersonalInfoMapper;
-import com.scnujxjy.backendpoint.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformation;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.OriginalEducationInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +67,6 @@ public class Test2 {
     }
 
 
-
     /**
      * 获取旧系统中的在籍学生数据
      */
@@ -118,42 +117,41 @@ public class Test2 {
         SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
 
         for (HashMap<String, String> studentData : studentInfos) {
-            StudentStatus studentStatus = new StudentStatus();
-            PersonalInfo personalInfo = new PersonalInfo();
-            OriginalEducationInfo originalEducationInfo = new OriginalEducationInfo();
-            GraduationInfo graduationInfo = new GraduationInfo();
+            StudentStatusPO studentStatusPO = new StudentStatusPO();
+            PersonalInfoPO personalInfoPO = new PersonalInfoPO();
+            OriginalEducationInfoPO originalEducationInfoPO = new OriginalEducationInfoPO();
+            GraduationInfoPO graduationInfoPO = new GraduationInfoPO();
 
             // 请根据实际的字段名和数据类型调整以下代码
-            studentStatus.setStudentNumber(studentData.get("XH"));
-            studentStatus.setGrade(studentData.get("NJ"));
-            studentStatus.setCollege(studentData.get("XSH"));
+            studentStatusPO.setStudentNumber(studentData.get("XH"));
+            studentStatusPO.setGrade(studentData.get("NJ"));
+            studentStatusPO.setCollege(studentData.get("XSH"));
 
             // 教学点 BH，去掉末尾的数字
             String teachingPoint = studentData.get("BH");
             teachingPoint = teachingPoint.replaceAll("\\d+$", "");
-            if(!jxd_jc.containsKey(teachingPoint)){
+            if (!jxd_jc.containsKey(teachingPoint)) {
                 log.error(teachingPoint + " 没有在集合内");
                 teachingPoint = teachingPoint;
-            }
-            else{
+            } else {
                 teachingPoint = jxd_jc.get(teachingPoint);
             }
 
-            studentStatus.setTeachingPoint(teachingPoint);
+            studentStatusPO.setTeachingPoint(teachingPoint);
 
-            studentStatus.setMajorName(studentData.get("ZYMC"));
-            studentStatus.setStudyForm(studentData.get("XXXS"));
-            studentStatus.setLevel(studentData.get("CC"));
-            studentStatus.setStudyDuration(studentData.get("XZ"));
-            studentStatus.setAdmissionNumber(studentData.get("KSH"));
-            studentStatus.setAcademicStatus(studentData.get("ZT"));
+            studentStatusPO.setMajorName(studentData.get("ZYMC"));
+            studentStatusPO.setStudyForm(studentData.get("XXXS"));
+            studentStatusPO.setLevel(studentData.get("CC"));
+            studentStatusPO.setStudyDuration(studentData.get("XZ"));
+            studentStatusPO.setAdmissionNumber(studentData.get("KSH"));
+            studentStatusPO.setAcademicStatus(studentData.get("ZT"));
 
             String enrollDateString = studentData.get("RXRQ");
             Date enrollDate = null;
             enrollDate = dateFormat5.parse(enrollDateString);
-            studentStatus.setEnrollmentDate(enrollDate);
+            studentStatusPO.setEnrollmentDate(enrollDate);
 
-            personalInfo.setGender(studentData.get("XB"));
+            personalInfoPO.setGender(studentData.get("XB"));
 
             String birthDateString = studentData.get("CSRQ");
             Date birthDate = null;
@@ -172,7 +170,7 @@ public class Test2 {
                 }
             }
             if (birthDate != null) {
-                personalInfo.setBirthDate(birthDate);
+                personalInfoPO.setBirthDate(birthDate);
             }
 
             // 根据考生号来获取新生数据中的个人信息
@@ -181,45 +179,45 @@ public class Test2 {
             queryWrapper.eq("admission_number", ksh);
             AdmissionInformation student = admissionInformationMapper.selectOne(queryWrapper);
 
-            personalInfo.setGender(student.getGender());
-            personalInfo.setBirthDate(student.getBirthDate());
-            personalInfo.setPoliticalStatus(student.getPoliticalStatus());
-            if(studentData.get("MZ").equals(student.getEthnicity())){
+            personalInfoPO.setGender(student.getGender());
+            personalInfoPO.setBirthDate(student.getBirthDate());
+            personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
+            if (studentData.get("MZ").equals(student.getEthnicity())) {
                 throw new Exception("民族信息与新生数据中不同 " + ksh);
             }
-            personalInfo.setEthnicity(studentData.get("MZ"));
-            personalInfo.setIdType(identifyID(studentData.get("SFZH")));
-            personalInfo.setIdNumber(studentData.get("SFZH"));
-            personalInfo.setPostalCode(student.getPostalCode());
-            personalInfo.setPhoneNumber(student.getPhoneNumber());
-            personalInfo.setAddress(student.getAddress());
-            personalInfo.setEntrancePhoto(studentData.get("RXPIC"));
-            personalInfo.setGrade(studentData.get("NJ"));
+            personalInfoPO.setEthnicity(studentData.get("MZ"));
+            personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
+            personalInfoPO.setIdNumber(studentData.get("SFZH"));
+            personalInfoPO.setPostalCode(student.getPostalCode());
+            personalInfoPO.setPhoneNumber(student.getPhoneNumber());
+            personalInfoPO.setAddress(student.getAddress());
+            personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
+            personalInfoPO.setGrade(studentData.get("NJ"));
 
 
-            originalEducationInfo.setGrade(studentData.get("NJ"));
-            originalEducationInfo.setIdNumber(studentData.get("SFZH"));
-            originalEducationInfo.setGraduationSchool(student.getGraduationSchool());
-            originalEducationInfo.setOriginalEducation(student.getOriginalEducation());
-            originalEducationInfo.setGraduationDate(student.getGraduationDate());
+            originalEducationInfoPO.setGrade(studentData.get("NJ"));
+            originalEducationInfoPO.setIdNumber(studentData.get("SFZH"));
+            originalEducationInfoPO.setGraduationSchool(student.getGraduationSchool());
+            originalEducationInfoPO.setOriginalEducation(student.getOriginalEducation());
+            originalEducationInfoPO.setGraduationDate(student.getGraduationDate());
 
-            graduationInfo.setGrade(studentData.get("NJ"));
-            graduationInfo.setIdNumber(studentData.get("SFZH"));
-            graduationInfo.setStudentNumber(studentData.get("XH"));
-            graduationInfo.setGraduationNumber(studentData.get("BYZH"));
+            graduationInfoPO.setGrade(studentData.get("NJ"));
+            graduationInfoPO.setIdNumber(studentData.get("SFZH"));
+            graduationInfoPO.setStudentNumber(studentData.get("XH"));
+            graduationInfoPO.setGraduationNumber(studentData.get("BYZH"));
 
 
             String graduateDateString = studentData.get("BYRQ");
             Date graduateDate = null;
             graduateDate = dateFormat5.parse(graduateDateString);
-            graduationInfo.setGraduationDate(graduateDate);
+            graduationInfoPO.setGraduationDate(graduateDate);
 
-            graduationInfo.setGraduationPhoto(studentData.get("BYPIC"));
+            graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
 
-            studentStatusMapper.insert(studentStatus);
-            personalInfoMapper.insert(personalInfo);
-            originalEducationInfoMapper.insert(originalEducationInfo);
-            graduationInfoMapper.insert(graduationInfo);
+            studentStatusMapper.insert(studentStatusPO);
+            personalInfoMapper.insert(personalInfoPO);
+            originalEducationInfoMapper.insert(originalEducationInfoPO);
+            graduationInfoMapper.insert(graduationInfoPO);
         }
     }
 
