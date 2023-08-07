@@ -1,6 +1,9 @@
 package com.scnujxjy.backendpoint.service.core_data;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelReader;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,15 +11,19 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.handler.excel.TeacherInformationExcelListener;
 import com.scnujxjy.backendpoint.inverter.core_data.TeachInformationInverter;
+import com.scnujxjy.backendpoint.model.bo.TeacherInformationExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -142,5 +149,22 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
             return null;
         }
         return count;
+    }
+
+    public List<TeacherInformationVO> excelImportTeacherInformation(MultipartFile file) {
+        TeacherInformationExcelListener listener = new TeacherInformationExcelListener();
+        try (InputStream inputStream = file.getInputStream();
+             ExcelReader reader = EasyExcel.read(inputStream, TeacherInformationExcelBO.class, listener).build();) {
+            // 读取第一张表即可，后面有字段说明
+            reader.read(EasyExcel.readSheet().sheetNo(0).build());
+            List<TeacherInformationExcelBO> dataList = listener.getDataList();
+            if (CollUtil.isNotEmpty(dataList)) {
+                return teachInformationInverter.excelBO2VO(dataList);
+            }
+        } catch (Exception e) {
+            log.error("解析表格出现错误", e);
+            return null;
+        }
+        return null;
     }
 }

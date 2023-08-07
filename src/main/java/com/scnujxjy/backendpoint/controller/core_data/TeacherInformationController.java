@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.controller.core_data;
 
 
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
@@ -9,8 +10,10 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -86,6 +89,18 @@ public class TeacherInformationController {
             throw dataDeleteError();
         }
         return SaResult.data(count);
+    }
+
+    @PostMapping("/excel/import")
+    public SaResult ExcelImportTeacherInformation(MultipartFile file) {
+        if (Objects.isNull(file) || file.isEmpty()) {
+            throw dataMissError();
+        }
+        List<TeacherInformationVO> teacherInformationVOS = teacherInformationService.excelImportTeacherInformation(file);
+        if (CollUtil.isEmpty(teacherInformationVOS)) {
+            return SaResult.error("错误解析");
+        }
+        return SaResult.data(teacherInformationVOS);
     }
 }
 
