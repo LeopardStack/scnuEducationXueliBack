@@ -7,8 +7,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.PersonalInfoR
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.PersonalInfoVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.PersonalInfoService;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -36,6 +35,7 @@ public class PersonalInfoController {
      * @param id 个人基本信息id
      * @return 个人基本信息
      */
+    @GetMapping("/detail")
     public SaResult detailById(Long id) {
         // 校验参数
         if (Objects.isNull(id)) {
@@ -55,7 +55,8 @@ public class PersonalInfoController {
      * @param personalInfoROPageRO 分页查询参数
      * @return 分页查询结果
      */
-    public SaResult pageQueryPersonalInfo(PageRO<PersonalInfoRO> personalInfoROPageRO) {
+    @PostMapping("/page")
+    public SaResult pageQueryPersonalInfo(@RequestBody PageRO<PersonalInfoRO> personalInfoROPageRO) {
         // 校验参数
         if (Objects.isNull(personalInfoROPageRO)) {
             throw dataMissError();
@@ -77,7 +78,8 @@ public class PersonalInfoController {
      * @param personalInfoRO 个人基本信息
      * @return 更新后的个人基本信息
      */
-    public SaResult editById(PersonalInfoRO personalInfoRO) {
+    @PutMapping("/edit")
+    public SaResult editById(@RequestBody PersonalInfoRO personalInfoRO) {
         // 校验参数
         if (Objects.isNull(personalInfoRO) || Objects.isNull(personalInfoRO.getId())) {
             throw dataMissError();
@@ -96,6 +98,7 @@ public class PersonalInfoController {
      * @param id 个人基本信息id
      * @return 删除的数据条数
      */
+    @DeleteMapping("/delete")
     public SaResult deleteById(Long id) {
         // 校验参数
         if (Objects.isNull(id)) {
