@@ -37,9 +37,11 @@ public class DegreeInfoController {
      */
     @GetMapping("/detail")
     public SaResult detailById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        // 数据查询
         DegreeInfoVO degreeInfoVO = degreeInfoService.detailById(id);
         if (Objects.isNull(degreeInfoVO)) {
             throw dataNotFoundError();
@@ -55,12 +57,14 @@ public class DegreeInfoController {
      */
     @PostMapping("/page")
     public SaResult pageQueryDegreeInfo(@RequestBody PageRO<DegreeInfoRO> degreeInfoROPageRO) {
+        // 参数校验
         if (Objects.isNull(degreeInfoROPageRO)) {
             throw dataMissError();
         }
         if (Objects.isNull(degreeInfoROPageRO.getEntity())) {
             degreeInfoROPageRO.setEntity(new DegreeInfoRO());
         }
+        // 数据查询
         PageVO<DegreeInfoVO> degreeInfoVOPageVO = degreeInfoService.pageQueryDegreeInfo(degreeInfoROPageRO);
         if (Objects.isNull(degreeInfoVOPageVO)) {
             throw dataNotFoundError();
@@ -76,9 +80,11 @@ public class DegreeInfoController {
      */
     @PutMapping("/edit")
     public SaResult editById(DegreeInfoRO degreeInfoRO) {
+        // 参数校验
         if (Objects.isNull(degreeInfoRO) || Objects.isNull(degreeInfoRO.getId())) {
             throw dataMissError();
         }
+        // 数据查询
         DegreeInfoVO degreeInfoVO = degreeInfoService.editById(degreeInfoRO);
         if (Objects.isNull(degreeInfoVO)) {
             throw dataUpdateError();
@@ -94,9 +100,11 @@ public class DegreeInfoController {
      */
     @DeleteMapping("/delete")
     public SaResult deleteById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        // 删除数据
         Integer count = degreeInfoService.deleteById(id);
         if (count <= 0) {
             throw dataDeleteError();

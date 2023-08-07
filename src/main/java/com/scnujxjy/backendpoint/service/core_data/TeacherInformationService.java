@@ -42,10 +42,12 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return 教师详细信息
      */
     public TeacherInformationVO detailById(String userId) {
+        // 参数校验
         if (StrUtil.isBlank(userId)) {
             log.error("参数缺失");
             return null;
         }
+        // 查询数据
         TeacherInformationPO teacherInformationPO = baseMapper.selectById(userId);
         return teachInformationInverter.po2VO(teacherInformationPO);
     }
@@ -57,6 +59,7 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return 分页查询的教师详细信息
      */
     public PageVO<TeacherInformationVO> pageQueryTeacherInformation(PageRO<TeacherInformationRO> teacherInformationROPageRO) {
+        // 参数校验
         if (Objects.isNull(teacherInformationROPageRO)) {
             log.error("参数缺失");
             return null;
@@ -65,6 +68,7 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
         if (Objects.isNull(entity)) {
             entity = new TeacherInformationRO();
         }
+        // 构造查询参数
         LambdaQueryWrapper<TeacherInformationPO> wrapper = Wrappers.<TeacherInformationPO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getUserId()), TeacherInformationPO::getUserId, entity.getUserId())
                 .like(StrUtil.isNotBlank(entity.getName()), TeacherInformationPO::getName, entity.getName())
@@ -87,7 +91,7 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
                 .eq(StrUtil.isNotBlank(entity.getStartTerm()), TeacherInformationPO::getStartTerm, entity.getStartTerm())
                 .eq(StrUtil.isNotBlank(entity.getTeacherType1()), TeacherInformationPO::getTeacherType1, entity.getTeacherType1())
                 .eq(StrUtil.isNotBlank(entity.getTeacherType2()), TeacherInformationPO::getTeacherType2, entity.getTeacherType2());
-
+        // 区分列表查询还是分页查询，并返回结果
         if (Objects.equals(true, teacherInformationROPageRO.getIsAll())) {
             List<TeacherInformationPO> teacherInformationPOS = baseMapper.selectList(wrapper);
             return new PageVO<>(teachInformationInverter.po2VO(teacherInformationPOS));
@@ -104,10 +108,12 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return 更新后的教师信息
      */
     public TeacherInformationVO editById(TeacherInformationRO teacherInformationRO) {
+        // 参数校验
         if (Objects.isNull(teacherInformationRO) || Objects.isNull(teacherInformationRO.getUserId())) {
             log.error("参数错误");
             return null;
         }
+        // 更新数据
         TeacherInformationPO teacherInformationPO = teachInformationInverter.ro2PO(teacherInformationRO);
         int count = baseMapper.updateById(teacherInformationPO);
         if (count <= 0) {
@@ -124,10 +130,12 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return 删除信息的数量
      */
     public Integer deleteById(String userId) {
+        // 参数校验
         if (Objects.isNull(userId)) {
             log.error("参数缺失");
             return null;
         }
+        // 删除数据
         int count = baseMapper.deleteById(userId);
         if (count <= 0) {
             log.error("删除失败，userId：{}", userId);

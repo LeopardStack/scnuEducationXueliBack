@@ -31,9 +31,11 @@ public class TeacherInformationController {
 
     @GetMapping("/detail")
     public SaResult detailById(String userId) {
+        // 参数校验
         if (StrUtil.isBlank(userId)) {
             throw dataMissError();
         }
+        // 数据查询
         TeacherInformationVO teacherInformationVO = teacherInformationService.detailById(userId);
         if (Objects.isNull(teacherInformationVO)) {
             throw dataNotFoundError();
@@ -43,12 +45,14 @@ public class TeacherInformationController {
 
     @PostMapping("/page")
     public SaResult pageQueryTeacherInformation(@RequestBody PageRO<TeacherInformationRO> teacherInformationROPageRO) {
+        // 参数校验
         if (Objects.isNull(teacherInformationROPageRO)) {
             throw dataMissError();
         }
         if (Objects.isNull(teacherInformationROPageRO.getEntity())) {
             teacherInformationROPageRO.setEntity(new TeacherInformationRO());
         }
+        // 数据查询
         PageVO<TeacherInformationVO> teacherInformationVOPageVO = teacherInformationService.pageQueryTeacherInformation(teacherInformationROPageRO);
         if (Objects.isNull(teacherInformationVOPageVO)) {
             throw dataNotFoundError();
@@ -58,9 +62,11 @@ public class TeacherInformationController {
 
     @PutMapping("/edit")
     public SaResult editById(@RequestBody TeacherInformationRO teacherInformationRO) {
+        // 参数校验
         if (Objects.isNull(teacherInformationRO) || StrUtil.isBlank(teacherInformationRO.getUserId())) {
             throw dataMissError();
         }
+        // 数据更新
         TeacherInformationVO teacherInformationVO = teacherInformationService.editById(teacherInformationRO);
         if (Objects.isNull(teacherInformationVO)) {
             throw dataUpdateError();
@@ -70,9 +76,11 @@ public class TeacherInformationController {
 
     @DeleteMapping("/delete")
     public SaResult deleteById(String userId) {
+        // 参数校验
         if (StrUtil.isBlank(userId)) {
             throw dataMissError();
         }
+        // 数据删除
         Integer count = teacherInformationService.deleteById(userId);
         if (count <= 0) {
             throw dataDeleteError();

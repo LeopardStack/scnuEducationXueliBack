@@ -37,9 +37,11 @@ public class PaymentInfoController {
      */
     @GetMapping("/detail")
     public SaResult detailById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        // 查询数据
         PaymentInfoVO paymentInfoVO = paymentInfoService.detailById(id);
         if (Objects.isNull(paymentInfoVO)) {
             throw dataNotFoundError();
@@ -55,12 +57,14 @@ public class PaymentInfoController {
      */
     @PostMapping("/page")
     public SaResult pageQueryPaymentInfo(@RequestBody PageRO<PaymentInfoRO> paymentInfoROPageRO) {
+        // 参数校验
         if (Objects.isNull(paymentInfoROPageRO)) {
             throw dataMissError();
         }
         if (Objects.isNull(paymentInfoROPageRO.getEntity())) {
             paymentInfoROPageRO.setEntity(new PaymentInfoRO());
         }
+        // 数据查询
         PageVO<PaymentInfoVO> paymentInfoVOPageVO = paymentInfoService.pageQueryPaymentInfo(paymentInfoROPageRO);
         if (Objects.isNull(paymentInfoVOPageVO)) {
             throw dataNotFoundError();
@@ -76,9 +80,11 @@ public class PaymentInfoController {
      */
     @PutMapping("/edit")
     public SaResult editById(@RequestBody PaymentInfoRO paymentInfoRO) {
+        // 参数校验
         if (Objects.isNull(paymentInfoRO) || Objects.isNull(paymentInfoRO.getId())) {
             throw dataMissError();
         }
+        // 数据更新
         PaymentInfoVO paymentInfoVO = paymentInfoService.editById(paymentInfoRO);
         if (Objects.isNull(paymentInfoVO)) {
             throw dataUpdateError();
@@ -94,9 +100,11 @@ public class PaymentInfoController {
      */
     @DeleteMapping("/delete")
     public SaResult deleteById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        // 查询
         Integer count = paymentInfoService.deleteById(id);
         if (Objects.isNull(count)) {
             throw dataDeleteError();

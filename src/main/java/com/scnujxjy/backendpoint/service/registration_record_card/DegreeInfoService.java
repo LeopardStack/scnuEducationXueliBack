@@ -42,10 +42,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
      * @return 学位信息
      */
     public DegreeInfoVO detailById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             log.error("参数缺失");
             return null;
         }
+        // 查询数据
         DegreeInfoPO degreeInfoPO = baseMapper.selectById(id);
         return degreeInfoInverter.po2VO(degreeInfoPO);
     }
@@ -57,6 +59,7 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
      * @return 学位信息列表
      */
     public PageVO<DegreeInfoVO> pageQueryDegreeInfo(PageRO<DegreeInfoRO> degreeInfoROPageRO) {
+        // 参数校验
         if (Objects.isNull(degreeInfoROPageRO)) {
             log.error("参数缺失");
             return null;
@@ -65,6 +68,7 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
         if (Objects.isNull(entity)) {
             entity = new DegreeInfoRO();
         }
+        // 构造查询参数
         LambdaQueryWrapper<DegreeInfoPO> wrapper = Wrappers.<DegreeInfoPO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getId()), DegreeInfoPO::getId, entity.getId())
                 .eq(StrUtil.isNotBlank(entity.getAdmissionNumber()), DegreeInfoPO::getAdmissionNumber, entity.getAdmissionNumber())
@@ -94,6 +98,7 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
                 .eq(StrUtil.isNotBlank(entity.getDegreeForeignLanguageSubject()), DegreeInfoPO::getDegreeForeignLanguageSubject, entity.getDegreeForeignLanguageSubject())
                 .eq(Objects.nonNull(entity.getDegreeForeignLanguagePassDate()), DegreeInfoPO::getDegreeForeignLanguagePassDate, entity.getDegreeForeignLanguagePassDate())
                 .eq(StrUtil.isNotBlank(entity.getDegreePhotoUrl()), DegreeInfoPO::getDegreePhotoUrl, entity.getDegreePhotoUrl());
+        // 区分列表查询还是分页查询 并返回数据
         if (Objects.equals(true, degreeInfoROPageRO.getIsAll())) {
             List<DegreeInfoPO> degreeInfoPOS = baseMapper.selectList(wrapper);
             return new PageVO<>(degreeInfoInverter.po2VO(degreeInfoPOS));
@@ -110,10 +115,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
      * @return 更新后学位信息
      */
     public DegreeInfoVO editById(DegreeInfoRO degreeInfoRO) {
+        // 参数校验
         if (Objects.isNull(degreeInfoRO) || Objects.isNull(degreeInfoRO.getId())) {
             log.error("参数缺失");
             return null;
         }
+        // 数据更新
         DegreeInfoPO degreeInfoPO = degreeInfoInverter.ro2PO(degreeInfoRO);
         int count = baseMapper.updateById(degreeInfoPO);
         if (count <= 0) {
@@ -130,10 +137,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
      * @return 删除数量
      */
     public Integer deleteById(Long id) {
+        // 参数校验
         if (Objects.isNull(id)) {
             log.error("参数缺失");
             return null;
         }
+        // 数据删除
         int count = baseMapper.deleteById(id);
         if (count <= 0) {
             log.error("删除失败，id：{}", id);
