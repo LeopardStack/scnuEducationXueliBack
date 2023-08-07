@@ -90,6 +90,44 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
         }
     }
 
+    /**
+     * 根据id删除支付信息
+     *
+     * @param id 主键id
+     * @return 删除数量
+     */
+    public Integer deleteById(Long id) {
+        // 参数校验
+        if (Objects.isNull(id)) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 删除
+        int count = baseMapper.deleteById(id);
+        return count;
+    }
+
+    /**
+     * 根据id更新支付信息
+     *
+     * @param paymentInfoRO 支付信息
+     * @return 更新后的支付信息
+     */
+    public PaymentInfoVO editById(PaymentInfoRO paymentInfoRO) {
+        // 参数校验
+        if (Objects.isNull(paymentInfoRO) || Objects.isNull(paymentInfoRO.getId())) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 更新信息
+        PaymentInfoPO paymentInfoPO = paymentInfoInverter.ro2PO(paymentInfoRO);
+        int count = baseMapper.updateById(paymentInfoPO);
+        if (count <= 0) {
+            log.error("更新失败，数据为：{}", paymentInfoPO);
+            return null;
+        }
+        return detailById(paymentInfoRO.getId());
+    }
 
 
 }
