@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
-import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfo;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ public class Test3 {
         log.info(String.valueOf(studentFees.size()));
 
         for (HashMap<String, String> studentData : studentFees) {
-            PaymentInfo paymentInfo = new PaymentInfo();
+            PaymentInfoPO paymentInfo = new PaymentInfoPO();
 
             // 请根据实际的字段名和数据类型调整以下代码
             paymentInfo.setStudentNumber(studentData.get("XHAO"));

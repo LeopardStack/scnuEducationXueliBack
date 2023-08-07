@@ -1,13 +1,13 @@
 package com.scnujxjy.backendpoint.dao.entity.core_data;
 
-import java.math.BigDecimal;
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * <p>
@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class PaymentInfo implements Serializable {
+public class PaymentInfoPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

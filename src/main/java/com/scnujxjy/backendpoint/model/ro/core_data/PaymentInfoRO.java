@@ -41,6 +41,16 @@ public class PaymentInfoRO {
     private String idCardNumber;
 
     /**
+     * 缴费开始时间：用于筛选查询
+     */
+    private Date paymentBeginDate;
+
+    /**
+     * 缴费结束时间：用于筛选查询
+     */
+    private Date paymentEndDate;
+
+    /**
      * 缴费日期
      */
     private Date paymentDate;

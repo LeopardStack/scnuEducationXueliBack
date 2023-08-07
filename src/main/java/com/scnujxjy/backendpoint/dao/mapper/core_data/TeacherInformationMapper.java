@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.core_data;
 
-import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformation;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface TeacherInformationMapper extends BaseMapper<TeacherInformation> {
+public interface TeacherInformationMapper extends BaseMapper<TeacherInformationPO> {
 
 }
