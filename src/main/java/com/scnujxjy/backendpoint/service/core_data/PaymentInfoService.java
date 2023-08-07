@@ -104,6 +104,9 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
         }
         // 删除
         int count = baseMapper.deleteById(id);
+        if (count <= 0) {
+            log.error("删除失败，id：{}", id);
+        }
         return count;
     }
 

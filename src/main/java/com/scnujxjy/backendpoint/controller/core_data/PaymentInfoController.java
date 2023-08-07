@@ -80,7 +80,7 @@ public class PaymentInfoController {
             throw dataMissError();
         }
         PaymentInfoVO paymentInfoVO = paymentInfoService.editById(paymentInfoRO);
-        if (Objects.isNull(paymentInfoRO)) {
+        if (Objects.isNull(paymentInfoVO)) {
             throw dataUpdateError();
         }
         return SaResult.data(paymentInfoVO);
