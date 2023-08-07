@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.model.vo;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.NumberUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import lombok.AllArgsConstructor;
@@ -10,8 +11,10 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Data
 @NoArgsConstructor
@@ -41,6 +44,9 @@ public class PageVO<T> implements Serializable {
     private Long current;
 
     public <M> PageVO(Page<M> tPage, List<T> data) {
+        if (Objects.isNull(tPage)) {
+            tPage = new Page<>();
+        }
         this.pages = tPage.getPages();
         this.size = tPage.getSize();
         this.current = tPage.getCurrent();
@@ -49,7 +55,10 @@ public class PageVO<T> implements Serializable {
     }
 
     public <M> PageVO(PageRO<M> pageRO, Long total, List<T> data) {
-        this.pages = total / pageRO.getPageSize();
+        if (Objects.isNull(pageRO)) {
+            pageRO = new PageRO<>();
+        }
+        this.pages = NumberUtil.div(total, pageRO.getPageSize(), 0, RoundingMode.HALF_UP).longValue();
         this.size = pageRO.getPageSize();
         this.current = pageRO.getPageNumber();
         this.total = total;
