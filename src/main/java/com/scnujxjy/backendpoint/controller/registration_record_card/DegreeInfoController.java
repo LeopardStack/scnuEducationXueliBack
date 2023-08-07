@@ -29,6 +29,12 @@ public class DegreeInfoController {
     @Resource
     private DegreeInfoService degreeInfoService;
 
+    /**
+     * 根据id查询学位信息
+     *
+     * @param id 学位信息id
+     * @return 学位信息
+     */
     @GetMapping("/detail")
     public SaResult detailById(Long id) {
         if (Objects.isNull(id)) {
@@ -41,6 +47,12 @@ public class DegreeInfoController {
         return SaResult.data(degreeInfoVO);
     }
 
+    /**
+     * 分页查询学位信息
+     *
+     * @param degreeInfoROPageRO 分页参数
+     * @return 学位信息列表
+     */
     @PostMapping("/page")
     public SaResult pageQueryDegreeInfo(@RequestBody PageRO<DegreeInfoRO> degreeInfoROPageRO) {
         if (Objects.isNull(degreeInfoROPageRO)) {
@@ -56,6 +68,12 @@ public class DegreeInfoController {
         return SaResult.data(degreeInfoVOPageVO);
     }
 
+    /**
+     * 更新学位信息
+     *
+     * @param degreeInfoRO 学位信息
+     * @return 更新后的学位信息
+     */
     @PutMapping("/edit")
     public SaResult editById(DegreeInfoRO degreeInfoRO) {
         if (Objects.isNull(degreeInfoRO) || Objects.isNull(degreeInfoRO.getId())) {
@@ -68,6 +86,12 @@ public class DegreeInfoController {
         return SaResult.data(degreeInfoVO);
     }
 
+    /**
+     * 根据id删除学位信息
+     *
+     * @param id 学位信息id
+     * @return 删除的学位信息数量
+     */
     @DeleteMapping("/delete")
     public SaResult deleteById(Long id) {
         if (Objects.isNull(id)) {

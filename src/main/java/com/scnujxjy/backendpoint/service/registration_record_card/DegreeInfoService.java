@@ -35,6 +35,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
     @Resource
     private DegreeInfoInverter degreeInfoInverter;
 
+    /**
+     * 根据id查询学位信息
+     *
+     * @param id 学位信息id
+     * @return 学位信息
+     */
     public DegreeInfoVO detailById(Long id) {
         if (Objects.isNull(id)) {
             log.error("参数缺失");
@@ -44,6 +50,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
         return degreeInfoInverter.po2VO(degreeInfoPO);
     }
 
+    /**
+     * 分页查询学位信息
+     *
+     * @param degreeInfoROPageRO 分页参数
+     * @return 学位信息列表
+     */
     public PageVO<DegreeInfoVO> pageQueryDegreeInfo(PageRO<DegreeInfoRO> degreeInfoROPageRO) {
         if (Objects.isNull(degreeInfoROPageRO)) {
             log.error("参数缺失");
@@ -91,6 +103,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
         }
     }
 
+    /**
+     * 更新学位信息
+     *
+     * @param degreeInfoRO 学位信息参数
+     * @return 更新后学位信息
+     */
     public DegreeInfoVO editById(DegreeInfoRO degreeInfoRO) {
         if (Objects.isNull(degreeInfoRO) || Objects.isNull(degreeInfoRO.getId())) {
             log.error("参数缺失");
@@ -105,6 +123,12 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
         return detailById(degreeInfoRO.getId());
     }
 
+    /**
+     * 删除学位信息
+     *
+     * @param id 学位信息id
+     * @return 删除数量
+     */
     public Integer deleteById(Long id) {
         if (Objects.isNull(id)) {
             log.error("参数缺失");
