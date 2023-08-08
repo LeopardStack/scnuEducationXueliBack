@@ -24,14 +24,25 @@ import java.io.Serializable;
 public class Permission implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    /**
+     * 权限id
+     */
     @TableId(type = IdType.AUTO)
-    private Long PermissionID;
+    private Long permissionId;
 
+    /**
+     * 权限名称
+     */
     private String permissionName;
 
+    /**
+     * 权限描述
+     */
     private String description;
 
+    /**
+     * 权限资源
+     */
     private String resource;
 
 

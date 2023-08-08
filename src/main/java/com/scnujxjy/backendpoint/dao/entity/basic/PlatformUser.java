@@ -25,6 +25,9 @@ public class PlatformUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 用户id，自增
+     */
     @TableId(type = IdType.AUTO)
     private Long userId;
     /**
@@ -43,7 +46,7 @@ public class PlatformUser implements Serializable {
     private String password;
 
     /**
-     * 用户名
+     * 用户名，用于登录
      */
     private String username;
 

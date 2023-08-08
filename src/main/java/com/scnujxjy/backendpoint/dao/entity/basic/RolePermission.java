@@ -24,10 +24,14 @@ import java.io.Serializable;
 public class RolePermission implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    /**
+     * 角色id
+     */
     @TableId(type = IdType.AUTO)
     private Long roleId;
-
+    /**
+     * 权限id
+     */
     private Long permissionId;
 
 

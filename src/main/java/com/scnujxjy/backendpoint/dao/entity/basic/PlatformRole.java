@@ -24,10 +24,15 @@ import java.io.Serializable;
 public class PlatformRole implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
+    /**
+     * 角色id
+     */
     @TableId(type = IdType.AUTO)
     private Long roleId;
 
+    /**
+     * 角色名
+     */
     private String roleName;
 
 
