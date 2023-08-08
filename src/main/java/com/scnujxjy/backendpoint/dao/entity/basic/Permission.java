@@ -1,16 +1,15 @@
 package com.scnujxjy.backendpoint.dao.entity.basic;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableField;
+import lombok.*;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author leopard
@@ -18,21 +17,22 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 public class Permission implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "PermissionID", type = IdType.AUTO)
+    @TableId(type = IdType.AUTO)
     private Long PermissionID;
 
-    @TableField("PermissionName")
-    private String PermissionName;
+    private String permissionName;
 
-    @TableField("Description")
-    private String Description;
+    private String description;
 
-    @TableField("Resource")
-    private String Resource;
+    private String resource;
 
 
 }

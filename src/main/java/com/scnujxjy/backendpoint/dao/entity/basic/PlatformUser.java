@@ -1,16 +1,15 @@
 package com.scnujxjy.backendpoint.dao.entity.basic;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableField;
+import lombok.*;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author leopard
@@ -18,24 +17,35 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 public class PlatformUser implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "UserID", type = IdType.AUTO)
-    private Long UserID;
+    @TableId(type = IdType.AUTO)
+    private Long userId;
+    /**
+     * 角色id
+     */
+    private Long roleId;
 
-    @TableField("RoleID")
-    private Long RoleID;
+    /**
+     * 用户头像地址
+     */
+    private String avatarImagePath;
 
-    @TableField("AvatarImagePath")
-    private String AvatarImagePath;
+    /**
+     * 密码
+     */
+    private String password;
 
-    @TableField("Password")
-    private String Password;
-
-    @TableField("Username")
-    private String Username;
+    /**
+     * 用户名
+     */
+    private String username;
 
 
 }
