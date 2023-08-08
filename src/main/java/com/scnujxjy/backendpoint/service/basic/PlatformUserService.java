@@ -50,14 +50,14 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
      * @return 用户信息
      */
     public PlatformUserVO detailById(Long userId) {
-
+        // 参数校验
         if (Objects.isNull(userId)) {
             log.error("参数缺失");
             return null;
         }
-
+        // 查询数据
         PlatformUserPO platformUserPO = baseMapper.selectById(userId);
-
+        // 返回数据
         return platformUserInverter.po2VO(platformUserPO);
     }
 
