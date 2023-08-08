@@ -1,17 +1,25 @@
 package com.scnujxjy.backendpoint.service.basic;
 
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.digest.SM3;
 import cn.hutool.crypto.symmetric.SM4;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import javax.crypto.SecretKey;
+import java.util.List;
 
 @SpringBootTest
 @Slf4j
 public class PlatformUserServiceTests {
+    @Resource
+    private PlatformUserService platformUserService;
+
     @Test
     void testSM() {
         String content = "123456";
@@ -25,5 +33,22 @@ public class PlatformUserServiceTests {
         SM3 sm3 = SmUtil.sm3();
         String digestHex = sm3.digestHex(content);
         log.info("sm3 摘要算法密文：{}", digestHex);
+    }
+
+    @Test
+    void testBatchCreateUser() {
+        List<PlatformUserRO> platformUserROS = ListUtil.of(PlatformUserRO.builder()
+                        .roleId(1L)
+                        .username("admin")
+                        .password("admin")
+                        .build(),
+                PlatformUserRO.builder()
+                        .roleId(2L)
+                        .username("liweitang")
+                        .password("liweitang")
+                        .build());
+        log.info("插入前的信息：{}", platformUserROS);
+        List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROS);
+        log.info("插入后的信息：{}", platformUserVOS);
     }
 }

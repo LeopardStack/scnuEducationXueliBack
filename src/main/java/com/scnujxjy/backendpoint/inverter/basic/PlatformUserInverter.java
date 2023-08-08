@@ -19,4 +19,7 @@ public abstract class PlatformUserInverter {
 
     @Mappings({})
     public abstract PlatformUserPO ro2PO(PlatformUserRO platformUserRO);
+
+    @Mappings({})
+    public abstract List<PlatformUserPO> ro2PO(List<PlatformUserRO> platformUserROS);
 }

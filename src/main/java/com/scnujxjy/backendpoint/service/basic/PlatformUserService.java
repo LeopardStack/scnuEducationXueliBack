@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -128,5 +129,109 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
                 .build();
     }
 
+    /**
+     * 批量插入用户信息
+     *
+     * @param platformUserROS 待插入用户信息列表
+     * @return 插入后用户信息列表
+     */
+    public List<PlatformUserVO> batchCreateUser(List<PlatformUserRO> platformUserROS) {
+        // 参数校验
+        if (CollUtil.isEmpty(platformUserROS)) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 检查好的数据
+        List<PlatformUserRO> checkedPlatformUserRO = platformUserROS.stream()
+                .filter(this::checkPlatformUser)
+                .collect(Collectors.toList());
+        // 需要插入的数据
+        List<PlatformUserRO> insertPlatformUserROS = checkedPlatformUserRO.stream()
+                .filter(ele -> Objects.isNull(ele.getUserId()))
+                .collect(Collectors.toList());
+        // 不需要插入的数据的userId集合
+        Set<Long> existUserIdSet = checkedPlatformUserRO.stream()
+                .filter(ele -> Objects.nonNull(ele.getUserId()))
+                .map(PlatformUserRO::getUserId)
+                .collect(Collectors.toSet());
+        // 插入数据
+        if (CollUtil.isNotEmpty(insertPlatformUserROS)) {
+            List<PlatformUserPO> insertPlatformUserPOS = platformUserInverter.ro2PO(insertPlatformUserROS);
+            boolean savedBatch = saveBatch(insertPlatformUserPOS);
+            // 插入检测
+            if (!savedBatch) {
+                log.error("插入失败，已回滚，用户列表为：{}", insertPlatformUserPOS);
+                return null;
+            }
+            // 将插入后的userId放入到集合中
+            existUserIdSet.addAll(insertPlatformUserPOS.stream()
+                    .filter(Objects::nonNull)
+                    .map(PlatformUserPO::getUserId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()));
+        }
+        // 用户id列表获取校验
+        if (CollUtil.isEmpty(existUserIdSet)) {
+            log.error("获取插入用户id失败，用户列表为：{}", insertPlatformUserROS);
+            return null;
+        }
+        // 批量获取用户信息
+        List<PlatformUserPO> userPOS = baseMapper.selectBatchIds(existUserIdSet);
+        // 获取用户信息校验
+        if (CollUtil.isEmpty(userPOS)) {
+            log.error("批量获取用户信息失败，用户id列表为：{}", existUserIdSet);
+            return null;
+        }
+        // 返回数据
+        return platformUserInverter.po2VO(userPOS);
+    }
+
+    /**
+     * 检查用户信息符合插入规则，并对其中的数据进行处理
+     *
+     * @param platformUserRO 用户信息
+     * @return true-符合，false-不符合
+     */
+    private Boolean checkPlatformUser(PlatformUserRO platformUserRO) {
+        // 校验参数
+        if (Objects.isNull(platformUserRO)) {
+            log.error("参数缺失");
+            return false;
+        }
+        // 检查用户角色
+        if (Objects.isNull(platformUserRO.getRoleId())) {
+            log.error("用户角色缺失，用户信息：{}", platformUserRO);
+            return false;
+        }
+        if (Objects.isNull(platformRoleService.detailById(platformUserRO.getRoleId()))) {
+            log.error("对应角色信息不存在，用户信息：{}", platformUserRO);
+            return false;
+        }
+
+        // 检查登录密码
+        if (StrUtil.isBlank(platformUserRO.getPassword())) {
+            log.error("用户登录密码缺失，用户信息：{}", platformUserRO);
+            return false;
+        }
+
+        // 检查登陆账号
+        if (StrUtil.isBlank(platformUserRO.getUsername())) {
+            log.error("用户登录账号缺失，用户信息：{}", platformUserRO);
+            return false;
+        }
+        // 重复账号跳过，将userId保留下来，方便后续查询信息
+        PlatformUserPO platformUserPO = baseMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, platformUserRO.getUsername()));
+        if (Objects.nonNull(platformUserPO)) {
+            log.error("登陆账号已经被注册，用户信息：{}", platformUserPO);
+            platformUserRO.setUserId(platformUserPO.getUserId());
+            return true;
+        }
+
+        // 密码加密
+        platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
+
+        return true;
+
+    }
 
 }

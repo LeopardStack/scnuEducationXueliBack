@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformRoleMapper;
+import com.scnujxjy.backendpoint.inverter.basic.PlatformRoleInverter;
 import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformRoleVO;
 import com.scnujxjy.backendpoint.model.vo.basic.RolePermissionVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,9 @@ public class PlatformRoleService extends ServiceImpl<PlatformRoleMapper, Platfor
 
     @Resource
     private PermissionService permissionService;
+
+    @Resource
+    private PlatformRoleInverter platformRoleInverter;
 
     /**
      * 根据角色id查询权限详情列表
@@ -67,5 +72,29 @@ public class PlatformRoleService extends ServiceImpl<PlatformRoleMapper, Platfor
         }
         // 返回结果
         return permissionVOS;
+    }
+
+    /**
+     * 根据角色id查询角色信息
+     *
+     * @param roleId 角色id
+     * @return 角色信息
+     */
+    public PlatformRoleVO detailById(Long roleId) {
+        // 参数校验
+        if (Objects.isNull(roleId)) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 查询数据
+        PlatformRolePO platformRolePO = baseMapper.selectById(roleId);
+        // 返回参数检查
+        if (Objects.isNull(platformRolePO)) {
+            log.error("角色信息为空，roleId：{}", roleId);
+            return null;
+        }
+        // 返回数据
+        return platformRoleInverter.po2VO(platformRolePO);
+
     }
 }
