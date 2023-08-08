@@ -151,6 +151,12 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
         return count;
     }
 
+    /**
+     * 解析Excel文件中的数据并导入到数据库中
+     *
+     * @param file excel文件
+     * @return 导入的数据
+     */
     public List<TeacherInformationVO> excelImportTeacherInformation(MultipartFile file) {
         TeacherInformationExcelListener listener = new TeacherInformationExcelListener();
         try (InputStream inputStream = file.getInputStream();
