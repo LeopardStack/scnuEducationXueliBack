@@ -1,34 +1,20 @@
-package com.scnujxjy.backendpoint.dao.entity.basic;
+package com.scnujxjy.backendpoint.model.ro.basic;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
-
-/**
- * <p>
- *
- * </p>
- *
- * @author leopard
- * @since 2023-08-02
- */
 @Data
-@EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class PlatformUser implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class PlatformUserRO {
     /**
      * 用户id，自增
      */
-    @TableId(type = IdType.AUTO)
     private Long userId;
     /**
      * 角色id
@@ -49,6 +35,4 @@ public class PlatformUser implements Serializable {
      * 用户名，用于登录
      */
     private String username;
-
-
 }

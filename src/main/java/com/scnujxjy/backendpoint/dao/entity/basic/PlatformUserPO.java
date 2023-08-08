@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.basic;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.Accessors;
 
@@ -21,19 +22,35 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class PlatformRole implements Serializable {
+@TableName("platform_user")
+public class PlatformUserPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 用户id，自增
+     */
+    @TableId(type = IdType.AUTO)
+    private Long userId;
     /**
      * 角色id
      */
-    @TableId(type = IdType.AUTO)
     private Long roleId;
 
     /**
-     * 角色名
+     * 用户头像地址
      */
-    private String roleName;
+    private String avatarImagePath;
+
+    /**
+     * 密码
+     */
+    private String password;
+
+    /**
+     * 用户名，用于登录
+     */
+    private String username;
 
 
 }

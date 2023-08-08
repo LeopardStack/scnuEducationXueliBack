@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.basic;
 
-import com.scnujxjy.backendpoint.dao.entity.basic.Permission;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.basic.PermissionPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface PermissionMapper extends BaseMapper<Permission> {
+public interface PermissionMapper extends BaseMapper<PermissionPO> {
 
 }

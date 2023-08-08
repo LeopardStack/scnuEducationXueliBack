@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.basic;
 
-import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRole;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface PlatformRoleMapper extends BaseMapper<PlatformRole> {
+public interface PlatformRoleMapper extends BaseMapper<PlatformRolePO> {
 
 }

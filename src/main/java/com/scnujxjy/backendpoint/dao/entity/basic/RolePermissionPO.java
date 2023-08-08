@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.basic;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.Accessors;
 
@@ -21,29 +22,19 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class Permission implements Serializable {
+@TableName("role_permission")
+public class RolePermissionPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
-     * 权限id
+     * 角色id
      */
     @TableId(type = IdType.AUTO)
+    private Long roleId;
+    /**
+     * 权限id
+     */
     private Long permissionId;
-
-    /**
-     * 权限名称
-     */
-    private String permissionName;
-
-    /**
-     * 权限描述
-     */
-    private String description;
-
-    /**
-     * 权限资源
-     */
-    private String resource;
 
 
 }
