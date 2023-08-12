@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.college;
 
-import com.scnujxjy.backendpoint.dao.entity.college.CollegeLeaderInformation;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeLeaderInformationPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface CollegeLeaderInformationMapper extends BaseMapper<CollegeLeaderInformation> {
+public interface CollegeLeaderInformationMapper extends BaseMapper<CollegeLeaderInformationPO> {
 
 }
