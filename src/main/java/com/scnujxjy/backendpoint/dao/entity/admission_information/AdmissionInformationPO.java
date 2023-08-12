@@ -1,12 +1,12 @@
 package com.scnujxjy.backendpoint.dao.entity.admission_information;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
+import lombok.*;
+import lombok.experimental.Accessors;
+
 import java.io.Serializable;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.util.Date;
 
 /**
  * <p>
@@ -18,7 +18,11 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class AdmissionInformation implements Serializable {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
+public class AdmissionInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -1,12 +1,11 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
-import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformation;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,7 +30,7 @@ public class Test1 {
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
 
         for (HashMap<String, String> studentData : studentLuqus) {
-            AdmissionInformation admissionInformation = new AdmissionInformation();
+            AdmissionInformationPO admissionInformation = new AdmissionInformationPO();
 
             // 请根据实际的字段名和数据类型调整以下代码
             admissionInformation.setStudentNumber(studentData.get("KSH"));

@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.admission_information;
 
-import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformation;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformation> {
+public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformationPO> {
 
 }

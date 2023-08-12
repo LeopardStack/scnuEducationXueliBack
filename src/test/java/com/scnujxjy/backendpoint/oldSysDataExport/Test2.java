@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformation;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
@@ -175,9 +175,9 @@ public class Test2 {
 
             // 根据考生号来获取新生数据中的个人信息
             String ksh = studentData.get("KSH");
-            QueryWrapper<AdmissionInformation> queryWrapper = new QueryWrapper<>();
+            QueryWrapper<AdmissionInformationPO> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("admission_number", ksh);
-            AdmissionInformation student = admissionInformationMapper.selectOne(queryWrapper);
+            AdmissionInformationPO student = admissionInformationMapper.selectOne(queryWrapper);
 
             personalInfoPO.setGender(student.getGender());
             personalInfoPO.setBirthDate(student.getBirthDate());
