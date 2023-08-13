@@ -16,9 +16,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
- * <p>
- * 前端控制器
- * </p>
+ * 用户登录控制
  *
  * @author leopard
  * @since 2023-08-02

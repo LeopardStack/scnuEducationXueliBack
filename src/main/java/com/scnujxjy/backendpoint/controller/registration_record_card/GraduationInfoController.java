@@ -15,9 +15,7 @@ import java.util.Objects;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
- * <p>
- * 毕业信息表 前端控制器
- * </p>
+ * 毕业信息表
  *
  * @author leopard
  * @since 2023-08-04
