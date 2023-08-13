@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_point;
 
-import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointLeaderInformation;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointLeaderInformationPO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-02
  */
-public interface TeachingPointLeaderInformationMapper extends BaseMapper<TeachingPointLeaderInformation> {
+public interface TeachingPointLeaderInformationMapper extends BaseMapper<TeachingPointLeaderInformationPO> {
 
 }

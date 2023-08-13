@@ -1,11 +1,11 @@
 package com.scnujxjy.backendpoint.dao.entity.teaching_point;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.Version;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
 
 /**
  * <p>
@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class TeachingPointLeaderInformation implements Serializable {
+public class TeachingPointLeaderInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
