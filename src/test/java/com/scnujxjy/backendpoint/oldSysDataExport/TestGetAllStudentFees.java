@@ -15,7 +15,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees
 
 @SpringBootTest
 @Slf4j
-public class Test3 {
+public class TestGetAllStudentFees {
     @Autowired(required = false)
     private PaymentInfoMapper paymentInfoMapper;
 

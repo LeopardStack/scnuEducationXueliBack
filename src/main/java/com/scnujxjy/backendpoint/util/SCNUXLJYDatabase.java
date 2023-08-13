@@ -638,6 +638,65 @@ public class SCNUXLJYDatabase {
         return ret;
     }
 
+    /**
+     * 获取没有照片数据的信息
+     * @param sql
+     * @return
+     */
+    public ArrayList<HashMap<String, String>> getNonPicData(String sql) {
+        ResultSet rs = null;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                BufferedImage imgXW = null;
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+
+                    if("ERTOTAL".equals(name) || "BYFEMALE".equals(name) || "BYTOTAL".equals(name) || "TOTAL".equals(name)
+                            || "FEMALE".equals(name) || "PK".equals(name)){
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                    }else{
+                        byte[] columnValue = null;
+                        try {
+                            columnValue = rs.getBytes(i);
+                            if(columnValue == null){
+                                hashMap.put(name, null);
+                                continue;
+                            }
+                            String tmp = new String(columnValue, "GBK");
+                            tmp = tmp.trim();
+                            hashMap.put(name, tmp);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+                }
+                ret.add(hashMap);
+            }
+        }catch (Exception e){
+            logger.error(e.toString());
+        }
+        return ret;
+    }
+
+
+    /**
+     * 获取数据多线程，并且指定图片关键词
+     * @param start
+     * @param pageSize
+     * @param threadNums
+     * @param nj
+     * @param picKey
+     * @return
+     */
+
     public ArrayList<HashMap<String, String>> getDataDIYMultiThread(int start, int pageSize, int threadNums, int nj, String picKey) {
         ExecutorService executor = Executors.newFixedThreadPool(threadNums); // 创建一个包含10个线程的线程池
 

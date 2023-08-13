@@ -29,6 +29,11 @@ public class MyThread extends Thread{
             else if(functionSelect == 1){
                 dataDIY = scnuxljyDatabase.getDegreeData(query);
             }
+            else if(functionSelect == 2){
+                // 获取没有照片信息的数据
+                dataDIY = scnuxljyDatabase.getNonPicData(query);
+
+            }
             System.out.println(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
 
             // 获取结束时间

@@ -66,12 +66,14 @@ public class CodeGenerator {
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("mapper.registration_record_card");
-        pc.setXml("mapper.registration_record_card.xml");
-        pc.setEntity("entity.registration_record_card");
-        pc.setService("service.registration_record_card");
-        pc.setServiceImpl("service.registration_record_card.impl");
-        pc.setController("controller.registration_record_card");
+        pc.setMapper("dao.mapper.teaching_process");
+//        pc.setXml("mapper.registration_record_card.xml");
+        pc.setEntity("dao.entity.teaching_process");
+
+        // 不设置Service和Controller包
+        // pc.setService("service.registration_record_card");
+        // pc.setServiceImpl("service.registration_record_card.impl");
+        // pc.setController("controller.registration_record_card");
         mpg.setPackageInfo(pc);
 
         // 策略配置

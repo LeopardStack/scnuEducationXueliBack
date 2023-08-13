@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.admission_information;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.Accessors;
 
@@ -22,6 +23,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
+@TableName("admission_information")
 public class AdmissionInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;

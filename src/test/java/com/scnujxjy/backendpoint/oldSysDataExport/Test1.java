@@ -3,10 +3,16 @@ package com.scnujxjy.backendpoint.oldSysDataExport;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,13 +27,18 @@ public class Test1 {
     @Autowired(required = false)
     private AdmissionInformationMapper admissionInformationMapper;
 
-    @Test
-    public void test1() throws ParseException {
-        String grade = "2021";
-        ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(2020);
+    // 用于保存失败的学生数据
+    private ArrayList<HashMap<String, String>> failedStudents = new ArrayList<>();
+
+
+    private void insertLuquStudents(int insertGrade){
+        String grade = String.valueOf(insertGrade + 1);
+        ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(insertGrade);
         log.info(String.valueOf(studentLuqus.size()));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+
+
 
         for (HashMap<String, String> studentData : studentLuqus) {
             AdmissionInformationPO admissionInformation = new AdmissionInformationPO();
@@ -54,6 +65,9 @@ public class Test1 {
                     admissionInformation.setGraduationDate(graduatedDate);
                 }catch (Exception e1){
                     log.error("毕业日期解析失败 " + graduatedDateString);
+                    studentData.put("插入失败原因", "毕业日期解析失败 " + e.toString());
+                    failedStudents.add(studentData);
+                    continue;
                 }
             }
 
@@ -70,6 +84,9 @@ public class Test1 {
                     admissionInformation.setBirthDate(birthDate);
                 }catch (Exception e1){
                     log.error("出生日期解析失败 " + birthDateString);
+                    studentData.put("插入失败原因", "出生日期解析失败 " + e.toString());
+                    failedStudents.add(studentData);
+                    continue;
                 }
             }
             admissionInformation.setAddress(studentData.get("TXDZ"));
@@ -80,7 +97,51 @@ public class Test1 {
             admissionInformation.setShortStudentNumber(studentData.get("KSH"));
             admissionInformation.setGrade(grade);
 
-            admissionInformationMapper.insert(admissionInformation);
+            try {
+                admissionInformationMapper.insert(admissionInformation);
+            } catch (Exception e) {
+                log.error("插入失败的学生：" + studentData.get("KSH"));
+                studentData.put("插入失败原因", "数据库插入失败 " + e.toString());
+                failedStudents.add(studentData);
+            }
+        }
+    }
+
+    // 使用Apache POI将失败的学生数据写入Excel
+    private void writeFailedStudentsToExcel() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Failed Students");
+        int rowNum = 0;
+
+        // 创建表头
+        Row header = sheet.createRow(rowNum++);
+        String[] headers = {"学号", "姓名", "失败原因"}; // 定义您的表头
+        for (int i = 0; i < headers.length; i++) {
+            header.createCell(i).setCellValue(headers[i]);
+        }
+
+        // 填充数据
+        for (HashMap<String, String> student : failedStudents) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(student.get("KSH"));
+            row.createCell(1).setCellValue(student.get("XM"));
+            row.createCell(1).setCellValue(student.get("插入失败原因"));
+            // ... 填充其他字段
+        }
+
+        // 写入文件
+        try (FileOutputStream outputStream = new FileOutputStream("导入旧系统录取新生数据失败的数据.xlsx")) {
+            workbook.write(outputStream);
+        } catch (IOException e) {
+            log.error("写入Excel失败", e);
+        }
+    }
+
+
+    @Test
+    public void test1() throws ParseException {
+        for(int i = 2021; i >= 2009; i--){
+            insertLuquStudents(i);
         }
     }
 }

@@ -197,6 +197,13 @@
             <artifactId>amqp-client</artifactId>
         </dependency>
 
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-scratchpad</artifactId>
+            <version>5.0.0</version>
+        </dependency>
+
         <!-- 提供各种工具类 -->
         <dependency>
             <groupId>cn.hutool</groupId>

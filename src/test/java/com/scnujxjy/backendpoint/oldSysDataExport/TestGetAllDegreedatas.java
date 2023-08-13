@@ -20,7 +20,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getDegreedatas
 
 @SpringBootTest
 @Slf4j
-public class Test5 {
+public class TestGetAllDegreedatas {
     @Autowired(required = false)
     private DegreeInfoMapper degreeInfoMapper;
 
