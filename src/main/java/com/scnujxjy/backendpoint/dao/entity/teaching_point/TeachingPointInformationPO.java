@@ -47,5 +47,10 @@ public class TeachingPointInformationPO implements Serializable {
      */
     private String qualificationId;
 
+    /**
+     * 别名
+     */
+    private String alias;
+
 
 }

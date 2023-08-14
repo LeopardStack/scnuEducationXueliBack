@@ -38,6 +38,9 @@ public class TeachingPointInformationRO {
      * 资质信息ID
      */
     private String qualificationId;
-
+    /**
+     * 别名
+     */
+    private String alias;
 
 }
