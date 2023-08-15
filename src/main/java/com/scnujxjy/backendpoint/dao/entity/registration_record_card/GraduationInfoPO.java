@@ -26,7 +26,6 @@ import java.util.Date;
 @Builder
 @Accessors(chain = true)
 @TableName("graduation_info")
-@TableName("graduation_info")
 public class GraduationInfoPO implements Serializable {
 
     private static final long serialVersionUID = 1L;

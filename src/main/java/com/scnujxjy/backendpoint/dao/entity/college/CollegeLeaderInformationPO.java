@@ -25,7 +25,6 @@ import java.io.Serializable;
 @Builder
 @Accessors(chain = true)
 @TableName("college_leader_information")
-@TableName("college_leader_information")
 public class CollegeLeaderInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;

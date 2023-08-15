@@ -27,7 +27,6 @@ import java.util.Date;
 @Builder
 @Accessors(chain = true)
 @TableName("payment_info")
-@TableName("payment_info")
 public class PaymentInfoPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
