@@ -39,5 +39,9 @@ public class TeachingPointInformationVO {
      */
     private String qualificationId;
 
+    /**
+     * 别名
+     */
+    private String alias;
 
 }
