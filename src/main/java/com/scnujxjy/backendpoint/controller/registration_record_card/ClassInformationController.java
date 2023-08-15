@@ -1,21 +1,20 @@
-package com.scnujxjy.backendpoint.controller;
+package com.scnujxjy.backendpoint.controller.registration_record_card;
 
 
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * <p>
- * 课程信息表 前端控制器
+ * 班级信息表 前端控制器
  * </p>
  *
  * @author leopard
  * @since 2023-08-14
  */
 @RestController
-@RequestMapping("/course-information")
-public class CourseInformationController {
+@RequestMapping("/class-information")
+public class ClassInformationController {
 
 }
 
