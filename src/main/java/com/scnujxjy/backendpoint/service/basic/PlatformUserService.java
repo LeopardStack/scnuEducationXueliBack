@@ -234,4 +234,31 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
 
     }
 
+    /**
+     * 根据userId更改用户密码
+     *
+     * @param userId 用户id
+     * @param newPassword 新密码
+     * @return true-成功，false-失败
+     */
+    public Boolean changePassword(Long userId, String newPassword) {
+        // 参数校验
+        if (Objects.isNull(userId) || StrUtil.isBlank(newPassword)) {
+            log.error("参数缺失");
+            return false;
+        }
+
+        // 密码加密
+        String encryptedPassword = sm3.digestHex(newPassword);
+
+        // 使用MyBatis Plus的UpdateWrapper来构建更新条件和更新内容
+        PlatformUserPO updateUser = new PlatformUserPO();
+        updateUser.setPassword(encryptedPassword);
+
+        int updateResult = baseMapper.update(updateUser, Wrappers.<PlatformUserPO>lambdaUpdate().eq(PlatformUserPO::getUserId, userId));
+
+        return updateResult > 0;
+    }
+
+
 }

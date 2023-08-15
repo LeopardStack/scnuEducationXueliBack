@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.teaching_point;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,6 +18,7 @@ import java.io.Serializable;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
+@TableName("teaching_point_information")
 public class TeachingPointInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;

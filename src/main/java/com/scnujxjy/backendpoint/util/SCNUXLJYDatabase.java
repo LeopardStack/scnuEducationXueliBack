@@ -423,33 +423,57 @@ public class SCNUXLJYDatabase {
                         //System.out.println("Column " + name + " value: " + " NULL");
                         hashMap.put(name, "NULL");
                     } else if (name.trim().equals("PIC") || name.trim().equals("RXPIC")) {
-                        Blob blob = rs.getBlob(i);
-                        InputStream is = blob.getBinaryStream();
-                        ByteArrayOutputStream os = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[4096];
-                        int len;
-                        while (true) {
-                            try {
-                                if ((len = is.read(buffer)) == -1) {
-                                    break;
+                        try {
+                            Blob blob = rs.getBlob(i);
+                            InputStream is = blob.getBinaryStream();
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[4096];
+                            int len;
+                            while (true) {
+                                try {
+                                    if ((len = is.read(buffer)) == -1) {
+                                        break;
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
                                 }
+                                os.write(buffer, 0, len);
+                            }
+                            byte[] bytes = os.toByteArray();
+
+                            InputStream in = new ByteArrayInputStream(bytes);
+                            try {
+                                if(name.trim().equals("PIC")) {
+                                    imgBY = ImageIO.read(in);
+                                }else{
+                                    imgRX = ImageIO.read(in);
+                                }
+
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
-                            os.write(buffer, 0, len);
-                        }
-                        byte[] bytes = os.toByteArray();
+                        }catch (Exception e){
+                            byte[] bytes = rs.getBytes(i);
 
-                        InputStream in = new ByteArrayInputStream(bytes);
-                        try {
-                            if(name.trim().equals("PIC")) {
-                                imgBY = ImageIO.read(in);
-                            }else{
-                                imgRX = ImageIO.read(in);
+                            // 使用try-with-resources确保流的正确关闭
+                            try (InputStream is = new ByteArrayInputStream(bytes)) {
+                                BufferedImage img;
+                                try {
+                                    img = ImageIO.read(is);
+                                } catch (IOException e1) {
+                                    throw new RuntimeException(e1);
+                                }
+
+                                if (name.trim().equals("PIC")) {
+                                    imgBY = img;
+                                } else {
+                                    imgRX = img;
+                                }
+                            } catch (IOException io) {
+                                logger.error("读取学生照片信息失败 " + io.toString());
+//                                throw new RuntimeException(io);
                             }
 
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
                         }
 
                         // System.out.println("Column " + name + " value: " + new String(picBytes));

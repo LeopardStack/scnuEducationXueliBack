@@ -31,7 +31,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentInfo
 
 @SpringBootTest
 @Slf4j
-public class Test2 {
+public class TestInsertXHStudents2 {
 
     @Autowired(required = false)
     private StudentStatusMapper studentStatusMapper;
@@ -73,6 +73,17 @@ public class Test2 {
     public void insertXHStudents(Set<String> undefinedJxd, Map<String, String> jxd_jc, int grade,
                                  List<HashMap<String, String>> failedStudents) {
         ArrayList<HashMap<String, String>> studentInfos = getStudentInfos(String.valueOf(grade));
+//        ArrayList<HashMap<String, String>> studentInfos1 = getStudentInfos("2022");
+//        ArrayList<HashMap<String, String>> studentInfos2 = getStudentInfos("2021");
+//        ArrayList<HashMap<String, String>> studentInfos3 = getStudentInfos("2020");
+//        ArrayList<HashMap<String, String>> studentInfos4 = getStudentInfos("2019");
+//        ArrayList<HashMap<String, String>> studentInfos5 = getStudentInfos("2018");
+
+//        studentInfos.addAll(studentInfos1);
+//        studentInfos.addAll(studentInfos2);
+//        studentInfos.addAll(studentInfos3);
+//        studentInfos.addAll(studentInfos4);
+//        studentInfos.addAll(studentInfos5);
         log.info(String.valueOf(studentInfos.size()));
 
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
@@ -195,18 +206,16 @@ public class Test2 {
 
 
                 String graduateDateString = studentData.get("BYRQ");
-                if(graduateDateString != null && !graduateDateString.equals("NULL")){
-                    Date graduateDate = null;
-                    graduateDate = dateFormat5.parse(graduateDateString);
-                    graduationInfoPO.setGraduationDate(graduateDate);
+                Date graduateDate = null;
+                graduateDate = dateFormat5.parse(graduateDateString);
+                graduationInfoPO.setGraduationDate(graduateDate);
 
-                    graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
-                    graduationInfoMapper.insert(graduationInfoPO);
-                }
+                graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
 
                 studentStatusMapper.insert(studentStatusPO);
                 personalInfoMapper.insert(personalInfoPO);
                 originalEducationInfoMapper.insert(originalEducationInfoPO);
+                graduationInfoMapper.insert(graduationInfoPO);
             }catch (ParseException p){
                 studentData.put("插入失败原因", "其他日期解析失败 " +p.getMessage());
                 failedStudents.add(studentData);
@@ -287,19 +296,13 @@ public class Test2 {
         jxd_jc.put("深圳宝安职训", "深圳宝安教学点");
         jxd_jc.put("佛山天天", "佛山天天教学点");
 
-//        Set<String> undefinedJxd = new HashSet<>();
-//
-//        for(int i = 2023; i >=2020; i--){
-//            List<HashMap<String, String>> failedStudents = new ArrayList<>();
-//            insertXHStudents(undefinedJxd, jxd_jc, i, failedStudents);
-//            writeToExcel(failedStudents, i + " 数据插入失败的学生学籍数据.xlsx");
-//        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
 
-        int startYear = 2020;
-        int endYear = 2023;
+        int startYear = 2015;
+        int endYear = 2019;
 
-        ExecutorService executorService = Executors.newFixedThreadPool(endYear - startYear + 1);
+        // 根据需要调整线程池的大小，这里我使用了10，但你可以根据实际资源进行调整
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
         List<Future<Void>> futures = new ArrayList<>();
 
         for (int i = endYear; i >= startYear; i--) {
@@ -318,6 +321,7 @@ public class Test2 {
         }
 
         executorService.shutdown();
-    log.info("未定义的教学点包括 " + undefinedJxd.toString());
     }
+
+
 }

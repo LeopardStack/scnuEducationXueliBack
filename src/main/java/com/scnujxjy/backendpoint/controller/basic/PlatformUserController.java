@@ -1,6 +1,8 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
+import cn.dev33.satoken.stp.SaTokenInfo;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
@@ -43,6 +45,7 @@ public class PlatformUserController {
         }
         // 登录
         Boolean isLogin = platformUserService.userLogin(platformUserRO);
+        StpUtil.login(platformUserRO.getUsername());
         // 返回
         return SaResult.data(isLogin);
     }
@@ -89,6 +92,32 @@ public class PlatformUserController {
         }
         // 返回数据
         return SaResult.data(userRolePermissionBO);
+    }
+
+
+    /**
+     * 请求某个用户是否已经登录，并返回其 token 剩余有效时间
+     *
+     * @param username 用户名
+     * @return SaResult 包含登录状态和token剩余有效时间
+     */
+    @GetMapping("/checkLogin")
+    public SaResult checkUserLoginStatus(@RequestParam String username) {
+        String tokenValue = StpUtil.getTokenValue();
+        if (StrUtil.isBlank(tokenValue)) {
+            return SaResult.data("User not logged in");
+        }
+
+        String currentUsername = (String) StpUtil.getLoginIdByToken(tokenValue);
+        if (username.equals(currentUsername)) {
+            // 获取token的剩余有效时间
+            long tokenTimeout = StpUtil.getTokenTimeout();
+            SaTokenInfo tokenInfo1 = StpUtil.getTokenInfo();
+
+            return SaResult.data(tokenInfo1);
+        } else {
+            return SaResult.data("Username does not match the current session").setCode(551);
+        }
     }
 
 }

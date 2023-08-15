@@ -33,6 +33,9 @@ public class Test1 {
 
     private void insertLuquStudents(int insertGrade){
         String grade = String.valueOf(insertGrade + 1);
+        if(insertGrade == -1){
+            grade = "2023";
+        }
         ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(insertGrade);
         log.info(String.valueOf(studentLuqus.size()));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
@@ -56,18 +59,20 @@ public class Test1 {
             admissionInformation.setGraduationSchool(studentData.get("BYXX"));
 
             String graduatedDateString = studentData.get("BYRQ");
-            try {
-                Date graduatedDate = dateFormat.parse(graduatedDateString);
-                admissionInformation.setGraduationDate(graduatedDate);
-            }catch (ParseException e){
-                try{
-                    Date graduatedDate = dateFormat1.parse(graduatedDateString);
+            if(graduatedDateString.trim().length() > 0) {
+                try {
+                    Date graduatedDate = dateFormat.parse(graduatedDateString);
                     admissionInformation.setGraduationDate(graduatedDate);
-                }catch (Exception e1){
-                    log.error("毕业日期解析失败 " + graduatedDateString);
-                    studentData.put("插入失败原因", "毕业日期解析失败 " + e.toString());
-                    failedStudents.add(studentData);
-                    continue;
+                } catch (ParseException e) {
+                    try {
+                        Date graduatedDate = dateFormat1.parse(graduatedDateString);
+                        admissionInformation.setGraduationDate(graduatedDate);
+                    } catch (Exception e1) {
+                        log.error("毕业日期解析失败 " + graduatedDateString);
+                        studentData.put("插入失败原因", "毕业日期解析失败 " + e.toString());
+                        failedStudents.add(studentData);
+                        continue;
+                    }
                 }
             }
 
@@ -140,8 +145,10 @@ public class Test1 {
 
     @Test
     public void test1() throws ParseException {
-        for(int i = 2021; i >= 2009; i--){
-            insertLuquStudents(i);
-        }
+//        for(int i = 2021; i >= 2009; i--){
+//            insertLuquStudents(i);
+//        }
+        insertLuquStudents(-1);
+//        writeFailedStudentsToExcel();
     }
 }

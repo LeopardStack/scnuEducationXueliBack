@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.registration_record_card;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -19,6 +20,7 @@ import java.util.Date;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
+@TableName("degree_info")
 public class DegreeInfoPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
