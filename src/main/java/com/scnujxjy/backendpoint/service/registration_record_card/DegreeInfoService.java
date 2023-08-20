@@ -97,7 +97,9 @@ public class DegreeInfoService extends ServiceImpl<DegreeInfoMapper, DegreeInfoP
                 .eq(StrUtil.isNotBlank(entity.getAwardingCollege()), DegreeInfoPO::getAwardingCollege, entity.getAwardingCollege())
                 .eq(StrUtil.isNotBlank(entity.getDegreeForeignLanguageSubject()), DegreeInfoPO::getDegreeForeignLanguageSubject, entity.getDegreeForeignLanguageSubject())
                 .eq(Objects.nonNull(entity.getDegreeForeignLanguagePassDate()), DegreeInfoPO::getDegreeForeignLanguagePassDate, entity.getDegreeForeignLanguagePassDate())
-                .eq(StrUtil.isNotBlank(entity.getDegreePhotoUrl()), DegreeInfoPO::getDegreePhotoUrl, entity.getDegreePhotoUrl());
+                .eq(StrUtil.isNotBlank(entity.getDegreePhotoUrl()), DegreeInfoPO::getDegreePhotoUrl, entity.getDegreePhotoUrl())
+                .last(StrUtil.isNotBlank(degreeInfoROPageRO.getOrderBy()), degreeInfoROPageRO.lastOrderSql());
+
         // 区分列表查询还是分页查询 并返回数据
         if (Objects.equals(true, degreeInfoROPageRO.getIsAll())) {
             List<DegreeInfoPO> degreeInfoPOS = baseMapper.selectList(wrapper);

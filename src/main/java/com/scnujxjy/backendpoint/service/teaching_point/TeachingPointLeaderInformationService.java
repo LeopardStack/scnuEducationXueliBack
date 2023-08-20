@@ -75,7 +75,9 @@ public class TeachingPointLeaderInformationService extends ServiceImpl<TeachingP
                 .eq(StrUtil.isNotBlank(entity.getTeachingPointId()), TeachingPointLeaderInformationPO::getTeachingPointId, entity.getTeachingPointId())
                 .eq(StrUtil.isNotBlank(entity.getIdCardNumber()), TeachingPointLeaderInformationPO::getIdCardNumber, entity.getIdCardNumber())
                 .like(StrUtil.isNotBlank(entity.getName()), TeachingPointLeaderInformationPO::getName, entity.getName())
-                .eq(StrUtil.isNotBlank(entity.getPhone()), TeachingPointLeaderInformationPO::getPhone, entity.getPhone());
+                .eq(StrUtil.isNotBlank(entity.getPhone()), TeachingPointLeaderInformationPO::getPhone, entity.getPhone())
+                .last(StrUtil.isNotBlank(teachingPointLeaderInformationROPageRO.getOrderBy()), teachingPointLeaderInformationROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回结果
         if (Objects.equals(true, teachingPointLeaderInformationROPageRO.getIsAll())) {
             List<TeachingPointLeaderInformationPO> teachingPointLeaderInformationPOS = baseMapper.selectList(wrapper);

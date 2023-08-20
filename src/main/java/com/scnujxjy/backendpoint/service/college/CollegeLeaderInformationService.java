@@ -74,7 +74,9 @@ public class CollegeLeaderInformationService extends ServiceImpl<CollegeLeaderIn
                 .eq(StrUtil.isNotBlank(entity.getUserId()), CollegeLeaderInformationPO::getUserId, entity.getUserId())
                 .like(StrUtil.isNotBlank(entity.getName()), CollegeLeaderInformationPO::getName, entity.getName())
                 .eq(StrUtil.isNotBlank(entity.getCollegeId()), CollegeLeaderInformationPO::getCollegeId, entity.getCollegeId())
-                .eq(StrUtil.isNotBlank(entity.getPhone()), CollegeLeaderInformationPO::getPhone, entity.getPhone());
+                .eq(StrUtil.isNotBlank(entity.getPhone()), CollegeLeaderInformationPO::getPhone, entity.getPhone())
+                .last(StrUtil.isNotBlank(collegeLeaderInformationROPageRO.getOrderBy()), collegeLeaderInformationROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, collegeLeaderInformationROPageRO.getIsAll())) {
             List<CollegeLeaderInformationPO> collegeLeaderInformationPOS = baseMapper.selectList(wrapper);

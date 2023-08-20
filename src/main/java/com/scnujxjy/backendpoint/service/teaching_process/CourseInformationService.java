@@ -82,7 +82,9 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
                 .eq(StrUtil.isNotBlank(entity.getTeachingMethod()), CourseInformationPO::getTeachingMethod, entity.getTeachingMethod())
                 .eq(StrUtil.isNotBlank(entity.getCourseType()), CourseInformationPO::getCourseType, entity.getCourseType())
                 .eq(Objects.nonNull(entity.getCredit()), CourseInformationPO::getCredit, entity.getCredit())
-                .eq(Objects.nonNull(entity.getTeachingSemester()), CourseInformationPO::getTeachingSemester, entity.getTeachingSemester());
+                .eq(Objects.nonNull(entity.getTeachingSemester()), CourseInformationPO::getTeachingSemester, entity.getTeachingSemester())
+                .last(StrUtil.isNotBlank(courseInformationROPageRO.getOrderBy()), courseInformationROPageRO.lastOrderSql());
+
         // 列表查询 和 分页查询 并返回
         if (Objects.equals(true, courseInformationROPageRO.getIsAll())) {
             List<CourseInformationPO> courseInformationPOS = baseMapper.selectList(wrapper);

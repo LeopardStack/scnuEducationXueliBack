@@ -77,7 +77,9 @@ public class GraduationInfoService extends ServiceImpl<GraduationInfoMapper, Gra
                 .eq(StrUtil.isNotBlank(entity.getGraduationPhoto()), GraduationInfoPO::getGraduationPhoto, entity.getGraduationPhoto())
                 .eq(StrUtil.isNotBlank(entity.getGraduationNumber()), GraduationInfoPO::getGraduationNumber, entity.getGraduationNumber())
                 .eq(StrUtil.isNotBlank(entity.getDocumentNumber()), GraduationInfoPO::getDocumentNumber, entity.getDocumentNumber())
-                .eq(Objects.nonNull(entity.getGraduationDate()), GraduationInfoPO::getGraduationDate, entity.getGraduationDate());
+                .eq(Objects.nonNull(entity.getGraduationDate()), GraduationInfoPO::getGraduationDate, entity.getGraduationDate())
+                .last(StrUtil.isNotBlank(graduationInfoROPageRO.getOrderBy()), graduationInfoROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回结果
         if (Objects.equals(true, graduationInfoROPageRO.getIsAll())) {
             List<GraduationInfoPO> graduationInfoPOS = baseMapper.selectList(wrapper);

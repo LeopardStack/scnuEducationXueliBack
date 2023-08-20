@@ -75,7 +75,8 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
                 .like(StrUtil.isNotBlank(entity.getName()), CollegeAdminInformationPO::getName, entity.getName())
                 .eq(StrUtil.isNotBlank(entity.getCollegeId()), CollegeAdminInformationPO::getCollegeId, entity.getCollegeId())
                 .eq(StrUtil.isNotBlank(entity.getPhone()), CollegeAdminInformationPO::getPhone, entity.getPhone())
-                .eq(StrUtil.isNotBlank(entity.getWorkNumber()), CollegeAdminInformationPO::getWorkNumber, entity.getWorkNumber());
+                .eq(StrUtil.isNotBlank(entity.getWorkNumber()), CollegeAdminInformationPO::getWorkNumber, entity.getWorkNumber())
+                .last(StrUtil.isNotBlank(collegeAdminInformationROPageRO.getOrderBy()), collegeAdminInformationROPageRO.lastOrderSql());
         // 列表查询 或 分页查询 并返回结果
         if (Objects.equals(true, collegeAdminInformationROPageRO.getIsAll())) {
             List<CollegeAdminInformationPO> collegeAdminInformationPOS = baseMapper.selectList(wrapper);

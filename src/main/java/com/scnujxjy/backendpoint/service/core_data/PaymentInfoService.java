@@ -79,7 +79,9 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
                 .eq(StrUtil.isNotBlank(entity.getPaymentType()), PaymentInfoPO::getPaymentType, entity.getPaymentType())
                 .eq(Objects.nonNull(entity.getAmount()), PaymentInfoPO::getAmount, entity.getAmount())
                 .eq(StrUtil.isNotBlank(entity.getIsPaid()), PaymentInfoPO::getIsPaid, entity.getIsPaid())
-                .eq(StrUtil.isNotBlank(entity.getPaymentMethod()), PaymentInfoPO::getPaymentMethod, entity.getPaymentMethod());
+                .eq(StrUtil.isNotBlank(entity.getPaymentMethod()), PaymentInfoPO::getPaymentMethod, entity.getPaymentMethod())
+                .last(StrUtil.isNotBlank(paymentInfoROPageRO.getOrderBy()), paymentInfoROPageRO.lastOrderSql());
+
         // 根据参数选择是否查询全部还是分页查询，并返回
         if (Objects.equals(true, paymentInfoROPageRO.getIsAll())) {
             List<PaymentInfoPO> paymentInfoPOS = baseMapper.selectList(wrapper);

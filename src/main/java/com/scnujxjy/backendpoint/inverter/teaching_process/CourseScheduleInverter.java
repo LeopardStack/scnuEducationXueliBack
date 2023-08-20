@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.inverter;
+package com.scnujxjy.backendpoint.inverter.teaching_process;
 
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;

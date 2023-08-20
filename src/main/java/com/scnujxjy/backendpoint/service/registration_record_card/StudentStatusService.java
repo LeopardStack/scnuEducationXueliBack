@@ -80,7 +80,9 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
                 .eq(StrUtil.isNotBlank(entity.getStudyDuration()), StudentStatusPO::getStudyDuration, entity.getStudyDuration())
                 .eq(StrUtil.isNotBlank(entity.getAdmissionNumber()), StudentStatusPO::getAdmissionNumber, entity.getAdmissionNumber())
                 .eq(StrUtil.isNotBlank(entity.getAcademicStatus()), StudentStatusPO::getAcademicStatus, entity.getAcademicStatus())
-                .eq(Objects.nonNull(entity.getEnrollmentDate()), StudentStatusPO::getEnrollmentDate, entity.getEnrollmentDate());
+                .eq(Objects.nonNull(entity.getEnrollmentDate()), StudentStatusPO::getEnrollmentDate, entity.getEnrollmentDate())
+                .last(StrUtil.isNotBlank(studentStatusROPageRO.getOrderBy()), studentStatusROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回结果
         if (Objects.equals(true, studentStatusROPageRO.getIsAll())) {
             List<StudentStatusPO> studentStatusPOS = baseMapper.selectList(wrapper);

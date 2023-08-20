@@ -91,7 +91,9 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
                 .eq(StrUtil.isNotBlank(entity.getStudentStatus()), ClassInformationPO::getStudentStatus, entity.getStudentStatus())
                 .eq(StrUtil.isNotBlank(entity.getMajorCode()), ClassInformationPO::getMajorCode, entity.getMajorCode())
                 .eq(Objects.nonNull(entity.getTuition()), ClassInformationPO::getTuition, entity.getTuition())
-                .eq(Objects.nonNull(entity.getIsTeacherStudent()), ClassInformationPO::getIsTeacherStudent, entity.getIsTeacherStudent());
+                .eq(Objects.nonNull(entity.getIsTeacherStudent()), ClassInformationPO::getIsTeacherStudent, entity.getIsTeacherStudent())
+                .last(StrUtil.isNotBlank(classInformationROPageRO.getOrderBy()), classInformationROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, classInformationROPageRO.getIsAll())) {
             List<ClassInformationPO> classInformationPOS = baseMapper.selectList(wrapper);

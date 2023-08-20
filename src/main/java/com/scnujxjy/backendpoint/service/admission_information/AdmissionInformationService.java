@@ -97,9 +97,8 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
                 .eq(StrUtil.isNotBlank(entity.getTeachingPoint()), AdmissionInformationPO::getTeachingPoint, entity.getTeachingPoint())
                 .like(StrUtil.isNotBlank(entity.getReportLocation()), AdmissionInformationPO::getReportLocation, entity.getReportLocation())
                 .eq(StrUtil.isNotBlank(entity.getEntrancePhotoUrl()), AdmissionInformationPO::getEntrancePhotoUrl, entity.getEntrancePhotoUrl())
-                .eq(StrUtil.isNotBlank(entity.getGrade()), AdmissionInformationPO::getGrade, entity.getGrade());
-
-
+                .eq(StrUtil.isNotBlank(entity.getGrade()), AdmissionInformationPO::getGrade, entity.getGrade())
+                .last(StrUtil.isNotBlank(admissionInformationROPageRO.getOrderBy()), admissionInformationROPageRO.lastOrderSql());
         // 分页查询 或 列表查询 最后返回结果
         if (Objects.equals(true, admissionInformationROPageRO.getIsAll())) {
             List<AdmissionInformationPO> admissionInformationPOS = baseMapper.selectList(wrapper);
