@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedule;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 
 /**
  * <p>
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author leopard
  * @since 2023-08-18
  */
-public interface CourseScheduleMapper extends BaseMapper<CourseSchedule> {
+public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
 }

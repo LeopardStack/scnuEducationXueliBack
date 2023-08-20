@@ -1,8 +1,7 @@
-package com.scnujxjy.backendpoint.controller;
+package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 /**
