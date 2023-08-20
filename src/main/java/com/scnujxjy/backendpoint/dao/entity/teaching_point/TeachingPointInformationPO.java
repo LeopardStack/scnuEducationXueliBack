@@ -3,8 +3,11 @@ package com.scnujxjy.backendpoint.dao.entity.teaching_point;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 
@@ -17,7 +20,10 @@ import java.io.Serializable;
  * @since 2023-08-02
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 @TableName("teaching_point_information")
 public class TeachingPointInformationPO implements Serializable {
 

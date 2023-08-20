@@ -1,40 +1,23 @@
-package com.scnujxjy.backendpoint.dao.entity.registration_record_card;
+package com.scnujxjy.backendpoint.model.ro.registration_record_card;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-/**
- * <p>
- * 班级信息表
- * </p>
- *
- * @author leopard
- * @since 2023-08-14
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("class_information")
-public class ClassInformationPO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class ClassInformationRO {
     /**
      * 自增主键
      */
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
@@ -103,14 +86,34 @@ public class ClassInformationPO implements Serializable {
     private String majorName;
 
     /**
+     * 入学开始日期
+     */
+    private Date admissionStartDate;
+
+    /**
      * 入学日期
      */
     private Date admissionDate;
 
     /**
+     * 入学结束日期
+     */
+    private Date admissionEndDate;
+
+    /**
+     * 毕业开始日期
+     */
+    private Date graduationStartDate;
+
+    /**
      * 毕业日期
      */
     private Date graduationDate;
+
+    /**
+     * 毕业结束日期
+     */
+    private Date graduationEndDate;
 
     /**
      * 学籍状态
@@ -131,6 +134,4 @@ public class ClassInformationPO implements Serializable {
      * 是否为师范生，1是，0否
      */
     private Boolean isTeacherStudent;
-
-
 }

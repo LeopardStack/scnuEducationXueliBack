@@ -1,15 +1,10 @@
-package com.scnujxjy.backendpoint.dao.entity.teaching_process;
+package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
 
 /**
  * <p>
@@ -24,15 +19,12 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("course_information")
-public class CourseInformationPO implements Serializable {
+public class CourseInformationVO {
 
-    private static final long serialVersionUID = 1L;
 
     /**
      * 自增主键
      */
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
