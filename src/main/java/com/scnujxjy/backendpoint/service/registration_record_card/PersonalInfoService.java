@@ -82,7 +82,9 @@ public class PersonalInfoService extends ServiceImpl<PersonalInfoMapper, Persona
                 .eq(StrUtil.isNotBlank(entity.getEmail()), PersonalInfoPO::getEmail, entity.getEmail())
                 .eq(StrUtil.isNotBlank(entity.getAddress()), PersonalInfoPO::getAddress, entity.getAddress())
                 .eq(StrUtil.isNotBlank(entity.getIsDisabled()), PersonalInfoPO::getIsDisabled, entity.getIsDisabled())
-                .eq(StrUtil.isNotBlank(entity.getGrade()), PersonalInfoPO::getGrade, entity.getGrade());
+                .eq(StrUtil.isNotBlank(entity.getGrade()), PersonalInfoPO::getGrade, entity.getGrade())
+                .last(StrUtil.isNotBlank(personalInfoROPageRO.getOrderBy()), personalInfoROPageRO.lastOrderSql());
+
 
         // 查询数据
         if (Objects.equals(true, personalInfoROPageRO.getIsAll())) {

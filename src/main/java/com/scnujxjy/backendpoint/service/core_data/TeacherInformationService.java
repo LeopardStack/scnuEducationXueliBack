@@ -97,7 +97,9 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
                 .eq(StrUtil.isNotBlank(entity.getEmail()), TeacherInformationPO::getEmail, entity.getEmail())
                 .eq(StrUtil.isNotBlank(entity.getStartTerm()), TeacherInformationPO::getStartTerm, entity.getStartTerm())
                 .eq(StrUtil.isNotBlank(entity.getTeacherType1()), TeacherInformationPO::getTeacherType1, entity.getTeacherType1())
-                .eq(StrUtil.isNotBlank(entity.getTeacherType2()), TeacherInformationPO::getTeacherType2, entity.getTeacherType2());
+                .eq(StrUtil.isNotBlank(entity.getTeacherType2()), TeacherInformationPO::getTeacherType2, entity.getTeacherType2())
+                .last(StrUtil.isNotBlank(teacherInformationROPageRO.getOrderBy()), teacherInformationROPageRO.lastOrderSql());
+
         // 区分列表查询还是分页查询，并返回结果
         if (Objects.equals(true, teacherInformationROPageRO.getIsAll())) {
             List<TeacherInformationPO> teacherInformationPOS = baseMapper.selectList(wrapper);

@@ -1,34 +1,22 @@
-package com.scnujxjy.backendpoint.dao.entity.teaching_process;
+package com.scnujxjy.backendpoint.model.ro.teaching_process;
 
-import com.baomidou.mybatisplus.annotation.IdType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+
 import java.util.Date;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.Version;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
-/**
- * <p>
- * 排课表
- * </p>
- *
- * @author leopard
- * @since 2023-08-18
- */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@TableName("course_schedule")
-public class CourseSchedule implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
+public class CourseScheduleRO {
     /**
      * 自增主键
      */
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
@@ -132,9 +120,17 @@ public class CourseSchedule implements Serializable {
     private Date teachingDate;
 
     /**
+     * 授课开始日期
+     */
+    private Date teachingStartDate;
+
+    /**
+     * 授课结束日期
+     */
+    private Date teachingEndDate;
+
+    /**
      * 授课时间
      */
     private String teachingTime;
-
-
 }

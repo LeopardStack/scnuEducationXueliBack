@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro;
 
-import com.baomidou.mybatisplus.core.metadata.OrderItem;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +14,8 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Accessors(chain = true)
 public class PageRO<T> {
+
+    public static final String ORDER_FORMAT = " order by %s %s ";
 
     /**
      * 条件实体
@@ -49,20 +51,30 @@ public class PageRO<T> {
     /**
      * 获取一个分页对象
      *
-     * @return
+     * @return 返回分页对象
      */
     public <M> Page<M> getPage() {
-        Page<M> pages = new Page<>(pageNumber, pageSize);
-        pages.addOrder(isAsc() ? OrderItem.asc(orderBy) : OrderItem.desc(orderBy));
-        return pages;
-
+        return new Page<>(pageNumber, pageSize);
     }
 
+    /**
+     * 获取排序类型：ASC-升序，DESC-降序
+     *
+     * @return ASC-升序，DESC-降序
+     */
     public String getOrderType() {
         return orderType.toUpperCase();
     }
 
-    public Boolean isAsc() {
-        return getOrderType().contains("ASC");
+    /**
+     * 获取排序SQL
+     *
+     * @return 排序SQL
+     */
+    public String lastOrderSql() {
+        if (StrUtil.isBlank(orderBy)) {
+            return "";
+        }
+        return String.format(ORDER_FORMAT, orderBy, getOrderType());
     }
 }

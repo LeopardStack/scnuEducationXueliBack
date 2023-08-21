@@ -75,8 +75,8 @@ public class OriginalEducationInfoService extends ServiceImpl<OriginalEducationI
                 .eq(StrUtil.isNotBlank(entity.getIdNumber()), OriginalEducationInfoPO::getIdNumber, entity.getIdNumber())
                 .eq(StrUtil.isNotBlank(entity.getGraduationSchool()), OriginalEducationInfoPO::getGraduationSchool, entity.getGraduationSchool())
                 .eq(StrUtil.isNotBlank(entity.getOriginalEducation()), OriginalEducationInfoPO::getOriginalEducation, entity.getOriginalEducation())
-                .eq(Objects.nonNull(entity.getGraduationDate()), OriginalEducationInfoPO::getGraduationDate, entity.getGraduationDate());
-
+                .eq(Objects.nonNull(entity.getGraduationDate()), OriginalEducationInfoPO::getGraduationDate, entity.getGraduationDate())
+                .last(StrUtil.isNotBlank(originalEducationInfoROPageRO.getOrderBy()), originalEducationInfoROPageRO.lastOrderSql());
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, originalEducationInfoROPageRO.getIsAll())) {
             List<OriginalEducationInfoPO> originalEducationInfoPOS = baseMapper.selectList(wrapper);
