@@ -18,6 +18,10 @@ public class BusinessException extends RuntimeException {
         this.code = 500;
     }
 
+    public BusinessException(Exception e) {
+        super(e);
+    }
+
     public Integer getCode() {
         return this.code;
     }
