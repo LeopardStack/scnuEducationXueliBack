@@ -2,12 +2,16 @@ package com.scnujxjy.backendpoint.util.video_stream;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.entity.channel.operate.LiveCreateSonChannelListRequest;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogRequest;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogResponse;
@@ -15,15 +19,14 @@ import net.polyv.live.v1.entity.quick.QuickCreateChannelResponse;
 import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
+import net.polyv.live.v1.util.LiveSignUtil;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -33,6 +36,8 @@ public class VideoStreamUtils {
     private final static LiveChannelQuickCreatorServiceImpl liveChannelQuickCreatorService = new LiveChannelQuickCreatorServiceImpl();
     @Resource
     private VideoStreamInverter videoStreamInverter;
+
+    public static final String URL_FORMAT = "http://api.polyv.net/live/v2/channels/%s/delete";
 
     /**
      * 根据频道请求信息生成直播间
@@ -114,6 +119,47 @@ public class VideoStreamUtils {
             log.error("无法查询到 channelId：{} 下的直播日志信息", channelId, e);
             throw new BusinessException(e);
         }
+    }
+
+    /**
+     * 根据频道id删除直播间
+     *
+     * @param channelId 频道id
+     * @return Restful风格
+     * <p>code - 响应码</p>
+     * <p>data - 数据</p>
+     * <p>message - 具体的信息</p>
+     * <p>status - success 成功 error 失败</p>
+     */
+    public Map<String, Object> deleteView(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 获取请求参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String userId = LiveGlobalConfig.getUserId();
+        String time = String.valueOf(System.currentTimeMillis());
+
+        // 构建请求链接
+        String url = String.format(URL_FORMAT, channelId);
+
+        // 构建表单
+        Map<String, String> signRequest = new HashMap<>();
+        signRequest.put("appId", appId);
+        signRequest.put("appSecret", appSecret);
+        signRequest.put("userId", userId);
+        signRequest.put("timestamp", time);
+        try {
+            signRequest.put("sign", LiveSignUtil.getSign(signRequest, appSecret));
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            log.error("获取保利威请求签名失败，表单：{}", signRequest);
+            return null;
+        }
+        Map<String, Object> request = new HashMap<>(signRequest);
+        String response = HttpUtil.post(url, request);
+        return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
     }
 
 

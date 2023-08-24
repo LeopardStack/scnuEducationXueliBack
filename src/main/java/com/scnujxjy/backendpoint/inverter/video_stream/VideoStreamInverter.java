@@ -1,9 +1,12 @@
 package com.scnujxjy.backendpoint.inverter.video_stream;
 
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelResponseBO;
+import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import net.polyv.live.v1.entity.channel.operate.LiveCreateSonChannelListRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoResponse;
 import net.polyv.live.v1.entity.quick.QuickCreateChannelResponse;
@@ -35,5 +38,23 @@ public interface VideoStreamInverter {
             @Mapping(target = ".", source = "liveChannelBasicInfoResponse")
     })
     ChannelResponseBO polyv2ChannelResponseBO(QuickCreateChannelResponse quickCreateChannelResponse);
+
+    @Mappings({})
+    VideoStreamRecordVO po2VO(VideoStreamRecordPO videoStreamRecordPO);
+
+    @Mappings({})
+    List<VideoStreamRecordVO> po2VO(List<VideoStreamRecordPO> videoStreamRecordPOS);
+
+    @Mappings({})
+    VideoStreamRecordPO ro2PO(VideoStreamRecordRO videoStreamRecordRO);
+
+    @Mappings({})
+    List<VideoStreamRecordPO> ro2PO(List<VideoStreamRecordRO> videoStreamRecordROS);
+
+    @Mappings({})
+    VideoStreamRecordRO channelResponseBO2RO(ChannelResponseBO channelResponseBO);
+
+    @Mappings({})
+    List<VideoStreamRecordRO> sonChannelResponseBO2RO(List<SonChannelResponseBO> sonChannelResponseBOS);
 
 }

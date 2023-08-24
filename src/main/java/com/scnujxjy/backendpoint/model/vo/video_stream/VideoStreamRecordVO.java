@@ -1,31 +1,24 @@
-package com.scnujxjy.backendpoint.dao.entity.video_stream;
+package com.scnujxjy.backendpoint.model.vo.video_stream;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-import com.baomidou.mybatisplus.annotation.Version;
-import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
-/**
- * <p>
- * 直播记录表
- * </p>
- *
- * @author leopard
- * @since 2023-08-21
- */
+import java.util.Date;
+import java.util.List;
+
 @Data
-@EqualsAndHashCode(callSuper = false)
-public class VideoStreamRecords implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+@AllArgsConstructor
+@NoArgsConstructor
+@Accessors(chain = true)
+@Builder
+public class VideoStreamRecordVO {
 
     /**
      * 主键id
      */
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
@@ -76,7 +69,7 @@ public class VideoStreamRecords implements Serializable {
     /**
      * 自频道id集合
      */
-    private String sonId;
+    private List<Long> sonId;
 
     /**
      * 主链接
@@ -87,6 +80,4 @@ public class VideoStreamRecords implements Serializable {
      * 观看链接
      */
     private String watchUrl;
-
-
 }

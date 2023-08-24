@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 默认启动配置类
+ *
  * @author: thomas
  **/
 @Component
@@ -24,7 +25,7 @@ public class StartupListener implements ApplicationContextAware {
         try {
             LiveGlobalConfig.init(appId, userId, appSecret);
             logger.info("--保利威直播 SDK 初始化完成--");
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error("--保利威直播 SDK 初始化失败--");
         }
     }
