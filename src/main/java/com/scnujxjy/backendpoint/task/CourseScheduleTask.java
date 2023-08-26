@@ -69,7 +69,7 @@ public class CourseScheduleTask {
                     .publisher(courseSchedulePO.getTutorName())
                     .startTime(courseSchedulePO.getTeachingDate().getTime())
                     .desc("测试用直播间")
-                    .nickname(courseSchedulePO.getTeachingTime())
+                    .nickname(courseSchedulePO.getMainTeacherName())
                     .build();
             ChannelResponseBO channelResponseBO = videoStreamUtils.createTeachChannel(channelRequestBO);
             if (Objects.isNull(channelResponseBO)) {
