@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.util.video_stream;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -90,7 +91,13 @@ public class VideoStreamUtils {
         }
         List<SonChannelRequestBO> sonChannelRequestBOS = channelRequestBO.getSonChannelRequestBOS();
         if (CollUtil.isEmpty(sonChannelRequestBOS)) {
-            return null;
+            // 当没有设置子频道信息时，设置一个助教，助教的role不需要传递
+            String passwd = RandomUtil.randomString(11);
+            log.info("助教频道密码：{}", passwd);
+            sonChannelRequestBOS.add(SonChannelRequestBO.builder()
+                    .nickname(channelRequestBO.getPublisher())
+                    .passwd(passwd)
+                    .build());
         }
         return videoStreamInverter.sonRequestBO2Polyv(sonChannelRequestBOS);
     }
