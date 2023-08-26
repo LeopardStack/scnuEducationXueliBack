@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.entity.video_stream;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +28,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
+@TableName("video_stream_record")
 public class VideoStreamRecordPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
