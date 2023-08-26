@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.task;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.LocalDateTimeUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -59,7 +60,17 @@ public class CourseScheduleTask {
         }
         // 生成直播链接
         for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
-            ChannelRequestBO channelRequestBO = ChannelRequestBO.builder().build();
+            String channelPasswd = RandomUtil.randomString(11);
+            log.info("直播间密码密码为：{}", channelPasswd);
+            ChannelRequestBO channelRequestBO = ChannelRequestBO.builder()
+                    .name(courseSchedulePO.getCourseName())
+                    .channelPasswd(channelPasswd)
+                    .linkMicLimit(-1)
+                    .publisher(courseSchedulePO.getTutorName())
+                    .startTime(courseSchedulePO.getTeachingDate().getTime())
+                    .desc("测试用直播间")
+                    .nickname(courseSchedulePO.getTeachingTime())
+                    .build();
             ChannelResponseBO channelResponseBO = videoStreamUtils.createTeachChannel(channelRequestBO);
             if (Objects.isNull(channelResponseBO)) {
                 log.error("生成直播链接失败，排课表信息：{}", courseSchedulePO);
