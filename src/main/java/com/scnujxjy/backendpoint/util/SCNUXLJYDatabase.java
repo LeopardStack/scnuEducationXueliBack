@@ -453,25 +453,28 @@ public class SCNUXLJYDatabase {
                                 throw new RuntimeException(e);
                             }
                         }catch (Exception e){
-                            byte[] bytes = rs.getBytes(i);
+                            try {
+                                byte[] bytes = rs.getBytes(i);
+                                // 使用try-with-resources确保流的正确关闭
+                                try (InputStream is = new ByteArrayInputStream(bytes)) {
+                                    BufferedImage img;
+                                    try {
+                                        img = ImageIO.read(is);
+                                    } catch (IOException e1) {
+                                        throw new RuntimeException(e1);
+                                    }
 
-                            // 使用try-with-resources确保流的正确关闭
-                            try (InputStream is = new ByteArrayInputStream(bytes)) {
-                                BufferedImage img;
-                                try {
-                                    img = ImageIO.read(is);
-                                } catch (IOException e1) {
-                                    throw new RuntimeException(e1);
-                                }
-
-                                if (name.trim().equals("PIC")) {
-                                    imgBY = img;
-                                } else {
-                                    imgRX = img;
-                                }
-                            } catch (IOException io) {
-                                logger.error("读取学生照片信息失败 " + io.toString());
+                                    if (name.trim().equals("PIC")) {
+                                        imgBY = img;
+                                    } else {
+                                        imgRX = img;
+                                    }
+                                } catch (IOException io) {
+                                    logger.error("读取学生照片信息失败 " + io.toString());
 //                                throw new RuntimeException(io);
+                                }
+                            }catch (Exception e1){
+                                logger.error("无法获取照片数据 " + e1.toString());
                             }
 
                         }

@@ -41,7 +41,17 @@ public class StpInterfaceConfig implements StpInterface {
             return ListUtil.of();
         }
         // 获取用户角色权限信息
-        UserRolePermissionBO userRolePermissionBO = platformUserService.rolePermissionDetailByUserId((Long) loginId);
+        Long userId;
+        if (loginId instanceof String) {
+            userId = Long.valueOf((String) loginId);
+        } else if (loginId instanceof Long) {
+            userId = (Long) loginId;
+        } else {
+            log.error("无效的loginId类型: {}", loginId.getClass());
+            return ListUtil.of();
+        }
+        UserRolePermissionBO userRolePermissionBO = platformUserService.rolePermissionDetailByUserId(userId);
+
         // 用户角色权限信息校验
         if (Objects.isNull(userRolePermissionBO)) {
             log.error("获取用户权限列表失败，用户id：{}", loginId);

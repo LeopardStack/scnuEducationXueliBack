@@ -48,6 +48,11 @@ public class Test2 {
     @Autowired(required = false)
     private GraduationInfoMapper graduationInfoMapper;
 
+    /**
+     * 根据身份证号码判别港澳台身份证
+     * @param id
+     * @return
+     */
     public String identifyID(String id) {
         if (id == null) {
             return null;
@@ -70,6 +75,26 @@ public class Test2 {
         }
     }
 
+    /**
+     * 根据准考证号码来判别年份
+     * @param code
+     * @return
+     */
+    public static int getYearFromCode(String code) {
+        if (code == null || code.length() < 2) {
+            throw new IllegalArgumentException("Code must have at least 2 characters.");
+        }
+
+        int threshold = 50;  // 假设从 50 开始是 21 世纪
+        int prefix = Integer.parseInt(code.substring(0, 2));
+
+        if (prefix < threshold) {
+            return 2000 + prefix;
+        } else {
+            return 1900 + prefix;
+        }
+    }
+
     public void insertXHStudents(Set<String> undefinedJxd, Map<String, String> jxd_jc, int grade,
                                  List<HashMap<String, String>> failedStudents) {
         ArrayList<HashMap<String, String>> studentInfos = getStudentInfos(String.valueOf(grade));
@@ -80,6 +105,11 @@ public class Test2 {
         SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
         SimpleDateFormat dateFormat4 = new SimpleDateFormat("yyyy/MM");
         SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
+        SimpleDateFormat dateFormat6 = new SimpleDateFormat("yyyy.MM.dd");
+
+        dateFormat4.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat5.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat6.setTimeZone(TimeZone.getTimeZone("GMT"));
 
         for (HashMap<String, String> studentData : studentInfos) {
             if(studentData.get("XXXS").contains("文凭")){
@@ -140,11 +170,15 @@ public class Test2 {
                         try {
                             birthDate = dateFormat3.parse(birthDateString);
                         } catch (ParseException e3) {
-                            studentData.put("插入失败原因", "出生日期解析失败 " +e3.getMessage());
-                            failedStudents.add(studentData);
-                            continue;
+                            try{
+                                birthDate = dateFormat6.parse(birthDateString);
+                            }catch (ParseException e4){
+                                studentData.put("插入失败原因", "出生日期解析失败 " +e3.getMessage());
+                                failedStudents.add(studentData);
+                                continue;
 //                            log.error(birthDateString);
 //                            log.error(e3.getMessage());
+                            }
                         }
                     }
                 }
@@ -154,10 +188,23 @@ public class Test2 {
 
                 // 根据考生号来获取新生数据中的个人信息
                 String ksh = studentData.get("KSH");
+                AdmissionInformationPO student = null;
 
                 QueryWrapper<AdmissionInformationPO> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("admission_number", ksh);
-                AdmissionInformationPO student = admissionInformationMapper.selectOne(queryWrapper);
+                List<AdmissionInformationPO> admissionInformationPOS = admissionInformationMapper.selectList(queryWrapper);
+                if(admissionInformationPOS.size() == 1){
+                    student = admissionInformationMapper.selectOne(queryWrapper);
+                }else if(admissionInformationPOS.size() > 1){
+                    for(int i = 0; i < admissionInformationPOS.size(); i++){
+                        AdmissionInformationPO admissionInformationPO = admissionInformationPOS.get(i);
+                        String grade1 = admissionInformationPO.getGrade();
+                        if(grade1.equals(getYearFromCode(ksh)+"")){
+                            student = admissionInformationPO;
+                            break;
+                        }
+                    }
+                }
                 if(student == null){
                     studentData.put("插入失败原因", "从录取表中获取不到学生的个人信息 ");
                     failedStudents.add(studentData);
@@ -167,7 +214,7 @@ public class Test2 {
                 personalInfoPO.setGender(student.getGender());
                 personalInfoPO.setBirthDate(student.getBirthDate());
                 personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
-                if (studentData.get("MZ").equals(student.getEthnicity())) {
+                if (!studentData.get("MZ").equals(student.getEthnicity())) {
                     studentData.put("插入失败原因", "民族信息与新生数据中不同 ");
                     failedStudents.add(studentData);
 //                    log.error("民族信息与新生数据中不同 " + ksh);
@@ -296,8 +343,8 @@ public class Test2 {
 //        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
 
-        int startYear = 2020;
-        int endYear = 2023;
+        int startYear = 1995;
+        int endYear = 1999;
 
         ExecutorService executorService = Executors.newFixedThreadPool(endYear - startYear + 1);
         List<Future<Void>> futures = new ArrayList<>();

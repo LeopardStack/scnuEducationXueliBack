@@ -39,10 +39,10 @@ mybatis:
     map-underscore-to-camel-case: true
 
 # 配置日志
-#mybatis-plus:
-#  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-## 关闭 MyBatis 的日志
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+# 关闭 MyBatis 的日志
 #logging:
 #  level:
 #    org.mybatis: OFF

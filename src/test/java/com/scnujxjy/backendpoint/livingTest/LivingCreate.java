@@ -1,6 +1,9 @@
 package com.scnujxjy.backendpoint.livingTest;
 
+import cn.hutool.core.collection.ListUtil;
 import com.alibaba.fastjson.JSON;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordsService;
 import com.scnujxjy.backendpoint.task.CourseScheduleTask;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
+import javax.swing.plaf.ListUI;
 import java.io.File;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -268,6 +272,15 @@ public class LivingCreate {
     @Test
     void testCreateView() {
         courseScheduleTask.doTask();
+    }
+
+    @Autowired
+    private VideoStreamRecordsService videoStreamRecordsService;
+
+    @Test
+    void testSelect() {
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsService.getBaseMapper().selectBatchIds(ListUtil.of(1L, 2L, 3L, 4L));
+        log.info("查询的数据是:{}",videoStreamRecordPOS);
     }
 
 

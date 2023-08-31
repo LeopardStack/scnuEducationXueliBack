@@ -8,14 +8,17 @@ import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
+import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
+import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
 
 /**
  * 用户登录控制
@@ -41,13 +44,20 @@ public class PlatformUserController {
     public SaResult userLogin(@RequestBody PlatformUserRO platformUserRO) {
         // 参数校验，登录名、密码不可或缺
         if (Objects.isNull(platformUserRO) || StrUtil.isBlank(platformUserRO.getUsername()) || StrUtil.isBlank(platformUserRO.getPassword())) {
-            return SaResult.data(false);
+            return SaResult.error("账户、密码不允许为空，登录失败");
         }
         // 登录
-        Boolean isLogin = platformUserService.userLogin(platformUserRO);
         StpUtil.login(platformUserRO.getUsername());
+        Boolean isLogin = platformUserService.userLogin(platformUserRO);
         // 返回
-        return SaResult.data(isLogin);
+        if(isLogin) {
+            Object tokenInfo = StpUtil.getTokenInfo();
+            List<String> permissionList = StpUtil.getPermissionList();
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList);
+            return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
+        }else{
+            return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
+        }
     }
 
     /**

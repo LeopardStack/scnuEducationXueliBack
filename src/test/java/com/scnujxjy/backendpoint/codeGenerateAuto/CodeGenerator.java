@@ -66,9 +66,9 @@ public class CodeGenerator {
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.teaching_process");
+        pc.setMapper("dao.mapper.video_stream");
 //        pc.setXml("mapper.registration_record_card.xml");
-        pc.setEntity("dao.entity.teaching_process");
+        pc.setEntity("dao.entity.video_stream");
 
         // 不设置Service和Controller包
         // pc.setService("service.registration_record_card");

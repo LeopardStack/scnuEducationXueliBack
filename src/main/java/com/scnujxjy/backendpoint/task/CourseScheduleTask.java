@@ -50,8 +50,8 @@ public class CourseScheduleTask {
         log.info("目前时间是：{}，开始生成直播间链接", LocalDateTimeUtil.format(now, DatePattern.NORM_DATETIME_FORMATTER));
         LambdaQueryWrapper<CourseSchedulePO> wrapper = Wrappers.<CourseSchedulePO>lambdaQuery()
                 .between(CourseSchedulePO::getTeachingDate, LocalDateTimeUtil.beginOfDay(now), LocalDateTimeUtil.endOfDay(now))
-                .between(CourseSchedulePO::getTeachingTime, now.withHour(0).withMinute(0).withSecond(0).withNano(0).plusSeconds(1),
-                        now.withHour(1).withMinute(0).withSecond(0).withNano(0))
+//                .between(CourseSchedulePO::getTeachingTime, now.withHour(0).withMinute(0).withSecond(0).withNano(0).plusSeconds(1),
+//                        now.withHour(1).withMinute(0).withSecond(0).withNano(0))
                 .eq(CourseSchedulePO::getTeachingMethod, "直播");
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(wrapper);
         if (CollUtil.isEmpty(courseSchedulePOS)) {

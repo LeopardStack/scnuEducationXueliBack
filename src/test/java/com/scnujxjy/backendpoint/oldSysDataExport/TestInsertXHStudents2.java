@@ -48,6 +48,11 @@ public class TestInsertXHStudents2 {
     @Autowired(required = false)
     private GraduationInfoMapper graduationInfoMapper;
 
+    /**
+     * 根据身份证号码判别港澳台身份证
+     * @param id
+     * @return
+     */
     public String identifyID(String id) {
         if (id == null) {
             return null;
@@ -70,20 +75,29 @@ public class TestInsertXHStudents2 {
         }
     }
 
+    /**
+     * 根据准考证号码来判别年份
+     * @param code
+     * @return
+     */
+    public static int getYearFromCode(String code) {
+        if (code == null || code.length() < 2) {
+            throw new IllegalArgumentException("Code must have at least 2 characters.");
+        }
+
+        int threshold = 50;  // 假设从 50 开始是 21 世纪
+        int prefix = Integer.parseInt(code.substring(0, 2));
+
+        if (prefix < threshold) {
+            return 2000 + prefix;
+        } else {
+            return 1900 + prefix;
+        }
+    }
+
     public void insertXHStudents(Set<String> undefinedJxd, Map<String, String> jxd_jc, int grade,
                                  List<HashMap<String, String>> failedStudents) {
         ArrayList<HashMap<String, String>> studentInfos = getStudentInfos(String.valueOf(grade));
-//        ArrayList<HashMap<String, String>> studentInfos1 = getStudentInfos("2022");
-//        ArrayList<HashMap<String, String>> studentInfos2 = getStudentInfos("2021");
-//        ArrayList<HashMap<String, String>> studentInfos3 = getStudentInfos("2020");
-//        ArrayList<HashMap<String, String>> studentInfos4 = getStudentInfos("2019");
-//        ArrayList<HashMap<String, String>> studentInfos5 = getStudentInfos("2018");
-
-//        studentInfos.addAll(studentInfos1);
-//        studentInfos.addAll(studentInfos2);
-//        studentInfos.addAll(studentInfos3);
-//        studentInfos.addAll(studentInfos4);
-//        studentInfos.addAll(studentInfos5);
         log.info(String.valueOf(studentInfos.size()));
 
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
@@ -91,6 +105,12 @@ public class TestInsertXHStudents2 {
         SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
         SimpleDateFormat dateFormat4 = new SimpleDateFormat("yyyy/MM");
         SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
+
+        dateFormat1.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat2.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat3.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat4.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormat5.setTimeZone(TimeZone.getTimeZone("GMT"));
 
         for (HashMap<String, String> studentData : studentInfos) {
             if(studentData.get("XXXS").contains("文凭")){
@@ -165,39 +185,55 @@ public class TestInsertXHStudents2 {
 
                 // 根据考生号来获取新生数据中的个人信息
                 String ksh = studentData.get("KSH");
+                AdmissionInformationPO student = null;
 
                 QueryWrapper<AdmissionInformationPO> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("admission_number", ksh);
-                AdmissionInformationPO student = admissionInformationMapper.selectOne(queryWrapper);
+                List<AdmissionInformationPO> admissionInformationPOS = admissionInformationMapper.selectList(queryWrapper);
+                if(admissionInformationPOS.size() == 1){
+                    student = admissionInformationMapper.selectOne(queryWrapper);
+                }else if(admissionInformationPOS.size() > 1){
+                    for(int i = 0; i < admissionInformationPOS.size(); i++){
+                        AdmissionInformationPO admissionInformationPO = admissionInformationPOS.get(i);
+                        String grade1 = admissionInformationPO.getGrade();
+                        if(grade1.equals(getYearFromCode(ksh)+"")){
+                            student = admissionInformationPO;
+                            break;
+                        }
+                    }
+                }
                 if(student == null){
                     studentData.put("插入失败原因", "从录取表中获取不到学生的个人信息 ");
                     failedStudents.add(studentData);
-                    continue;
-                }
-
-                personalInfoPO.setGender(student.getGender());
-                personalInfoPO.setBirthDate(student.getBirthDate());
-                personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
-                if (studentData.get("MZ").equals(student.getEthnicity())) {
-                    studentData.put("插入失败原因", "民族信息与新生数据中不同 ");
-                    failedStudents.add(studentData);
+//                    continue;
+                }else{
+                    personalInfoPO.setGender(student.getGender());
+                    personalInfoPO.setBirthDate(student.getBirthDate());
+                    personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
+                    if (!studentData.get("MZ").equals(student.getEthnicity())) {
+                        studentData.put("插入失败原因", "民族信息与新生数据中不同 ");
+                        failedStudents.add(studentData);
 //                    log.error("民族信息与新生数据中不同 " + ksh);
+                    }
+                    personalInfoPO.setEthnicity(studentData.get("MZ"));
+                    personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
+                    personalInfoPO.setIdNumber(studentData.get("SFZH"));
+                    personalInfoPO.setPostalCode(student.getPostalCode());
+                    personalInfoPO.setPhoneNumber(student.getPhoneNumber());
+                    personalInfoPO.setAddress(student.getAddress());
+                    personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
+                    personalInfoPO.setGrade(studentData.get("NJ"));
+
+
+                    originalEducationInfoPO.setGrade(studentData.get("NJ"));
+                    originalEducationInfoPO.setIdNumber(studentData.get("SFZH"));
+                    originalEducationInfoPO.setGraduationSchool(student.getGraduationSchool());
+                    originalEducationInfoPO.setOriginalEducation(student.getOriginalEducation());
+                    originalEducationInfoPO.setGraduationDate(student.getGraduationDate());
+
+                    personalInfoMapper.insert(personalInfoPO);
+                    originalEducationInfoMapper.insert(originalEducationInfoPO);
                 }
-                personalInfoPO.setEthnicity(studentData.get("MZ"));
-                personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
-                personalInfoPO.setIdNumber(studentData.get("SFZH"));
-                personalInfoPO.setPostalCode(student.getPostalCode());
-                personalInfoPO.setPhoneNumber(student.getPhoneNumber());
-                personalInfoPO.setAddress(student.getAddress());
-                personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
-                personalInfoPO.setGrade(studentData.get("NJ"));
-
-
-                originalEducationInfoPO.setGrade(studentData.get("NJ"));
-                originalEducationInfoPO.setIdNumber(studentData.get("SFZH"));
-                originalEducationInfoPO.setGraduationSchool(student.getGraduationSchool());
-                originalEducationInfoPO.setOriginalEducation(student.getOriginalEducation());
-                originalEducationInfoPO.setGraduationDate(student.getGraduationDate());
 
                 graduationInfoPO.setGrade(studentData.get("NJ"));
                 graduationInfoPO.setIdNumber(studentData.get("SFZH"));
@@ -206,16 +242,17 @@ public class TestInsertXHStudents2 {
 
 
                 String graduateDateString = studentData.get("BYRQ");
-                Date graduateDate = null;
-                graduateDate = dateFormat5.parse(graduateDateString);
-                graduationInfoPO.setGraduationDate(graduateDate);
+                if(graduateDateString != null && !graduateDateString.equals("NULL")){
+                    Date graduateDate = null;
+                    graduateDate = dateFormat5.parse(graduateDateString);
+                    graduationInfoPO.setGraduationDate(graduateDate);
 
-                graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
+                    graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
+                    graduationInfoMapper.insert(graduationInfoPO);
+                }
 
                 studentStatusMapper.insert(studentStatusPO);
-                personalInfoMapper.insert(personalInfoPO);
-                originalEducationInfoMapper.insert(originalEducationInfoPO);
-                graduationInfoMapper.insert(graduationInfoPO);
+
             }catch (ParseException p){
                 studentData.put("插入失败原因", "其他日期解析失败 " +p.getMessage());
                 failedStudents.add(studentData);
@@ -296,13 +333,19 @@ public class TestInsertXHStudents2 {
         jxd_jc.put("深圳宝安职训", "深圳宝安教学点");
         jxd_jc.put("佛山天天", "佛山天天教学点");
 
+//        Set<String> undefinedJxd = new HashSet<>();
+//
+//        for(int i = 2023; i >=2020; i--){
+//            List<HashMap<String, String>> failedStudents = new ArrayList<>();
+//            insertXHStudents(undefinedJxd, jxd_jc, i, failedStudents);
+//            writeToExcel(failedStudents, i + " 数据插入失败的学生学籍数据.xlsx");
+//        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
 
-        int startYear = 2015;
-        int endYear = 2019;
+        int startYear = 1995;
+        int endYear = 1999;
 
-        // 根据需要调整线程池的大小，这里我使用了10，但你可以根据实际资源进行调整
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        ExecutorService executorService = Executors.newFixedThreadPool(endYear - startYear + 1);
         List<Future<Void>> futures = new ArrayList<>();
 
         for (int i = endYear; i >= startYear; i--) {
@@ -321,7 +364,6 @@ public class TestInsertXHStudents2 {
         }
 
         executorService.shutdown();
+        log.info("未定义的教学点包括 " + undefinedJxd.toString());
     }
-
-
 }

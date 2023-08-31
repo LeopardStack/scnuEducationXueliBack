@@ -10,7 +10,7 @@ public enum ResultCode {
 
     // 用户错误：20001-29999
     USER_NOT_EXIST(20001, "用户不存在"),
-    USER_LOGIN_ERROR(20002, "用户登录失败"),
+    USER_LOGIN_ERROR(20002, "用户登录失败，账号/密码错误"),
     USER_ID_GET_FAIL(20003, "用户ID获取失败"),
 
     // 获取所有角色信息失败
