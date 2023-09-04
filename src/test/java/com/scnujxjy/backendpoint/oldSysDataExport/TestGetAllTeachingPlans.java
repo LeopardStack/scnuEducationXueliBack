@@ -32,6 +32,9 @@ public class TestGetAllTeachingPlans {
         ArrayList<HashMap<String, String>> teachingPlans = getTeachingPlans();
         log.info("教学计划总数 " + teachingPlans.size());
 
+        // 记录文凭班教学计划数量
+        int wpCount = 0;
+
         for(HashMap<String, String> hashMap : teachingPlans){
             CourseInformationPO courseInformationPO = new CourseInformationPO();
             String classIdentifier = hashMap.get("BSHI");
@@ -40,10 +43,15 @@ public class TestGetAllTeachingPlans {
             queryWrapper.eq("class_identifier", classIdentifier);
             ClassInformationPO classInformationPO = classInformationMapper.selectOne(queryWrapper);
 
-            if (classInformationPO == null && !classIdentifier.startsWith("WP")) {
+            if(classInformationPO == null){
+                if(classIdentifier.startsWith("WP")){
+                    wpCount += 1;
+                }
                 log.error(hashMap.toString() + " 找不到对应的班级");
-                continue;  // 跳过这次循环，继续下一个
+                continue;
             }
+
+
 
             courseInformationPO.setGrade(classInformationPO.getGrade());
             courseInformationPO.setMajorName(classInformationPO.getMajorName());
@@ -57,9 +65,10 @@ public class TestGetAllTeachingPlans {
             courseInformationPO.setCourseType(hashMap.get("TYPES"));
             courseInformationPO.setTeachingSemester(hashMap.get("XQI"));
 
-            courseInformationMapper.insert(courseInformationPO);
+//            courseInformationMapper.insert(courseInformationPO);
 
 
         }
+        log.info("文凭班总数为 " + wpCount);
     }
 }

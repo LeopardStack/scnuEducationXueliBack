@@ -23,5 +23,10 @@ public class UserLoginVO {
      * 用户权限信息，从 SaToken 框架中获取
      */
     private List<String> permissionList;
+
+    /**
+     * 用户角色信息，用于登录返回，判断用户属于教师、管理员还是学生
+     */
+    private String roleName;
 }
 

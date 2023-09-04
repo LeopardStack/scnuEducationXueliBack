@@ -86,8 +86,18 @@ public class StpInterfaceConfig implements StpInterface {
             return ListUtil.of();
         }
 
+        Long userId;
+        if (loginId instanceof String) {
+            userId = Long.valueOf((String) loginId);
+        } else if (loginId instanceof Long) {
+            userId = (Long) loginId;
+        } else {
+            log.error("无效的loginId类型: {}", loginId.getClass());
+            return ListUtil.of();
+        }
+
         // 获取用户角色信息
-        PlatformUserVO platformUserVO = platformUserService.detailById((long) loginId);
+        PlatformUserVO platformUserVO = platformUserService.detailById(userId);
 
         // 角色信息校验
         if (Objects.isNull(platformUserVO)) {

@@ -5,11 +5,14 @@ import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -19,6 +22,7 @@ import java.util.Objects;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
+import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_FAIL;
 
 /**
  * 用户登录控制
@@ -26,12 +30,16 @@ import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
  * @author leopard
  * @since 2023-08-02
  */
+@Slf4j
 @RestController
 @RequestMapping("/platform-user")
 public class PlatformUserController {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private PlatformRoleService platformRoleService;
 
     /**
      * 用户登录接口
@@ -53,7 +61,21 @@ public class PlatformUserController {
         if(isLogin) {
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList);
+            List<String> roleList = StpUtil.getRoleList();
+            long roleID = Long.parseLong(roleList.get(0));
+
+            PlatformRolePO rolePO = platformRoleService.getById(roleID);
+            if(rolePO == null){
+                return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
+            }
+
+            String roleName = rolePO.getRoleName();
+            if(!"学生".equals(roleName) && !"教师".equals(roleName)){
+                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员");
+                return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
+            }
+
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, rolePO.getRoleName());
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

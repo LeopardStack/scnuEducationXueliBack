@@ -16,7 +16,7 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword(){
-        Boolean aBoolean = platformUserService.changePassword(1L, "123456");
+        Boolean aBoolean = platformUserService.changePassword(6L, "123456");
         log.info("修改密码 " + aBoolean);
     }
 }
