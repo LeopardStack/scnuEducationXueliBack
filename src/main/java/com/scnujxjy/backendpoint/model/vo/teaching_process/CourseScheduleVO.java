@@ -1,8 +1,21 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+
 import java.util.Date;
 
-
+<<<<<<< HEAD
+=======
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
+>>>>>>> dd2174dd9c60b8083ce463cadca92c10ceb157d5
 public class CourseScheduleVO {
     /**
      * 自增主键

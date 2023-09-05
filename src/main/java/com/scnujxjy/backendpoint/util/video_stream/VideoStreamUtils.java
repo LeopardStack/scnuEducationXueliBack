@@ -38,8 +38,15 @@ public class VideoStreamUtils {
     private final static LiveChannelQuickCreatorServiceImpl liveChannelQuickCreatorService = new LiveChannelQuickCreatorServiceImpl();
     @Resource
     private VideoStreamInverter videoStreamInverter;
+    /**
+     * 新建直播频道链接
+     */
+    private static final String URL_FORMAT = "http://api.polyv.net/live/v2/channels/%s/delete";
 
-    public static final String URL_FORMAT = "http://api.polyv.net/live/v2/channels/%s/delete";
+    /**
+     * 关闭直播间链接
+     */
+    private static final String CLOSE_URL_FORMAT = "http://api.polyv.net/live/v2/channels/%s/end";
 
     /**
      * 根据频道请求信息生成直播间
@@ -170,5 +177,33 @@ public class VideoStreamUtils {
         return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
     }
 
+    /**
+     * 关闭直播间
+     *
+     * @param channelId 频道id
+     * @return 响应信息
+     */
+    public Map<String, Object> videoStreamClose(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            log.error("参数缺失");
+            return null;
+        }
+        String url = String.format(CLOSE_URL_FORMAT, channelId);
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("appSecret", LiveGlobalConfig.getAppSecret());
+        requestMap.put("userId", LiveGlobalConfig.getUserId());
+        requestMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        try {
+            requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            log.error("获取保利威请求签名失败，表单：{}", requestMap);
+            throw new BusinessException("获取签名失败");
+        }
+
+        String response = HttpUtil.post(url, new HashMap<>(requestMap));
+        log.info("关闭直播间响应：{}", response);
+        return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
+    }
 
 }

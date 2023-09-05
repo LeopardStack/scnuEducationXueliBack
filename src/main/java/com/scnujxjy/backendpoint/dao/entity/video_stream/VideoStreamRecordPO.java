@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.LongListTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.apache.ibatis.type.LongTypeHandler;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -72,6 +72,7 @@ public class VideoStreamRecordPO implements Serializable {
     /**
      * 直播介绍
      */
+    @TableField("`desc`")
     private String desc;
 
     /**
@@ -87,7 +88,7 @@ public class VideoStreamRecordPO implements Serializable {
     /**
      * 自频道id集合
      */
-    @TableField(typeHandler = LongTypeHandler.class)
+    @TableField(typeHandler = LongListTypeHandler.class)
     private List<Long> sonId;
 
     /**
