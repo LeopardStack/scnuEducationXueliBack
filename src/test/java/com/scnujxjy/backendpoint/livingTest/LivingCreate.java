@@ -3,8 +3,7 @@ package com.scnujxjy.backendpoint.livingTest;
 import cn.hutool.core.collection.ListUtil;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
-import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordsService;
-import com.scnujxjy.backendpoint.task.CourseScheduleTask;
+import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
@@ -23,7 +22,6 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
-import javax.swing.plaf.ListUI;
 import java.io.File;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -43,8 +41,7 @@ public class LivingCreate {
 
     @Autowired
     private VideoStreamUtils videoStreamUtils;
-    @Autowired
-    private CourseScheduleTask courseScheduleTask;
+
 
     /**
      * 简单创建直播间
@@ -269,13 +266,9 @@ public class LivingCreate {
         log.info("response:{}", map);
     }
 
-    @Test
-    void testCreateView() {
-        courseScheduleTask.doTask();
-    }
 
     @Autowired
-    private VideoStreamRecordsService videoStreamRecordsService;
+    private VideoStreamRecordService videoStreamRecordsService;
 
     @Test
     void testSelect() {

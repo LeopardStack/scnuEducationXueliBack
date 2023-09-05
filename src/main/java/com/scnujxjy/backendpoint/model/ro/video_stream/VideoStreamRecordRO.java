@@ -42,6 +42,11 @@ public class VideoStreamRecordRO {
     private String publisher;
 
     /**
+     * 频道主讲人姓名
+     */
+    private String mainTeacherName;
+
+    /**
      * 直播开始时间
      */
     private Date startTime;
@@ -80,4 +85,9 @@ public class VideoStreamRecordRO {
      * 观看链接
      */
     private String watchUrl;
+
+    /**
+     * 排课表id
+     */
+    private Long courseScheduleId;
 }
