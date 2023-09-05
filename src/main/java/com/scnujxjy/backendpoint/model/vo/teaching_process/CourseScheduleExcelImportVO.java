@@ -1,9 +1,17 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.Date;
 
-
-public class CourseScheduleVO {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class CourseScheduleExcelImportVO {
     /**
      * 自增主键
      */

@@ -1,7 +1,12 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
+import com.alibaba.excel.EasyExcel;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +18,38 @@ import java.util.HashMap;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees;
 
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+class ErrorData{
+    private Integer index;
+    private String data;
+    private String reason;
+}
+
+
 @SpringBootTest
 @Slf4j
-public class TestGetAllStudentFees {
+public class TestGetAllGradeInfos {
     @Autowired(required = false)
     private PaymentInfoMapper paymentInfoMapper;
+
+    public void exportErrorListToExcel(ArrayList<HashMap<String, String>> errorList, String outputPath) {
+        ArrayList<ErrorData> exportList = new ArrayList<>();
+
+        for (int i = 0; i < errorList.size(); i++) {
+            HashMap<String, String> errorDataMap = errorList.get(i);
+            ErrorData errorData = new ErrorData();
+            errorData.setIndex(i + 1);
+            errorData.setData(errorDataMap.toString());  // 你可以根据需要更改这里的数据格式
+            errorData.setReason("数据插入失败原因");  // 如果你可以从errorList获取具体的失败原因，则替换这里
+            exportList.add(errorData);
+        }
+
+        EasyExcel.write(outputPath, ErrorData.class).sheet("Error Data").doWrite(exportList);
+    }
 
     public void insertStudentFeesByGrade(int grade, ArrayList<HashMap<String, String>> errorList){
         ArrayList<HashMap<String, String>> studentFees = getStudentFees("" + grade);
@@ -38,14 +70,21 @@ public class TestGetAllStudentFees {
                 paymentInfo.setPaymentCategory(studentData.get("LB"));
                 paymentInfo.setAcademicYear(studentData.get("XN"));
                 paymentInfo.setPaymentType(studentData.get("JFFS"));
-                paymentInfo.setAmount(BigDecimal.valueOf(Double.parseDouble(studentData.get("XF"))));
+                String fee = studentData.get("XF");
+                if(fee == null || fee.trim().length() == 0){
+                    fee = studentData.get("JINE");
+                }
+                paymentInfo.setAmount(BigDecimal.valueOf(Double.parseDouble(fee)));
+
                 paymentInfo.setPaymentMethod("学年");
 
                 paymentInfoMapper.insert(paymentInfo);
                 success_insert += 1;
             }catch (Exception e){
                 log.error(e.toString());
-                errorList.add(studentData);
+                HashMap<String, String> errorData = new HashMap<>();
+                errorData.put(studentData.toString(), e.toString());
+                errorList.add(errorData);
                 failed_insert += 1;
             }
         }
@@ -60,8 +99,13 @@ public class TestGetAllStudentFees {
     @Test
     public void test1(){
         ArrayList<HashMap<String, String>> errorList = new ArrayList<>();
-        for(int i = 2023; i > 2015; i--){
+        // 2023 - 2016 已导入，闭区间
+
+        for(int i = 2015; i > 2000; i--){
             insertStudentFeesByGrade(i, errorList);
         }
+
+        // 调用新方法导出errorList
+        exportErrorListToExcel(errorList, "data_import_error_excel/studentfees/20230905导入缴费数据失败的部分数据.xlsx");
     }
 }

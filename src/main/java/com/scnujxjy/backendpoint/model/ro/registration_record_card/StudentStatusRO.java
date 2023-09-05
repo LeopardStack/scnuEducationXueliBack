@@ -73,4 +73,14 @@ public class StudentStatusRO {
      * 入学日期，一般为入学年份 + 03
      */
     private Date enrollmentDate;
+
+    /**
+     * 身份证号码
+     */
+    private String idNumber;
+
+    /**
+     * 班级标号
+     */
+    private String classIdentifier;
 }

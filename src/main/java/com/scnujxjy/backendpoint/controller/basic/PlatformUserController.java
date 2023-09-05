@@ -55,10 +55,11 @@ public class PlatformUserController {
             return SaResult.error("账户、密码不允许为空，登录失败");
         }
         // 登录
-        StpUtil.login(platformUserRO.getUsername());
         Boolean isLogin = platformUserService.userLogin(platformUserRO);
         // 返回
         if(isLogin) {
+            // Satoken 注册登录
+            StpUtil.login(platformUserRO.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
             List<String> roleList = StpUtil.getRoleList();
@@ -71,11 +72,11 @@ public class PlatformUserController {
 
             String roleName = rolePO.getRoleName();
             if(!"学生".equals(roleName) && !"教师".equals(roleName)){
-                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员");
+                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员", (String) StpUtil.getLoginId());
                 return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
             }
 
-            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, rolePO.getRoleName());
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, rolePO.getRoleName(), (String) StpUtil.getLoginId());
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

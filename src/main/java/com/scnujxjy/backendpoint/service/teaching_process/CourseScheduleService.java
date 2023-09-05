@@ -6,10 +6,18 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
@@ -17,8 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * <p>
@@ -34,6 +41,15 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     @Resource
     private CourseScheduleInverter courseScheduleInverter;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private ClassInformationMapper classInformationMapper;
 
     /**
      * 根据id查询排课表信息
@@ -151,6 +167,52 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         }
         // 返回删除数量
         return count;
+    }
+
+    public List<CourseSchedulePO> getStudentCourseSchedules(String userID){
+        try {
+            long loginId = Long.parseLong(userID);
+            PlatformUserPO platformUserPO = platformUserMapper.selectById(loginId);
+            String username = platformUserPO.getUsername();
+            List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentByidNumber(username);
+            if(studentStatusPOS.size() == 0){
+                return new ArrayList<CourseSchedulePO>();
+            }else{
+                List<CourseSchedulePO> returnCourseSchedules = new ArrayList<>();
+                for(StudentStatusPO studentStatusPO: studentStatusPOS){
+                    String class_identifier = studentStatusPO.getClassIdentifier();
+                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(class_identifier);
+                    if(classInformationPOS.size() > 1){
+                        log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 存在多个班级信息");
+                        return new ArrayList<CourseSchedulePO>();
+                    }else if(classInformationPOS.size() == 1){
+                        ClassInformationPO classInformationPO = classInformationPOS.get(0);
+                        List<CourseSchedulePO> courseInformationPOS = baseMapper.selectCourseSchedules1(classInformationPO.getGrade(), classInformationPO.getMajorName(), classInformationPO.getLevel(),
+                                classInformationPO.getStudyForm(), classInformationPO.getClassName());
+                        returnCourseSchedules.addAll(courseInformationPOS);
+                    }
+                    else{
+                        log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 找不到任何班级信息");
+                        return new ArrayList<CourseSchedulePO>();
+                    }
+                }
+                // 在返回数据之前，对 returnCourseInformationPOS 进行排序
+                Collections.sort(returnCourseSchedules, new Comparator<CourseSchedulePO>() {
+                    @Override
+                    public int compare(CourseSchedulePO o1, CourseSchedulePO o2) {
+                        // 假设 grade 属性是 "2022" 这样的年份格式，直接转换为整数进行比较
+                        int grade1 = Integer.parseInt(o1.getGrade());
+                        int grade2 = Integer.parseInt(o2.getGrade());
+                        // 由于你想要年份在前的排在前面，所以我们使用 grade2 - grade1
+                        return grade2 - grade1;
+                    }
+                });
+            }
+
+        }catch (Exception e){
+            log.error(e.toString());
+        }
+        return new ArrayList<CourseSchedulePO>();
     }
 
 }

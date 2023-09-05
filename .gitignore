@@ -38,3 +38,6 @@ xuelistudentpictures
 target
 xueweipictures
 data_import_error_excel
+
+src/main/resources/data
+2023 数据插入失败的学生学籍数据.xlsx

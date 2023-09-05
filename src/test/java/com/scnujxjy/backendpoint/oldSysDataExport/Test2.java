@@ -156,6 +156,9 @@ public class Test2 {
                 Date enrollDate = null;
                 enrollDate = dateFormat5.parse(enrollDateString);
                 studentStatusPO.setEnrollmentDate(enrollDate);
+                studentStatusPO.setIdNumber(studentData.get("SFZH"));
+                studentStatusPO.setClassIdentifier(studentData.get("BSHI"));
+
 
                 personalInfoPO.setGender(studentData.get("XB"));
 
@@ -248,12 +251,12 @@ public class Test2 {
                     graduationInfoPO.setGraduationDate(graduateDate);
 
                     graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
-                    graduationInfoMapper.insert(graduationInfoPO);
+//                    graduationInfoMapper.insert(graduationInfoPO);
                 }
 
                 studentStatusMapper.insert(studentStatusPO);
-                personalInfoMapper.insert(personalInfoPO);
-                originalEducationInfoMapper.insert(originalEducationInfoPO);
+//                personalInfoMapper.insert(personalInfoPO);
+//                originalEducationInfoMapper.insert(originalEducationInfoPO);
             }catch (ParseException p){
                 studentData.put("插入失败原因", "其他日期解析失败 " +p.getMessage());
                 failedStudents.add(studentData);
@@ -343,8 +346,8 @@ public class Test2 {
 //        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
 
-        int startYear = 1995;
-        int endYear = 1999;
+        int startYear = 2023;
+        int endYear = 2023;
 
         ExecutorService executorService = Executors.newFixedThreadPool(endYear - startYear + 1);
         List<Future<Void>> futures = new ArrayList<>();

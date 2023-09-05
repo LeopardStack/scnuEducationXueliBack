@@ -28,5 +28,10 @@ public class UserLoginVO {
      * 用户角色信息，用于登录返回，判断用户属于教师、管理员还是学生
      */
     private String roleName;
+
+    /**
+     * 用户登录ID，也就是平台用户表中的自增 id
+     */
+    private String userID;
 }
 

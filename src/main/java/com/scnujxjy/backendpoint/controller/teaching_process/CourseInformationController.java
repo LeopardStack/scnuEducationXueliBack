@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
@@ -10,6 +11,7 @@ import com.scnujxjy.backendpoint.service.teaching_process.CourseInformationServi
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -116,5 +118,27 @@ public class CourseInformationController {
         // 返回数据
         return SaResult.data(count);
     }
+
+
+    /**
+     * 根据学生登录的账号查询课程信息
+     *
+     * @return 课程信息
+     */
+    @GetMapping("/detail_student_course_information")
+    public SaResult detailByStudentID() {
+        // 获取访问者 ID
+        Object loginId = StpUtil.getLoginId();
+        // 查询
+        List<CourseInformationRO> studentTeachingPlan = courseInformationService.getStudentTeachingPlan((String) loginId);
+        // 参数校验
+        if (Objects.isNull(studentTeachingPlan)) {
+            throw dataNotFoundError();
+        }
+        // 转换并返回
+        return SaResult.data(studentTeachingPlan);
+    }
+
+
 }
 

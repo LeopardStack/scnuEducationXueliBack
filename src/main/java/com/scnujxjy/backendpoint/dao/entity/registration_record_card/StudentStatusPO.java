@@ -91,5 +91,15 @@ public class StudentStatusPO implements Serializable {
      */
     private Date enrollmentDate;
 
+    /**
+     * 身份证号码
+     */
+    private String idNumber;
+
+    /**
+     * 班级标号
+     */
+    private String classIdentifier;
+
 
 }
