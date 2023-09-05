@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.controller;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
@@ -12,7 +13,8 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
 
-import static com.scnujxjy.backendpoint.exception.DataException.*;
+import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
+import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * <p>
@@ -23,7 +25,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  * @since 2023-08-21
  */
 @RestController
-@RequestMapping("/video-stream-records")
+@RequestMapping("/video-stream-record")
 public class VideoStreamRecordController {
 
     @Resource
@@ -42,7 +44,7 @@ public class VideoStreamRecordController {
         }
         List<List<VideoStreamRecordVO>> generateVideoStream = videoStreamRecordService.generateVideoStream(videoStreamRecordROS);
         if (CollUtil.isEmpty(generateVideoStream)) {
-            throw dataInsertError();
+            return SaResult.error().setMsg("创建失败，请联系管理员");
         }
         return SaResult.data(generateVideoStream);
     }
@@ -65,6 +67,19 @@ public class VideoStreamRecordController {
         return SaResult.data(videoStreamRecordVO);
     }
 
-
+    /**
+     * 根据频道id关闭直播间
+     *
+     * @param channelId
+     * @return
+     */
+    @GetMapping("/close")
+    public SaResult closeByChannelId(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            throw dataMissError();
+        }
+        Boolean closed = videoStreamRecordService.closeVideoStream(channelId);
+        return SaResult.data(closed);
+    }
 }
 

@@ -3,6 +3,8 @@ package com.scnujxjy.backendpoint.service.video_stream;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpStatus;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
@@ -21,10 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +49,12 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
     @Resource
     private CourseScheduleService courseScheduleService;
 
+    /**
+     * 根据id查询直播间信息
+     *
+     * @param id
+     * @return
+     */
     public VideoStreamRecordVO detailById(Long id) {
         if (Objects.isNull(id)) {
             log.error("参数缺失");
@@ -59,6 +64,11 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         return videoStreamInverter.po2VO(videoStreamRecordPO);
     }
 
+    /**
+     * 构建直播参数
+     *
+     * @param videoStreamRecordROS
+     */
     private void generateVideoStreamRecord(List<VideoStreamRecordRO> videoStreamRecordROS) {
         if (CollUtil.isEmpty(videoStreamRecordROS)) {
             log.error("参数缺失");
@@ -160,6 +170,12 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         return detailById(videoStreamRecordPO.getId());
     }
 
+    /**
+     * 批量添加直播间
+     *
+     * @param videoStreamRecordROS
+     * @return
+     */
     @Transactional
     public List<VideoStreamRecordVO> createBatch(List<VideoStreamRecordRO> videoStreamRecordROS) {
         if (CollUtil.isEmpty(videoStreamRecordROS)) {
@@ -176,4 +192,24 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         List<VideoStreamRecordPO> recordPOS = baseMapper.selectBatchIds(idSet);
         return videoStreamInverter.po2VO(recordPOS);
     }
+
+    /**
+     * 根据频道id关闭直播间
+     *
+     * @param channelId 频道id
+     * @return
+     */
+    public Boolean closeVideoStream(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            log.error("参数缺失");
+            return false;
+        }
+        Map<String, Object> response = videoStreamUtils.videoStreamClose(channelId);
+        if (Objects.equals(response.get("code"), HttpStatus.HTTP_OK)) {
+            return true;
+        }
+        log.error("关闭失败，响应：{}", response);
+        return false;
+    }
+
 }
