@@ -133,4 +133,9 @@ public class CourseScheduleRO {
      * 授课时间
      */
     private String teachingTime;
+
+    /**
+     * 教师平台用户名
+     */
+    private String teacher_username;
 }

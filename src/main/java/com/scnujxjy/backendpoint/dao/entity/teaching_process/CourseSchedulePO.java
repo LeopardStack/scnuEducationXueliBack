@@ -163,5 +163,10 @@ public class CourseSchedulePO implements Serializable {
     @ExcelProperty(index = 21)
     private String teachingTime;
 
+    /**
+     * 教师平台用户名
+     */
+    private String teacher_username;
+
 
 }

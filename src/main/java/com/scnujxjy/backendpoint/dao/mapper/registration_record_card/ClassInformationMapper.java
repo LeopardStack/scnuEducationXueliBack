@@ -36,4 +36,32 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
     @Select("SELECT * FROM class_information WHERE grade = #{grade} AND major_name = #{major_name} AND level = #{level}" +
             " AND study_form = #{study_form}")
     List<ClassInformationPO> selectClassByCondition1(String grade, String major_name, String level, String study_form);
+
+    /**
+     * 获取所有不重复的专业名称
+     * @return 专业名称列表
+     */
+    @Select("SELECT DISTINCT major_name FROM class_information")
+    List<String> selectDistinctMajorNames();
+
+    /**
+     * 获取所有不重复的年级
+     * @return 年级列表
+     */
+    @Select("SELECT DISTINCT grade FROM class_information")
+    List<String> selectDistinctGrades();
+
+    /**
+     * 获取所有不重复的层次信息
+     * @return 层次列表
+     */
+    @Select("SELECT DISTINCT level FROM class_information")
+    List<String> selectDistinctLevels();
+
+    /**
+     * 获取所有不重复的学习形式信息
+     * @return 学习形式列表
+     */
+    @Select("SELECT DISTINCT study_form FROM class_information")
+    List<String> selectDistinctStudyforms();
 }

@@ -1,15 +1,28 @@
 package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
+import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
+import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -24,10 +37,23 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  */
 @RestController
 @RequestMapping("/course-schedule")
+@Slf4j
 public class CourseScheduleController {
 
     @Resource
     private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private CollegeInformationService collegeInformationService;
+
+    @Resource
+    private PlatformUserService platformUserService;
+
+    @Resource
+    private CollegeAdminInformationService collegeAdminInformationService;
+
+    @Resource
+    private TeacherInformationService teacherInformationService;
 
     /**
      * 根据id查询排课表信息
@@ -119,6 +145,81 @@ public class CourseScheduleController {
         }
         // 返回删除数量
         return SaResult.data(count);
+    }
+
+
+    /**
+     * 根据登录用户 id 查询二级学院教务员相关的排课表
+     *
+     * @return 排课表详细信息
+     */
+    @GetMapping("/detail_by_userId")
+    public SaResult detailByUserId() {
+        String loginId = (String) StpUtil.getLoginId();
+        // 参数校验
+        if (Objects.isNull(loginId)) {
+            throw dataMissError();
+        }
+
+        String account = loginId;
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName(account);
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationService.getById(platformUserVO.getUserId());
+        CollegeInformationPO collegeInformationServiceById = collegeInformationService.getById(collegeAdminInformationPO.getCollegeId());
+        String collegeName = collegeInformationServiceById.getCollegeName();
+
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleService.getBaseMapper().selectCourseSchedules2(collegeName);
+
+        if (Objects.isNull(courseSchedulePOS)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseSchedulePOS);
+    }
+
+
+    /**
+     * 根据登录用户 id 查询教师相关的排课表
+     *
+     * @return 排课表详细信息
+     */
+    @GetMapping("/detail_by_teacherId")
+    public SaResult detailByTeacherId() {
+        String loginId = (String) StpUtil.getLoginId();
+        // 参数校验
+        if (Objects.isNull(loginId)) {
+            throw dataMissError();
+        }
+
+        String findStr = loginId.substring(1);
+        TeacherInformationPO teacherInformationPO = null;
+
+        List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectByWorkNumber(findStr);
+        if(teacherInformationPOS.size() > 0){
+            teacherInformationPO = teacherInformationPOS.get(0);
+        }else{
+            List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationService.getBaseMapper().selectByIdCardNumber(findStr);
+            if(teacherInformationPOS.size() > 0){
+                teacherInformationPO = teacherInformationPOS.get(0);
+            }else{
+                List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationService.getBaseMapper().selectByPhone(findStr);
+                if(teacherInformationPOS.size() > 0){
+                    teacherInformationPO = teacherInformationPOS.get(0);
+                }else{
+
+                }
+            }
+        }
+        if(teacherInformationPO == null){
+            log.error("没有找到该老师信息 " + loginId);
+        }else{
+            List<CourseSchedulePO> courseSchedulePOS = courseScheduleService.getBaseMapper().selectCourseSchedules3(teacherInformationPO.getName());
+            log.info("它是哪个老师 " + teacherInformationPO.getName());
+            log.info(teacherInformationPO.getName() + " 老师的教学计划总数 " + courseSchedulePOS.size());
+            log.info("最后一条记录 " + courseSchedulePOS.get(courseSchedulePOS.size()-1));
+            return SaResult.data(courseSchedulePOS);
+        }
+        // 返回数据
+        return SaResult.error("未能获取到该教师相关的排课表信息 " + loginId);
     }
 }
 

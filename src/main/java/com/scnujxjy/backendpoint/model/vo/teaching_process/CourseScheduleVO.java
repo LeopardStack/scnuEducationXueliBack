@@ -8,14 +8,11 @@ import lombok.experimental.Accessors;
 
 import java.util.Date;
 
-<<<<<<< HEAD
-=======
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
->>>>>>> dd2174dd9c60b8083ce463cadca92c10ceb157d5
 public class CourseScheduleVO {
     /**
      * 自增主键
@@ -126,4 +123,9 @@ public class CourseScheduleVO {
      * 授课时间
      */
     private String teachingTime;
+
+    /**
+     * 教师平台用户名
+     */
+    private String teacher_username;
 }

@@ -40,4 +40,13 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
      */
     @Select("SELECT * FROM teacher_information WHERE phone = #{phone}")
     List<TeacherInformationPO> selectByPhone(String phone);
+
+
+    /**
+     * 根据 姓名查找教师
+     * @param name 姓名
+     * @return 教师信息集合，类型为 TeacherInformationPO
+     */
+    @Select("SELECT * FROM teacher_information WHERE name = #{name}")
+    List<TeacherInformationPO> selectByName(String name);
 }

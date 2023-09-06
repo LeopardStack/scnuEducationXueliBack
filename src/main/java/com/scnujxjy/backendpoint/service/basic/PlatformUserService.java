@@ -62,6 +62,32 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     }
 
     /**
+     * 根据用户名获取用户信息
+     *
+     * @param userName 用户登录账号
+     * @return 用户信息
+     */
+    public PlatformUserVO detailByuserName(String userName) {
+        // 参数校验
+        if (Objects.isNull(userName)) {
+            log.error("参数缺失");
+            return null;
+        }
+        // 查询数据
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(userName);
+        if(platformUserPOS.size() > 1){
+            log.error("该账号存在多名用户 " + userName);
+            return null;
+        }else if(platformUserPOS.size() == 0){
+            log.error("该账号不存在 " + userName);
+            return null;
+        }
+        PlatformUserPO platformUserPO = platformUserPOS.get(0);
+        // 返回数据
+        return platformUserInverter.po2VO(platformUserPO);
+    }
+
+    /**
      * 根据username和password登录
      *
      * @param platformUserRO 登录信息

@@ -49,16 +49,22 @@ public class TestUserInfoChange {
     public void addStudentLoginAccount(){
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGradeCollege("2023", "计算机学院");
         log.info(studentStatusPOS.toString());
-        for(StudentStatusPO studentStatusPO: studentStatusPOS){
 
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+
+        for(StudentStatusPO studentStatusPO: studentStatusPOS){
+            PlatformUserRO platformUserRO = new PlatformUserRO();
+            String userName = studentStatusPO.getIdNumber();
+            platformUserRO.setUsername(userName);
+            if(userName.length() >= 6) {
+                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+            } else {
+                platformUserRO.setPassword(userName); // 如果 account 长度小于6，则直接使用 account 作为密码
+            }
+            platformUserRO.setRoleId(1L);
+            platformUserROList.add(platformUserRO);
         }
 
-//        List<PlatformUserRO> platformUserROList = new ArrayList<>();
-//        PlatformUserRO platformUserRO = new PlatformUserRO();
-//        platformUserRO.setUsername("M001");
-//        platformUserRO.setPassword("123456");
-//        platformUserRO.setRoleId(6L);
-//        platformUserROList.add(platformUserRO);
-//        platformUserService.batchCreateUser(platformUserROList);
+        platformUserService.batchCreateUser(platformUserROList);
     }
 }

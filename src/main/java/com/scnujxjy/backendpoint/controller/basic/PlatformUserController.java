@@ -21,8 +21,7 @@ import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
-import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
-import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_FAIL;
+import static com.scnujxjy.backendpoint.util.ResultCode.*;
 
 /**
  * 用户登录控制
@@ -62,21 +61,20 @@ public class PlatformUserController {
             StpUtil.login(platformUserRO.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            List<String> roleList = StpUtil.getRoleList();
-            long roleID = Long.parseLong(roleList.get(0));
-
-            PlatformRolePO rolePO = platformRoleService.getById(roleID);
-            if(rolePO == null){
-                return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
+            if(StpUtil.getRoleList().size() != 1){
+                if(StpUtil.getRoleList().size() == 0){
+                    return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
+                }else if(StpUtil.getRoleList().size() > 1){
+                    return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
+                }
             }
-
-            String roleName = rolePO.getRoleName();
+            String roleName = StpUtil.getRoleList().get(0);
             if(!"学生".equals(roleName) && !"教师".equals(roleName)){
-                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员", (String) StpUtil.getLoginId());
+                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员", roleName, (String) StpUtil.getLoginId());
                 return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
             }
 
-            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, rolePO.getRoleName(), (String) StpUtil.getLoginId());
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId());
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

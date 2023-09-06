@@ -30,6 +30,11 @@ public class UserLoginVO {
     private String roleName;
 
     /**
+     * 用户详细角色信息，标识用户具体身份
+     */
+    private String detailRoleName;
+
+    /**
      * 用户登录ID，也就是平台用户表中的自增 id
      */
     private String userID;

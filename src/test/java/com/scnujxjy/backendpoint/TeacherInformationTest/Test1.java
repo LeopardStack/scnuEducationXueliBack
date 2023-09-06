@@ -19,7 +19,7 @@ public class Test1 {
 
     @Test
     public void test1(){
-        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\授课教师信息\\计算机学院教师信息导入.xlsx";
+        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\授课教师信息\\文学院教师信息导入.xlsx";
         int headRowNumber = 1;  // 根据你的 Excel 调整这个值
         EasyExcel.read(fileName, TeacherInformationExcelImportVO.class, new TeacherInformationListener(teacherInformationMapper)).
                 sheet().headRowNumber(headRowNumber).doRead();

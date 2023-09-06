@@ -118,4 +118,9 @@ public class TeacherInformationRO {
      * 教师类型2
      */
     private String teacherType2;
+
+    /**
+     * 教师的平台用户名
+     */
+    private String teacher_username;
 }
