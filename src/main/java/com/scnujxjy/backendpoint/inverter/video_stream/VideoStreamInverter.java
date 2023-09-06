@@ -7,6 +7,7 @@ import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveCreateSonChannelListRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoResponse;
 import net.polyv.live.v1.entity.quick.QuickCreateChannelResponse;
@@ -57,4 +58,6 @@ public interface VideoStreamInverter {
     @Mappings({})
     List<VideoStreamRecordRO> sonChannelResponseBO2RO(List<SonChannelResponseBO> sonChannelResponseBOS);
 
+    @Mappings({})
+    ChannelResponseBO liveChannelBasicInfoResponse2ChannelResponseBO(LiveChannelBasicInfoResponse liveChannelBasicInfoResponse);
 }

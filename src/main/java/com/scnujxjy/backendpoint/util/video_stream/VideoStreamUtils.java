@@ -14,11 +14,14 @@ import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.config.LiveGlobalConfig;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoRequest;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveCreateSonChannelListRequest;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogRequest;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogResponse;
 import net.polyv.live.v1.entity.quick.QuickCreateChannelResponse;
 import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
+import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
 import net.polyv.live.v1.util.LiveSignUtil;
@@ -46,7 +49,12 @@ public class VideoStreamUtils {
     /**
      * 关闭直播间链接
      */
-    private static final String CLOSE_URL_FORMAT = "http://api.polyv.net/live/v2/channels/%s/end";
+    private static final String CLOSE_URL_FORMAT = "http://api.polyv.net/live/v2/stream/%s/cutoff";
+
+    /**
+     * 恢复直播链接
+     */
+    private static final String RESUME_URL_FORMAT = "http://api.polyv.net/live/v2/stream/%s/resume";
 
     /**
      * 根据频道请求信息生成直播间
@@ -161,19 +169,8 @@ public class VideoStreamUtils {
         String url = String.format(URL_FORMAT, channelId);
 
         // 构建表单
-        Map<String, String> signRequest = new HashMap<>();
-        signRequest.put("appId", appId);
-        signRequest.put("appSecret", appSecret);
-        signRequest.put("userId", userId);
-        signRequest.put("timestamp", time);
-        try {
-            signRequest.put("sign", LiveSignUtil.getSign(signRequest, appSecret));
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-            log.error("获取保利威请求签名失败，表单：{}", signRequest);
-            return null;
-        }
-        Map<String, Object> request = new HashMap<>(signRequest);
-        String response = HttpUtil.post(url, request);
+        Map<String, String> signRequest = getRequestMap();
+        String response = HttpUtil.post(url, new HashMap<>(signRequest));
         return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
     }
 
@@ -189,6 +186,18 @@ public class VideoStreamUtils {
             return null;
         }
         String url = String.format(CLOSE_URL_FORMAT, channelId);
+        Map<String, String> requestMap = getRequestMap();
+        String response = HttpUtil.post(url, new HashMap<>(requestMap));
+        log.info("关闭直播间响应：{}", response);
+        return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
+    }
+
+    /**
+     * 封装请求参数map
+     *
+     * @return
+     */
+    private Map<String, String> getRequestMap() {
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", LiveGlobalConfig.getAppId());
         requestMap.put("appSecret", LiveGlobalConfig.getAppSecret());
@@ -200,10 +209,44 @@ public class VideoStreamUtils {
             log.error("获取保利威请求签名失败，表单：{}", requestMap);
             throw new BusinessException("获取签名失败");
         }
+        return requestMap;
+    }
 
-        String response = HttpUtil.post(url, new HashMap<>(requestMap));
-        log.info("关闭直播间响应：{}", response);
+    /**
+     * 恢复直播间
+     *
+     * @param channelId
+     * @return
+     */
+    public Map<String, Object> videoStreamResume(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            log.error("参数缺失");
+            return null;
+        }
+
+        String url = String.format(RESUME_URL_FORMAT, channelId);
+        String response = HttpUtil.post(url, new HashMap<>(getRequestMap()));
         return JSONObject.toJavaObject(JSONObject.parseObject(response), Map.class);
     }
+
+    /**
+     * 获取频道基本信息
+     *
+     * @param channelId 频道id
+     * @return
+     */
+    public ChannelResponseBO getChannelBasicInfo(String channelId) {
+        LiveChannelBasicInfoRequest request = new LiveChannelBasicInfoRequest();
+        request.setChannelId(channelId);
+        try {
+            LiveChannelBasicInfoResponse response = new LiveChannelOperateServiceImpl().getChannelBasicInfo(request);
+            log.info("频道信息：{}", response);
+            return videoStreamInverter.liveChannelBasicInfoResponse2ChannelResponseBO(response);
+        } catch (IOException | NoSuchAlgorithmException e) {
+            log.error("获取频道信息失败：{}", request);
+            throw new BusinessException(e);
+        }
+    }
+
 
 }

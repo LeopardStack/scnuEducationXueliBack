@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.teaching_process;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -9,7 +10,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
@@ -17,7 +17,6 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
@@ -147,6 +146,38 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
     /**
+     * 根据传入参数更新排课表
+     * <p>根据课程名称、授课讲师、授课日期、授课时间来合班教学，这种情况下应该是同一个直播间</p>
+     *
+     * @param courseScheduleRO
+     * @return
+     */
+    public List<CourseScheduleVO> generateVideoStream(CourseScheduleRO courseScheduleRO) {
+        if (Objects.isNull(courseScheduleRO) || Objects.isNull(courseScheduleRO.getId())) {
+            log.error("参数缺失");
+            return null;
+        }
+        CourseScheduleVO courseScheduleVO = detailById(courseScheduleRO.getId());
+        LambdaQueryWrapper<CourseSchedulePO> wrapper = Wrappers.<CourseSchedulePO>lambdaQuery()
+                .eq(CourseSchedulePO::getCourseName, courseScheduleVO.getCourseName())
+                .eq(CourseSchedulePO::getTeachingDate, courseScheduleVO.getTeachingDate())
+                .eq(CourseSchedulePO::getMainTeacherName, courseScheduleVO.getMainTeacherName())
+                .eq(CourseSchedulePO::getTeachingTime, courseScheduleVO.getTeachingTime());
+        List<CourseSchedulePO> courseSchedulePOS = baseMapper.selectList(wrapper);
+        if (CollUtil.isEmpty(courseSchedulePOS)) {
+            log.error("更新失败");
+            return null;
+        }
+        List<CourseScheduleVO> res = new LinkedList<>();
+        courseSchedulePOS.forEach(ele -> {
+            ele.setOnlinePlatform(courseScheduleRO.getOnlinePlatform());
+            baseMapper.updateById(ele);
+            res.add(detailById(ele.getId()));
+        });
+        return res;
+    }
+
+    /**
      * 根据id删除排课信息
      *
      * @param id 主键id
@@ -169,29 +200,28 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return count;
     }
 
-    public List<CourseSchedulePO> getStudentCourseSchedules(String userID){
+    public List<CourseSchedulePO> getStudentCourseSchedules(String userID) {
         try {
             long loginId = Long.parseLong(userID);
             PlatformUserPO platformUserPO = platformUserMapper.selectById(loginId);
             String username = platformUserPO.getUsername();
             List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentByidNumber(username);
-            if(studentStatusPOS.size() == 0){
+            if (studentStatusPOS.size() == 0) {
                 return new ArrayList<CourseSchedulePO>();
-            }else{
+            } else {
                 List<CourseSchedulePO> returnCourseSchedules = new ArrayList<>();
-                for(StudentStatusPO studentStatusPO: studentStatusPOS){
+                for (StudentStatusPO studentStatusPO : studentStatusPOS) {
                     String class_identifier = studentStatusPO.getClassIdentifier();
                     List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(class_identifier);
-                    if(classInformationPOS.size() > 1){
+                    if (classInformationPOS.size() > 1) {
                         log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 存在多个班级信息");
                         return new ArrayList<CourseSchedulePO>();
-                    }else if(classInformationPOS.size() == 1){
+                    } else if (classInformationPOS.size() == 1) {
                         ClassInformationPO classInformationPO = classInformationPOS.get(0);
                         List<CourseSchedulePO> courseInformationPOS = baseMapper.selectCourseSchedules1(classInformationPO.getGrade(), classInformationPO.getMajorName(), classInformationPO.getLevel(),
                                 classInformationPO.getStudyForm(), classInformationPO.getClassName());
                         returnCourseSchedules.addAll(courseInformationPOS);
-                    }
-                    else{
+                    } else {
                         log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 找不到任何班级信息");
                         return new ArrayList<CourseSchedulePO>();
                     }
@@ -209,7 +239,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                 });
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error(e.toString());
         }
         return new ArrayList<CourseSchedulePO>();

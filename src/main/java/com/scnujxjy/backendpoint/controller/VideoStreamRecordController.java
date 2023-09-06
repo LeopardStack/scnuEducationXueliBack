@@ -68,18 +68,37 @@ public class VideoStreamRecordController {
     }
 
     /**
-     * 根据频道id关闭直播间
+     * 根据channelId查询直播间信息
      *
-     * @param channelId
+     * @param channelId 频道id
      * @return
      */
-    @GetMapping("/close")
-    public SaResult closeByChannelId(String channelId) {
+    @GetMapping("/detail/channelId")
+    public SaResult detailByChannelId(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
-        Boolean closed = videoStreamRecordService.closeVideoStream(channelId);
-        return SaResult.data(closed);
+        VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailByChannelId(channelId);
+        if (Objects.isNull(videoStreamRecordVO)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(videoStreamRecordVO);
+    }
+
+    /**
+     * 开启或关闭直播间
+     *
+     * @param channelId 频道id
+     * @param type      状态：0-关闭，1-开启
+     * @return
+     */
+    @GetMapping("/edit/status")
+    public SaResult closeByChannelId(String channelId, Integer type) {
+        if (StrUtil.isBlank(channelId) || Objects.isNull(type)) {
+            throw dataMissError();
+        }
+        Boolean ok = videoStreamRecordService.closeVideoStream(channelId, type);
+        return SaResult.data(ok);
     }
 }
 

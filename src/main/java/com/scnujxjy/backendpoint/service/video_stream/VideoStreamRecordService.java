@@ -1,10 +1,14 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpStatus;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
@@ -60,9 +64,38 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             log.error("参数缺失");
             return null;
         }
+        // 根据api查询最新的情况
         VideoStreamRecordPO videoStreamRecordPO = baseMapper.selectById(id);
-        return videoStreamInverter.po2VO(videoStreamRecordPO);
+        if (Objects.isNull(videoStreamRecordPO)) {
+            log.error("查询失败，id：{}", id);
+            return null;
+        }
+        VideoStreamRecordPO res = videoStreamInverter.ro2PO(videoStreamInverter.channelResponseBO2RO(videoStreamUtils.getChannelBasicInfo(videoStreamRecordPO.getChannelId())));
+        if (Objects.isNull(res)) {
+            log.error("查询失败");
+            return null;
+        }
+        res.setId(videoStreamRecordPO.getId());
+        baseMapper.updateById(res);
+        return videoStreamInverter.po2VO(baseMapper.selectById(id));
     }
+
+    /**
+     * 根据channelId查询直播间情况
+     *
+     * @param channelId
+     * @return
+     */
+    public VideoStreamRecordVO detailByChannelId(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            log.error("参数缺失");
+            return null;
+        }
+        VideoStreamRecordPO res = videoStreamInverter.ro2PO(videoStreamInverter.channelResponseBO2RO(videoStreamUtils.getChannelBasicInfo(channelId)));
+        baseMapper.update(res, Wrappers.<VideoStreamRecordPO>lambdaUpdate().eq(VideoStreamRecordPO::getChannelId, channelId));
+        return videoStreamInverter.po2VO(baseMapper.selectOne(Wrappers.<VideoStreamRecordPO>lambdaQuery().eq(VideoStreamRecordPO::getChannelId, channelId)));
+    }
+
 
     /**
      * 构建直播参数
@@ -78,12 +111,47 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
                 continue;
             }
             CourseScheduleVO courseScheduleVO = courseScheduleService.detailById(videoStreamRecordRO.getCourseScheduleId());
-            String dateStr = DateUtil.format(courseScheduleVO.getTeachingDate(), "yyyy-MM-dd") + " " + courseScheduleVO.getTeachingTime();
+            Pair<DateTime, DateTime> startAndEndDateTime = verifyDateTime(courseScheduleVO.getTeachingDate(), courseScheduleVO.getTeachingTime());
             videoStreamRecordRO.setName(courseScheduleVO.getCourseName())
                     .setPublisher(courseScheduleVO.getTutorName())
-                    .setStartTime(DateUtil.parse(dateStr, "yyyy-MM-dd HH:mm"))
+                    .setStartTime(startAndEndDateTime.getKey())
+                    .setEndTime(startAndEndDateTime.getValue())
                     .setMainTeacherName(courseScheduleVO.getMainTeacherName());
         }
+    }
+
+    /**
+     * 对数据库中的时间进行转换
+     * <p>如果使用12小时制度，则转换为24小时</p>
+     * <p>如果时间格式错误，则使用当天时间</p>
+     *
+     * @param date 当天日期：yyyy-MM-dd
+     * @param time 持续时间：HH:mm-HH:mm
+     * @return 开始时间和结束时间
+     */
+    private Pair<DateTime, DateTime> verifyDateTime(Date date, String time) {
+        String[] times = time.split("-");
+        String start = "00:00";
+        String end = "23:59";
+        if (times.length >= 2) {
+            start = times[0];
+            end = times[1];
+        }
+        if (Objects.isNull(date)) {
+            date = new Date();
+        }
+        String todoy = DateUtil.format(date, "yyyy-MM-dd");
+        DateTime startDate = DateUtil.parse(todoy + " " + start, "yyyy-MM-dd HH:mm");
+        DateTime endDate = DateUtil.parse(todoy + " " + end, "yyyy-MM-dd HH:mm");
+        // 如果比当天的八点还要早，说明是下午
+        if (DateUtil.compare(startDate, DateUtil.parse(todoy + " " + "8:00"), "yyyy-MM-dd HH:mm") < 0) {
+            startDate = startDate.offsetNew(DateField.HOUR_OF_DAY, 12);
+        }
+        if (DateUtil.compare(endDate, DateUtil.parse(todoy + " " + "8:00"), "yyyy-MM-dd HH:mm") < 0) {
+            endDate = endDate.offsetNew(DateField.HOUR_OF_DAY, 12);
+        }
+
+        return Pair.of(startDate, endDate);
     }
 
     /**
@@ -124,18 +192,6 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             }
             // 将生成的信息入库
             VideoStreamRecordRO mainRecordRO = videoStreamInverter.channelResponseBO2RO(channelResponseBO);
-            // 子频道信息入库
-/*            List<VideoStreamRecordRO> sonRecordROS = videoStreamInverter.sonChannelResponseBO2RO(channelResponseBO.getSonChannelResponseBOS());
-            if (CollUtil.isNotEmpty(sonRecordROS)) {
-                List<VideoStreamRecordVO> sonRecordVOS = createBatch(sonRecordROS);
-                if (CollUtil.isNotEmpty(sonRecordVOS)) {
-                    // 子频道id给到主频道
-                    List<Long> sonIds = sonRecordVOS.stream().map(VideoStreamRecordVO::getId).collect(Collectors.toList());
-                    mainRecordRO.setSonId(sonIds);
-                    // 将子频道放入结果中
-                    videoStreamRecordVOS.addAll(sonRecordVOS);
-                }
-            }*/
             // 设置观看链接以及教师链接
             mainRecordRO.setUrl(String.format(TEACHER_URL_FORMAT, channelId));
             mainRecordRO.setWatchUrl(String.format(WATCH_URL_FORMAT, channelId));
@@ -149,8 +205,7 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             videoStreamRecordVOS.addFirst(videoStreamRecordVO);
             res.add(videoStreamRecordVOS);
             // 将生成的直播记录记录到排课表中
-            courseScheduleService.editById(CourseScheduleRO.builder().id(videoStreamRecordRO.getCourseScheduleId()).onlinePlatform(String.valueOf(videoStreamRecordVO.getId())).build());
-            // todo 通知教师
+            courseScheduleService.generateVideoStream(CourseScheduleRO.builder().id(videoStreamRecordRO.getCourseScheduleId()).onlinePlatform(String.valueOf(videoStreamRecordVO.getId())).build());
         }
         log.info("课程信息生成完成");
         return res;
@@ -194,22 +249,28 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
     }
 
     /**
-     * 根据频道id关闭直播间
+     * 开启或关闭直播间
      *
      * @param channelId 频道id
+     * @param type      状态：0-关闭，1-开启
      * @return
      */
-    public Boolean closeVideoStream(String channelId) {
-        if (StrUtil.isBlank(channelId)) {
+    public Boolean closeVideoStream(String channelId, Integer type) {
+        if (StrUtil.isBlank(channelId) || Objects.isNull(type)) {
             log.error("参数缺失");
             return false;
         }
-        Map<String, Object> response = videoStreamUtils.videoStreamClose(channelId);
-        if (Objects.equals(response.get("code"), HttpStatus.HTTP_OK)) {
-            return true;
+        Map<String, Object> map = null;
+        if (Objects.equals(type, 0)) {
+            map = videoStreamUtils.videoStreamClose(channelId);
+        } else {
+            map = videoStreamUtils.videoStreamResume(channelId);
         }
-        log.error("关闭失败，响应：{}", response);
-        return false;
+        if (Objects.isNull(map) || !Objects.equals(map.get("code"), HttpStatus.HTTP_OK)) {
+            log.error("关闭失败，响应：{}", map);
+            return false;
+        }
+        return true;
     }
 
 }
