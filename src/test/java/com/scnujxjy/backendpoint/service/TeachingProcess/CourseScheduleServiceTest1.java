@@ -63,7 +63,7 @@ public class CourseScheduleServiceTest1 {
      */
     @Test
     public void test2(){
-        String account = "T20175031";
+/*        String account = "T20175031";
         String findStr = account.substring(1);
         TeacherInformationPO teacherInformationPO = null;
 
@@ -90,7 +90,7 @@ public class CourseScheduleServiceTest1 {
             log.info("它是哪个老师 " + teacherInformationPO.getName());
             log.info(teacherInformationPO.getName() + " 老师的教学计划总数 " + courseSchedulePOS.size());
             log.info("最后一条记录 " + courseSchedulePOS.get(courseSchedulePOS.size()-1));
-        }
+        }*/
 
     }
 

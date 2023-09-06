@@ -1,6 +1,8 @@
 package com.scnujxjy.backendpoint.service.teaching_process;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,10 +10,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
@@ -24,7 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 
 /**
  * <p>
@@ -50,6 +61,12 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     @Resource
     private ClassInformationMapper classInformationMapper;
 
+    @Resource
+    private CollegeAdminInformationMapper collegeAdminInformationMapper;
+
+    @Resource
+    private CollegeInformationMapper collegeInformationMapper;
+
     /**
      * 根据id查询排课表信息
      *
@@ -69,6 +86,45 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
     /**
+     * 根据身份填充筛选条件
+     *
+     * @param entity 条件
+     */
+    private void fillFilterRO(CourseScheduleRO entity) {
+        if (Objects.isNull(entity)) {
+            entity = new CourseScheduleRO();
+        }
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return;
+        }
+        // 如果是学生：根据loginId去学籍表查询，根据班级信息表获取年级、专业、班名、层次、学习形式
+        if (CollUtil.contains(StpUtil.getRoleList(), STUDENT.getRoleName())) {
+            Long username = Long.parseLong(loginId);
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, username));
+            StudentStatusPO studentStatusPO = studentStatusMapper.selectOne(Wrappers.<StudentStatusPO>lambdaQuery().eq(StudentStatusPO::getIdNumber, platformUserPO.getUsername()));
+            if (Objects.isNull(studentStatusPO)) {
+                return;
+            }
+            ClassInformationPO classInformationPO = classInformationMapper.selectOne(Wrappers.<ClassInformationPO>lambdaQuery().eq(ClassInformationPO::getClassIdentifier, studentStatusPO.getClassIdentifier()));
+            if (Objects.isNull(classInformationPO)) {
+                return;
+            }
+            entity.setGrade(classInformationPO.getGrade())
+                    .setMajorName(classInformationPO.getMajorName())
+                    .setLevel(classInformationPO.getLevel())
+                    .setStudyForm(classInformationPO.getStudyForm())
+                    .setAdminClass(classInformationPO.getClassName());
+            return;
+        }
+        // 如果是老师：根据账户查询
+        if (CollUtil.contains(StpUtil.getRoleList(), TEACHER.getRoleName())) {
+            String userId = StrUtil.sub(loginId, 1, loginId.length());
+            entity.setTeacherUsername(userId);
+        }
+    }
+
+    /**
      * 分页查询排课表信息
      *
      * @param courseScheduleROPageRO 分页参数
@@ -81,9 +137,39 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             return null;
         }
         CourseScheduleRO entity = courseScheduleROPageRO.getEntity();
-        if (Objects.isNull(entity)) {
-            entity = new CourseScheduleRO();
+        fillFilterRO(entity);
+        // 二级学院查询
+        if (CollUtil.contains(StpUtil.getRoleList(), SECOND_COLLEGE_ADMIN.getRoleName())) {
+            List<CourseSchedulePO> courseSchedulePOS = pageByCollegeAdminId();
+            if (CollUtil.isEmpty(courseSchedulePOS)) {
+                return null;
+            }
+            // 根据行政班级、课程名、主讲教师名筛选
+            courseSchedulePOS = courseSchedulePOS.stream().filter(ele -> {
+                        if (StrUtil.isNotBlank(entity.getAdminClass())) {
+                            return StrUtil.contains(ele.getAdminClass(), entity.getAdminClass());
+                        }
+                        return true;
+                    })
+                    .filter(ele -> {
+                        if (StrUtil.isNotBlank(entity.getCourseName())) {
+                            return StrUtil.contains(ele.getCourseName(), entity.getCourseName());
+                        }
+                        return true;
+                    }).filter(ele -> {
+                        if (StrUtil.isNotBlank(entity.getMainTeacherName())) {
+                            return StrUtil.contains(ele.getMainTeacherName(), entity.getMainTeacherName());
+                        }
+                        return true;
+                    }).collect(Collectors.toList());
+            if (Objects.equals(courseScheduleROPageRO.getIsAll(), true)) {
+                return new PageVO<>(courseScheduleInverter.po2VO(courseSchedulePOS));
+            } else {
+                List<CourseSchedulePO> schedulePOS = ListUtil.page(Math.toIntExact(courseScheduleROPageRO.getPageNumber()), Math.toIntExact(courseScheduleROPageRO.getPageSize()), courseSchedulePOS);
+                return new PageVO<>(courseScheduleInverter.po2VO(schedulePOS));
+            }
         }
+
         // 构造查询条件
         LambdaQueryWrapper<CourseSchedulePO> wrapper = Wrappers.<CourseSchedulePO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getId()), CourseSchedulePO::getId, entity.getId())
@@ -109,6 +195,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                 .between(Objects.nonNull(entity.getTeachingStartDate()) && Objects.nonNull(entity.getTeachingEndDate()),
                         CourseSchedulePO::getTeachingDate, entity.getTeachingStartDate(), entity.getTeachingEndDate())
                 .eq(StrUtil.isNotBlank(entity.getTeachingTime()), CourseSchedulePO::getTeachingTime, entity.getTeachingTime())
+                .eq(StrUtil.isNotBlank(entity.getTeacherUsername()), CourseSchedulePO::getTeacherUsername, entity.getTeacherUsername())
                 .last(StrUtil.isNotBlank(courseScheduleROPageRO.getOrderBy()), courseScheduleROPageRO.lastOrderSql());
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, courseScheduleROPageRO.getIsAll())) {
@@ -200,49 +287,29 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return count;
     }
 
-    public List<CourseSchedulePO> getStudentCourseSchedules(String userID) {
-        try {
-            long loginId = Long.parseLong(userID);
-            PlatformUserPO platformUserPO = platformUserMapper.selectById(loginId);
-            String username = platformUserPO.getUsername();
-            List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentByidNumber(username);
-            if (studentStatusPOS.size() == 0) {
-                return new ArrayList<CourseSchedulePO>();
-            } else {
-                List<CourseSchedulePO> returnCourseSchedules = new ArrayList<>();
-                for (StudentStatusPO studentStatusPO : studentStatusPOS) {
-                    String class_identifier = studentStatusPO.getClassIdentifier();
-                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(class_identifier);
-                    if (classInformationPOS.size() > 1) {
-                        log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 存在多个班级信息");
-                        return new ArrayList<CourseSchedulePO>();
-                    } else if (classInformationPOS.size() == 1) {
-                        ClassInformationPO classInformationPO = classInformationPOS.get(0);
-                        List<CourseSchedulePO> courseInformationPOS = baseMapper.selectCourseSchedules1(classInformationPO.getGrade(), classInformationPO.getMajorName(), classInformationPO.getLevel(),
-                                classInformationPO.getStudyForm(), classInformationPO.getClassName());
-                        returnCourseSchedules.addAll(courseInformationPOS);
-                    } else {
-                        log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 找不到任何班级信息");
-                        return new ArrayList<CourseSchedulePO>();
-                    }
-                }
-                // 在返回数据之前，对 returnCourseInformationPOS 进行排序
-                Collections.sort(returnCourseSchedules, new Comparator<CourseSchedulePO>() {
-                    @Override
-                    public int compare(CourseSchedulePO o1, CourseSchedulePO o2) {
-                        // 假设 grade 属性是 "2022" 这样的年份格式，直接转换为整数进行比较
-                        int grade1 = Integer.parseInt(o1.getGrade());
-                        int grade2 = Integer.parseInt(o2.getGrade());
-                        // 由于你想要年份在前的排在前面，所以我们使用 grade2 - grade1
-                        return grade2 - grade1;
-                    }
-                });
-            }
-
-        } catch (Exception e) {
-            log.error(e.toString());
+    /**
+     * 如果是二级学院教务员：查询自己学院下的
+     *
+     * @return
+     */
+    public List<CourseSchedulePO> pageByCollegeAdminId() {
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
         }
-        return new ArrayList<CourseSchedulePO>();
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper.selectById(platformUserPO.getUserId());
+        if (Objects.isNull(collegeAdminInformationPO)) {
+            return null;
+        }
+        CollegeInformationPO collegeInformationPO = collegeInformationMapper.selectById(collegeAdminInformationPO.getCollegeId());
+        if (Objects.isNull(collegeInformationPO)) {
+            return null;
+        }
+        return baseMapper.detailByCollegeName(collegeInformationPO.getCollegeName());
     }
 
 }
