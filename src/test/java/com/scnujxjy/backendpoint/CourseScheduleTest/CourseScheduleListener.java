@@ -71,10 +71,11 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
         return po;
     }
 
-    private int insertCourseScheduleData(CourseScheduleExcelImportVO data){
+    private int insertCourseScheduleData(CourseScheduleExcelImportVO data, CourseScheduleExcelOutputVO outputData){
 //        int insert = courseScheduleMapper.insert(convertVOtoPO(data));
 //                log.info("读入一行数据 " + data.toString() + "\n 上课时间为 " + startDateTime + " 下课时间为 " + endDateTime);
         dataCount++;
+        outputData.setErrorMessage("导入成功");
         return 1;
     }
 
@@ -177,7 +178,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     // 检测是否有教学班别名称，如果没有则可以录入
                     String commonClassA = data.getTeachingClass().trim();
                     if(commonClassA.length() == 0){
-                        insertCourseScheduleData(data);
+                        insertCourseScheduleData(data, outputData);
                     }else{
 
                         //合班的教学班名检测先不考虑了
@@ -190,20 +191,23 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                             String mainTeacherIdentity = data.getMainTeacherIdentity();
                             List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationMapper.selectByWorkNumber(mainTeacherId);
                             if(teacherInformationPOS1.size() == 1){
-                                insertCourseScheduleData(data);
+                                insertCourseScheduleData(data, outputData);
                             }else{
                                 List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationMapper.selectByIdCardNumber(mainTeacherIdentity);
                                 if(teacherInformationPOS2.size() == 1){
-                                    insertCourseScheduleData(data);
+                                    insertCourseScheduleData(data, outputData);
                                 }else{
                                     outputData.setErrorMessage("主讲教师出现重复没找到唯一 " + data.getMainTeacherName());
                                 }
                             }
 
                         }else if(teacherInformationPOS.size() == 1){
-                            courseScheduleMapper.insert(convertVOtoPO(data));
-//                log.info("读入一行数据 " + data.toString() + "\n 上课时间为 " + startDateTime + " 下课时间为 " + endDateTime);
-                            dataCount++;
+                            if(classList.contains(data.getAdminClass())){
+                                insertCourseScheduleData(data, outputData);
+                            }else{
+                                outputData.setErrorMessage("没有找到该 年级、专业名称、层次、学习形式所匹配的 班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
+                                        classList.toString());
+                            }
                         }else{
                             outputData.setErrorMessage("主讲教师没找到 " + data.getMainTeacherName());
                         }
@@ -216,8 +220,13 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
 
             }else if(classInformationPOS.size() > 1){
-                outputData.setErrorMessage("通过 年级、专业名称、层次、学习形式匹配数据库时出现了多个班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
-                        classList.toString());
+                // 这种情况确实存在 年级、专业、学习形式、层次 没法确定一个班级
+                if(classList.contains(data.getAdminClass())){
+                    insertCourseScheduleData(data, outputData);
+                }else {
+                    outputData.setErrorMessage("通过 年级、专业名称、层次、学习形式匹配数据库时出现了多个班级,但没有找到对应表格中的班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
+                            classList.toString());
+                }
             }else{
                 outputData.setErrorMessage("没有找到该 年级、专业名称、层次、学习形式所匹配的 班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
                         classList.toString());

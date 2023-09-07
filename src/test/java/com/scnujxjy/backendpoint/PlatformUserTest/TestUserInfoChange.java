@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
@@ -66,5 +67,23 @@ public class TestUserInfoChange {
         }
 
         platformUserService.batchCreateUser(platformUserROList);
+    }
+
+    /**
+     * 删除指定学生群体的登录账号
+     */
+    @Test
+    public void deleteStudentLoginAccount(){
+        List<PlatformUserPO> usersToDelete = platformUserService.getBaseMapper().selectUsersByCollegeAndGrade("2023", "计算机学院");
+        int deletedCount = platformUserService.getBaseMapper().deleteUsersByCollegeAndGrade("2023", "计算机学院");
+
+        if(deletedCount == usersToDelete.size()) {
+            // 所有查询到的用户都被成功删除
+            log.info("查询到所有用户都被删除了");
+        } else {
+            // 可能有一些用户没有被删除，你可以进一步处理或记录这些用户
+            log.error("存在部分用户没有被删除");
+        }
+
     }
 }

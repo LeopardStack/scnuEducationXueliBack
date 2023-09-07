@@ -17,7 +17,7 @@ public class TeacherInformationVO {
     /**
      * 用户id
      */
-    private String userId;
+    private int userId;
 
     /**
      * 姓名

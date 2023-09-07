@@ -48,12 +48,8 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @param userId 教师id
      * @return 教师详细信息
      */
-    public TeacherInformationVO detailById(String userId) {
-        // 参数校验
-        if (StrUtil.isBlank(userId)) {
-            log.error("参数缺失");
-            return null;
-        }
+    public TeacherInformationVO detailById(int userId) {
+
         // 查询数据
         TeacherInformationPO teacherInformationPO = baseMapper.selectById(userId);
         return teachInformationInverter.po2VO(teacherInformationPO);

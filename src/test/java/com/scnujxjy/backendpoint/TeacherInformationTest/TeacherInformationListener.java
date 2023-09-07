@@ -13,9 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 public class TeacherInformationListener extends AnalysisEventListener<TeacherInformationExcelImportVO> {
@@ -27,10 +25,19 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
     // 记录导入失败的数据
     private List<TeacherInformationErrorRecord> errorRecords = new ArrayList<>();
 
+    // 添加一个列表来存储所有读取的教师信息
+    private List<TeacherInformationExcelImportVO> allTeachers = new ArrayList<>();
+
+
 
     public TeacherInformationListener(TeacherInformationMapper teacherInformationMapper) {
         this.teacherInformationMapper = teacherInformationMapper;
     }
+
+    public int getDataCount() {
+        return dataCount;
+    }
+
 
     public Date convertBirthDate(String birthDateStr) {
         SimpleDateFormat format;
@@ -42,20 +49,58 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
             } else {
                 format = new SimpleDateFormat("yyyy年");
             }
-            try {
-                return format.parse(birthDateStr);
-            } catch (ParseException e) {
-                e.printStackTrace();
-                return null;
-            }
+        } else if (birthDateStr.contains(".")) {
+            format = new SimpleDateFormat("yyyy.MM");
+        } else if (birthDateStr.matches("\\d{4}")) {  // 判断是否为4位数字
+            format = new SimpleDateFormat("yyyy");
+        } else {
+            return null;  // 如果格式不匹配，返回null或者你可以选择抛出异常
         }
-        return null;  // 如果格式不匹配，返回null或者你可以选择抛出异常
+
+        try {
+            return format.parse(birthDateStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
+    /**
+     * 获取身份证号码中的出生年月信息
+     * @param idCardNumber 身份证号码
+     * @return
+     */
+    public Date convertBirthDateFromIdCard(String idCardNumber) {
+        if (idCardNumber == null) {
+            return null;
+        }
+        String birthDateStr;
+        SimpleDateFormat format;
+        if (idCardNumber.length() == 15) {
+            birthDateStr = "19" + idCardNumber.substring(6, 12); // 对于15位身份证，需要加上"19"作为世纪
+            format = new SimpleDateFormat("yyyyMMdd");
+        } else if (idCardNumber.length() == 18) {
+            birthDateStr = idCardNumber.substring(6, 14);
+            format = new SimpleDateFormat("yyyyMMdd");
+        } else {
+            return null;
+        }
+        try {
+            return format.parse(birthDateStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     public static TeacherInformationPO from(TeacherInformationExcelImportVO vo) {
-        TeacherInformationListener listener = new TeacherInformationListener(null); // 这里为了使用convertBirthDate方法，我们实例化了一个Listener，但不需要mapper
+        TeacherInformationListener listener = new TeacherInformationListener(null);
         Date birthDate = null;
-        if(vo.getBirthDate() != null){
+        if(vo.getIdCardNumber() != null && !vo.getIdCardNumber().isEmpty()){
+            birthDate = listener.convertBirthDateFromIdCard(vo.getIdCardNumber());
+        }
+        if (birthDate == null && vo.getBirthDate() != null) {
             birthDate = listener.convertBirthDate(vo.getBirthDate());
         }
 
@@ -122,14 +167,64 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
         return null;
     }
 
+    /**
+     * 检查导入的教师是否与数据库中的教师信息存在同名同姓 但是身份证号码、工号、手机号码没有一个能区分的
+     * @param data
+     * @return
+     */
+    private boolean isDuplicateTeacher(TeacherInformationExcelImportVO data) {
+        List<TeacherInformationPO> sameNameTeachers = teacherInformationMapper.selectByName(data.getName());
+
+        for (TeacherInformationPO teacher : sameNameTeachers) {
+            // 如果两者都为null或空，认为它们相同；否则，如果其中一个为null或空，认为它们不同
+            boolean sameIdCard = (data.getIdCardNumber() == null || data.getIdCardNumber().isEmpty()) && (teacher.getIdCardNumber() == null || teacher.getIdCardNumber().isEmpty())
+                    || Objects.equals(data.getIdCardNumber(), teacher.getIdCardNumber());
+
+            boolean samePhone = (data.getPhone() == null || data.getPhone().isEmpty()) && (teacher.getPhone() == null || teacher.getPhone().isEmpty())
+                    || Objects.equals(data.getPhone(), teacher.getPhone());
+
+            boolean sameWorkNumber = (data.getWorkNumber() == null || data.getWorkNumber().isEmpty()) && (teacher.getWorkNumber() == null || teacher.getWorkNumber().isEmpty())
+                    || Objects.equals(data.getWorkNumber(), teacher.getWorkNumber());
+
+            if (sameIdCard && samePhone && sameWorkNumber) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private TeacherInformationPO findMatchingTeacher(TeacherInformationExcelImportVO data) {
+        List<TeacherInformationPO> sameNameTeachers = teacherInformationMapper.selectByName(data.getName());
+
+        for (TeacherInformationPO teacher : sameNameTeachers) {
+            boolean sameIdCard = (data.getIdCardNumber() == null || data.getIdCardNumber().isEmpty()) ?
+                    (teacher.getIdCardNumber() == null || teacher.getIdCardNumber().isEmpty()) :
+                    Objects.equals(data.getIdCardNumber(), teacher.getIdCardNumber());
+
+            boolean samePhone = (data.getPhone() == null || data.getPhone().isEmpty()) ?
+                    (teacher.getPhone() == null || teacher.getPhone().isEmpty()) :
+                    Objects.equals(data.getPhone(), teacher.getPhone());
+
+            boolean sameWorkNumber = (data.getWorkNumber() == null || data.getWorkNumber().isEmpty()) ?
+                    (teacher.getWorkNumber() == null || teacher.getWorkNumber().isEmpty()) :
+                    Objects.equals(data.getWorkNumber(), teacher.getWorkNumber());
+
+            if (sameIdCard && samePhone && sameWorkNumber) {
+                return teacher;
+            }
+        }
+
+        return null;
+    }
+
 
     @Override
     public void invoke(TeacherInformationExcelImportVO data, AnalysisContext context) {
         try {
-            TeacherInformationPO teacherInformationPO = from(data);
-            String errorMsg = checkDuplicate(data);
-            if (errorMsg != null) {
-                log.error("插入数据失败 " + data.toString() + "\n" + errorMsg);
+            TeacherInformationPO matchingTeacher = findMatchingTeacher(data);
+            if (matchingTeacher != null) {
+                log.error("导入失败，数据库中存在与此相同或相似的老师: " + data.toString());
                 errorRecords.add(TeacherInformationErrorRecord.builder()
                         .userId(data.getUserId())
                         .name(data.getName())
@@ -151,11 +246,14 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
                         .email(data.getEmail())
                         .startTerm(data.getStartTerm())
                         .teacherType1(data.getTeacherType1())
-                        .errorDescription(errorMsg)
+                        .errorDescription("导入失败，数据库中存在与此相同或相似的老师: " + matchingTeacher.toString())
                         .build());
-
             } else {
+                TeacherInformationPO teacherInformationPO = from(data);
+
+                // 插入数据库
                 teacherInformationMapper.insert(teacherInformationPO);
+
                 dataCount++;
             }
         } catch (Exception e){
@@ -184,6 +282,8 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
                     .errorDescription(e.getMessage())
                     .build());
         }
+        // 将每个读取的教师信息添加到列表中
+        allTeachers.add(data);
     }
 
     @Override
@@ -191,12 +291,33 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
         log.info("总共读入了 " + dataCount + " 条数据");
 
         if (!errorRecords.isEmpty()) {
+            log.error("存在导入失败的数据 " + errorRecords.size() + " 条");
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
             String currentDateTime = LocalDateTime.now().format(formatter);
             String relativePath = "data_import_error_excel/teacherInformation";
             String errorFileName = currentDateTime + "_errorImportTeacherInformation.xlsx";
             EasyExcel.write(relativePath + "/" + errorFileName,
                     TeacherInformationErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
+        }
+
+        // 检查同名同性的教师
+        checkForDuplicateTeachers();
+    }
+
+    private void checkForDuplicateTeachers() {
+        Map<String, List<TeacherInformationExcelImportVO>> nameGenderMap = new HashMap<>();
+        for (TeacherInformationExcelImportVO teacher : allTeachers) {
+            String key = teacher.getName() + "_" + teacher.getGender();
+            nameGenderMap.computeIfAbsent(key, k -> new ArrayList<>()).add(teacher);
+        }
+
+        for (Map.Entry<String, List<TeacherInformationExcelImportVO>> entry : nameGenderMap.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                log.info("找到同名同性的教师: " + entry.getKey().split("_")[0]);
+                for (TeacherInformationExcelImportVO duplicateTeacher : entry.getValue()) {
+                    log.info(duplicateTeacher.toString());
+                }
+            }
         }
     }
 }

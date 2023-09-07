@@ -51,7 +51,7 @@ public class CourseScheduleServiceTest1 {
         CollegeInformationPO collegeInformationServiceById = collegeInformationService.getById(collegeAdminInformationPO.getCollegeId());
         String collegeName = collegeInformationServiceById.getCollegeName();
 
-        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectCourseSchedules2(collegeName);
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.detailByCollegeName(collegeName);
         log.info("它是哪个学院的教务员 " + collegeName);
         log.info(collegeName + " 学院的教学计划总数 " + courseSchedulePOS.size());
         log.info("最后一条记录 " + courseSchedulePOS.get(courseSchedulePOS.size()-1));
@@ -99,34 +99,34 @@ public class CourseScheduleServiceTest1 {
      */
     @Test
     public void test3(){
-        String account = "T20175031";
-        String findStr = account.substring(1);
-        TeacherInformationPO teacherInformationPO = null;
-
-        List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectByWorkNumber(findStr);
-        if(teacherInformationPOS.size() > 0){
-            teacherInformationPO = teacherInformationPOS.get(0);
-        }else{
-            List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationService.getBaseMapper().selectByIdCardNumber(findStr);
-            if(teacherInformationPOS.size() > 0){
-                teacherInformationPO = teacherInformationPOS.get(0);
-            }else{
-                List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationService.getBaseMapper().selectByPhone(findStr);
-                if(teacherInformationPOS.size() > 0){
-                    teacherInformationPO = teacherInformationPOS.get(0);
-                }else{
-
-                }
-            }
-        }
-        if(teacherInformationPO == null){
-            log.error("没有找到该老师信息 " + account);
-        }else{
-            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectCourseSchedules3(teacherInformationPO.getName());
-            log.info("它是哪个老师 " + teacherInformationPO.getName());
-            log.info(teacherInformationPO.getName() + " 老师的教学计划总数 " + courseSchedulePOS.size());
-            log.info("最后一条记录 " + courseSchedulePOS.get(courseSchedulePOS.size()-1));
-        }
-
+//        String account = "T20175031";
+//        String findStr = account.substring(1);
+//        TeacherInformationPO teacherInformationPO = null;
+//
+//        List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectByWorkNumber(findStr);
+//        if(teacherInformationPOS.size() > 0){
+//            teacherInformationPO = teacherInformationPOS.get(0);
+//        }else{
+//            List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationService.getBaseMapper().selectByIdCardNumber(findStr);
+//            if(teacherInformationPOS.size() > 0){
+//                teacherInformationPO = teacherInformationPOS.get(0);
+//            }else{
+//                List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationService.getBaseMapper().selectByPhone(findStr);
+//                if(teacherInformationPOS.size() > 0){
+//                    teacherInformationPO = teacherInformationPOS.get(0);
+//                }else{
+//
+//                }
+//            }
+//        }
+//        if(teacherInformationPO == null){
+//            log.error("没有找到该老师信息 " + account);
+//        }else{
+//            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectCourseSchedules3(teacherInformationPO.getName());
+//            log.info("它是哪个老师 " + teacherInformationPO.getName());
+//            log.info(teacherInformationPO.getName() + " 老师的教学计划总数 " + courseSchedulePOS.size());
+//            log.info("最后一条记录 " + courseSchedulePOS.get(courseSchedulePOS.size()-1));
+//        }
+//
     }
 }

@@ -20,7 +20,7 @@ public class TeacherInformationExcelImportVO {
      * 用户代码
      */
     @TableId(value = "user_id", type = IdType.AUTO)
-    private String userId;
+    private int userId;
 
     /**
      * 姓名

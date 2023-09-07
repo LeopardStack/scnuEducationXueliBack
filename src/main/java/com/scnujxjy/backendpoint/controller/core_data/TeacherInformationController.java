@@ -31,11 +31,8 @@ public class TeacherInformationController {
     private TeacherInformationService teacherInformationService;
 
     @GetMapping("/detail")
-    public SaResult detailById(String userId) {
+    public SaResult detailById(int userId) {
         // 参数校验
-        if (StrUtil.isBlank(userId)) {
-            throw dataMissError();
-        }
         // 数据查询
         TeacherInformationVO teacherInformationVO = teacherInformationService.detailById(userId);
         if (Objects.isNull(teacherInformationVO)) {
@@ -64,7 +61,7 @@ public class TeacherInformationController {
     @PutMapping("/edit")
     public SaResult editById(@RequestBody TeacherInformationRO teacherInformationRO) {
         // 参数校验
-        if (Objects.isNull(teacherInformationRO) || StrUtil.isBlank(teacherInformationRO.getUserId())) {
+        if (Objects.isNull(teacherInformationRO)) {
             throw dataMissError();
         }
         // 数据更新

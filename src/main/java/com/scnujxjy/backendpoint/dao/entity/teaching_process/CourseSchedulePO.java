@@ -13,14 +13,6 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 import java.util.Date;
 
-/**
- * <p>
- * 排课表
- * </p>
- *
- * @author leopard
- * @since 2023-08-18
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -31,142 +23,71 @@ public class CourseSchedulePO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 自增主键
-     */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 年级
-     */
-    @ExcelProperty(index = 1)
+    @ExcelProperty(value = "年级", index = 1)
     private String grade;
 
-    /**
-     * 专业名称
-     */
-    @ExcelProperty(index = 2)
+    @ExcelProperty(value = "专业名称", index = 2)
     private String majorName;
 
-    /**
-     * 层次
-     */
-    @ExcelProperty(index = 3)
+    @ExcelProperty(value = "层次", index = 3)
     private String level;
 
-    /**
-     * 学习形式
-     */
-    @ExcelProperty(index = 4)
+    @ExcelProperty(value = "学习形式", index = 4)
     private String studyForm;
 
-    /**
-     * 行政班别
-     */
-    @ExcelProperty(index = 5)
+    @ExcelProperty(value = "行政班别", index = 5)
     private String adminClass;
 
-    /**
-     * 教学班别
-     */
-    @ExcelProperty(index = 6)
+    @ExcelProperty(value = "教学班别", index = 6)
     private String teachingClass;
 
-    /**
-     * 学生人数
-     */
-    @ExcelProperty(index = 7)
+    @ExcelProperty(value = "学生人数", index = 7)
     private Integer studentCount;
 
-    /**
-     * 课程名称
-     */
-    @ExcelProperty(index = 8)
+    @ExcelProperty(value = "课程名称", index = 8)
     private String courseName;
 
-    /**
-     * 学时数
-     */
-    @ExcelProperty(index = 9)
+    @ExcelProperty(value = "学时数", index = 9)
     private Integer classHours;
 
-    /**
-     * 考核类型
-     */
-    @ExcelProperty(index = 10)
+    @ExcelProperty(value = "考核类型", index = 10)
     private String examType;
 
-    /**
-     * 主讲教师
-     */
-    @ExcelProperty(index = 11)
+    @ExcelProperty(value = "主讲教师", index = 11)
     private String mainTeacherName;
 
-    /**
-     * 主讲教师工号/学号
-     */
-    @ExcelProperty(index = 12)
+    @ExcelProperty(value = "主讲教师工号/学号", index = 12)
     private String mainTeacherId;
 
-    /**
-     * 主讲教师身份证号码
-     */
-    @ExcelProperty(index = 13)
+    @ExcelProperty(value = "主讲教师身份证号码", index = 13)
     private String mainTeacherIdentity;
 
-    /**
-     * 辅导教师
-     */
-    @ExcelProperty(index = 14)
+    @ExcelProperty(value = "辅导教师", index = 14)
     private String tutorName;
 
-    /**
-     * 辅导教师工号
-     */
-    @ExcelProperty(index = 15)
+    @ExcelProperty(value = "辅导教师工号", index = 15)
     private String tutorId;
 
-    /**
-     * 辅导教师身份证号码
-     */
-    @ExcelProperty(index = 16)
+    @ExcelProperty(value = "辅导教师身份证号码", index = 16)
     private String tutorIdentity;
 
-    /**
-     * 授课方式（直播、点播、线下）
-     */
-    @ExcelProperty(index = 17)
+    @ExcelProperty(value = "授课方式", index = 17)
     private String teachingMethod;
 
-    /**
-     * 上课地点
-     */
-    @ExcelProperty(index = 18)
+    @ExcelProperty(value = "上课地点", index = 18)
     private String classLocation;
 
-    /**
-     * 在线教学平台及网络课程资源拥有情况
-     */
-    @ExcelProperty(index = 19)
+    @ExcelProperty(value = "在线教学平台及网络课程资源拥有情况", index = 19)
     private String onlinePlatform;
 
-    /**
-     * 授课日期
-     */
-    @ExcelProperty(index = 20)
+    @ExcelProperty(value = "授课日期", index = 20)
     private Date teachingDate;
 
-    /**
-     * 授课时间
-     */
-    @ExcelProperty(index = 21)
+    @ExcelProperty(value = "授课时间", index = 21)
     private String teachingTime;
 
-    /**
-     * 教师平台用户名
-     */
     private String teacherUsername;
-
-
 }

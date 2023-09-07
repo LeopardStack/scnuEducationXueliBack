@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class TeacherInformationErrorRecord {
 
     @ExcelProperty(index = 0, value = "用户代码")
-    private String userId;
+    private int userId;
 
     @ExcelProperty(index = 1, value = "姓名")
     private String name;

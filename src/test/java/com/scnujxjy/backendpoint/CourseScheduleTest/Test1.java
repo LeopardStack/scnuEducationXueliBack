@@ -32,7 +32,7 @@ public class Test1 {
      */
     @Test
     public void test1(){
-        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\排课表\\教学科学学院排课表信息导入（更新）.xlsx";
+        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\排课表\\教学科学学院排课表信息导入0907-修改.xlsx";
         int headRowNumber = 1;  // 根据你的 Excel 调整这个值
         // 使用ExcelReaderBuilder注册自定义的日期转换器
         ExcelReaderBuilder readerBuilder = EasyExcel.read(fileName, CourseScheduleExcelImportVO.class,

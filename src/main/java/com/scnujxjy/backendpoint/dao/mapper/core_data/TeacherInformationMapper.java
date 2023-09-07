@@ -3,7 +3,9 @@ package com.scnujxjy.backendpoint.dao.mapper.core_data;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -49,4 +51,13 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
      */
     @Select("SELECT * FROM teacher_information WHERE name = #{name}")
     List<TeacherInformationPO> selectByName(String name);
+
+
+    /**
+     * 根据 user_id 更新 teacher_username
+     * @param userId 教师的 user_id
+     * @param teacherUsername 新的 teacher_username
+     */
+    @Update("UPDATE teacher_information SET teacher_username = #{teacherUsername} WHERE user_id = #{userId}")
+    void updateTeacherUsernameByUserId(@Param("userId") int userId, @Param("teacherUsername") String teacherUsername);
 }

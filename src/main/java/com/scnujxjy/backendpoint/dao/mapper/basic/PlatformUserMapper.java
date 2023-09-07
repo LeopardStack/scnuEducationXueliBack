@@ -2,7 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.basic;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -16,6 +16,7 @@ import java.util.List;
  * @since 2023-08-02
  */
 public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
+
     /**
      * 根据 用户名查找用户
      * @param username 用户名
@@ -23,4 +24,20 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
      */
     @Select("SELECT * FROM platform_user WHERE username = #{username}")
     List<PlatformUserPO> selectPlatformUsers1(String username);
+
+    /**
+     * 根据学院和年级查询用户
+     * @return 满足条件的平台用户信息集合，类型为 PlatformUserPO
+     */
+    @Select("SELECT * FROM platform_user WHERE username IN (SELECT id_number FROM student_status WHERE college = #{college} " +
+            "AND grade = #{grade})")
+    List<PlatformUserPO> selectUsersByCollegeAndGrade(String grade, String college);
+
+    /**
+     * 根据学院和年级删除用户
+     * @return 删除的用户数量
+     */
+    @Delete("DELETE FROM platform_user WHERE username IN (SELECT id_number FROM student_status WHERE college = #{college} " +
+            "AND grade = #{grade})")
+    int deleteUsersByCollegeAndGrade(String grade, String college);
 }
