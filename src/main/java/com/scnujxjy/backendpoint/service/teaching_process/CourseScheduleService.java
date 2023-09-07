@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.service.teaching_process;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -30,11 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static cn.hutool.core.date.DateField.DAY_OF_MONTH;
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 
 /**
@@ -138,6 +141,11 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         }
         CourseScheduleRO entity = courseScheduleROPageRO.getEntity();
         fillFilterRO(entity);
+        // 默认取前后两周的数据
+        if (Objects.isNull(entity.getTeachingStartDate()) && Objects.isNull(entity.getTeachingEndDate()) && Objects.equals(courseScheduleROPageRO.getIsAll(), false)) {
+            entity.setTeachingStartDate(DateUtil.offset(new Date(), DAY_OF_MONTH, -7));
+            entity.setTeachingEndDate(DateUtil.offset(new Date(), DAY_OF_MONTH, 7));
+        }
         // 二级学院查询
         if (CollUtil.contains(StpUtil.getRoleList(), SECOND_COLLEGE_ADMIN.getRoleName())) {
             List<CourseSchedulePO> courseSchedulePOS = pageByCollegeAdminId();
@@ -156,9 +164,16 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                             return StrUtil.contains(ele.getCourseName(), entity.getCourseName());
                         }
                         return true;
-                    }).filter(ele -> {
+                    })
+                    .filter(ele -> {
                         if (StrUtil.isNotBlank(entity.getMainTeacherName())) {
                             return StrUtil.contains(ele.getMainTeacherName(), entity.getMainTeacherName());
+                        }
+                        return true;
+                    })
+                    .filter(ele -> {
+                        if (Objects.nonNull(entity.getTeachingStartDate()) && Objects.nonNull(entity.getTeachingEndDate()) && Objects.equals(courseScheduleROPageRO.getIsAll(), false)) {
+                            return ele.getTeachingDate().after(entity.getTeachingStartDate()) && ele.getTeachingDate().before(entity.getTeachingEndDate());
                         }
                         return true;
                     }).collect(Collectors.toList());
@@ -169,7 +184,6 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                 return new PageVO<>(courseScheduleInverter.po2VO(schedulePOS));
             }
         }
-
         // 构造查询条件
         LambdaQueryWrapper<CourseSchedulePO> wrapper = Wrappers.<CourseSchedulePO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getId()), CourseSchedulePO::getId, entity.getId())
@@ -197,6 +211,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                 .eq(StrUtil.isNotBlank(entity.getTeachingTime()), CourseSchedulePO::getTeachingTime, entity.getTeachingTime())
                 .eq(StrUtil.isNotBlank(entity.getTeacherUsername()), CourseSchedulePO::getTeacherUsername, entity.getTeacherUsername())
                 .last(StrUtil.isNotBlank(courseScheduleROPageRO.getOrderBy()), courseScheduleROPageRO.lastOrderSql());
+
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, courseScheduleROPageRO.getIsAll())) {
             List<CourseSchedulePO> courseSchedulePOS = baseMapper.selectList(wrapper);
