@@ -292,7 +292,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
      *
      * @return
      */
-    public List<CourseSchedulePO> pageByCollegeAdminId() {
+    private List<CourseSchedulePO> pageByCollegeAdminId() {
         String loginId = (String) StpUtil.getLoginId();
         if (StrUtil.isBlank(loginId)) {
             return null;
