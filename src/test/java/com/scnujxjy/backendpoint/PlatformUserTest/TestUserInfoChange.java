@@ -1,10 +1,13 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
+import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,9 @@ public class TestUserInfoChange {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private CollegeAdminInformationService collegeAdminInformationService;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -85,5 +91,34 @@ public class TestUserInfoChange {
             log.error("存在部分用户没有被删除");
         }
 
+    }
+
+    @Test
+    public void addCollegeManager(){
+        String userName = "Mjiaokeyuan001";
+        String password = "test001";
+        PlatformUserPO platformUserPO = new PlatformUserPO();
+        platformUserPO.setUsername(userName);
+        platformUserPO.setPassword(password);
+        platformUserPO.setRoleId(6L);
+        if(!platformUserService.getBaseMapper().existsByUsername(userName)){
+            int insert = platformUserService.getBaseMapper().insert(platformUserPO);
+            log.info("生成新账号 " + insert);
+        }
+    }
+
+    @Test
+    public void addCollegeManager2(){
+        String userName = "Mjiaokeyuan001";
+        long userIdByUsername = -1L;
+        userIdByUsername = platformUserService.getBaseMapper().getUserIdByUsername(userName);
+        // 设置其为某个学院的教务员
+        CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO();
+        collegeAdminInformationPO.setUserId(String.valueOf(userIdByUsername));
+        collegeAdminInformationPO.setCollegeId("07");
+        collegeAdminInformationPO.setName("教育科学学院测试教务员1");
+        log.info(collegeAdminInformationPO.toString());
+        int insert = collegeAdminInformationService.getBaseMapper().insert(collegeAdminInformationPO);
+        log.info("插入教务员账号 " + insert);
     }
 }

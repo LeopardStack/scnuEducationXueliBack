@@ -39,9 +39,9 @@ mybatis:
     map-underscore-to-camel-case: true
 
 # 配置日志
-#mybatis-plus:
-#  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
 # 关闭 MyBatis 的日志
 #logging:
 #  level:
@@ -59,7 +59,7 @@ sa-token:
   # token名称 (同时也是cookie名称)
   token-name: xl_token
   # token有效期，单位s 默认30天, -1代表永不过期
-  timeout: 300
+  timeout: 30000
   # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
   active-timeout: -1
   # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)

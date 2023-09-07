@@ -31,6 +31,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "ON cs.grade = ci.grade " +
             "AND cs.level = ci.level " +
             "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
             "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
             "WHERE ci.college = #{collegeName};")
     List<CourseSchedulePO> detailByCollegeName(String collegeName);
@@ -89,58 +90,114 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             + "</script>")
     int updateTeacherPlatformAccount(String main_teacher_name, String main_teacher_id, String main_teacher_identity, String platform_account);
 
-    @Select("SELECT DISTINCT grade " +
+    @Select("SELECT DISTINCT cs.grade " +
             "FROM course_schedule cs " +
             "JOIN class_information ci " +
             "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
             "WHERE ci.college = #{collegeName};")
     List<String> getDistinctGradesByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT level " +
+    @Select("SELECT DISTINCT cs.level " +
             "FROM course_schedule cs " +
             "JOIN class_information ci " +
-            "ON cs.level = ci.level " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
             "WHERE ci.college = #{collegeName};")
     List<String> getDistinctLevelsByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT majorName " +
+    @Select("SELECT DISTINCT cs.major_name " +
             "FROM course_schedule cs " +
-            "WHERE cs.majorName IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctMajorsByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT teachingClass " +
+    @Select("SELECT DISTINCT cs.teaching_class " +
             "FROM course_schedule cs " +
-            "WHERE cs.teachingClass IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctTeachingClassesByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT adminClass " +
+    @Select("SELECT DISTINCT cs.admin_class " +
             "FROM course_schedule cs " +
-            "WHERE cs.adminClass IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctAdminClassesByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT examType " +
+    @Select("SELECT DISTINCT cs.exam_type " +
             "FROM course_schedule cs " +
-            "WHERE cs.examType IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctExamTypesByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT studyForm " +
+    @Select("SELECT DISTINCT cs.study_form " +
             "FROM course_schedule cs " +
-            "WHERE cs.studyForm IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctStudyFormsByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT courseName " +
+    @Select("SELECT DISTINCT cs.course_name " +
             "FROM course_schedule cs " +
-            "WHERE cs.courseName IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctCourseNamesByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT mainTeacherName " +
+    @Select("SELECT DISTINCT cs.main_teacher_name " +
             "FROM course_schedule cs " +
-            "WHERE cs.mainTeacherName IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctMainTeachersByCollegeName(String collegeName);
 
-    @Select("SELECT DISTINCT teachingMethod " +
+    @Select("SELECT DISTINCT cs.teaching_method " +
             "FROM course_schedule cs " +
-            "WHERE cs.teachingMethod IS NOT NULL AND ci.college = #{collegeName};")
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
     List<String> getDistinctTeachingMethodsByCollegeName(String collegeName);
 
 

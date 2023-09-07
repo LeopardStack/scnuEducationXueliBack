@@ -40,4 +40,20 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
     @Delete("DELETE FROM platform_user WHERE username IN (SELECT id_number FROM student_status WHERE college = #{college} " +
             "AND grade = #{grade})")
     int deleteUsersByCollegeAndGrade(String grade, String college);
+
+    /**
+     * 检查用户名是否在数据库中存在
+     * @param username 用户名
+     * @return 如果存在返回 true，否则返回 false
+     */
+    @Select("SELECT COUNT(*) FROM platform_user WHERE username = #{username}")
+    boolean existsByUsername(String username);
+
+    /**
+     * 根据用户名返回 user_id
+     * @param username 用户名
+     * @return user_id
+     */
+    @Select("SELECT user_id FROM platform_user WHERE username = #{username}")
+    long getUserIdByUsername(String username);
 }
