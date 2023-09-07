@@ -47,7 +47,7 @@ public class TeacherInformationServiceTest {
         // 更新教师表
         TeacherInformationPO teacherInformationPO = teacherInformationPOS1.get(0);
 //        log.info("Updating teacher with ID: " + teacherInformationPO.toString() + ", teacher_username: " + account.getAccountName());
-        teacherInformationPO.setTeacher_username(account.getAccountName());
+        teacherInformationPO.setTeacherUsername(account.getAccountName());
         teacherInformationService.getBaseMapper().updateTeacherUsernameByUserId(teacherInformationPO.getUserId(), account.getAccountName());
 
         // 更新排课表
