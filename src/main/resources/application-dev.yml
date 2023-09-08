@@ -32,8 +32,8 @@ spring:
     password: xhl2023@
 
 mybatis:
-  mapper-locations: classpath:mapper/*xml
-  type-aliases-package: com.scnujxjy.backendpoint.entity
+  mapper-locations: classpath:com/scnujxjy/backendpoint/dao/mapper/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.dao.entity
   # 开启驼峰命名
   configuration:
     map-underscore-to-camel-case: true

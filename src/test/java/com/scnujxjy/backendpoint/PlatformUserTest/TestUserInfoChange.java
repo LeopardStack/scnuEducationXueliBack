@@ -32,9 +32,9 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword(){
-        Boolean aBoolean = platformUserService.changePassword(2L, "123456");
-        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
-        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
+        Boolean aBoolean = platformUserService.changePassword(2997L, "123456");
+//        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
+//        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
     }
 
@@ -42,7 +42,7 @@ public class TestUserInfoChange {
     public void addManager(){
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("M001");
+        platformUserRO.setUsername("Mjiaokeyuan001");
         platformUserRO.setPassword("123456");
         platformUserRO.setRoleId(6L);
         platformUserROList.add(platformUserRO);
@@ -54,7 +54,7 @@ public class TestUserInfoChange {
      */
     @Test
     public void addStudentLoginAccount(){
-        List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGradeCollege("2023", "计算机学院");
+        List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGradeCollege("2023", "教育科学学院");
         log.info(studentStatusPOS.toString());
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
@@ -73,6 +73,7 @@ public class TestUserInfoChange {
         }
 
         platformUserService.batchCreateUser(platformUserROList);
+        log.info("共计生成账号 " + studentStatusPOS.size() + " 个");
     }
 
     /**

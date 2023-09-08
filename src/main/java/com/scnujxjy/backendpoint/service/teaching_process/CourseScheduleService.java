@@ -220,6 +220,56 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
     /**
+     * 分页查询所有排课表信息
+     *
+     * @param courseScheduleROPageRO 分页参数
+     * @return 排课表分页信息
+     */
+    public PageVO<CourseScheduleVO> allPageQueryCourseScheduleService(PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            log.error("参数缺失");
+            return null;
+        }
+        CourseScheduleRO entity = courseScheduleROPageRO.getEntity();
+        fillFilterRO(entity);
+
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper.selectById(platformUserPO.getUserId());
+        if (Objects.isNull(collegeAdminInformationPO)) {
+            return null;
+        }
+        CollegeInformationPO collegeInformationPO = collegeInformationMapper.selectById(collegeAdminInformationPO.getCollegeId());
+        if (Objects.isNull(collegeInformationPO)) {
+            return null;
+        }
+
+        // 获取满足条件的总记录数
+        long totalCount = baseMapper.countCourseSchedulesByConditions(collegeInformationPO.getCollegeName(), courseScheduleROPageRO);
+
+        // 获取当前页的数据
+        List<CourseSchedulePO> courseSchedulePOS = baseMapper.getCourseSchedulesByConditions(collegeInformationPO.getCollegeName(), courseScheduleROPageRO);
+
+        // 创建并返回分页信息
+        PageVO<CourseScheduleVO> result = new PageVO<>(courseScheduleInverter.po2VO(courseSchedulePOS));
+        result.setTotal(totalCount);
+        result.setCurrent(courseScheduleROPageRO.getPageNumber());
+        result.setSize(courseScheduleROPageRO.getPageSize());
+        result.setPages((long) Math.ceil((double) totalCount / courseScheduleROPageRO.getPageSize()));
+
+        return result;
+
+    }
+
+
+    /**
      * 根据id更新排课表信息
      *
      * @param courseScheduleRO 更新的排课表信息

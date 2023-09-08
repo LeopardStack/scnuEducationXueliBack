@@ -81,6 +81,30 @@ public class CourseScheduleController {
     }
 
     /**
+     * 获取所有的排课表信息 不限制日期
+     * @param courseScheduleROPageRO
+     * @return
+     */
+    @PostMapping("/allPage")
+    public SaResult allPageQueryCourseSchedule(@RequestBody PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleROPageRO.getEntity())) {
+            courseScheduleROPageRO.setEntity(new CourseScheduleRO());
+        }
+        // 查询数据
+        PageVO<CourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.allPageQueryCourseScheduleService(courseScheduleROPageRO);
+        // 数据校验
+        if (Objects.isNull(courseScheduleVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseScheduleVOPageVO);
+    }
+
+    /**
      * 根据id更新排课表信息
      *
      * @param courseScheduleRO 更新的排课表信息

@@ -2,9 +2,9 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -64,7 +64,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      * @return 排课表集合，类型为 CourseSchedulePO
      */
     @Select("SELECT * FROM course_schedule WHERE main_teacher_name = #{main_teacher_name} AND main_teacher_identity = #{main_teacher_identity}")
-    List<CourseSchedulePO> detailByMainTeacherName(String main_teacher_name, String main_teacher_identity);
+    List<CourseSchedulePO> detailByMainTeacherNameIdNumber(String main_teacher_name, String main_teacher_identity);
 
     /**
      * 根据主讲教师姓名和工号（或身份证号码）来更新排课表中的平台账号字段
@@ -90,6 +90,11 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             + "</script>")
     int updateTeacherPlatformAccount(String main_teacher_name, String main_teacher_id, String main_teacher_identity, String platform_account);
 
+    /**
+     * 获取指定学院排课表中的年级数（不重复）
+     * @param collegeName
+     * @return
+     */
     @Select("SELECT DISTINCT cs.grade " +
             "FROM course_schedule cs " +
             "JOIN class_information ci " +
@@ -199,6 +204,45 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
             "WHERE ci.college = #{collegeName};")
     List<String> getDistinctTeachingMethodsByCollegeName(String collegeName);
+
+    /**
+     * 获取指定学院的排课表记录
+     * @param collegeName
+     * @return
+     */
+    @Select("SELECT cs.* " +
+            "FROM course_schedule cs " +
+            "JOIN class_information ci " +
+            "ON cs.grade = ci.grade " +
+            "AND cs.level = ci.level " +
+            "AND cs.study_form = ci.study_form " +
+            "AND cs.major_name = ci.major_name " +
+            "AND cs.admin_class = ci.class_name " +  // 注意这里添加了一个空格
+            "WHERE ci.college = #{collegeName};")
+    List<CourseScheduleRO> getDistinctCourseSchedulesByCollegeName(String collegeName);
+
+
+    /**
+     * 动态条件查询指定学院的排课表记录
+     * @param collegeName
+     * @param ro
+     * @return
+     */
+
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "getCourseSchedulesByConditions")
+    List<CourseSchedulePO> getCourseSchedulesByConditions(@Param("collegeName") String collegeName, @Param("ro") PageRO<CourseScheduleRO> ro);
+
+    /**
+     * 动态条件查询指定学院的排课表记录总数目
+     * @param collegeName
+     * @param ro
+     * @return
+     */
+
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "countCourseSchedulesByConditions")
+    long countCourseSchedulesByConditions(@Param("collegeName") String collegeName, @Param("ro") PageRO<CourseScheduleRO> ro);
+
+
 
 
     /**
