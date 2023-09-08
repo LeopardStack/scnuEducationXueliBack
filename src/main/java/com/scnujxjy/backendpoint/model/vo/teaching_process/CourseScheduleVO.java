@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -117,6 +118,7 @@ public class CourseScheduleVO {
     /**
      * 授课日期
      */
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date teachingDate;
 
     /**
