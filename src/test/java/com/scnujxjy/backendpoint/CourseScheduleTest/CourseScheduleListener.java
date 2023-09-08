@@ -28,19 +28,25 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
     private TeacherInformationMapper teacherInformationMapper;
 
+    private String collegeName;
+
     private int dataCount = 0; // 添加一个计数变量
 
     private String commonClassB = null;    // 用于记录合班的教学班别名称第一个
+
+    private String finalNewTeachingClass = null;    // 用于最终记录合班的教学班别名称，因为可能行政班别或者已有的教学班别（人工）出现了重复
     private HashMap<String, HashSet<String>> commonClassMap = new HashMap<>();    // 用于记录合班的教学班别所对应的每一个行政班
+    private HashSet<String> commonClassSet = new HashSet<>();   // 记录Excel 已读入的合班的教学班别
 
     private List<CourseScheduleExcelOutputVO> outputDataList = new ArrayList<>();
 
 
     public CourseScheduleListener(CourseScheduleMapper courseScheduleMapper, ClassInformationMapper classInformationMapper,
-                                  TeacherInformationMapper teacherInformationMapper) {
+                                  TeacherInformationMapper teacherInformationMapper, String collegeName) {
         this.courseScheduleMapper = courseScheduleMapper;
         this.classInformationMapper = classInformationMapper;
         this.teacherInformationMapper = teacherInformationMapper;
+        this.collegeName = collegeName;
     }
 
     private CourseSchedulePO convertVOtoPO(CourseScheduleExcelImportVO vo) {
@@ -100,7 +106,10 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(data.getTeachingDate());
-
+            if(data.getTeachingTime().contains("-")){
+                // 特殊字符
+                data.setTeachingTime(data.getTeachingTime().replace("-", "—"));
+            }
             String[] timeParts = data.getTeachingTime().split("[:-—]");
             // 这会把 "8:30-11:30" 分为 "8", "30", "11", "30"
             // 开始时间
@@ -176,11 +185,10 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                 String classDBName = classInformationPO.getClassName();
                 if(classDBName.equals(data.getAdminClass())){
                     // 检测是否有教学班别名称，如果没有则可以录入
-                    String commonClassA = data.getTeachingClass().trim();
-                    if(commonClassA.length() == 0){
+                    if(data.getTeachingClass() == null || data.getTeachingClass().length() == 0){
                         insertCourseScheduleData(data, outputData);
                     }else{
-
+                        String commonClassA = data.getTeachingClass().trim();
                         //合班的教学班名检测先不考虑了
 
                         // 考虑老师是否存在师资库中，以及老师姓名重复的问题
@@ -230,6 +238,134 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             }else{
                 outputData.setErrorMessage("没有找到该 年级、专业名称、层次、学习形式所匹配的 班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
                         classList.toString());
+            }
+
+            // 在班级信息确定后，检查班级是否属于指定的学院
+            String actualCollegeName = classInformationMapper.selectCollegeByMultipleConditions(data.getGrade(), data.getMajorName(),
+                    data.getLevel(), data.getStudyForm(), data.getAdminClass());
+            if (actualCollegeName != null && !collegeName.equals(actualCollegeName)) {
+                throw new RuntimeException("班级 " + data.getAdminClass() + " 不属于 " + collegeName + " 学院。");
+            }else if(actualCollegeName == null){
+                throw new RuntimeException(("该记录中的行政班别不属于任何学院 "));
+            }
+
+
+            // 年级、层次、专业名称、层次、学习形式以及行政班级没问题后 需要根据其是否写了教学班别 进行合班判断
+            // 如果教学班别写了  说明要开始合班 或者说它手工补充了教学班别（单个行政班别）
+            // 但无论怎样 如果出现了教学班别 下一行数据中的教学班别如果和这个教学班别相同则说明下一个行数据与其合班
+            // 但是不允许出现重复（数据库和现有的 Excel 的数据）的教学班别，如果出现让程序自动加个序号直到没有重复
+            if(commonClassB == null){
+                // 读取第一条排课记录
+                String adminClass = data.getAdminClass();
+                String teachingClass = data.getTeachingClass();
+                if(teachingClass == null || teachingClass.trim().length() == 0){
+                    // 行政班单独成班
+                    String newTeachingClass = adminClass;
+                    int count = 1;
+                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
+                        newTeachingClass = adminClass + count;
+                        count += 1;
+                    }
+                    data.setTeachingClass(newTeachingClass);
+                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+                    commonClassSet.add(newTeachingClass);
+                    finalNewTeachingClass = newTeachingClass;
+                }else{
+                    // 教学班别被人工设置了
+                    String newTeachingClass = data.getTeachingClass();
+                    int count = 1;
+                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
+                        newTeachingClass = adminClass + count;
+                        count += 1;
+                    }
+                    data.setTeachingClass(newTeachingClass);
+                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+                    commonClassSet.add(newTeachingClass);
+                    finalNewTeachingClass = newTeachingClass;
+                }
+            }else{
+                // 读取第一条以后的排课记录
+                String adminClass = data.getAdminClass();
+                String teachingClass = data.getTeachingClass();
+                if(teachingClass == null || teachingClass.trim().length() == 0){
+                    // 说明没合班 而且单独一个班作为教学班
+                    String newTeachingClass = adminClass;
+                    int count = 1;
+                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+                    while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
+                        newTeachingClass = adminClass + count;
+                        count += 1;
+                    }
+                    data.setTeachingClass(newTeachingClass);
+                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+                    commonClassSet.add(newTeachingClass);
+                    finalNewTeachingClass = newTeachingClass;
+                }else{
+                    // 可能要合班，人工设置了教学班，字符串长度不为 0
+                    if(teachingClass.trim().equals(this.commonClassB.trim())){
+                        // 与上一行的教学班别相等
+                        data.setTeachingClass(this.finalNewTeachingClass);
+                    }else{
+                        // 不相等 与上一行的教学班别不同，那就直接先成立一个教学班 后面是否合班再看
+                        String newTeachingClass = data.getTeachingClass();
+                        int count = 1;
+                        List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+                        while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
+                            newTeachingClass = adminClass + count;
+                            count += 1;
+                        }
+                        data.setTeachingClass(newTeachingClass);
+                        // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+                        commonClassSet.add(newTeachingClass);
+                        finalNewTeachingClass = newTeachingClass;
+                    }
+                }
+            }
+
+            // 进行主讲教师判断
+            String mainTeacherName = data.getMainTeacherName();
+            List<TeacherInformationPO> teacherInformationPOS = teacherInformationMapper.selectByName(mainTeacherName);
+            if(teacherInformationPOS.size() == 0){
+                throw new RuntimeException("系统师资库中没有该主讲老师信息，请先提供该教师信息");
+            }else if(teacherInformationPOS.size() == 1){
+                // 年级、层次、学习形式、专业名称、行政班别、教学班别都没问题了 主讲老师也能找到唯一一个 接下来就可以将此排课记录写入数据库
+                int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
+                if (count > 0) {
+                    throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                } else {
+                    courseScheduleMapper.insert(convertVOtoPO(data));
+                }
+            }else{
+                // 存在同名同性老师
+                String workNumber = data.getMainTeacherId();    // 获取 Excel 中的主讲教师工号/学号
+                String idNumber = data.getMainTeacherIdentity();    // 获取 Excel 中的主讲教师的身份证号码
+                if(workNumber == null){
+                    throw new RuntimeException("系统师资库中存在多名同名同性的教师，请提供工号或者身份证号码");
+                }
+                if(teacherInformationMapper.selectByWorkNumber(workNumber.trim()).size() == 1){
+                    int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
+                    if (count > 0) {
+                        throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                    } else {
+                        courseScheduleMapper.insert(convertVOtoPO(data));
+                    }
+                }else{
+                    if(idNumber == null){
+                        throw new RuntimeException("系统师资库中存在多名同名同性的教师，请提供工号或者身份证号码");
+                    }
+                    if(teacherInformationMapper.selectByIdCardNumber(idNumber.trim()).size() == 1){
+                        int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
+                        if (count > 0) {
+                            throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                        } else {
+                            courseScheduleMapper.insert(convertVOtoPO(data));
+                        }
+                    }else{
+                        throw new RuntimeException("系统师资库中存在多名同名同性的教师，请提供工号或者身份证号码");
+                    }
+                }
             }
 
         }catch (Exception e){

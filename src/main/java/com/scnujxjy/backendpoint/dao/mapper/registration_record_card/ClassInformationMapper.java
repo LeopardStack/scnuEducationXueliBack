@@ -64,4 +64,22 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      */
     @Select("SELECT DISTINCT study_form FROM class_information")
     List<String> selectDistinctStudyforms();
+
+    /**
+     * 根据年级、层次、学习形式、专业名称、班级名称来获取其学院信息
+     * @param grade 年级
+     * @param majorName 专业名称
+     * @param level 层次
+     * @param studyForm 学习形式
+     * @param className 班级名称（行政班别）
+     * @return
+     */
+    @Select("SELECT college FROM class_information " +
+            "WHERE grade = #{grade} " +
+            "AND major_name = #{majorName} " +
+            "AND level = #{level} " +
+            "AND study_form = #{studyForm} " +
+            "AND class_name = #{className}")
+    String selectCollegeByMultipleConditions(String grade, String majorName, String level, String studyForm, String className);
+
 }

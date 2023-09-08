@@ -31,10 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static cn.hutool.core.date.DateField.DAY_OF_MONTH;
@@ -325,6 +322,61 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             return null;
         }
         return baseMapper.detailByCollegeName(collegeInformationPO.getCollegeName());
+    }
+
+    public HashMap<String, List<String>> getSelectCourseScheduleArgs(){
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
+        }
+
+        // 二级学院管理员获取其排课表中所有的筛选条件
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper.selectById(platformUserPO.getUserId());
+        if (Objects.isNull(collegeAdminInformationPO)) {
+            return null;
+        }
+        CollegeInformationPO collegeInformationPO = collegeInformationMapper.selectById(collegeAdminInformationPO.getCollegeId());
+        if (Objects.isNull(collegeInformationPO)) {
+            return null;
+        }
+
+        HashMap<String, List<String>> selectCourseSchedules = new HashMap<>();
+
+        List<String> distinctGradesByCollegeName = baseMapper.getDistinctGradesByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("年级", distinctGradesByCollegeName);
+
+        List<String> distinctLevelsByCollegeName = baseMapper.getDistinctLevelsByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("层次", distinctLevelsByCollegeName);
+
+        List<String> distinctMajorsByCollegeName = baseMapper.getDistinctMajorsByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("专业名称", distinctMajorsByCollegeName);
+
+        List<String> distinctTeachingClassesByCollegeName = baseMapper.getDistinctTeachingClassesByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("教学班别", distinctTeachingClassesByCollegeName);
+
+        List<String> distinctAdminClassesByCollegeName = baseMapper.getDistinctAdminClassesByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("行政班别", distinctAdminClassesByCollegeName);
+
+        List<String> distinctExamTypesByCollegeName = baseMapper.getDistinctExamTypesByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("考核类型", distinctExamTypesByCollegeName);
+
+        List<String> distinctStudyFormsByCollegeName = baseMapper.getDistinctStudyFormsByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("学习形式", distinctStudyFormsByCollegeName);
+
+        List<String> distinctCourseNamesByCollegeName = baseMapper.getDistinctCourseNamesByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("课程名称", distinctCourseNamesByCollegeName);
+
+        List<String> distinctMainTeachersByCollegeName = baseMapper.getDistinctMainTeachersByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("主讲教师姓名", distinctMainTeachersByCollegeName);
+
+        List<String> distinctTeachingMethodsByCollegeName = baseMapper.getDistinctTeachingMethodsByCollegeName(collegeInformationPO.getCollegeName());
+        selectCourseSchedules.put("教学方式", distinctTeachingMethodsByCollegeName);
+
+        return selectCourseSchedules;
     }
 
 }

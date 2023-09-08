@@ -159,6 +159,6 @@ public class TeacherInformationPO implements Serializable {
     /**
      * 教师的平台用户名
      */
-    private String teacher_username;
+    private String teacherUsername;
 
 }

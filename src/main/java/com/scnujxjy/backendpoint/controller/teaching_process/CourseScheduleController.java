@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -121,6 +123,20 @@ public class CourseScheduleController {
         }
         // 返回删除数量
         return SaResult.data(count);
+    }
+
+    /**
+     * 获取排课表筛选条件
+     *
+     * @return 排课表筛选条件
+     */
+    @GetMapping("/select_course_schedules_args")
+    public SaResult getSelectCourseScheduleArgs() {
+        HashMap<String, List<String>> selectArgs = courseScheduleService.getSelectCourseScheduleArgs();
+        if (Objects.isNull(selectArgs) || selectArgs.isEmpty()) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(selectArgs);
     }
 
 
