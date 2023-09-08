@@ -119,8 +119,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         }
         // 如果是老师：根据账户查询
         if (CollUtil.contains(StpUtil.getRoleList(), TEACHER.getRoleName())) {
-            String userId = StrUtil.sub(loginId, 1, loginId.length());
-            entity.setTeacherUsername(userId);
+            entity.setTeacherUsername(loginId);
         }
     }
 
@@ -140,8 +139,8 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         fillFilterRO(entity);
         // 默认取前后两周的数据
         if (Objects.isNull(entity.getTeachingStartDate()) && Objects.isNull(entity.getTeachingEndDate()) && Objects.equals(courseScheduleROPageRO.getIsAll(), false)) {
-            entity.setTeachingStartDate(DateUtil.offset(new Date(), DAY_OF_MONTH, -7));
-            entity.setTeachingEndDate(DateUtil.offset(new Date(), DAY_OF_MONTH, 7));
+            entity.setTeachingStartDate(DateUtil.offset(new Date(), DAY_OF_MONTH, -14));
+            entity.setTeachingEndDate(DateUtil.offset(new Date(), DAY_OF_MONTH, 14));
         }
         // 二级学院查询
         if (CollUtil.contains(StpUtil.getRoleList(), SECOND_COLLEGE_ADMIN.getRoleName())) {
@@ -173,12 +172,16 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                             return ele.getTeachingDate().after(entity.getTeachingStartDate()) && ele.getTeachingDate().before(entity.getTeachingEndDate());
                         }
                         return true;
-                    }).collect(Collectors.toList());
+                    })
+                    .collect(Collectors.toList());
             if (Objects.equals(courseScheduleROPageRO.getIsAll(), true)) {
                 return new PageVO<>(courseScheduleInverter.po2VO(courseSchedulePOS));
             } else {
-                List<CourseSchedulePO> schedulePOS = ListUtil.page(Math.toIntExact(courseScheduleROPageRO.getPageNumber()), Math.toIntExact(courseScheduleROPageRO.getPageSize()), courseSchedulePOS);
-                return new PageVO<>(courseScheduleInverter.po2VO(schedulePOS));
+                Long pageSize = courseScheduleROPageRO.getPageSize();
+                Long current = courseScheduleROPageRO.getPageNumber();
+                List<CourseSchedulePO> schedulePOS = ListUtil.page(Math.toIntExact(current), Math.toIntExact(pageSize), courseSchedulePOS);
+                int total = courseSchedulePOS.size();
+                return new PageVO<>(pageSize, Long.valueOf(total), total / pageSize, current, courseScheduleInverter.po2VO(schedulePOS));
             }
         }
         // 构造查询条件
@@ -324,7 +327,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return baseMapper.detailByCollegeName(collegeInformationPO.getCollegeName());
     }
 
-    public HashMap<String, List<String>> getSelectCourseScheduleArgs(){
+    public HashMap<String, List<String>> getSelectCourseScheduleArgs() {
         String loginId = (String) StpUtil.getLoginId();
         if (StrUtil.isBlank(loginId)) {
             return null;
