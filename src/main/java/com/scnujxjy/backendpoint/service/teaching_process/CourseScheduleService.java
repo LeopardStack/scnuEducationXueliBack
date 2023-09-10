@@ -375,7 +375,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return baseMapper.detailByCollegeName(collegeInformationPO.getCollegeName());
     }
 
-    public HashMap<String, List<String>> getSelectCourseScheduleArgs(){
+    public HashMap<String, List<String>> getSelectCourseScheduleArgs() {
         String loginId = (String) StpUtil.getLoginId();
         if (StrUtil.isBlank(loginId)) {
             return null;

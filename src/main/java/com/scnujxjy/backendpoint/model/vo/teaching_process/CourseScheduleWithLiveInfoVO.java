@@ -1,18 +1,16 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
-import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class CourseScheduleWithLiveInfoVO extends CourseScheduleVO{
+public class CourseScheduleWithLiveInfoVO extends CourseScheduleVO {
     /**
      * 直播间基本信息
      */
-    ChannelResponseBO channelResponseBO = null;
+    VideoStreamRecordVO videoStreamRecord = null;
 }
