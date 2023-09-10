@@ -6,6 +6,7 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -95,7 +96,7 @@ public class CourseScheduleController {
             courseScheduleROPageRO.setEntity(new CourseScheduleRO());
         }
         // 查询数据
-        PageVO<CourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.allPageQueryCourseScheduleService(courseScheduleROPageRO);
+        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.allPageQueryCourseScheduleService(courseScheduleROPageRO);
         // 数据校验
         if (Objects.isNull(courseScheduleVOPageVO)) {
             throw dataNotFoundError();
