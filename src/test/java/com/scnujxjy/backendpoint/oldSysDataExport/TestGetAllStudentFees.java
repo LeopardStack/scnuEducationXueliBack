@@ -38,7 +38,16 @@ public class TestGetAllStudentFees {
                 paymentInfo.setPaymentCategory(studentData.get("LB"));
                 paymentInfo.setAcademicYear(studentData.get("XN"));
                 paymentInfo.setPaymentType(studentData.get("JFFS"));
-                paymentInfo.setAmount(BigDecimal.valueOf(Double.parseDouble(studentData.get("XF"))));
+                String fee = studentData.get("JINE");
+                if(fee == null){
+                    throw new RuntimeException("学费金额为空 " + studentData.toString());
+                }
+                else{
+                    if(fee.trim().equals("NULL")){
+                        throw new RuntimeException("学费金额为空 " + studentData.toString());
+                    }
+                }
+                paymentInfo.setAmount(Double.parseDouble(fee));
                 paymentInfo.setPaymentMethod("学年");
 
                 paymentInfoMapper.insert(paymentInfo);
@@ -60,7 +69,7 @@ public class TestGetAllStudentFees {
     @Test
     public void test1(){
         ArrayList<HashMap<String, String>> errorList = new ArrayList<>();
-        for(int i = 2023; i > 2015; i--){
+        for(int i = 2023; i > 2001; i--){
             insertStudentFeesByGrade(i, errorList);
         }
     }

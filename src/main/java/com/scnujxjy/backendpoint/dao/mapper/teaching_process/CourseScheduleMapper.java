@@ -242,6 +242,47 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     @SelectProvider(type = CourseScheduleSqlProvider.class, method = "countCourseSchedulesByConditions")
     long countCourseSchedulesByConditions(@Param("collegeName") String collegeName, @Param("ro") PageRO<CourseScheduleRO> ro);
 
+    /**
+     * 根据 年级、专业名称、层次、学习形式、行政班别、主讲教师名字、授课日期、授课时间是否在数据库中
+     * 存在一模一样的记录，存在则说明排课重复，需要选择是否覆盖
+     * @param courseSchedulePO 导入的排课表记录
+     * @return
+     */
+    @Update("UPDATE course_schedule " +
+            "SET grade = #{grade}, " +
+            "major_name = #{majorName}, " +
+            "level = #{level}, " +
+            "study_form = #{studyForm}, " +
+            "admin_class = #{adminClass}, " +
+            "teaching_class = #{teachingClass}, " +
+            "student_count = #{studentCount}, " +
+            "course_name = #{courseName}, " +
+            "class_hours = #{classHours}, " +
+            "exam_type = #{examType}, " +
+            "main_teacher_name = #{mainTeacherName}, " +
+            "main_teacher_id = #{mainTeacherId}, " +
+            "main_teacher_identity = #{mainTeacherIdentity}, " +
+            "tutor_name = #{tutorName}, " +
+            "tutor_id = #{tutorId}, " +
+            "tutor_identity = #{tutorIdentity}, " +
+            "teaching_method = #{teachingMethod}, " +
+            "class_location = #{classLocation}, " +
+            "online_platform = #{onlinePlatform}, " +
+            "teaching_date = #{teachingDate}, " +
+            "teaching_time = #{teachingTime}, " +
+            "teacher_username = #{teacherUsername} " +
+            "WHERE grade = #{grade} " +
+            "AND major_name = #{majorName} " +
+            "AND level = #{level} " +
+            "AND study_form = #{studyForm} " +
+            "AND admin_class = #{adminClass} " +
+            "AND main_teacher_name = #{mainTeacherName} " +
+            "AND teaching_date = #{teachingDate} " +
+            "AND teaching_time = #{teachingTime}")
+    int updateCourseScheduleByConditions(CourseSchedulePO courseSchedulePO);
+
+
+
 
 
 
@@ -265,7 +306,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     List<String> getAllDistinctTeachingClasses();
 
     /**
-     * 通过 年级、专业名称、层次、学习形式、行政班别、教学班别、课程名称、主讲教师、授课日期、授课时间 来查看是否存在重复的排课
+     * 通过 年级、专业名称、层次、学习形式、行政班别、课程名称、主讲教师、授课日期、授课时间 来查看是否存在重复的排课
      * @param courseSchedulePO 排课表记录
      * @return
      */
@@ -275,7 +316,6 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "AND level = #{level} " +
             "AND study_form = #{studyForm} " +
             "AND admin_class = #{adminClass} " +
-            "AND teaching_class = #{teachingClass} " +
             "AND course_name = #{courseName} " +
             "AND main_teacher_name = #{mainTeacherName} " +
             "AND teaching_date = #{teachingDate} " +

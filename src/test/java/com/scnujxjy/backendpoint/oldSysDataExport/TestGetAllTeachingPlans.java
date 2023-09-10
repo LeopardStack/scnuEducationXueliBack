@@ -57,15 +57,16 @@ public class TestGetAllTeachingPlans {
             courseInformationPO.setMajorName(classInformationPO.getMajorName());
             courseInformationPO.setLevel(classInformationPO.getLevel());
             courseInformationPO.setStudyForm(classInformationPO.getStudyForm());
-            courseInformationPO.setAdminClass(classInformationPO.getClassName());
+            courseInformationPO.setAdminClass(hashMap.get("BSHI"));
             courseInformationPO.setCourseName(hashMap.get("KCHM"));
             courseInformationPO.setStudyHours(Integer.valueOf(hashMap.get("KCHH")));
             courseInformationPO.setAssessmentType(hashMap.get("FSHI"));
             courseInformationPO.setTeachingMethod("线下");
             courseInformationPO.setCourseType(hashMap.get("TYPES"));
             courseInformationPO.setTeachingSemester(hashMap.get("XQI"));
+            courseInformationPO.setCourse_code(hashMap.get("KCHH"));
 
-//            courseInformationMapper.insert(courseInformationPO);
+            courseInformationMapper.insert(courseInformationPO);
 
 
         }

@@ -77,6 +77,11 @@ public class DataImportScnuOldSys {
         return allData;
     }
 
+    /**
+     * 获取学生成绩信息
+     * @param grade
+     * @return
+     */
 
     public static ArrayList<HashMap<String, String>> getGradeInfos(String grade){
         // 获取开始时间
@@ -147,6 +152,11 @@ public class DataImportScnuOldSys {
     }
 
 
+    /**
+     * 获取学生学费信息
+     * @param grade
+     * @return
+     */
     public static ArrayList<HashMap<String, String>> getStudentFees(String grade){
         // 获取开始时间
         long startTime = System.nanoTime();
@@ -215,6 +225,11 @@ public class DataImportScnuOldSys {
         return allData;
     }
 
+    /**
+     * 获取学生的学籍异动信息
+     * @return
+     */
+
     public static ArrayList<HashMap<String, String>> getStudentXJYDs(){
         // 获取开始时间
         long startTime = System.nanoTime();
@@ -282,6 +297,12 @@ public class DataImportScnuOldSys {
 
         return allData;
     }
+
+    /**
+     * 获取学生的录取信息
+     * @param grade
+     * @return
+     */
 
     public static ArrayList<HashMap<String, String>> getStudentLuqus(int grade){
         // 获取开始时间
@@ -358,6 +379,11 @@ public class DataImportScnuOldSys {
     }
 
 
+    /**
+     * 获取指定年级的所有教学计划
+     * @param grade
+     * @return
+     */
     public static ArrayList<HashMap<String, String>> getTeachingPlans(String grade){
         // 获取开始时间
         long startTime = System.nanoTime();
@@ -425,6 +451,11 @@ public class DataImportScnuOldSys {
 
         return allData;
     }
+
+    /**
+     * 获取学位信息
+     * @return
+     */
 
     public static ArrayList<HashMap<String, String>> getDegreedatas(){
         // 获取开始时间

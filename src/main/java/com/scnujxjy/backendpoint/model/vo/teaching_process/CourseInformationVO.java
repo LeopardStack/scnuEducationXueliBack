@@ -87,5 +87,10 @@ public class CourseInformationVO {
      */
     private String teachingSemester;
 
+    /**
+     * 课程编号
+     */
+    private String course_code;
+
 
 }

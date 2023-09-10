@@ -30,11 +30,7 @@ public interface CourseScheduleInverter {
     default VideoStreamRecordVO liveInfo(String channelId) {
         if (StrUtil.isNotBlank(channelId)) {
             VideoStreamRecordService videoStreamRecordService = ApplicationContextProvider.getApplicationContext().getBean(VideoStreamRecordService.class);
-            VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailByChannelId(channelId);
-            if (Objects.isNull(channelId)) {
-                return null;
-            }
-            return videoStreamRecordVO;
+            return videoStreamRecordService.detailById(Long.valueOf(channelId));
         }
         return null;
     }

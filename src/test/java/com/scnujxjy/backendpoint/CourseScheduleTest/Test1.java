@@ -35,12 +35,14 @@ public class Test1 {
      */
     @Test
     public void test1(){
-        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\排课表\\教学科学学院排课表信息导入0907-修改2 .xlsx";
+        String fileName = "D:\\MyProject\\xueliJYPlatform2\\xueliBackEnd\\src\\main\\resources\\data\\学院排课表信息导入\\教育科学学院排课表信息导入0907-修改部分.xlsx";
         String collegeName = "教育科学学院";
         int headRowNumber = 1;  // 根据你的 Excel 调整这个值
         // 使用ExcelReaderBuilder注册自定义的日期转换器
-        ExcelReaderBuilder readerBuilder = EasyExcel.read(fileName, CourseScheduleExcelImportVO.class,
-                new CourseScheduleListener(courseScheduleMapper, classInformationMapper, teacherInformationMapper, collegeName));
+        CourseScheduleListener courseScheduleListener = new CourseScheduleListener(courseScheduleMapper,
+                classInformationMapper, teacherInformationMapper, collegeName);
+        courseScheduleListener.setUpdate(true);
+        ExcelReaderBuilder readerBuilder = EasyExcel.read(fileName, CourseScheduleExcelImportVO.class,courseScheduleListener);
         readerBuilder.registerConverter(new CustomDateConverter());
 
         // 继续你的读取操作

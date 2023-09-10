@@ -22,11 +22,20 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param major_name 专业名称
      * @param level 层次
      * @param study_form 学习形式
-     * @param admin_class 行政班名称
+     * @param admin_class 班级标识
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
     @Select("SELECT * FROM course_information WHERE grade = #{grade} AND major_name = #{major_name} AND level = #{level}" +
             " AND study_form = #{study_form} AND admin_class = #{admin_class}")
     List<CourseInformationPO> selectCourseInformations1(String grade, String major_name, String level, String study_form,
                                                        String admin_class);
+
+    /**
+     * 根据 班级名称 学习形式来获取某一个班级的教学计划
+     * @param admin_class 班级标识
+     * @param course_code 课程名称编号
+     * @return 教师信息集合，类型为 TeacherInformationPO
+     */
+    @Select("SELECT * FROM course_information WHERE admin_class = #{admin_class} AND course_code = #{course_code}")
+    List<CourseInformationPO> selectByAdminClassId(String admin_class, String course_code);
 }

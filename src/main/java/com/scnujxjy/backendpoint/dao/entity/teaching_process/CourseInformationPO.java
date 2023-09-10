@@ -56,7 +56,7 @@ public class CourseInformationPO implements Serializable {
     private String studyForm;
 
     /**
-     * 行政班别
+     * 行政班别标识
      */
     private String adminClass;
 
@@ -94,6 +94,11 @@ public class CourseInformationPO implements Serializable {
      * 授课学期
      */
     private String teachingSemester;
+
+    /**
+     * 课程编号
+     */
+    private String course_code;
 
 
 }

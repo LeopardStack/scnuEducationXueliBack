@@ -80,7 +80,7 @@ public class PaymentInfoPO implements Serializable {
     /**
      * 金额
      */
-    private BigDecimal amount;
+    private Double amount;
 
     /**
      * 是否已缴费

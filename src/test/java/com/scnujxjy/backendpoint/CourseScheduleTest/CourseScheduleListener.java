@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImpor
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelImportVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelOutputVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 
@@ -22,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
+@Data
 public class CourseScheduleListener extends AnalysisEventListener<CourseScheduleExcelImportVO> {
     private CourseScheduleMapper courseScheduleMapper;
     private ClassInformationMapper classInformationMapper;
@@ -31,6 +33,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
     private String collegeName;
 
     private int dataCount = 0; // 添加一个计数变量
+    private boolean update = false; // 出现重复的排课表时是否需要覆盖
 
     private String commonClassB = null;    // 用于记录合班的教学班别名称第一个
 
@@ -77,11 +80,22 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
         return po;
     }
 
-    private int insertCourseScheduleData(CourseScheduleExcelImportVO data, CourseScheduleExcelOutputVO outputData){
-//        int insert = courseScheduleMapper.insert(convertVOtoPO(data));
+    private int insertCourseScheduleData(CourseScheduleExcelImportVO data, CourseScheduleExcelOutputVO outputData, int ident){
+        if(ident == 1) {
+            int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
+            if (count > 0) {
+                int insert = courseScheduleMapper.updateCourseScheduleByConditions(convertVOtoPO(data));
+                outputData.setErrorMessage("覆盖成功 " + insert + " 条");
+            }else{
+                int insert = courseScheduleMapper.insert(convertVOtoPO(data));
+                outputData.setErrorMessage("导入成功 " + insert);
+            }
+        }else{
+            int insert = courseScheduleMapper.updateCourseScheduleByConditions(convertVOtoPO(data));
+            outputData.setErrorMessage("覆盖成功 " + insert + " 条");
+        }
 //                log.info("读入一行数据 " + data.toString() + "\n 上课时间为 " + startDateTime + " 下课时间为 " + endDateTime);
         dataCount++;
-        outputData.setErrorMessage("导入成功");
         return 1;
     }
 
@@ -186,7 +200,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                 if(classDBName.equals(data.getAdminClass())){
                     // 检测是否有教学班别名称，如果没有则可以录入
                     if(data.getTeachingClass() == null || data.getTeachingClass().length() == 0){
-                        insertCourseScheduleData(data, outputData);
+//                        insertCourseScheduleData(data, outputData, 1);
                     }else{
                         String commonClassA = data.getTeachingClass().trim();
                         //合班的教学班名检测先不考虑了
@@ -199,11 +213,11 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                             String mainTeacherIdentity = data.getMainTeacherIdentity();
                             List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationMapper.selectByWorkNumber(mainTeacherId);
                             if(teacherInformationPOS1.size() == 1){
-                                insertCourseScheduleData(data, outputData);
+//                                insertCourseScheduleData(data, outputData, 1);
                             }else{
                                 List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationMapper.selectByIdCardNumber(mainTeacherIdentity);
                                 if(teacherInformationPOS2.size() == 1){
-                                    insertCourseScheduleData(data, outputData);
+//                                    insertCourseScheduleData(data, outputData, 1);
                                 }else{
                                     outputData.setErrorMessage("主讲教师出现重复没找到唯一 " + data.getMainTeacherName());
                                 }
@@ -211,7 +225,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
                         }else if(teacherInformationPOS.size() == 1){
                             if(classList.contains(data.getAdminClass())){
-                                insertCourseScheduleData(data, outputData);
+//                                insertCourseScheduleData(data, outputData, 1);
                             }else{
                                 outputData.setErrorMessage("没有找到该 年级、专业名称、层次、学习形式所匹配的 班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
                                         classList.toString());
@@ -230,7 +244,9 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             }else if(classInformationPOS.size() > 1){
                 // 这种情况确实存在 年级、专业、学习形式、层次 没法确定一个班级
                 if(classList.contains(data.getAdminClass())){
-                    insertCourseScheduleData(data, outputData);
+                    // 检测数据库中是否有重复记录
+
+//                    insertCourseScheduleData(data, outputData, 1);
                 }else {
                     outputData.setErrorMessage("通过 年级、专业名称、层次、学习形式匹配数据库时出现了多个班级,但没有找到对应表格中的班级 根据表格中提供的年级、层次、专业、学习形式在系统中查到的班级如下\n" +
                             classList.toString());
@@ -333,9 +349,19 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                 // 年级、层次、学习形式、专业名称、行政班别、教学班别都没问题了 主讲老师也能找到唯一一个 接下来就可以将此排课记录写入数据库
                 int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
                 if (count > 0) {
-                    throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                    if(count > 1){
+                        throw new RuntimeException("已存在完全匹配的数据并且大于 2条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                    }else{
+                        if(update){
+                            // 允许覆盖
+                            insertCourseScheduleData(data, outputData, 0);
+                        }else{
+                            throw new RuntimeException("已存在完全匹配的数据 1 条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                        }
+                    }
                 } else {
-                    courseScheduleMapper.insert(convertVOtoPO(data));
+                    insertCourseScheduleData(data, outputData, 1);
+//                    courseScheduleMapper.insert(convertVOtoPO(data));
                 }
             }else{
                 // 存在同名同性老师
@@ -347,9 +373,19 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                 if(teacherInformationMapper.selectByWorkNumber(workNumber.trim()).size() == 1){
                     int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
                     if (count > 0) {
-                        throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                        if(count > 1){
+                            throw new RuntimeException("已存在完全匹配的数据并且大于 2条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                        }else{
+                            if(update){
+                                // 允许覆盖
+                                insertCourseScheduleData(data, outputData, 0);
+                            }else{
+                                throw new RuntimeException("已存在完全匹配的数据 1 条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                            }
+                        }
+
                     } else {
-                        courseScheduleMapper.insert(convertVOtoPO(data));
+                        insertCourseScheduleData(data, outputData, 1);
                     }
                 }else{
                     if(idNumber == null){
@@ -358,9 +394,18 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     if(teacherInformationMapper.selectByIdCardNumber(idNumber.trim()).size() == 1){
                         int count = courseScheduleMapper.checkDuplicate(convertVOtoPO(data));
                         if (count > 0) {
-                            throw new RuntimeException("已存在完全匹配的数据! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                            if(count > 1){
+                                throw new RuntimeException("已存在完全匹配的数据并且大于 2条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                            }else{
+                                if(update){
+                                    // 允许覆盖
+                                    insertCourseScheduleData(data, outputData, 0);
+                                }else{
+                                    throw new RuntimeException("已存在完全匹配的数据 1 条! " + courseScheduleMapper.findDuplicateRecords(convertVOtoPO(data)));
+                                }
+                            }
                         } else {
-                            courseScheduleMapper.insert(convertVOtoPO(data));
+                            insertCourseScheduleData(data, outputData, 1);
                         }
                     }else{
                         throw new RuntimeException("系统师资库中存在多名同名同性的教师，请提供工号或者身份证号码");
