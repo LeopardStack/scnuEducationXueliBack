@@ -280,9 +280,7 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.ini</include>
+                    <include>**/*.yml</include>
                 </includes>
             </resource>
         </resources>
