@@ -9,8 +9,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.scnujxjy</groupId>
-    <artifactId>BackEndpoint</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>ScnuXueliBack</artifactId>
+    <version>1.0</version>
     <name>BackEndpoint</name>
     <description>BackEndpoint</description>
     <properties>
@@ -131,11 +131,11 @@
         <!--			<artifactId>spring-boot-starter-security</artifactId>-->
         <!--		</dependency>-->
 
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.1.21</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.alibaba</groupId>-->
+<!--            <artifactId>druid</artifactId>-->
+<!--            <version>1.1.21</version>-->
+<!--        </dependency>-->
 
         <!--        引入 保利威 直播、点播 SDK -->
         <dependency>
@@ -248,6 +248,7 @@
 
     <build>
         <plugins>
+            <!-- Your existing maven-compiler-plugin configuration -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -269,23 +270,37 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
+            <!-- The maven-jar-plugin configuration to specify the Main-Class -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>com.scnujxjy.backendpoint.BackEndpointApplication</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/java</directory>
-                <includes>
-                    <include>**/*.xml</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.properties</include>
-                    <include>**/*.ini</include>
-                </includes>
-            </resource>
-        </resources>
     </build>
+
 
 </project>

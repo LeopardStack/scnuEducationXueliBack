@@ -26,8 +26,10 @@ import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverte
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleFilterDataVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
+import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -267,6 +269,32 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
         return result;
 
+    }
+
+
+    /**
+     * 根据筛选器来获取不同角色的排课表数据
+     * @param courseScheduleROPageRO
+     * @param filter
+     * @return
+     */
+    public PageVO<CourseScheduleWithLiveInfoVO> allPageQueryCourseScheduleFilter(PageRO<CourseScheduleRO> courseScheduleROPageRO, AbstractFilter filter) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            log.error("参数缺失");
+            return null;
+        }
+
+        CourseScheduleFilterDataVO courseSchedulePOS = filter.filterCourseSchedule(courseScheduleROPageRO);
+
+        // 创建并返回分页信息
+        PageVO<CourseScheduleWithLiveInfoVO> result = new PageVO<>(courseScheduleInverter.po2LiveVO(courseSchedulePOS.getCourseSchedulePOS()));
+        result.setTotal(courseSchedulePOS.getTotal());
+        result.setCurrent(courseScheduleROPageRO.getPageNumber());
+        result.setSize(courseScheduleROPageRO.getPageSize());
+        result.setPages((long) Math.ceil((double) courseSchedulePOS.getCourseSchedulePOS().size() / courseScheduleROPageRO.getPageSize()));
+
+        return result;
     }
 
 

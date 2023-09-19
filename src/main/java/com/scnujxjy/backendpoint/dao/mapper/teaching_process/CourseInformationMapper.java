@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -38,4 +39,17 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      */
     @Select("SELECT * FROM course_information WHERE admin_class = #{admin_class} AND course_code = #{course_code}")
     List<CourseInformationPO> selectByAdminClassId(String admin_class, String course_code);
+
+
+    /**
+     * 获取学生的教学计划 按照课程代码排序
+     * @param id_number 学生的身份证号码
+     * @return
+     */
+    @Select("SELECT g.* " +
+            "FROM student_status s " +
+            "JOIN course_information g ON s.class_identifier  = g.admin_class " +
+            "WHERE s.id_number = #{id_number} " +
+            "ORDER BY g.grade DESC, g.course_code ASC")
+    List<CourseInformationPO> getStudentTeachingPlans(String id_number);
 }

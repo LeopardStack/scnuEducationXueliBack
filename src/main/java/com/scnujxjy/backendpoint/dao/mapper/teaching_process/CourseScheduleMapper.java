@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -241,6 +242,47 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     @SelectProvider(type = CourseScheduleSqlProvider.class, method = "countCourseSchedulesByConditions")
     long countCourseSchedulesByConditions(@Param("collegeName") String collegeName, @Param("ro") PageRO<CourseScheduleRO> ro);
+
+
+    /**
+     * 动态条件查询指定老师的排课表记录
+     * @param teacher_username
+     * @param ro
+     * @return
+     */
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "getCourseSchedulesByTeacherUserName")
+    List<CourseSchedulePO> getCourseSchedulesByTeacherUserName(@Param("teacher_username") String teacher_username,
+                                                                 @Param("ro") PageRO<CourseScheduleRO> ro);
+
+    /**
+     * 动态条件查询指定学生的排课表记录总数目
+     * @param class_information 班级信息
+     * @param ro 筛选条件
+     * @return
+     */
+
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "countCourseSchedulesByStudentIdNumber")
+    long countCourseSchedulesByStudentIdNumber(@Param("class_information") ClassInformationPO class_information, @Param("ro") PageRO<CourseScheduleRO> ro);
+
+    /**
+     * 动态条件查询指定学生的排课表记录
+     * @param class_information 班级信息
+     * @param ro 筛选条件
+     * @return
+     */
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "getCourseSchedulesByStudentIdNumber")
+    List<CourseSchedulePO> getCourseSchedulesByStudentIdNumber(@Param("class_information") ClassInformationPO class_information,
+                                                               @Param("ro") PageRO<CourseScheduleRO> ro);
+
+    /**
+     * 动态条件查询指定老师的排课表记录总数目
+     * @param teacher_username
+     * @param ro
+     * @return
+     */
+
+    @SelectProvider(type = CourseScheduleSqlProvider.class, method = "countCourseSchedulesByTeacherUserName")
+    long countCourseSchedulesByTeacherUserName(@Param("teacher_username") String teacher_username, @Param("ro") PageRO<CourseScheduleRO> ro);
 
     /**
      * 根据 年级、专业名称、层次、学习形式、行政班别、主讲教师名字、授课日期、授课时间是否在数据库中

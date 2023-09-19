@@ -7,6 +7,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.obs.shade.okhttp3.*;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
@@ -30,7 +31,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Component
@@ -248,5 +252,94 @@ public class VideoStreamUtils {
         }
     }
 
+
+    /**
+     * 根据频道ID生成讲师的单点登录链接
+     *
+     * @param channelId 频道ID
+     * @return 单点登录链接
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String generateTeacherSSOLink(String channelId) throws IOException, NoSuchAlgorithmException {
+        // 公共参数,填写自己的实际参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        long beijingTimestamp1 = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp1);
+
+        // 自定义的token，只能使用一次，且10秒内有效
+        String token = UUID.randomUUID().toString().replaceAll("-", "");
+        String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-token", channelId);
+
+
+
+        // 1、设置频道单点登录token
+        OkHttpClient client = new OkHttpClient();
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        requestMap.put("timestamp", String.valueOf(beijingTimestamp));
+        requestMap.put("token", token);
+
+        FormBody.Builder formBuilder = new FormBody.Builder()
+                .add("appId", appId)
+                .add("timestamp", timestamp)
+                .add("token", token)
+                .add("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        Request request = new Request.Builder()
+                .url(url)
+                .post(formBuilder.build())
+                .build();
+        Response response = client.newCall(request).execute();
+        // TODO: 判断response返回是否成功
+        log.info("单点登录返回值 " + response.toString());
+        // 2、生成讲师授权登录地址
+        String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + channelId;
+        String authURL = "https://console.polyv.net/teacher/auth-login";
+        authURL += "?channelId=" + channelId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+        log.info("讲师单点登录地址设置成功，跳转地址为：{}", authURL);
+
+        return authURL;
+    }
+
+    /**
+     * 查询指定频道号下的所有角色信息
+     * @param channelId 频道ID
+     * @return 角色信息的JSON字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String getAccountsByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
+        OkHttpClient client = new OkHttpClient();
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        requestMap.put("timestamp", String.valueOf(beijingTimestamp));
+
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(String.format("https://api.polyv.net/live/v2/channelAccount/%s/accounts", channelId)).newBuilder();
+        for (Map.Entry<String, String> entry : requestMap.entrySet()) {
+            urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
+        }
+
+        Request request = new Request.Builder()
+                .url(urlBuilder.build())
+                .get()
+                .build();
+
+        log.info("\n请求信息为 " + request.toString());
+        try (Response response = client.newCall(request).execute()) {
+            if (response.isSuccessful()) {
+                log.info("\n获取指定频道 " + channelId + " 的角色信息 " + response.toString());
+                return response.body().string();
+            } else {
+                throw new IOException("Unexpected code " + response.toString());
+            }
+        }
+    }
 
 }

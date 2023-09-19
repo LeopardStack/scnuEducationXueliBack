@@ -54,6 +54,10 @@ public class CollegeAdminInformationPO implements Serializable {
      * 工号
      */
     private String workNumber;
+    /**
+     * 身份证号码
+     */
+    private String idNumber;
 
 
 }

@@ -2,6 +2,9 @@ package com.scnujxjy.backendpoint.dao.mapper.college;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +16,6 @@ import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
  */
 public interface CollegeInformationMapper extends BaseMapper<CollegeInformationPO> {
 
+    @Select("SELECT * FROM college_information WHERE college_name=#{collegeName}")
+    List<CollegeInformationPO> selectByCollegeName(String collegeName);
 }

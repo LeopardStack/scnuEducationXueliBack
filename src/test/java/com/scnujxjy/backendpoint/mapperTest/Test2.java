@@ -1,13 +1,17 @@
 package com.scnujxjy.backendpoint.mapperTest;
 
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.PersonalInfoVO;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeanUtils;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
@@ -28,6 +32,8 @@ public class Test2 {
 
     @Resource
     private ClassInformationMapper classInformationMapper;
+    @Resource
+    private PersonalInfoMapper personalInfoMapper;
 
     @Test
     public void test1(){
@@ -55,5 +61,17 @@ public class Test2 {
         }
 //        log.info(courseInformationPOS.toString());
         log.info("错误的排课表行政班别包括\n" + errorClassName.toString());
+    }
+
+    @Test
+    public void test2(){
+        List<PersonalInfoVO> personalInfoVOS = personalInfoMapper.selectInfoByGradeAndIdNumber("2015", "441481198505264407");
+        log.info(personalInfoVOS.toString());
+        PersonalInfoVO personalInfoVO = personalInfoVOS.get(0);
+        PersonalInfoPO personalInfoPO = new PersonalInfoPO();
+        BeanUtils.copyProperties(personalInfoVO, personalInfoPO);
+        log.info(personalInfoPO.toString());
+        personalInfoPO.setName("Test");
+        personalInfoMapper.updateAllInfoByGradeAndIdNumber(personalInfoPO);
     }
 }

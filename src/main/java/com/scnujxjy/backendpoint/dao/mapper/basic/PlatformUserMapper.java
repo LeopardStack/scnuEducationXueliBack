@@ -56,4 +56,12 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
      */
     @Select("SELECT user_id FROM platform_user WHERE username = #{username}")
     long getUserIdByUsername(String username);
+
+    /**
+     * 根据学生的身份证号码删除其账户信息
+     * @param idNumber 身份证号码
+     * @return 删除的记录数
+     */
+    @Delete("DELETE FROM platform_user WHERE username = #{idNumber}")
+    int deleteStudentByIdNumber(String idNumber);
 }

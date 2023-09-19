@@ -8,7 +8,11 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.StudentFilter;
+import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -33,6 +37,15 @@ public class CourseScheduleController {
 
     @Resource
     private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private CollegeAdminFilter collegeAdminFilter;
+
+    @Resource
+    private TeacherFilter teacherFilter;
+
+    @Resource
+    private StudentFilter studentFilter;
 
     /**
      * 根据id查询排课表信息
@@ -82,6 +95,81 @@ public class CourseScheduleController {
     }
 
     /**
+     * 获取二级学院管理员所有的排课表信息 不限制日期
+     * @param courseScheduleROPageRO
+     * @return
+     */
+    @PostMapping("/allPageByCollegeAdmin")
+    public SaResult allPageQueryCourseScheduleByCollegeAdmin(@RequestBody PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleROPageRO.getEntity())) {
+            courseScheduleROPageRO.setEntity(new CourseScheduleRO());
+        }
+        // 查询数据
+        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.
+                allPageQueryCourseScheduleFilter(courseScheduleROPageRO, collegeAdminFilter);
+        // 数据校验
+        if (Objects.isNull(courseScheduleVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseScheduleVOPageVO);
+    }
+
+    /**
+     * 获取教师所有的排课表信息 不限制日期
+     * @param courseScheduleROPageRO
+     * @return
+     */
+    @PostMapping("/allPageByTeacher")
+    public SaResult allPageQueryCourseScheduleByTeacher(@RequestBody PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleROPageRO.getEntity())) {
+            courseScheduleROPageRO.setEntity(new CourseScheduleRO());
+        }
+        // 查询数据
+        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.
+                allPageQueryCourseScheduleFilter(courseScheduleROPageRO, teacherFilter);
+        // 数据校验
+        if (Objects.isNull(courseScheduleVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseScheduleVOPageVO);
+    }
+
+    /**
+     * 获取学生所有的排课表信息 不限制日期 除非她/他本人提供筛选条件
+     * @param courseScheduleROPageRO 排课表信息筛选条件
+     * @return
+     */
+    @PostMapping("/allPageByStudent")
+    public SaResult allPageQueryCourseScheduleByStudent(@RequestBody PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleROPageRO.getEntity())) {
+            courseScheduleROPageRO.setEntity(new CourseScheduleRO());
+        }
+        // 查询数据
+        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.
+                allPageQueryCourseScheduleFilter(courseScheduleROPageRO, studentFilter);
+        // 数据校验
+        if (Objects.isNull(courseScheduleVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseScheduleVOPageVO);
+    }
+
+    /**
      * 获取所有的排课表信息 不限制日期
      * @param courseScheduleROPageRO
      * @return
@@ -96,7 +184,8 @@ public class CourseScheduleController {
             courseScheduleROPageRO.setEntity(new CourseScheduleRO());
         }
         // 查询数据
-        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.allPageQueryCourseScheduleService(courseScheduleROPageRO);
+        PageVO<CourseScheduleWithLiveInfoVO> courseScheduleVOPageVO = courseScheduleService.
+                allPageQueryCourseScheduleService(courseScheduleROPageRO);
         // 数据校验
         if (Objects.isNull(courseScheduleVOPageVO)) {
             throw dataNotFoundError();

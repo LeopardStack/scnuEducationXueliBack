@@ -17,6 +17,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -82,7 +83,8 @@ public class Test2 {
      */
     public static int getYearFromCode(String code) {
         if (code == null || code.length() < 2) {
-            throw new IllegalArgumentException("Code must have at least 2 characters.");
+            throw new IllegalArgumentException("Code must " +
+                    "have at least 2 characters.");
         }
 
         int threshold = 50;  // 假设从 50 开始是 21 世纪
@@ -95,10 +97,11 @@ public class Test2 {
         }
     }
 
+    @Transactional
     public void insertXHStudents(Set<String> undefinedJxd, Map<String, String> jxd_jc, int grade,
                                  List<HashMap<String, String>> failedStudents) {
         ArrayList<HashMap<String, String>> studentInfos = getStudentInfos(String.valueOf(grade));
-        log.info(String.valueOf(studentInfos.size()));
+        log.info(grade + " 年的总学生人数是 " + String.valueOf(studentInfos.size()));
 
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyyMMdd");
@@ -107,13 +110,19 @@ public class Test2 {
         SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
         SimpleDateFormat dateFormat6 = new SimpleDateFormat("yyyy.MM.dd");
 
-        dateFormat4.setTimeZone(TimeZone.getTimeZone("GMT"));
-        dateFormat5.setTimeZone(TimeZone.getTimeZone("GMT"));
-        dateFormat6.setTimeZone(TimeZone.getTimeZone("GMT"));
+        TimeZone timeZone = TimeZone.getTimeZone("Asia/Shanghai"); // 设置为北京时间
+        dateFormat1.setTimeZone(timeZone);
+        dateFormat2.setTimeZone(timeZone);
+        dateFormat3.setTimeZone(timeZone);
+        dateFormat4.setTimeZone(timeZone);
+        dateFormat5.setTimeZone(timeZone);
+        dateFormat6.setTimeZone(timeZone);
 
         for (HashMap<String, String> studentData : studentInfos) {
             if(studentData.get("XXXS").contains("文凭")){
                 // 澳门培训的文凭班学生直接跳过
+                studentData.put("插入失败原因", "澳门培训的文凭班学生");
+                failedStudents.add(studentData);
                 continue;
             }
             try {
@@ -251,12 +260,14 @@ public class Test2 {
                     graduationInfoPO.setGraduationDate(graduateDate);
 
                     graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
-                    graduationInfoMapper.insert(graduationInfoPO);
+//                    graduationInfoMapper.insert(graduationInfoPO);
                 }
 
-                studentStatusMapper.insert(studentStatusPO);
-                personalInfoMapper.insert(personalInfoPO);
-                originalEducationInfoMapper.insert(originalEducationInfoPO);
+//                studentStatusMapper.insert(studentStatusPO);
+//                personalInfoMapper.insert(personalInfoPO);
+                // 覆盖导入 学生个人信息
+                personalInfoMapper.updateAllInfoByGradeAndIdNumber(personalInfoPO);
+//                originalEducationInfoMapper.insert(originalEducationInfoPO);
             }catch (ParseException p){
                 studentData.put("插入失败原因", "其他日期解析失败 " +p.getMessage());
                 failedStudents.add(studentData);
@@ -345,9 +356,11 @@ public class Test2 {
 //            writeToExcel(failedStudents, i + " 数据插入失败的学生学籍数据.xlsx");
 //        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
-
-        int startYear = 2022;
-        int endYear = 2022;
+        /**
+         * 2023 - 2020 级已经全部导入了
+         */
+        int startYear = 2015;
+        int endYear = 2019;
 
         ExecutorService executorService = Executors.newFixedThreadPool(endYear - startYear + 1);
         List<Future<Void>> futures = new ArrayList<>();
@@ -357,7 +370,7 @@ public class Test2 {
             futures.add(executorService.submit(() -> {
                 List<HashMap<String, String>> failedStudents = Collections.synchronizedList(new ArrayList<>());
                 insertXHStudents(undefinedJxd, jxd_jc, year, failedStudents);
-                writeToExcel(failedStudents, year + " 数据插入失败的学生学籍数据.xlsx");
+                writeToExcel(failedStudents, "./data_import_error_excel/studentStatusData/" + year + " 数据插入失败的学生学籍数据.xlsx");
                 return null;
             }));
         }

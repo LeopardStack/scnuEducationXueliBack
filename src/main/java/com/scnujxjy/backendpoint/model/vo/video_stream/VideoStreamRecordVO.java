@@ -80,4 +80,9 @@ public class VideoStreamRecordVO {
      * 观看链接
      */
     private String watchUrl;
+
+    /**
+     * 单点登录链接
+     */
+    private String autoUrl;
 }

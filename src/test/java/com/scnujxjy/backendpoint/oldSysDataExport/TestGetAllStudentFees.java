@@ -1,17 +1,38 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class ErrorPaymentInfoData extends PaymentInfoPO {
+    @ExcelProperty(value = "导入失败原因", index = 12)
+    private String errorReason;
+}
 
 @SpringBootTest
 @Slf4j
@@ -19,9 +40,18 @@ public class TestGetAllStudentFees {
     @Autowired(required = false)
     private PaymentInfoMapper paymentInfoMapper;
 
-    public void insertStudentFeesByGrade(int grade, ArrayList<HashMap<String, String>> errorList){
+    public void insertStudentFeesByGrade(int grade, ArrayList<ErrorPaymentInfoData> errorList){
+        SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
+        TimeZone timeZone = TimeZone.getTimeZone("Asia/Shanghai"); // 设置为北京时间
+        dateFormat1.setTimeZone(timeZone);
+        dateFormat2.setTimeZone(timeZone);
+        dateFormat3.setTimeZone(timeZone);
+
         ArrayList<HashMap<String, String>> studentFees = getStudentFees("" + grade);
 //        log.info(String.valueOf(studentFees.size()));
+        ErrorPaymentInfoData errorPaymentInfoData = new ErrorPaymentInfoData();
 
         int success_insert = 0;
         int failed_insert = 0;
@@ -35,6 +65,34 @@ public class TestGetAllStudentFees {
 //            paymentInfo.setAdmissionNumber(studentData.get("NJ"));
                 paymentInfo.setName(studentData.get("XM"));
                 paymentInfo.setIdCardNumber(studentData.get("SFZH"));
+
+                String feeDateString = studentData.get("RQ");
+                Date feeDate = null;
+                try {
+                    feeDate = dateFormat1.parse(feeDateString);
+                } catch (ParseException e) {
+                    try{
+                        feeDate = dateFormat2.parse(feeDateString);
+                    }catch (ParseException e1){
+                        try{
+                            feeDate = dateFormat3.parse(feeDateString);
+                        }catch (ParseException e2){
+                            errorPaymentInfoData.setStudentNumber(studentData.get("XHAO"));
+                            errorPaymentInfoData.setName(studentData.get("XM"));
+                            errorPaymentInfoData.setIdCardNumber(studentData.get("SFZH"));
+                            errorPaymentInfoData.setPaymentCategory(studentData.get("LB"));
+                            errorPaymentInfoData.setAcademicYear(studentData.get("XN"));
+                            errorPaymentInfoData.setPaymentType(studentData.get("JFFS"));
+//                errorPaymentInfoData.setam(studentData.get("JFFS"));
+                            errorPaymentInfoData.setErrorReason(e.toString());
+                            errorList.add(errorPaymentInfoData);
+                            log.error("缴费日期格式解析失败 " + e2.toString());
+                        }
+
+                    }
+                }
+                paymentInfo.setPaymentDate(feeDate);
+
                 paymentInfo.setPaymentCategory(studentData.get("LB"));
                 paymentInfo.setAcademicYear(studentData.get("XN"));
                 paymentInfo.setPaymentType(studentData.get("JFFS"));
@@ -49,12 +107,20 @@ public class TestGetAllStudentFees {
                 }
                 paymentInfo.setAmount(Double.parseDouble(fee));
                 paymentInfo.setPaymentMethod("学年");
-
+                paymentInfo.setIsPaid("是");
                 paymentInfoMapper.insert(paymentInfo);
                 success_insert += 1;
             }catch (Exception e){
                 log.error(e.toString());
-                errorList.add(studentData);
+                errorPaymentInfoData.setStudentNumber(studentData.get("XHAO"));
+                errorPaymentInfoData.setName(studentData.get("XM"));
+                errorPaymentInfoData.setIdCardNumber(studentData.get("SFZH"));
+                errorPaymentInfoData.setPaymentCategory(studentData.get("LB"));
+                errorPaymentInfoData.setAcademicYear(studentData.get("XN"));
+                errorPaymentInfoData.setPaymentType(studentData.get("JFFS"));
+//                errorPaymentInfoData.setam(studentData.get("JFFS"));
+                errorPaymentInfoData.setErrorReason(e.toString());
+                errorList.add(errorPaymentInfoData);
                 failed_insert += 1;
             }
         }
@@ -68,9 +134,19 @@ public class TestGetAllStudentFees {
      */
     @Test
     public void test1(){
-        ArrayList<HashMap<String, String>> errorList = new ArrayList<>();
-        for(int i = 2023; i > 2001; i--){
+        ArrayList<ErrorPaymentInfoData> errorList = new ArrayList<>();
+        StringBuilder allGrades = new StringBuilder();
+        // 2000 - 至今 是全部的缴费数据 退学、休学、转学是学籍异动产生的费用
+        for(int i = 2023; i > 2000; i--){
             insertStudentFeesByGrade(i, errorList);
+            allGrades.append(i).append("_");
         }
+
+        // 调用新方法导出errorList
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String currentDateTime = LocalDateTime.now().format(formatter);
+        String relativePath = "data_import_error_excel/studentfees/";
+        String errorFileName = relativePath + currentDateTime + "_" + allGrades + "导入成绩数据失败的部分数据.xlsx";
+        EasyExcel.write(errorFileName, ErrorPaymentInfoData.class).sheet("Error Data").doWrite(errorList);
     }
 }

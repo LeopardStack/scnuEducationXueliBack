@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
@@ -13,7 +14,9 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class PersonalInfoVO {
+public class PersonalInfoVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /**
      * 自增主键
      */
@@ -88,4 +91,9 @@ public class PersonalInfoVO {
      * 年级
      */
     private String grade;
+
+    /**
+     * 学生姓名
+     */
+    private String name;
 }

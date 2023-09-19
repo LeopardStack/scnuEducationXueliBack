@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getClassDatas;
 
@@ -39,6 +40,8 @@ public class TestGetAllClassData {
         log.info("班级数据总数 " + classDatas.size());
 
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy.MM");
+        TimeZone timeZone = TimeZone.getTimeZone("Asia/Shanghai"); // 设置为北京时间
+        dateFormat1.setTimeZone(timeZone);
 
         for(HashMap<String, String> hashMap : classDatas){
 

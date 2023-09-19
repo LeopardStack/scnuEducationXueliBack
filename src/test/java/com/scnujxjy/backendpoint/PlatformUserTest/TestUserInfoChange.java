@@ -5,6 +5,7 @@ import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
@@ -32,7 +33,8 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword(){
-        Boolean aBoolean = platformUserService.changePassword(2997L, "123456");
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName("M001");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "2023JJy@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -122,4 +124,79 @@ public class TestUserInfoChange {
         int insert = collegeAdminInformationService.getBaseMapper().insert(collegeAdminInformationPO);
         log.info("插入教务员账号 " + insert);
     }
+
+    /**
+     * 根据年级来添加用户账号
+     * @param grade 年级
+     */
+    private void generateStudentAccount(String grade){
+        List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGrade(grade);
+//        log.info(studentStatusPOS.toString());
+
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+
+        for(StudentStatusPO studentStatusPO: studentStatusPOS){
+            PlatformUserRO platformUserRO = new PlatformUserRO();
+            String userName = studentStatusPO.getIdNumber();
+            platformUserRO.setUsername(userName);
+            if(userName.length() >= 6) {
+                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+            } else {
+                platformUserRO.setPassword(userName); // 如果 account 长度小于6，则直接使用 account 作为密码
+            }
+            platformUserRO.setRoleId(1L);
+            // 检测是否该用户存在
+            if(platformUserService.getBaseMapper().selectPlatformUsers1(userName).size() > 0){
+                log.info("该用户已存在平台账户 " + platformUserRO.toString());
+            }else{
+                platformUserROList.add(platformUserRO);
+            }
+        }
+
+        platformUserService.batchCreateUser(platformUserROList);
+        log.info("共计生成账号 " + studentStatusPOS.size() + " 个");
+    }
+
+
+    /**
+     * 指定一个年级的学生群体创建登录账号
+     */
+    @Test
+    public void addStudentLoginAccountByGrade(){
+        /**
+         * 2023 - 2019 都有了
+         */
+        int gradeStart = 2018;
+        int gradeEnd = 2015;
+        for(int i = gradeStart; i >= gradeEnd; i--){
+            generateStudentAccount("" + i);
+        }
+    }
+
+
+    private void deleteStudentAccountByGrade(String grade) {
+        // 获取指定年级的所有学生的账号
+        List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGrade(grade);
+
+        if(studentStatusPOS.isEmpty()) {
+            log.info("没有找到年级为 " + grade + " 的用户账号");
+            return;
+        }
+
+        // 删除这些账号
+        for(StudentStatusPO studentStatusPO : studentStatusPOS) {
+            platformUserService.getBaseMapper().deleteStudentByIdNumber(studentStatusPO.getIdNumber());
+            log.info("成功删除了用户账号：" + studentStatusPO.getIdNumber());
+        }
+    }
+
+    @Test
+    public void testDeleteStudentAccountByGrade() {
+//        String gradeToDelete = "2023";  // 你可以根据需要更改这个值
+//        deleteStudentAccountByGrade(gradeToDelete);
+        String userName = "";
+        platformUserService.getBaseMapper().deleteStudentByIdNumber(userName);
+        log.info("成功删除了用户账号：" + userName);
+    }
+
 }

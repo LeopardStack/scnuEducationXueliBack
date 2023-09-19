@@ -19,7 +19,6 @@ spring:
     queue1: test
     queue2: test1
 
-
   servlet:
     multipart:
       maxFileSize: 10GB
@@ -27,9 +26,11 @@ spring:
   ## mysql
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://113.108.140.172:80/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: xhl2023@
+    hikari:
+      maximum-pool-size: 1000 # 设置最大连接数为1000
 
 mybatis:
   mapper-locations: classpath:com/scnujxjy/backendpoint/dao/mapper/*xml
@@ -38,7 +39,7 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-# 配置日志
+#配置日志
 #mybatis-plus:
 #  configuration:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
@@ -85,4 +86,3 @@ management:
     export:
       prometheus:
         enabled: true
-

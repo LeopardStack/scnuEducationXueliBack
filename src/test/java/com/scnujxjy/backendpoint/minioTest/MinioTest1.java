@@ -240,9 +240,9 @@ public class MinioTest1 {
      */
     @Test
     public void testUploadPictures(){
-        String bucketName = "xueweipictures";
+        String bucketName = "xuelistudentpictures";
         String projectRootPath = System.getProperty("user.dir");
-        File rootDir = new File(projectRootPath, "xueweipictures");
+        File rootDir = new File(projectRootPath, "xuelistudentpictures");
         rootDirPath = rootDir.getAbsolutePath();
 
         try {
@@ -251,5 +251,45 @@ public class MinioTest1 {
             throw new RuntimeException(e);
         }
     }
+
+    public String searchImageByFileName(String bucketName, String fileName) {
+        try {
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket(bucketName).object(fileName).build()) != null;
+
+            if (!exists) {
+                return null; // 文件不存在
+            }
+
+            String presignedUrl = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .expiry(7, TimeUnit.DAYS) // 设置链接有效期
+                            .build());
+
+            return presignedUrl;
+        } catch (Exception e) {
+            throw new RuntimeException("文件搜索失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 搜索 Minio 中是否存在学生的照片
+     */
+    @Test
+    public void searchPic(){
+        String fileName = "2023/import/2244010311606218.jpg";
+
+        String imageUrl = searchImageByFileName(bucketName, fileName);
+        if (imageUrl != null) {
+            System.out.println("图片下载链接：" + imageUrl);
+        } else {
+            System.out.println("文件不存在");
+        }
+
+    }
+
 
 }

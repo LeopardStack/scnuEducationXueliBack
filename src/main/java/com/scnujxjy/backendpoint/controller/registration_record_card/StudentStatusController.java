@@ -1,16 +1,26 @@
 package com.scnujxjy.backendpoint.controller.registration_record_card;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentAllStatusInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
+import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.Objects;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
@@ -26,6 +36,9 @@ public class StudentStatusController {
 
     @Resource
     private StudentStatusService studentStatusService;
+
+    @Resource
+    private MinioService minioService;
 
     /**
      * 根据id查询学籍信息
@@ -108,6 +121,132 @@ public class StudentStatusController {
             throw dataDeleteError();
         }
         return SaResult.data(count);
+    }
+
+    /**
+     * 根据学生用户 id 查询自己的学籍信息
+     *
+     * @return 学籍信息
+     */
+    @GetMapping("/query_student_status_information")
+    public SaResult queryStudentStatusInformation() {
+        Object loginId = StpUtil.getLoginId();
+        String studentId = null;
+        // 校验参数
+        if (Objects.isNull(loginId)) {
+            throw dataMissError();
+        }else{
+            try{
+                studentId = (String)loginId;
+            }catch (Exception e){
+                throw e;
+            }
+        }
+        // 查询
+        List<StudentAllStatusInfoVO> studentAllStatusInfoVOS = studentStatusService.statusInfoByIdNumber(studentId);
+        if (Objects.isNull(studentAllStatusInfoVOS)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(studentAllStatusInfoVOS);
+    }
+
+    /**
+     * 根据 用户名查询学籍信息
+     *
+     * @return 学籍信息
+     */
+    @GetMapping("/detail_username")
+    public SaResult detailByUserName() {
+        String loginId = (String)StpUtil.getLoginId();
+        // 校验参数
+        if (Objects.isNull(loginId) || loginId.length() == 0) {
+            throw dataMissError();
+        }
+        // 查询
+        List<StudentStatusVO> studentStatusVOs = studentStatusService.getBaseMapper().
+                selectStudentByidNumber(loginId);
+        if (Objects.isNull(studentStatusVOs) || studentStatusVOs.size() == 0) {
+            throw dataNotFoundError();
+        }
+
+        // 使用流操作找到最大的 grade 值
+        Optional<StudentStatusVO> maxGradeStudent = studentStatusVOs.stream()
+                .max(Comparator.comparing(StudentStatusVO::getGrade));
+
+        // 检查是否找到最大 grade 值的对象
+        StudentStatusVO result = null;
+        result = maxGradeStudent.orElseGet(() -> studentStatusVOs.get(0));
+
+        return SaResult.data(result);
+    }
+
+    /**
+     * 获取入学照片
+     * @param grade 年级
+     * @return
+     */
+    @GetMapping("/searchImportPhoto/{grade}")
+    public ResponseEntity<byte[]> getImportPhoto(@PathVariable String grade) {
+        byte[] photoBytes = studentStatusService.getImportPhoto(grade);
+
+        if (photoBytes != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(photoBytes.length)
+                    .body(photoBytes);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 获取毕业照片
+     * @param grade 年级
+     * @return
+     */
+    @GetMapping("/searchExportPhoto/{grade}")
+    public ResponseEntity<byte[]> getExportPhoto(@PathVariable String grade) {
+        byte[] photoBytes = studentStatusService.getExportPhoto(grade);
+
+        if (photoBytes != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(photoBytes.length)
+                    .body(photoBytes);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * 获取学位照片
+     * @param payload 学位照片的URL
+     * @return
+     */
+    @PostMapping("/searchDegreePhoto")
+    public ResponseEntity<byte[]> getDegreePhoto(@RequestBody Map<String, String> payload) {
+        String degreePhotoUrl = payload.get("degreePhotoUrl");
+
+        // 根据 degreePhotoUrl 获取学位照片的字节数据
+        byte[] photoBytes = studentStatusService.getDegreePhotoByURL(degreePhotoUrl);
+
+        if (photoBytes != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(photoBytes.length)
+                    .body(photoBytes);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
 

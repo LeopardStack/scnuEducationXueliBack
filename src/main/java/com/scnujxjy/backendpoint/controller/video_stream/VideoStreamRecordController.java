@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.controller;
+package com.scnujxjy.backendpoint.controller.video_stream;
 
 
 import cn.dev33.satoken.util.SaResult;

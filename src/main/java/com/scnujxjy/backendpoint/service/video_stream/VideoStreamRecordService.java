@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +79,15 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         }
         res.setId(videoStreamRecordPO.getId());
         baseMapper.updateById(res);
-        return videoStreamInverter.po2VO(baseMapper.selectById(id));
+        VideoStreamRecordVO videoStreamRecordVO = videoStreamInverter.po2VO(baseMapper.selectById(id));
+
+        try {
+            String s = videoStreamUtils.generateTeacherSSOLink(videoStreamRecordVO.getChannelId());
+            videoStreamRecordVO.setAutoUrl(s);
+        }catch (Exception e){
+            log.error(e.toString());
+        }
+        return videoStreamRecordVO;
     }
 
     /**
@@ -271,6 +281,20 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             return false;
         }
         return true;
+    }
+
+    /**
+     * 根据频道 ID 创建教师单点登录链接
+     * @param channelId 频道 ID
+     * @return
+     */
+    public String generateAutoURL(String channelId) {
+        try {
+            return videoStreamUtils.generateTeacherSSOLink(channelId);
+        }catch (Exception e){
+            log.error(e.toString());
+        }
+        return null;
     }
 
 }

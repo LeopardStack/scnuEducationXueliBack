@@ -1,14 +1,23 @@
 server:
-  port: 40001
+  port: 40000
 
 spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
   redis:
-    host: 192.168.52.133
-    port: 6379
+    host: 113.108.140.173
+    port: 8001
     password: 12345A
+  # rabbitmq
+  rabbitmq:
+    host: 113.108.140.173
+    port: 8003
+    username: rabbitmq
+    password: password
+    queue1: test
+    queue2: test1
+
   servlet:
     multipart:
       maxFileSize: 10GB
@@ -16,13 +25,13 @@ spring:
   ## mysql
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.52.133:3308/fxlplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    url: jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+    password: xhl2023@
 
 mybatis:
-  mapper-locations: classpath:mapper/*xml
-  type-aliases-package: com.scnujxjy.backendpoint.entity
+  mapper-locations: classpath:com/scnujxjy/backendpoint/dao/mapper/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.dao.entity
   # 开启驼峰命名
   configuration:
     map-underscore-to-camel-case: true
@@ -38,16 +47,16 @@ logging:
 
 
 minio:
-  url: http://192.168.52.133:9000/
-  accessKey: SnxU7beOfHZ7AVU4xdxS
-  secretKey: h3KgVWJLK4ejfAhWIe7Llh3AFWMgKuOdpIG02PEE
-  bucketName: miniofilesfxl
+  url: http://113.108.140.173:8000/
+  accessKey: WU2D2LUC4BM0KHDLESAH
+  secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
+  bucketName: xuelistudentpictures
 
 sa-token:
   # token名称 (同时也是cookie名称)
-  token-name: fxl_token
+  token-name: xl_token
   # token有效期，单位s 默认30天, -1代表永不过期
-  timeout: 300
+  timeout: 30000
   # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
   active-timeout: -1
   # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
@@ -58,3 +67,18 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: false
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

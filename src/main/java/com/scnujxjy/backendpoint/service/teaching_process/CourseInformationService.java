@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.inverter.teaching_process.CourseInformationInve
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -167,13 +168,13 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
             long loginId = Long.parseLong(userID);
             PlatformUserPO platformUserPO = platformUserMapper.selectById(loginId);
             String username = platformUserPO.getUsername();
-            List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentByidNumber(username);
-            if(studentStatusPOS.size() == 0){
+            List<StudentStatusVO> studentStatusVOS = studentStatusMapper.selectStudentByidNumber(username);
+            if(studentStatusVOS.size() == 0){
                 return new ArrayList<CourseInformationRO>();
             }else{
                 List<CourseInformationPO> returnCourseInformationPOS = new ArrayList<>();
-                for(StudentStatusPO studentStatusPO: studentStatusPOS){
-                    String class_identifier = studentStatusPO.getClassIdentifier();
+                for(StudentStatusVO studentStatusVO: studentStatusVOS){
+                    String class_identifier = studentStatusVO.getClassIdentifier();
                     List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(class_identifier);
                     if(classInformationPOS.size() > 1){
                         log.error(username + " 该学生所对应的班级标识 " + class_identifier + " 存在多个班级信息");

@@ -51,17 +51,20 @@ public class ScoreInformationPO implements Serializable {
     private String assessmentType;
 
     @ExcelProperty(value = "总评成绩", index = 11)
-    private Double finalScore;
+    private String finalScore;
 
     @ExcelProperty(value = "补考1成绩", index = 12)
-    private Double makeupExam1Score;
+    private String makeupExam1Score;
 
     @ExcelProperty(value = "补考2成绩", index = 13)
-    private Double makeupExam2Score;
+    private String makeupExam2Score;
 
     @ExcelProperty(value = "结业后补考成绩", index = 14)
-    private Double postGraduationScore;
+    private String postGraduationScore;
 
     @ExcelProperty(value = "备注信息", index = 15)
     private String remarks;
+
+    @ExcelProperty(value = "状态", index = 16)
+    private String status;
 }

@@ -90,7 +90,7 @@ public class CourseInformationRO {
     /**
      * 课程编号
      */
-    private String course_code;
+    private String courseCode;
 
 
 }

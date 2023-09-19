@@ -104,6 +104,24 @@ public class PlatformUserController {
     }
 
     /**
+     * 根据用户id查询数据
+     *
+     * @return 用户信息
+     */
+    @GetMapping("/detailUser")
+    public SaResult detail() {
+        Object loginId = StpUtil.getLoginId();
+        // 查询数据
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginId);
+        // 校验返回数据
+        if (Objects.isNull(platformUserVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(platformUserVO);
+    }
+
+    /**
      * 根据用户id查询角色权限资源信息
      *
      * @param userId 用户id

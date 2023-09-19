@@ -1,7 +1,9 @@
 package com.scnujxjy.backendpoint.controller.core_data;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -10,6 +12,7 @@ import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -108,6 +111,25 @@ public class PaymentInfoController {
             throw dataDeleteError();
         }
         return SaResult.data(count);
+    }
+
+    /**
+     * 学生获取自己的缴费信息
+     * @return
+     */
+    @GetMapping("/getPaymentInfo")
+    public SaResult getPaymentInfo() {
+        String loginId = (String) StpUtil.getLoginId();
+        // 参数校验
+        if (Objects.isNull(loginId) || loginId.trim().length() == 0) {
+            throw dataMissError();
+        }
+        // 查询数据
+        List<PaymentInfoPO> paymentInfoPOS = paymentInfoService.getBaseMapper().getStudentPayInfo(loginId);
+        if (Objects.isNull(paymentInfoPOS)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(paymentInfoPOS);
     }
 }
 

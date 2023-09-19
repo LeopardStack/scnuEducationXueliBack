@@ -106,5 +106,10 @@ public class PersonalInfoPO implements Serializable {
      */
     private String grade;
 
+    /**
+     * 学生姓名
+     */
+    private String name;
+
 
 }
