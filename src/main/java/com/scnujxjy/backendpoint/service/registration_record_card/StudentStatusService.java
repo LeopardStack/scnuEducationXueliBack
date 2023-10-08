@@ -14,12 +14,19 @@ import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInfor
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.*;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -312,5 +319,64 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
      */
     public byte[] getDegreePhotoByURL(String degreePhotoUrl) {
         return minioService.getFileFromMinio(degreePhotoUrl);
+    }
+
+    /**
+     * 根据传入的筛选参数 和角色筛选器来获取对应的学籍数据
+     * @param studentStatusROPageRO 筛选参数
+     * @param filter 角色筛选器
+     * @return
+     */
+    public FilterDataVO allPageQueryStudentStatusFilter(PageRO<StudentStatusFilterRO> studentStatusROPageRO, AbstractFilter filter) {
+        // 校验参数
+        if (Objects.isNull(studentStatusROPageRO)) {
+            log.error("参数缺失");
+            return null;
+        }
+
+
+        return filter.filterStudentStatus(studentStatusROPageRO);
+    }
+
+    /**
+     * 为不同角色导出学籍数据
+     * @param pageRO
+     * @param filter
+     */
+    public void generateBatchStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, AbstractFilter filter, String userId) {
+        // 校验参数
+        if (Objects.isNull(pageRO)) {
+            log.error("导出学籍数据参数缺失");
+
+        }
+
+
+        filter.exportStudentStatusData(pageRO, userId);
+    }
+
+    /**
+     * 获取学籍数据的筛选参数
+     * @param loginId 登录用户名
+     * @param filter 筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
+     * @return
+     */
+    public StudentStatusSelectArgs getStudentStatusArgs(String loginId, AbstractFilter filter) {
+        return filter.filterStudentStatusSelectArgs();
+    }
+
+    /**
+     * 为不同角色导出成绩数据
+     * @param pageRO
+     * @param filter
+     */
+    public void generateBatchScoreInformationData(PageRO<ScoreInformationFilterRO> pageRO, AbstractFilter filter, String userId) {
+        // 校验参数
+        if (Objects.isNull(pageRO)) {
+            log.error("导出学籍数据参数缺失");
+
+        }
+
+
+        filter.exportScoreInformationData(pageRO, userId);
     }
 }

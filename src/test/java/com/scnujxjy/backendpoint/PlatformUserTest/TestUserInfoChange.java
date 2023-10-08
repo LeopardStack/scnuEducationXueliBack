@@ -33,20 +33,39 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword(){
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName("M001");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "2023JJy@");
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName("M17047");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M170472023@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
     }
 
+    /**
+     * 添加学历教育部管理员
+     */
     @Test
     public void addManager(){
+
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("Mjiaokeyuan001");
-        platformUserRO.setPassword("123456");
-        platformUserRO.setRoleId(6L);
+        platformUserRO.setUsername("xuelijiaoyuTest1");
+        platformUserRO.setPassword("xuelijiaoyuTest12023@");
+        platformUserRO.setRoleId(3L);
+        platformUserROList.add(platformUserRO);
+        platformUserService.batchCreateUser(platformUserROList);
+    }
+
+    /**
+     * 添加教学点管理员
+     */
+    @Test
+    public void addTeachingPointManager(){
+
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+        PlatformUserRO platformUserRO = new PlatformUserRO();
+        platformUserRO.setUsername("guangzhoudadeTest1");
+        platformUserRO.setPassword("guangzhoudadeTest12023@");
+        platformUserRO.setRoleId(7L);
         platformUserROList.add(platformUserRO);
         platformUserService.batchCreateUser(platformUserROList);
     }

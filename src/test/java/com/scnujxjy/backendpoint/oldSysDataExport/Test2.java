@@ -348,13 +348,6 @@ public class Test2 {
         jxd_jc.put("深圳宝安职训", "深圳宝安教学点");
         jxd_jc.put("佛山天天", "佛山天天教学点");
 
-//        Set<String> undefinedJxd = new HashSet<>();
-//
-//        for(int i = 2023; i >=2020; i--){
-//            List<HashMap<String, String>> failedStudents = new ArrayList<>();
-//            insertXHStudents(undefinedJxd, jxd_jc, i, failedStudents);
-//            writeToExcel(failedStudents, i + " 数据插入失败的学生学籍数据.xlsx");
-//        }
         Set<String> undefinedJxd = Collections.synchronizedSet(new HashSet<>());
         /**
          * 2023 - 2020 级已经全部导入了

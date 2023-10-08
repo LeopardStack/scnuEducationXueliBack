@@ -18,7 +18,6 @@ import java.util.Scanner;
 
 public class CodeGenerator {
 
-
     public static String scanner(String tip) {
         Scanner scanner = new Scanner(System.in);
         StringBuilder help = new StringBuilder();
@@ -33,10 +32,6 @@ public class CodeGenerator {
         throw new MybatisPlusException("请输入正确的" + tip + "！");
     }
 
-
-
-
-
     public static void main(String[] args) {
         // 代码生成器
         AutoGenerator mpg = new AutoGenerator();
@@ -44,15 +39,13 @@ public class CodeGenerator {
         // 全局配置
         GlobalConfig gc = new GlobalConfig();
         String projectPath = System.getProperty("user.dir");
-        gc.setOutputDir(projectPath + "/src/main/java");//设置代码生成路径
-        gc.setFileOverride(true);//是否覆盖以前文件
-        gc.setOpen(false);//是否打开生成目录
-        gc.setAuthor("leopard");//设置项目作者名称
-        gc.setIdType(IdType.AUTO);//设置主键策略
-        gc.setBaseResultMap(true);//生成基本ResultMap
-        gc.setBaseColumnList(true);//生成基本ColumnList
-        gc.setServiceName("%sService");//去掉服务默认前缀
-        gc.setDateType(DateType.ONLY_DATE);//设置时间类型
+        gc.setOutputDir(projectPath + "/src/main/java");
+        gc.setAuthor("谢辉龙");
+        gc.setIdType(IdType.AUTO);
+        gc.setBaseResultMap(true);
+        gc.setBaseColumnList(true);
+        gc.setServiceName("%sService");
+        gc.setDateType(DateType.ONLY_DATE);
         mpg.setGlobalConfig(gc);
 
         // 数据源配置
@@ -66,46 +59,36 @@ public class CodeGenerator {
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.teaching_process");
-//        pc.setXml("mapper.registration_record_card.xml");
-        pc.setEntity("dao.entity.teaching_process");
-
-        // 不设置Service和Controller包
-        // pc.setService("service.registration_record_card");
-        // pc.setServiceImpl("service.registration_record_card.impl");
-        // pc.setController("controller.registration_record_card");
+        pc.setMapper("dao.mapper.platform_message");
+        pc.setEntity("dao.entity.platform_message");
+        pc.setController("controller.platform_message");
         mpg.setPackageInfo(pc);
 
         // 策略配置
         StrategyConfig sc = new StrategyConfig();
         sc.setNaming(NamingStrategy.underline_to_camel);
         sc.setColumnNaming(NamingStrategy.underline_to_camel);
-        sc.setEntityLombokModel(true);//自动lombok
+        sc.setEntityLombokModel(true);
         sc.setRestControllerStyle(true);
         sc.setControllerMappingHyphenStyle(true);
-
-        sc.setLogicDeleteFieldName("deleted");//设置逻辑删除
+        sc.setLogicDeleteFieldName("deleted");
 
         //设置自动填充配置
         TableFill gmt_create = new TableFill("create_time", FieldFill.INSERT);
         TableFill gmt_modified = new TableFill("update_time", FieldFill.INSERT_UPDATE);
-        ArrayList<TableFill> tableFills=new ArrayList<>();
+        ArrayList<TableFill> tableFills = new ArrayList<>();
         tableFills.add(gmt_create);
         tableFills.add(gmt_modified);
         sc.setTableFillList(tableFills);
 
         //乐观锁
         sc.setVersionFieldName("version");
-        sc.setRestControllerStyle(true);//驼峰命名
+        sc.setRestControllerStyle(true);
 
-
-
-        //  sc.setTablePrefix("tbl_"); 设置表名前缀
         sc.setInclude(scanner("表名，多个英文逗号分割").split(","));
         mpg.setStrategy(sc);
 
         // 生成代码
         mpg.execute();
     }
-
 }

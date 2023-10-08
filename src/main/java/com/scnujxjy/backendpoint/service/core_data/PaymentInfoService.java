@@ -10,9 +10,15 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -135,4 +141,24 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
     }
 
 
+    /**
+     * 根据角色筛选器 获取缴费信息
+     * @param paymentInfoFilterROPageRO 缴费筛选参数
+     * @param filter 角色筛选器
+     * @return
+     */
+    public FilterDataVO allPageQueryPayInfoFilter(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO,
+                                                  AbstractFilter filter) {
+        return filter.filterPayInfo(paymentInfoFilterROPageRO);
+    }
+
+    /**
+     * 获取缴费数据的筛选参数
+     * @param loginId 登录用户名
+     * @param filter 筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
+     * @return
+     */
+    public PaymentInformationSelectArgs getStudentStatusArgs(String loginId, AbstractFilter filter) {
+        return filter.filterPaymentInformationSelectArgs();
+    }
 }

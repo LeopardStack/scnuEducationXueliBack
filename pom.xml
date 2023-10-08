@@ -238,6 +238,25 @@
             <version>3.3.2</version>
         </dependency>
 
+        <!--        将日志发送到 logstash -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>5.1</version>
+        </dependency>
+            <!--添加切面依赖-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!--  引入 interbase 华师依赖      -->
+        <dependency>
+            <groupId>com.scnu</groupId>
+            <artifactId>interbase</artifactId>
+            <version>1.0</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.bouncycastle</groupId>

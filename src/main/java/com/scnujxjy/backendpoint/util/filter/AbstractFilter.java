@@ -1,18 +1,36 @@
 package com.scnujxjy.backendpoint.util.filter;
 
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.DegreeInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleFilterDataVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationSelectArgs;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -38,6 +56,15 @@ public abstract class AbstractFilter {
 
     @Resource
     protected ClassInformationMapper classInformationMapper;
+
+    @Resource
+    protected CourseInformationMapper courseInformationMapper;
+
+    @Resource
+    protected PaymentInfoMapper paymentInfoMapper;
+
+    @Resource
+    protected ScoreInformationMapper scoreInformationMapper;
 
     /**
      * 筛选学籍数据的方法
@@ -67,5 +94,118 @@ public abstract class AbstractFilter {
     public CourseScheduleFilterDataVO filterCourseSchedule(PageRO<CourseScheduleRO> courseScheduleFilter) {
         // 默认实现，子类可以选择性地重写
         return null;
+    }
+
+
+    /**
+     * 筛选教学计划数据的方法
+     * @param courseInformationFilter 获取的教学计划筛选数据
+     * @return 教学计划集合
+     */
+    public FilterDataVO filterCourseInformation(PageRO<CourseInformationRO> courseInformationFilter) {
+        // 默认实现，子类可以选择性地重写
+        return null;
+    }
+
+    /**
+     * 获取二级学院教学计划筛选参数
+     * @return 教学计划筛选参数
+     */
+    public CourseInformationSelectArgs filterCourseInformationSelectArgs() {
+        // 默认实现，子类可以选择性地重写
+        return null;
+    }
+
+    /**
+     * 筛选学籍数据的方法
+     * @param studentStatusFilter 获取的学籍筛选数据
+     * @return 学籍数据集合
+     */
+    public FilterDataVO filterStudentStatus(PageRO<StudentStatusFilterRO> studentStatusFilter) {
+        // 默认实现，子类可以选择性地重写
+        return null;
+    }
+
+    /**
+     * 导出学籍数据到指定用户 的消息中
+     * @param pageRO
+     */
+    public void exportStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, String userId) {
+    }
+
+    /**
+     * 获取学籍筛选参数
+     * @return
+     */
+    public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
+        return null;
+    }
+
+
+    /**
+     * 获取缴费信息
+     * @param paymentInfoFilterROPageRO 缴费筛选参数
+     * @return
+     */
+    public FilterDataVO filterPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        return null;
+    }
+
+    /**
+     * 获取成绩信息
+     * @param scoreInformationFilterROPageRO 成绩筛选参数
+     * @return
+     */
+    public FilterDataVO filterGradeInfo(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO) {
+        return null;
+    }
+
+    /**
+     * 获取成绩筛选参数
+     * @return
+     */
+    public ScoreInformationSelectArgs filterScoreInformationSelectArgs() {
+        return null;
+    }
+
+    /**
+     * 导出成绩数据到指定用户 的消息中
+     * @param pageRO
+     */
+    public void exportScoreInformationData(PageRO<ScoreInformationFilterRO> pageRO, String userId) {
+
+    }
+
+    /**
+     * 获取缴费信息筛选参数
+     * @return
+     */
+    public PaymentInformationSelectArgs filterPaymentInformationSelectArgs() {
+        return null;
+    }
+
+    /**
+     * 获取班级信息
+     * @param classInformationFilterROPageRO 班级筛选参数
+     * @return
+     */
+    public FilterDataVO filterClassInfo(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO) {
+        return null;
+    }
+
+    /**
+     * 获取班级信息筛选参数
+     * @return
+     */
+    public ClassInformationSelectArgs filterClassInformationSelectArgs() {
+        return null;
+    }
+
+    /**
+     * 导出班级数据到指定用户 的消息中
+     * @param pageRO
+     */
+    public void exportClassInformationData(PageRO<ClassInformationFilterRO> pageRO, String userId, PlatformMessagePO platformMessagePO) {
+
     }
 }

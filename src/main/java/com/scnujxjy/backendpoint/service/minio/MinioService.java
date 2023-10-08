@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.minio;
 
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
+import io.minio.errors.MinioException;
 import io.minio.http.Method;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +15,11 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -31,6 +33,28 @@ public class MinioService {
     public MinioService(MinioClient minioClient, @Value("${minio.bucketName}") String bucketName) {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
+    }
+
+    /**
+     * 列出指定桶下的所有文件名
+     * @return
+     */
+    public List<String> getAllFileNames(String bucketNameCertain){
+        List<String> returnList = new ArrayList<>();
+        try {
+            // 列出指定桶中的所有对象
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                    ListObjectsArgs.builder().bucket(bucketNameCertain).recursive(true).build());
+
+            // 打印对象名称
+            for (Result<Item> result : results) {
+                Item item = result.get();
+                returnList.add(item.objectName());
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return returnList;
     }
 
     public String getBucketName() {
@@ -202,6 +226,270 @@ public class MinioService {
         } catch (Exception e) {
             log.error("上传文件到 Minio 失败: " + e.getMessage());
             throw new RuntimeException("上传文件到 Minio 失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 把文件流直接写入到 Minio 作为一个文件
+     * @param inputStream
+     * @param fileName
+     */
+    public boolean uploadStreamToMinio(InputStream inputStream, String fileName, String diyBucketName) {
+        try {
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(fileName, "UTF-8"));
+
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(diyBucketName)
+                            .object(fileName)
+                            .stream(inputStream, -1, 10485760)  // 10485760 是 10MiB
+                            .headers(headers)
+                            .build());
+
+            return true;
+        } catch (Exception e) {
+            log.error("上传文件到 Minio 失败: " + e.getMessage());
+//            throw new RuntimeException("上传文件到 Minio 失败: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * 使用 Minio 地址下载文件
+     * @param minioUrl Minio 文件地址，例如 "dataexport/12/34/学籍数据.xlsx"
+     * @return 文件的字节流，如果文件不存在则返回 null
+     */
+    public byte[] downloadFileFromMinio(String minioUrl) {
+        try {
+            // 从 URL 中解析出桶名和文件名
+            String[] parts = minioUrl.split("/", 2);
+            if (parts.length < 2) {
+                log.error("无效的 Minio URL: " + minioUrl);
+                return null;
+            }
+
+            String parsedBucketName = parts[0];
+            String fileName = parts[1];
+
+            // 获取文件内容
+            return getFileFromMinio(parsedBucketName, fileName);
+        } catch (Exception e) {
+            log.error("从 Minio 下载文件失败: " + e.getMessage());
+            throw new RuntimeException("从 Minio 下载文件失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 使用 Minio 地址获取文件内容
+     * @param bucketName Minio 桶名，例如 "dataexport"
+     * @param fileName Minio 文件名，例如 "12/34/学籍数据.xlsx"
+     * @return 文件的字节流，如果文件不存在则返回 null
+     */
+    public byte[] getFileFromMinio(String bucketName, String fileName) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            // 检查文件是否存在
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket(bucketName).object(fileName).build()) != null;
+
+            if (!exists) {
+                log.error("文件不存在: " + fileName);
+                return null; // 文件不存在
+            }
+
+            // 获取文件内容
+            try (InputStream inputStream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .build())) {
+
+                byte[] buffer = new byte[4096]; // 使用更大的缓冲区
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            } catch (Exception e) {
+                log.error("从 Minio 获取文件失败: " + e.getMessage());
+                throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
+            }
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                log.error("文件不存在: " + fileName);
+                return null; // 文件不存在
+            }
+            log.error("从 Minio 获取文件失败: " + e.getMessage());
+            throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("从 Minio 获取文件失败: " + e.getMessage());
+            throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
+        }
+        return outputStream.toByteArray();
+    }
+
+
+    /**
+     * 使用Minio地址获取文件的URL
+     * @param minioUrl Minio文件地址，例如 "./xuelistudentpictures/2023/import/2244011511501738.jpg"
+     * @return 文件的URL，如果文件不存在则返回null
+     */
+    public String getFileUrlFromMinio(String minioUrl) {
+        try {
+            // 从URL中解析出桶名和文件名
+            String[] parts = minioUrl.split("/", 3);
+            if (parts.length < 3) {
+                log.error("无效的Minio URL: " + minioUrl);
+                return null;
+            }
+
+            String parsedBucketName = parts[1];
+            String fileName = parts[2];
+
+            // 检查文件是否存在
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket(parsedBucketName).object(fileName).build()) != null;
+
+            if (!exists) {
+                return null; // 文件不存在
+            }
+
+            // 获取文件的URL
+            String presignedUrl = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(parsedBucketName)
+                            .object(fileName)
+                            .expiry(1, TimeUnit.DAYS) // 设置链接有效期为1天
+                            .build());
+
+            return presignedUrl;
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                return null; // 文件不存在
+            }
+            log.error("从Minio获取文件URL失败: " + e.getMessage());
+            throw new RuntimeException("从Minio获取文件URL失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("从Minio获取文件URL失败: " + e.getMessage());
+            throw new RuntimeException("从Minio获取文件URL失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 使用Minio地址获取照片的字节数组
+     * @param minioUrl Minio文件地址，例如 "./xuelistudentpictures/2023/import/2244011511501738.jpg"
+     * @return 照片的字节数组，如果文件不存在则返回null
+     */
+    public byte[] getPhotoBytesFromMinio(String minioUrl) {
+        try {
+            // 从URL中解析出桶名和文件名
+            String[] parts = minioUrl.split("/", 3);
+            if (parts.length < 3) {
+                log.error("无效的Minio URL: " + minioUrl);
+                return null;
+            }
+
+            String parsedBucketName = parts[1];
+            String fileName = parts[2];
+
+            // 检查文件是否存在
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket(parsedBucketName).object(fileName).build()) != null;
+
+            if (!exists) {
+                return null; // 文件不存在
+            }
+
+            // 获取文件内容
+            InputStream inputStream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(parsedBucketName)
+                            .object(fileName)
+                            .build());
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+
+            while ((length = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, length);
+            }
+
+            return outputStream.toByteArray();
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                return null; // 文件不存在
+            }
+            log.error("从Minio获取照片字节数组失败: " + e.getMessage());
+            throw new RuntimeException("从Minio获取照片字节数组失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("从Minio获取照片字节数组失败: " + e.getMessage());
+            throw new RuntimeException("从Minio获取照片字节数组失败: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * 更新学生的照片信息
+     * @param bucketName 照片桶名
+     * @param dir 照片的本地读取目录
+     * @param rootDirPath 照片的路径
+     * @param picCountMap 照片的读入记录
+     * @param update 是否强制更新 当照片存在时
+     * @throws Exception
+     */
+    public void uploadDirectory(String bucketName, File dir, String rootDirPath, Map<String, Long> picCountMap, boolean update) throws Exception {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    uploadDirectory(bucketName, file, rootDirPath, picCountMap, update);
+                } else {
+                    uploadFile(bucketName, file, rootDirPath, picCountMap, update);
+                }
+            }
+        }
+    }
+    private void uploadFile(String bucketName, File file, String rootDirPath, Map<String, Long> picCountMap, boolean update) throws Exception {
+        String objectName = file.getAbsolutePath().substring(rootDirPath.length() + 1).replace("\\", "/");
+
+        // 根据objectName的值来更新计数器
+        if (objectName.contains("import")) {
+            picCountMap.put("入学照片", picCountMap.get("入学照片") + 1);
+        } else if (objectName.contains("export")) {
+            picCountMap.put("毕业照片", picCountMap.get("毕业照片") + 1);
+        }
+
+        // 检查对象是否已经存在
+        boolean objectExists = true;
+        try {
+            // 如果没有异常 说明文件存在
+            minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+        } catch (Exception e) {
+            objectExists = false;
+        }
+
+        // 如果对象不存在，或者 update 标志为 true，则上传文件
+        if (!objectExists || update) {
+            ObjectWriteResponse objectWriteResponse = minioClient.uploadObject(
+                    UploadObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .filename(file.getAbsolutePath())
+                            .build());
+            if (objectWriteResponse != null) {
+                String returnedObjectName = objectWriteResponse.object();
+                String returnedBucketName = objectWriteResponse.bucket();
+
+                if (objectName.equals(returnedObjectName) && bucketName.equals(returnedBucketName)) {
+//                log.info("学生照片上传成功!");
+                } else {
+                    log.error("学生照片上传失败. Mismatch in object or bucket name.");
+                }
+            } else {
+                log.error("学生照片上传失败. Response is null.");
+            }
         }
     }
 

@@ -1,0 +1,651 @@
+package com.scnujxjy.backendpoint.util.filter;
+
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.util.StrUtil;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.alibaba.excel.write.metadata.WriteSheet;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
+import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
+import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import net.polyv.common.v1.validator.constraints.Min;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+/**
+ * 继续教育学院各个部门的管理员的筛选器
+ */
+@Component
+@Slf4j
+@Data
+public class ManagerFilter  extends AbstractFilter {
+    /**
+     * 标识
+     * 0 表示学历教育部
+     * 1 表示招生部
+     * 2 表示财务部
+     * -1 表示超级管理员
+     */
+    private int identifier = 0;
+    /**
+     * 筛选教学计划
+     * @param courseInformationFilter 获取的教学计划筛选数据
+     * @return
+     */
+    @Override
+    public FilterDataVO filterCourseInformation(PageRO<CourseInformationRO> courseInformationFilter) {
+        FilterDataVO<CourseInformationManagerZeroVO> courseInformationFilterDataVO = new FilterDataVO<>();
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+
+
+        log.info("查询参数 " + courseInformationFilter.getEntity());
+        // 使用 courseInformationMapper 获取数据
+        List<CourseInformationManagerZeroVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPageByManager0(courseInformationFilter.getEntity(),
+                courseInformationFilter.getPageSize(),
+                courseInformationFilter.getPageSize() * (courseInformationFilter.getPageNumber() -1));
+        long total =  courseInformationMapper.getCountByFilterAndPageManager0(courseInformationFilter.getEntity());
+        courseInformationFilterDataVO.setData(courseInformationVOS);
+        courseInformationFilterDataVO.setTotal(total);
+
+        return courseInformationFilterDataVO;
+    }
+
+    /**
+     * 获取二级学院教学计划筛选参数
+     * @return
+     */
+    @Override
+    public CourseInformationSelectArgs filterCourseInformationSelectArgs() {
+        CourseInformationSelectArgsManagerZero courseInformationSelectArgs = new CourseInformationSelectArgsManagerZero();
+
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+
+
+        List<String> grades = courseInformationMapper.selectDistinctGrades(null);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(null);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(null);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(null);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(null);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(null);
+        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames();
+        courseInformationSelectArgs.setGrades(grades);
+        courseInformationSelectArgs.setMajorNames(majorNames);
+        courseInformationSelectArgs.setLevels(levels);
+        courseInformationSelectArgs.setCourseNames(courseNames);
+        courseInformationSelectArgs.setStudyForms(studyForms);
+        courseInformationSelectArgs.setClassNames(classNames);
+        courseInformationSelectArgs.setCollegeNames(collegeNames);
+        return courseInformationSelectArgs;
+    }
+
+    /**
+     * 筛选学籍数据
+     * @param studentStatusFilter 获取学籍数据的筛选数据
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public FilterDataVO filterStudentStatus(PageRO<StudentStatusFilterRO> studentStatusFilter) {
+        FilterDataVO<StudentStatusAllVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+        String loginId = (String) StpUtil.getLoginId();
+        if (StrUtil.isBlank(loginId)) {
+            return null;
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            return null;
+        }
+
+
+        log.info("学籍数据查询参数 " + studentStatusFilter.getEntity());
+        // 使用 courseInformationMapper 获取数据
+        List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper.selectByFilterAndPageByManager0(studentStatusFilter.getEntity(),
+                studentStatusFilter.getPageSize(),
+                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() -1));
+        long total =  studentStatusMapper.getCountByFilterAndPageManager0(studentStatusFilter.getEntity());
+        studentStatusVOFilterDataVO.setData(studentStatusVOS);
+        studentStatusVOFilterDataVO.setTotal(total);
+
+        return studentStatusVOFilterDataVO;
+    }
+
+    /**
+     * 导出学籍数据到指定继续教育学院用户 的消息中
+     * @param studentStatusFilter
+     * @param userId
+     */
+    @Override
+    @Transactional
+    public void exportStudentStatusData(PageRO<StudentStatusFilterRO> studentStatusFilter, String userId) {
+        ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
+        StudentStatusMapper studentStatusMapper1 = ctx.getBean(StudentStatusMapper.class);
+        MinioService minioService = ctx.getBean(MinioService.class);
+        PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
+        DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
+
+        // 获取数据
+        List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper1.
+                downloadStudentStatusDataByManager0(studentStatusFilter.getEntity());
+
+        log.info("导出了 " + studentStatusVOS.size() + " 条学籍数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < studentStatusVOS.size(); i++) {
+            studentStatusVOS.get(i).setIndex(i + 1);
+        }
+
+        // 获取所有带有@ExcelProperty注解的字段
+        List<String> includeColumnFiledNames = Arrays.stream(StudentStatusAllVO.class.getDeclaredFields())
+                .filter(field -> field.getAnnotation(ExcelProperty.class) != null)
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, StudentStatusAllVO.class)
+                .includeColumnFiledNames(includeColumnFiledNames)  // 只导出带有@ExcelProperty注解的字段
+                .sheet("学籍数据")
+                .doWrite(studentStatusVOS);
+
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_STATUS.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_STATUS.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + userId + "_" + currentDateTime + "_studentStatusData.xlsx";
+
+        // 上传到 Minio
+        boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if(b){
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.STUDENT_STATUS_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+            log.info("下载学籍数据、下载文件消息插入 "+ insert);
+
+            // 获取自增ID
+            Long generatedId = downloadMessagePO.getId();
+            PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+            platformMessagePO.setCreatedAt(generateData);
+            platformMessagePO.setUserId(userId);
+            platformMessagePO.setIsRead(false);
+            platformMessagePO.setRelatedMessageId(generatedId);
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            int insert1 = platformMessageMapper.insert(platformMessagePO);
+            log.info("用户下载消息插入结果 "+ insert1);
+        }
+    }
+
+    /**
+     * 获取学籍数据筛选参数
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
+        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs() ;
+        List<String> distinctGrades = studentStatusMapper.getDistinctGrades(new StudentStatusFilterRO());
+        List<String> colleges    = studentStatusMapper.getDistinctColleges(new StudentStatusFilterRO());
+        List<String> majorNames = studentStatusMapper.getDistinctMajorNames(new StudentStatusFilterRO());
+        List<String> levels = studentStatusMapper.getDistinctLevels(new StudentStatusFilterRO());
+        List<String> studyForms = studentStatusMapper.getDistinctStudyForms(new StudentStatusFilterRO());
+        List<String> classNames = studentStatusMapper.getDistinctClassNames(new StudentStatusFilterRO());
+        List<String> studyDurations = studentStatusMapper.getDistinctStudyDurations(new StudentStatusFilterRO());
+        List<String> academicStatuss = studentStatusMapper.getDistinctAcademicStatuss(new StudentStatusFilterRO());
+
+        studentStatusSelectArgs.setGrades(distinctGrades);
+        studentStatusSelectArgs.setClassNames(classNames);
+        studentStatusSelectArgs.setCollegeNames(colleges);
+        studentStatusSelectArgs.setMajorNames(majorNames);
+        studentStatusSelectArgs.setLevels(levels);
+        studentStatusSelectArgs.setStudyForms(studyForms);
+        studentStatusSelectArgs.setStudyDurations(studyDurations);
+        studentStatusSelectArgs.setAcademicStatus(academicStatuss);
+
+        return studentStatusSelectArgs;
+    }
+
+    /**
+     * 为继续教育学院学历教育部获取缴费信息
+     * @param paymentInfoFilterROPageRO 缴费筛选参数
+     * @return
+     */
+    @Override
+    public FilterDataVO filterPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        FilterDataVO<PaymentInfoVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+
+        List<PaymentInfoVO> paymentInfoVOList =  paymentInfoMapper.getStudentPayInfoByFilter(
+                paymentInfoFilterROPageRO.getEntity(),
+                paymentInfoFilterROPageRO.getPageSize(),
+                (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
+                );
+        long countStudentPayInfoByFilter = paymentInfoMapper.getCountStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        studentStatusVOFilterDataVO.setData(paymentInfoVOList);
+
+        return studentStatusVOFilterDataVO;
+    }
+
+
+    /**
+     * 为继续教育学院学历教育部获取成绩信息
+     * @param scoreInformationFilterROPageRO 成绩筛选参数
+     * @return
+     */
+    @Override
+    public FilterDataVO filterGradeInfo(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO) {
+        FilterDataVO<ScoreInformationVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+        log.info(StpUtil.getLoginId( ) + " 查询成绩的参数是 " + scoreInformationFilterROPageRO);
+        List<ScoreInformationVO> paymentInfoVOList =  scoreInformationMapper.getStudentGradeInfoByFilter(
+                scoreInformationFilterROPageRO.getEntity(),
+                scoreInformationFilterROPageRO.getPageSize(),
+                (scoreInformationFilterROPageRO.getPageNumber() - 1) * scoreInformationFilterROPageRO.getPageSize()
+        );
+        long countStudentPayInfoByFilter = scoreInformationMapper.getCountStudentGradeInfoByFilter(scoreInformationFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        studentStatusVOFilterDataVO.setData(paymentInfoVOList);
+
+        return studentStatusVOFilterDataVO;
+    }
+
+    /**
+     * 采用线程池技术，提高 SQL 查询筛选参数效率
+     * 获取学籍数据筛选参数
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public ScoreInformationSelectArgs filterScoreInformationSelectArgs() {
+        ScoreInformationSelectArgs scoreInformationSelectArgs = new ScoreInformationSelectArgs();
+        ScoreInformationFilterRO filter = new ScoreInformationFilterRO();
+
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> scoreInformationMapper.getDistinctGrades(filter));
+        Future<List<String>> collegesFuture = executor.submit(() -> scoreInformationMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> majorNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctMajorNames(filter));
+        Future<List<String>> levelsFuture = executor.submit(() -> scoreInformationMapper.getDistinctLevels(filter));
+        Future<List<String>> studyFormsFuture = executor.submit(() -> scoreInformationMapper.getDistinctStudyForms(filter));
+        Future<List<String>> classNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctClassNames(filter));
+        Future<List<String>> courseNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctCourseNames(filter));
+        Future<List<String>> statusesFuture = executor.submit(() -> scoreInformationMapper.getDistinctStatus(filter));
+
+        try {
+            scoreInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            scoreInformationSelectArgs.setCollegeNames(collegesFuture.get());
+            scoreInformationSelectArgs.setMajorNames(majorNamesFuture.get());
+            scoreInformationSelectArgs.setLevels(levelsFuture.get());
+            scoreInformationSelectArgs.setStudyForms(studyFormsFuture.get());
+            scoreInformationSelectArgs.setClassNames(classNamesFuture.get());
+            scoreInformationSelectArgs.setCourseNames(courseNamesFuture.get());
+            scoreInformationSelectArgs.setStatuses(statusesFuture.get());
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return scoreInformationSelectArgs;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void exportScoreInformationData(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO, String userId) {
+        ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
+        ScoreInformationMapper scoreInformationMapper1 = ctx.getBean(ScoreInformationMapper.class);
+        MinioService minioService = ctx.getBean(MinioService.class);
+        PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
+        DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
+
+        // 获取数据
+        List<ScoreInformationDownloadVO> scoreInformationDownloadVOS = scoreInformationMapper1.
+                downloadScoreInformationDataByManager0(scoreInformationFilterROPageRO.getEntity());
+
+        log.info("导出了 " + scoreInformationDownloadVOS.size() + " 条成绩数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < scoreInformationDownloadVOS.size(); i++) {
+            scoreInformationDownloadVOS.get(i).setIndex(i + 1);
+        }
+
+        // 获取所有带有@ExcelProperty注解的字段
+        List<String> includeColumnFiledNames = Arrays.stream(ScoreInformationDownloadVO.class.getDeclaredFields())
+                .filter(field -> field.getAnnotation(ExcelProperty.class) != null)
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        // 根据数据量计算需要的sheet数量
+        final int MAX_ROWS = 1000000;  // 10W
+        int totalSize = scoreInformationDownloadVOS.size();
+        int sheetCount = (totalSize / MAX_ROWS) + (totalSize % MAX_ROWS == 0 ? 0 : 1);
+
+        ExcelWriter excelWriter = EasyExcel.write(outputStream, ScoreInformationDownloadVO.class)
+                .includeColumnFiledNames(includeColumnFiledNames)
+                .build();
+
+        for (int i = 0; i < sheetCount; i++) {
+            int startIndex = i * MAX_ROWS;
+            int endIndex = Math.min((i + 1) * MAX_ROWS, totalSize);
+            List<ScoreInformationDownloadVO> currentSheetData = scoreInformationDownloadVOS.subList(startIndex, endIndex);
+
+            WriteSheet writeSheet = EasyExcel.writerSheet(i, "成绩数据_" + (i + 1)).build();
+            excelWriter.write(currentSheetData, writeSheet);
+        }
+
+        excelWriter.finish();
+
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_SCORE_INFORMATION.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_SCORE_INFORMATION.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + userId + "_" + currentDateTime + "_scoreInformationData.xlsx";
+
+        // 上传到 Minio
+        boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if(b){
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.STUDENT_SCORE_INFORMATION_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+            log.info("下载成绩数据、下载文件消息插入 "+ insert);
+
+            // 获取自增ID
+            Long generatedId = downloadMessagePO.getId();
+            PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+            platformMessagePO.setCreatedAt(generateData);
+            platformMessagePO.setUserId(userId);
+            platformMessagePO.setIsRead(false);
+            platformMessagePO.setRelatedMessageId(generatedId);
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            int insert1 = platformMessageMapper.insert(platformMessagePO);
+            log.info("用户下载消息插入结果 "+ insert1);
+        }
+    }
+
+    /**
+     * 采用线程池技术，提高 SQL 查询筛选参数效率
+     * 获取缴费数据筛选参数
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public PaymentInformationSelectArgs filterPaymentInformationSelectArgs() {
+        PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
+        PaymentInfoFilterRO filter = new PaymentInfoFilterRO();
+
+        ExecutorService executor = Executors.newFixedThreadPool(6); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctCollegeNames(filter));
+
+        try {
+            paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            paymentInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            paymentInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
+            paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return paymentInformationSelectArgs;
+    }
+
+    /**
+     * 为继续教育学院学历教育部获取班级信息
+     * @param classInformationFilterROPageRO 班级筛选参数
+     * @return
+     */
+    @Override
+    public FilterDataVO filterClassInfo(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO) {
+        FilterDataVO<ClassInformationVO> classInformationVOFilterDataVO = new FilterDataVO<>();
+        log.info(StpUtil.getLoginId( ) + " 查询班级的参数是 " + classInformationFilterROPageRO);
+        List<ClassInformationVO> classInformationVOList =  classInformationMapper.getClassInfoByFilter(
+                classInformationFilterROPageRO.getEntity(),
+                classInformationFilterROPageRO.getPageSize(),
+                (classInformationFilterROPageRO.getPageNumber() - 1) * classInformationFilterROPageRO.getPageSize()
+        );
+        long countStudentPayInfoByFilter = classInformationMapper.getCountClassInfoByFilter(classInformationFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        classInformationVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        classInformationVOFilterDataVO.setData(classInformationVOList);
+
+        return classInformationVOFilterDataVO;
+    }
+
+
+    /**
+     * 采用线程池技术，提高 SQL 查询筛选参数效率
+     * 获取班级数据筛选参数
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public ClassInformationSelectArgs filterClassInformationSelectArgs() {
+        ClassInformationSelectArgs classInformationSelectArgs = new ClassInformationSelectArgs();
+        ClassInformationFilterRO filter = new ClassInformationFilterRO();
+
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> classInformationMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> classInformationMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> classInformationMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> classInformationMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> classInformationMapper.getDistinctTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> classInformationMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> classInformationMapper.getDistinctMajorNames(filter));
+        Future<List<String>> distinctStudyPeriodsFuture = executor.submit(() -> classInformationMapper.getDistinctStudyPeriods(filter));
+
+        try {
+            classInformationSelectArgs.setGrades(distinctGradesFuture.get());
+
+            classInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            classInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            classInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
+            classInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            classInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            classInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
+            classInformationSelectArgs.setStudyDurations(distinctStudyPeriodsFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return classInformationSelectArgs;
+    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void exportClassInformationData(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO, String userId,
+                                           PlatformMessagePO platformMessagePO) {
+        ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
+        ClassInformationMapper classInformationMapper1 = ctx.getBean(ClassInformationMapper.class);
+        MinioService minioService = ctx.getBean(MinioService.class);
+        PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
+        DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
+
+        // 获取数据
+        List<ClassInformationDownloadVO> classInformationDownloadVOS = classInformationMapper1.
+                downloadClassInformationDataByManager0(classInformationFilterROPageRO.getEntity());
+
+        log.info("导出了 " + classInformationDownloadVOS.size() + " 条成绩数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < classInformationDownloadVOS.size(); i++) {
+            classInformationDownloadVOS.get(i).setIndex(i + 1);
+        }
+
+        // 获取所有带有@ExcelProperty注解的字段
+        List<String> includeColumnFiledNames = Arrays.stream(ClassInformationDownloadVO.class.getDeclaredFields())
+                .filter(field -> field.getAnnotation(ExcelProperty.class) != null)
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        // 根据数据量计算需要的sheet数量
+        final int MAX_ROWS = 1000000;  // 10W
+        int totalSize = classInformationDownloadVOS.size();
+        int sheetCount = (totalSize / MAX_ROWS) + (totalSize % MAX_ROWS == 0 ? 0 : 1);
+
+        ExcelWriter excelWriter = EasyExcel.write(outputStream, ClassInformationDownloadVO.class)
+                .includeColumnFiledNames(includeColumnFiledNames)
+                .build();
+
+        for (int i = 0; i < sheetCount; i++) {
+            int startIndex = i * MAX_ROWS;
+            int endIndex = Math.min((i + 1) * MAX_ROWS, totalSize);
+            List<ClassInformationDownloadVO> currentSheetData = classInformationDownloadVOS.subList(startIndex, endIndex);
+
+            WriteSheet writeSheet = EasyExcel.writerSheet(i, "班级数据_" + (i + 1)).build();
+            excelWriter.write(currentSheetData, writeSheet);
+        }
+
+        excelWriter.finish();
+
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_CLASS_INFORMATIONS.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_CLASS_INFORMATIONS.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + userId + "_" + currentDateTime + "_classInformationData.xlsx";
+
+        // 上传到 Minio
+        boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if(b){
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.CLASS_INFORMATION_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+
+            platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
+            platformMessageMapper.update(platformMessagePO, new LambdaQueryWrapper<PlatformMessagePO>().
+                    eq(PlatformMessagePO::getId, platformMessagePO.getId()));
+
+            log.info("下载班级信息数据完成 "+ insert);
+        }
+    }
+
+}

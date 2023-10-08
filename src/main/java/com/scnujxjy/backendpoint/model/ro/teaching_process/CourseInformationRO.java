@@ -92,5 +92,15 @@ public class CourseInformationRO {
      */
     private String courseCode;
 
+    /**
+     * 班级名称
+     */
+    private String className;
+
+    /**
+     * 学院名称
+     */
+    private String college;
+
 
 }

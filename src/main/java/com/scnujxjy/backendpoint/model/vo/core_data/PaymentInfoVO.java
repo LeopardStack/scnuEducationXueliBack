@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -14,7 +15,10 @@ import java.util.Date;
 @Data
 @Builder
 @Accessors(chain = true)
-public class PaymentInfoVO {
+public class PaymentInfoVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     /**
      * 主键id
      */
@@ -74,5 +78,30 @@ public class PaymentInfoVO {
      * 缴费方式
      */
     private String paymentMethod;
+
+    /**
+     * 班级名称
+     */
+    private String className;
+
+    /**
+     * 学院
+     */
+    private String college;
+
+    /**
+     * 层次
+     */
+    private String level;
+
+    /**
+     * 学习形式
+     */
+    private String studyForm;
+
+    /**
+     * 年级
+     */
+    private String grade;
 
 }

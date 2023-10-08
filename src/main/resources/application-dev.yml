@@ -2,12 +2,15 @@ server:
   port: 40000
 
 spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
   redis:
     host: 113.108.140.173
-    port: 8001
+    port: 6379
     password: 12345A
 
   # rabbitmq
@@ -16,8 +19,10 @@ spring:
     port: 8003
     username: rabbitmq
     password: password
-    queue1: test
+    queue1: data_synchronize
     queue2: test1
+    queue3: data_export
+    queue4: data_export2
 
   servlet:
     multipart:
@@ -31,6 +36,8 @@ spring:
     password: xhl2023@
     hikari:
       maximum-pool-size: 1000 # 设置最大连接数为1000
+      leakDetectionThreshold: 60000  # set to 60 seconds for example
+      idleTimeout: 300000  # set to 5 minutes for example
 
 mybatis:
   mapper-locations: classpath:com/scnujxjy/backendpoint/dao/mapper/*xml
@@ -40,14 +47,13 @@ mybatis:
     map-underscore-to-camel-case: true
 
 #配置日志
-#mybatis-plus:
-#  configuration:
+mybatis-plus:
+  configuration:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-# 关闭 MyBatis 的日志
-#logging:
-#  level:
-#    org.mybatis: OFF
-#    org.mybatis: DEBUG
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
+# 设置日志输出
+logging:
+  config: src/main/resources/logback.xml
 
 
 minio:
@@ -86,3 +92,4 @@ management:
     export:
       prometheus:
         enabled: true
+

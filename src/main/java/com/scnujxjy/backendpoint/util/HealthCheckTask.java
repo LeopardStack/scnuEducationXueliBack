@@ -53,20 +53,6 @@ public class HealthCheckTask {
         }
     }
 
-    /**
-     * 每 60秒 轮询一次
-     */
-    @Scheduled(fixedRate = 100000)
-    public void checkCourseSchedules() {
-
-    }
-
-    @Scheduled(cron = "0 47 9 * * ?")
-    public void executeAt1AM1520() {
-        // 您的任务逻辑...
-        log.info("旧系统数据更新中...");
-    }
-
 
     /**
      * 使用@PostConstruct注解确保在SpringBoot启动时执行此方法

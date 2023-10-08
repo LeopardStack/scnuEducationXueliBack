@@ -4,24 +4,31 @@ package com.scnujxjy.backendpoint.controller.registration_record_card;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentAllStatusInfoVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
-import org.springframework.core.io.ByteArrayResource;
+import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -39,6 +46,20 @@ public class StudentStatusController {
 
     @Resource
     private MinioService minioService;
+
+    @Resource
+    private MessageSender messageSender;
+
+
+    @Resource
+    private CollegeAdminFilter collegeAdminFilter;
+
+    @Resource
+    private ManagerFilter managerFilter;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
 
     /**
      * 根据id查询学籍信息
@@ -247,6 +268,140 @@ public class StudentStatusController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+
+    /**
+     * 不同角色获取学生学籍信息，eg.教学点教务员、二级学院教务员、继续教育学院的各个部门的教务员
+     *
+     * @param studentStatusROPageRO 分页参数
+     * @return 学籍信息列表
+     */
+    @PostMapping("/page_query_student_status")
+    public SaResult pageQueryStudentStatusByManager(@RequestBody PageRO<StudentStatusFilterRO> studentStatusROPageRO) {
+        // 校验参数
+        if (Objects.isNull(studentStatusROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(studentStatusROPageRO.getEntity())) {
+            studentStatusROPageRO.setEntity(new StudentStatusFilterRO());
+        }
+
+        // 生成缓存键
+        String cacheKey = "studentStatus:" + studentStatusROPageRO.toString();
+
+        // 从Redis中尝试获取缓存
+        PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
+
+        if (filterDataVO == null) {
+
+            List<String> roleList = StpUtil.getRoleList();
+//        PageVO<FilterDataVO> filterDataVO = null;
+            // 获取访问者 ID
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    FilterDataVO studentStatusFilterDataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, managerFilter);
+
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(studentStatusFilterDataVO.getData());
+                    filterDataVO.setTotal(studentStatusFilterDataVO.getTotal());
+                    filterDataVO.setCurrent(studentStatusROPageRO.getPageNumber());
+                    filterDataVO.setSize(studentStatusROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) studentStatusFilterDataVO.getData().size()
+                            / studentStatusROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (filterDataVO != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, filterDataVO, 10, TimeUnit.HOURS);
+                }
+
+            }
+        }
+        return SaResult.data(filterDataVO);
+
+    }
+
+    /**
+     * 根据二级学院教务员获取筛选参数
+     *
+     * @return 教学计划
+     */
+    @GetMapping("/get_select_args_admin")
+    public SaResult getTeachingPlansArgsByCollege() {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        Object loginId = StpUtil.getLoginId();
+        StudentStatusSelectArgs studentStatusSelectArgs = null;
+
+        // 生成缓存键
+        String cacheKey = "studentStatusSelectArgsAdmin:" + loginId.toString();
+
+        // 尝试从Redis中获取数据
+        studentStatusSelectArgs = (StudentStatusSelectArgs) redisTemplate.opsForValue().get(cacheKey);
+
+        if (studentStatusSelectArgs == null) {
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, managerFilter);
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (studentStatusSelectArgs != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, studentStatusSelectArgs, 10, TimeUnit.HOURS);
+                }
+            }
+        }
+
+        return SaResult.data(studentStatusSelectArgs);
+    }
+
+
+    /**
+     * 采用消息队列来处理数据导出
+     * 根据二级学院教务员获取筛选参数
+     *
+     * @return 教学计划
+     */
+    @PostMapping("/batch_export_studentstatus_data")
+    public SaResult batchExportStudentStatusData(@RequestBody PageRO<StudentStatusFilterRO> studentStatusROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        String userId = (String) StpUtil.getLoginId();
+        CourseInformationSelectArgs courseInformationSelectArgs = null;
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 二级学院管理员
+
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                // 继续教育学院管理员
+                boolean send = messageSender.send(studentStatusROPageRO, managerFilter, userId);
+                if(send){
+                    return SaResult.ok("导出学籍数据成功");
+                }
+            }
+        }
+    return SaResult.error("导出学籍数据失败！");
     }
 }
 

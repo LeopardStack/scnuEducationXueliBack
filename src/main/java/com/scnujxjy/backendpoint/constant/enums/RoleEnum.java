@@ -7,7 +7,8 @@ public enum RoleEnum {
 
     STUDENT(1, "学生"),
     TEACHER(2, "教师"),
-    SECOND_COLLEGE_ADMIN(6, "二级学院管理员");
+    SECOND_COLLEGE_ADMIN(6, "二级学院管理员"),
+    XUELIJIAOYUBU_ADMIN(3, "学历教育部管理员");
 
     private Integer roleId;
 

@@ -272,7 +272,8 @@ public class LivingCreate {
 
     @Test
     void testSelect() {
-        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsService.getBaseMapper().selectBatchIds(ListUtil.of(1L, 2L, 3L, 4L));
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsService.
+                getBaseMapper().selectBatchIds(ListUtil.of(1L, 2L, 3L, 4L));
         log.info("查询的数据是:{}",videoStreamRecordPOS);
     }
 

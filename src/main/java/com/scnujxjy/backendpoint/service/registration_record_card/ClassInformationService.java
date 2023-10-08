@@ -6,13 +6,21 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.ClassInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -152,4 +160,42 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
         return count;
     }
 
+    /**
+     * 根据角色筛选器 获取班级信息
+     * @param classInformationFilterROPageRO 缴费班级信息
+     * @param filter 角色筛选器
+     * @return
+     */
+    public FilterDataVO allPageQueryPayInfoFilter(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO,
+                                                  AbstractFilter filter) {
+        return filter.filterClassInfo(classInformationFilterROPageRO);
+    }
+
+    /**
+     * 获取缴费数据的筛选参数
+     * @param loginId 登录用户名
+     * @param filter 筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
+     * @return
+     */
+    public ClassInformationSelectArgs getClassInformationArgs(String loginId, AbstractFilter filter) {
+        return filter.filterClassInformationSelectArgs();
+    }
+
+    /**
+     * 为不同角色导出班级数据
+     * @param pageRO
+     * @param filter
+     * @param userId
+     * @param platformMessagePO
+     */
+    public void generateBatchClassInformationData(PageRO<ClassInformationFilterRO> pageRO, AbstractFilter filter, String userId, PlatformMessagePO platformMessagePO) {
+        // 校验参数
+        if (Objects.isNull(pageRO)) {
+            log.error("导出班级信息数据参数缺失");
+
+        }
+
+
+        filter.exportClassInformationData(pageRO, userId, platformMessagePO);
+    }
 }

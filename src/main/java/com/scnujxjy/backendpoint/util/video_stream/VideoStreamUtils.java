@@ -6,13 +6,28 @@ import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.obs.shade.okhttp3.*;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelDetail;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelPlayBackInfoResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.roleCreate.CreateMainResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.roleCreate.CreateRoleRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.AuthSetting;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.BasicSetting;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
+import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
+import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoRequest;
@@ -25,7 +40,6 @@ import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
-import net.polyv.live.v1.util.LiveSignUtil;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -305,41 +319,477 @@ public class VideoStreamUtils {
 
     /**
      * 查询指定频道号下的所有角色信息
+     *
      * @param channelId 频道ID
      * @return 角色信息的JSON字符串
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public String getAccountsByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
-        OkHttpClient client = new OkHttpClient();
-        Map<String, String> requestMap = new HashMap<>();
-        requestMap.put("appId", LiveGlobalConfig.getAppId());
+    public ChannelResponse getAccountsByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
+        String url = "https://api.polyv.net/live/v2/channelAccount/%s/accounts";
 
         // 获取北京时间的时间戳
         long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
-        requestMap.put("timestamp", String.valueOf(beijingTimestamp));
+        String timestamp = String.valueOf(beijingTimestamp);
 
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
 
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(String.format("https://api.polyv.net/live/v2/channelAccount/%s/accounts", channelId)).newBuilder();
-        for (Map.Entry<String, String> entry : requestMap.entrySet()) {
-            urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
+        url = String.format(url, channelId);
+        ChannelResponse channelResponse = null;
+        try {
+            String response = PolyvHttpUtil.get(url, requestMap);
+            // 解析响应为 ChannelResponse POJO
+            channelResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {});
+        }catch (Exception e){
+            log.error("获取频道 (" + channelId + ") 下的角色信息失败 " + e.toString());
         }
 
-        Request request = new Request.Builder()
-                .url(urlBuilder.build())
-                .get()
-                .build();
-
-        log.info("\n请求信息为 " + request.toString());
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                log.info("\n获取指定频道 " + channelId + " 的角色信息 " + response.toString());
-                return response.body().string();
-            } else {
-                throw new IOException("Unexpected code " + response.toString());
-            }
-        }
+        return channelResponse;
     }
 
-}
+    /**
+     * 设置指定频道的观看条件
+     *
+     * @param channelId 需要设置观看条件的频道ID
+     * @param body      观看条件的JSON字符串
+     * @return 响应字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String setWatchCondition(String channelId, String body) throws IOException, NoSuchAlgorithmException {
+        String url = "http://api.polyv.net/live/v3/channel/auth/update";
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+
+        url = PolyvHttpUtil.appendUrl(url, requestMap);
+
+        String response = PolyvHttpUtil.postJsonBody(url, body, null);
+
+        log.info("设置频道 {} 的观看条件，接口返回值：{}", channelId, response);
+
+        return response;
+    }
+
+    /**
+     * 创建频道
+     * @param liveRequestBody
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ApiResponse createChannel(LiveRequestBody liveRequestBody) throws IOException, NoSuchAlgorithmException {
+        //公共参数,填写自己的实际
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        //业务参数
+        String url = "http://api.polyv.net/live/v4/channel/create";
+
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+
+        Map<String, String> bodyMap = new HashMap<>();
+        bodyMap.put("name", liveRequestBody.getName());
+        bodyMap.put("newScene", liveRequestBody.getNewScene());
+        bodyMap.put("template", liveRequestBody.getTemplate());
+        bodyMap.put("channelPasswd", liveRequestBody.getChannelPasswd());
+        bodyMap.put("seminarHostPassword", liveRequestBody.getSeminarHostPassword());
+        bodyMap.put("seminarAttendeePassword", liveRequestBody.getSeminarAttendeePassword());
+        bodyMap.put("pureRtcEnabled", liveRequestBody.getPureRtcEnabled());
+        bodyMap.put("type", liveRequestBody.getType());
+        bodyMap.put("doubleTeacherType", liveRequestBody.getDoubleTeacherType());
+        bodyMap.put("cnAndEnLiveEnabled", liveRequestBody.getCnAndEnLiveEnabled());
+        bodyMap.put("splashImg", liveRequestBody.getSplashImg());
+        bodyMap.put("linkMicLimit", "" + liveRequestBody.getLinkMicLimit());
+        bodyMap.put("categoryId", "" + liveRequestBody.getCategoryId());
+        bodyMap.put("startTime", "" + liveRequestBody.getStartTime());
+        bodyMap.put("endTime", "" + liveRequestBody.getEndTime());
+//        bodyMap.put("subAccount", "" + liveRequestBody.getSubAccount());
+        bodyMap.put("customTeacherId", "" + liveRequestBody.getCustomTeacherId());
+
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        String body = JSON.toJSONString(bodyMap);
+        url = PolyvHttpUtil.appendUrl(url, requestMap);
+        String response = PolyvHttpUtil.postJsonBody(url, body, null);
+
+        return JSON.parseObject(response, ApiResponse.class);
+    }
+
+    /**
+     * 增加助教或嘉宾账号
+     * @param createRoleRequestBody
+     * @param channelId
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public CreateMainResponse addChannelAccount(CreateRoleRequestBody createRoleRequestBody,
+                                                String channelId) throws IOException,
+            NoSuchAlgorithmException {
+        // 获取公共参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 设置业务URL
+        String url = "http://api.polyv.net/live/v4/channel/account/create";
+
+        // 构建请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+
+        Map<String, Object> bodyMap = new HashMap<>();
+        bodyMap.put("role", createRoleRequestBody.getRole());
+        bodyMap.put("actor", createRoleRequestBody.getActor());
+        bodyMap.put("nickName", createRoleRequestBody.getNickName());
+        bodyMap.put("avatar", createRoleRequestBody.getAvatar());
+        bodyMap.put("passwd", createRoleRequestBody.getPasswd());
+        bodyMap.put("purviewList", createRoleRequestBody.getPurviewList());
+
+        // 生成签名
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        // 调用HTTP POST方法
+        url = PolyvHttpUtil.appendUrl(url, requestMap);
+        String response = PolyvHttpUtil.postJsonBody(url, JSON.toJSONString(bodyMap), null);
+
+        log.info("创建角色成功：{}", response);
+
+        return JSON.parseObject(response, CreateMainResponse.class);
+    }
+
+    /**
+     * 修改直播开始时间和结束时间
+     * @param channelId 频道ID
+     * @param endTime 结束时间
+     * @param startTime 开始时间
+     * @return ApiResponse
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse setLivingTime(String channelId, String startTime, String endTime) throws IOException, NoSuchAlgorithmException {
+        // 获取公共参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 设置业务URL
+        String url = String.format("http://api.polyv.net/live/v2/channelSetting/%s/set-countdown", channelId);
+
+        // 构建请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("endTime", endTime);
+        requestMap.put("startTime", startTime);
+
+        // 生成签名
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        // 调用HTTP POST方法
+        String response = PolyvHttpUtil.postFormBody(url, requestMap);
+
+        log.info("修改直播倒计时设置成功：{}", response);
+
+        return JSON.parseObject(response, ChannelResponse.class);
+    }
+
+    /**
+     * 批量修改频道弹幕开关
+     * @param closeDanmu 是否关闭弹幕功能
+     * @param showDanmuInfoEnabled 是否显示弹幕信息开关
+     * @param channelIds 需要修改弹幕开关的频道号，多个频道号用逗号隔开
+     * @return ApiResponse
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse batchUpdateDanmu(String closeDanmu, String showDanmuInfoEnabled,
+                                        String channelIds) throws IOException,
+            NoSuchAlgorithmException {
+        // 获取公共参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 设置业务URL
+        String url = "http://api.polyv.net/live/v3/channel/basic/batchUpdateDanmu";
+
+        // 构建请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("closeDanmu", closeDanmu);
+        requestMap.put("showDanmuInfoEnabled", showDanmuInfoEnabled);
+        requestMap.put("channelIds", channelIds);
+
+        // 生成签名
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        // 调用HTTP POST方法
+        String response = PolyvHttpUtil.postFormBody(url, requestMap);
+
+        log.info("批量修改频道弹幕开关成功：{}", response);
+
+        return JSON.parseObject(response, ChannelResponse.class);
+    }
+
+    /**
+     * 修改频道主持人姓名
+     * @param publisherName 主持人姓名
+     * @param channelId 频道号，如果不提供或传-1，则修改该用户的所有频道号的主持人姓名
+     * @return ApiResponse
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse setPublisherName(String publisherName, String channelId) throws IOException, NoSuchAlgorithmException {
+        // 获取公共参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String userId = LiveGlobalConfig.getUserId();
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 设置业务URL
+        String url = String.format("http://api.polyv.net/live/v2/channelSetting/%s/setPublisher", userId);
+
+        // 构建请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("publisher", publisherName);
+        requestMap.put("channelId", channelId);
+
+        // 生成签名
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        // 调用HTTP POST方法
+        String response = PolyvHttpUtil.postFormBody(url, requestMap);
+
+        log.info("修改频道主持人姓名成功：{}", response);
+
+        return JSON.parseObject(response, ChannelResponse.class);
+    }
+
+    /**
+     * 修改频道名称
+     * @param channelName 修改后的频道名称
+     * @param channelId 频道号
+     * @return ChannelResponse
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse updateChannelName(String channelName, String channelId) throws IOException, NoSuchAlgorithmException {
+        // 获取公共参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String userId = LiveGlobalConfig.getUserId();
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 设置业务URL
+        String url = String.format("http://api.polyv.net/live/v2/channels/%s/update", channelId);
+
+        // 构建请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("name", channelName);
+
+        // 生成签名
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        // 调用HTTP POST方法
+        String response = PolyvHttpUtil.postFormBody(url, requestMap);
+
+        log.info("修改频道名称成功：{}", response);
+
+        return JSON.parseObject(response, ChannelResponse.class);
+    }
+
+    /**
+     * 修改频道信息 比如设置连麦人数、直播介绍、是否无延迟直播、弹幕是否打开、开始时间、结束时间、主持人名称
+     * 频道密码、频道名称
+     * @param channelId
+     * @param basicSetting
+     * @param authSettings
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse updateChannelDetailSetting(String channelId, BasicSetting basicSetting,
+                                                      List<AuthSetting> authSettings)
+            throws IOException, NoSuchAlgorithmException {
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        // 获取当前时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // 构造URL
+        String url = "http://api.polyv.net/live/v3/channel/basic/update";
+
+        // 构造请求参数
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        url = PolyvHttpUtil.appendUrl(url, requestMap);
+
+        // 将POJO转为JSON字符串
+        String json = generateJsonString(basicSetting, authSettings);
+
+        // 发起请求
+        String response = PolyvHttpUtil.postJsonBody(url, json, null);
+        log.info("修改频道信息，返回值：{}", response);
+
+        return JSON.parseObject(response, ChannelResponse.class);
+    }
+
+    private String generateJsonString(BasicSetting basicSetting, List<AuthSetting> authSettings) {
+        JSONObject root = new JSONObject();
+        root.put("basicSetting", JSON.toJSON(basicSetting));
+        root.put("authSettings", JSON.toJSON(authSettings));
+        return root.toJSONString();
+    }
+
+    /**
+     * 查询指定频道号下的频道完整信息
+     *
+     * @param channelId 频道ID
+     * @return 角色信息的JSON字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelInfoResponse getChannelInfoByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
+        String url = "http://api.polyv.net/live/v4/channel/basic/get";
+
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+
+        ChannelInfoResponse channelResponse = null;
+        try {
+            String response = PolyvHttpUtil.get(url, requestMap);
+            log.info("频道信息返回值 \n" + response);
+            // 解析响应为 ChannelResponse POJO
+            channelResponse = JSON.parseObject(response, new TypeReference<ChannelInfoResponse>() {});
+        }catch (Exception e){
+            log.error("获取频道 (" + channelId + ") 下的角色信息失败 " + e.toString());
+        }
+
+        return channelResponse;
+    }
+
+    /**
+     * 查询指定频道号的回放设置
+     *
+     * @param channelId 频道ID
+     * @return 回放设置的JSON字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelPlayBackInfoResponse getPlaybackSettingByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
+        // Endpoint URL for fetching playback settings
+        String url = "http://api.polyv.net/live/v3/channel/playback/get-setting";
+
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // Constructing the request parameters
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+
+        ChannelPlayBackInfoResponse playbackResponse = null;
+        try {
+            String response = PolyvHttpUtil.get(url, requestMap);  // assuming PolyvHttpUtil can be used here
+            log.info("回放设置返回值 \n" + response);
+            // 解析响应为 PlaybackSettingResponse POJO
+            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelPlayBackInfoResponse>() {});
+        } catch (Exception e) {
+            log.error("获取频道 (" + channelId + ") 的回放设置失败 " + e.toString());
+        }
+
+        return playbackResponse;
+    }
+
+    /**
+     * 修改频道回放设置
+     *
+     * @param playbackSetting 请求参数
+     * @return 返回的JSON字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public ChannelResponse setRecordSetting(ChannelInfoData playbackSetting) throws IOException, NoSuchAlgorithmException {
+        String url = "http://api.polyv.net/live/v3/channel/playback/set-setting";
+
+        // 获取北京时间的时间戳
+        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+        String timestamp = String.valueOf(beijingTimestamp);
+
+        // Constructing the request parameters
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", playbackSetting.getChannelId()==null ? "" : playbackSetting.getChannelId());
+        requestMap.put("globalSettingEnabled", playbackSetting.getGlobalSettingEnabled()== null ? "" : playbackSetting.getGlobalSettingEnabled());
+        requestMap.put("crontabType", playbackSetting.getCrontType() == null ? "" : playbackSetting.getCrontType());
+        requestMap.put("startTime", playbackSetting.getStartTime() == null ? "" : "" + playbackSetting.getStartTime());
+        requestMap.put("endTime", playbackSetting.getEndTime() == null ? "" : "" + playbackSetting.getEndTime());
+        requestMap.put("playbackEnabled", playbackSetting.getPlaybackEnabled() == null ? "" : playbackSetting.getPlaybackEnabled());
+        requestMap.put("type", playbackSetting.getType() == null ? "" : playbackSetting.getType());
+        requestMap.put("origin", playbackSetting.getOrigin() == null ? "" : playbackSetting.getOrigin());
+        requestMap.put("videoId", playbackSetting.getVideoId() == null ? "" : playbackSetting.getVideoId());
+        requestMap.put("sectionEnabled", playbackSetting.getSectionEnabled() == null ? "" : playbackSetting.getSectionEnabled());
+        requestMap.put("chatPlaybackEnabled", playbackSetting.getChatPlaybackEnabled() == null ? "" : playbackSetting.getChatPlaybackEnabled());
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+
+        log.info("请求参数  " + requestMap);
+        ChannelResponse playbackResponse = null;
+        try {
+            String response = PolyvHttpUtil.postFormBody(url, requestMap);  // assuming PolyvHttpUtil can be used here
+            log.info("回放设置返回值 \n" + response);
+            // 解析响应为 PlaybackSettingResponse POJO
+            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {});
+        } catch (Exception e) {
+            log.error("设置频道 (" + playbackSetting.getChannelId() + ") 的回放参数失败 " + e.toString());
+        }
+
+        return playbackResponse;
+
+    }
+
+
+
+    }

@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentLuqus;
 
@@ -40,7 +41,9 @@ public class Test1 {
         log.info(String.valueOf(studentLuqus.size()));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
-
+        TimeZone timeZone = TimeZone.getTimeZone("Asia/Shanghai"); // 设置为北京时间
+        dateFormat1.setTimeZone(timeZone);
+        dateFormat.setTimeZone(timeZone);
 
 
         for (HashMap<String, String> studentData : studentLuqus) {

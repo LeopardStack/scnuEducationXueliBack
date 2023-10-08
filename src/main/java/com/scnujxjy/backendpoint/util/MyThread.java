@@ -46,7 +46,10 @@ public class MyThread extends Thread{
             System.out.println(Thread.currentThread().getName() + " 数据处理时间：" + durationInSeconds1 + " 秒");
         }catch (Exception e){
             logger.error(e.toString());
-            scnuxljyDatabase.close();
+        }finally {
+            if(scnuxljyDatabase != null){
+                scnuxljyDatabase.close();
+            }
         }
     }
 

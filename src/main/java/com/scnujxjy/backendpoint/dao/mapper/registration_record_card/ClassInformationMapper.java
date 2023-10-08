@@ -3,6 +3,12 @@ package com.scnujxjy.backendpoint.dao.mapper.registration_record_card;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.ClassInformationDownloadVO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -82,4 +88,231 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
             "AND class_name = #{className}")
     String selectCollegeByMultipleConditions(String grade, String majorName, String level, String studyForm, String className);
 
+    /**
+     * 根据筛选条件获取班级信息
+     * @param entity 筛选条件
+     * @param pageSize 筛选条件
+     * @param l 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT ci.* " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "AND ci.grade REGEXP '^[0-9]+$' " +  // 添加这一行来确保grade只包含数字
+            "AND ci.grade IS NOT NULL " +  // 添加这一行来确保grade不为空
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+
+            "ORDER BY ci.grade DESC " +  // 按照年级降序排序
+            "LIMIT #{l}, #{pageSize} " +
+            "</script>")
+
+    List<ClassInformationVO> getClassInfoByFilter(@Param("entity") ClassInformationFilterRO entity,
+                                                  @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    /**
+     * 根据筛选条件获取班级统计数据
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT COUNT(*) " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+
+            "</script>")
+    long getCountClassInfoByFilter(@Param("entity") ClassInformationFilterRO entity);
+
+    /**
+     * 获取班级的年级筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.grade " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctGrades(@Param("entity") ClassInformationFilterRO entity);
+
+    /**
+     * 获取班级的层次筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.level " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctLevels(@Param("entity") ClassInformationFilterRO entity);
+
+
+    /**
+     * 获取班级的年级筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.study_form " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctStudyForms(@Param("entity") ClassInformationFilterRO entity);
+
+    /**
+     * 获取班级的年级筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.class_name " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctClassNames(@Param("entity") ClassInformationFilterRO entity);
+
+    /**
+     * 获取班级的学制筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.study_period " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctStudyPeriods(@Param("entity") ClassInformationFilterRO entity);
+
+
+    /**
+     * 获取班级的学院筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.college " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctCollegeNames(@Param("entity") ClassInformationFilterRO entity);
+
+    /**
+     * 获取班级的专业名称筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ci.major_name " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctMajorNames(@Param("entity") ClassInformationFilterRO entity);
+
+
+    /**
+     * 获取班级的教学点筛选参数
+     * @param entity 筛选条件
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT REGEXP_REPLACE(ci.class_name, '[0-9]', '') AS cleaned_class_name " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<String> getDistinctTeachingPoints(@Param("entity") ClassInformationFilterRO entity);
+
+    @Select("<script>" +
+            "SELECT ci.* " +
+            "FROM class_information ci " +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
+            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
+            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
+            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
+            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
+            "</script>")
+    List<ClassInformationDownloadVO> downloadClassInformationDataByManager0(@Param("entity") ClassInformationFilterRO entity);
 }

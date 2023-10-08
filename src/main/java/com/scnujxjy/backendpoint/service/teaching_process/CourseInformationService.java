@@ -1,12 +1,16 @@
 package com.scnujxjy.backendpoint.service.teaching_process;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
@@ -17,9 +21,11 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMa
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -207,5 +213,34 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
             log.error(e.toString());
         }
         return new ArrayList<CourseInformationRO>();
+    }
+
+
+    /**
+     * 根据筛选器来获取不同角色的排课表数据
+     * @param courseInformationROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO allPageQueryCourseInformationFilter(PageRO<CourseInformationRO> courseInformationROPageRO, AbstractFilter filter) {
+        // 校验参数
+        if (Objects.isNull(courseInformationROPageRO)) {
+            log.error("参数缺失");
+            return null;
+        }
+
+//        CourseInformationFilterDataVO courseInformationFilterDataVO =
+
+
+        return filter.filterCourseInformation(courseInformationROPageRO);
+    }
+
+    /**
+     * 获取学院的教学计划筛选参数
+     * @param loginId
+     * @return
+     */
+    public CourseInformationSelectArgs getTeachingPlansArgsByCollege(String loginId, AbstractFilter filter) {
+        return filter.filterCourseInformationSelectArgs();
     }
 }

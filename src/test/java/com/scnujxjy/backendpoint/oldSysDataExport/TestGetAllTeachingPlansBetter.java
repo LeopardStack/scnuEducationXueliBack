@@ -29,7 +29,7 @@ public class TestGetAllTeachingPlansBetter {
     @Autowired(required = false)
     private CourseInformationMapper courseInformationMapper;
 
-    private static final int CONSUMER_COUNT = 1000;
+    private static final int CONSUMER_COUNT = 200;
     private ExecutorService executorService;
 
     private BlockingQueue<HashMap<String, String>> queue = new LinkedBlockingQueue<>();  // Unbounded queue

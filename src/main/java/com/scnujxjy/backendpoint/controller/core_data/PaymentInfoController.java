@@ -5,16 +5,26 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -29,6 +39,15 @@ public class PaymentInfoController {
 
     @Resource
     private PaymentInfoService paymentInfoService;
+
+    @Resource
+    private CollegeAdminFilter collegeAdminFilter;
+
+    @Resource
+    private ManagerFilter managerFilter;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 通过id查询详情
@@ -124,12 +143,116 @@ public class PaymentInfoController {
         if (Objects.isNull(loginId) || loginId.trim().length() == 0) {
             throw dataMissError();
         }
+
         // 查询数据
         List<PaymentInfoPO> paymentInfoPOS = paymentInfoService.getBaseMapper().getStudentPayInfo(loginId);
         if (Objects.isNull(paymentInfoPOS)) {
             throw dataNotFoundError();
         }
         return SaResult.data(paymentInfoPOS);
+    }
+
+
+    /**
+     * 根据不同角色来获取其权限范围内的缴费信息
+     *
+     * @param paymentInfoFilterROPageRO 缴费信息参数
+     * @return 支付信息详情分页列表
+     */
+    @PostMapping("/get_pagyinfo_data")
+    public SaResult getPayInfoByRole(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        // 参数校验
+        if (Objects.isNull(paymentInfoFilterROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(paymentInfoFilterROPageRO.getEntity())) {
+            paymentInfoFilterROPageRO.setEntity(new PaymentInfoFilterRO());
+        }
+
+        // 生成缓存键
+        String cacheKey = "paymentInfos:" + paymentInfoFilterROPageRO.toString();
+
+        // 从Redis中尝试获取缓存
+        PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
+
+        if (filterDataVO == null) {
+
+            List<String> roleList = StpUtil.getRoleList();
+            // 获取访问者 ID
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    FilterDataVO paymentInfoVOPageVO = null;
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryPayInfoFilter(paymentInfoFilterROPageRO, managerFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(paymentInfoVOPageVO.getData());
+                    filterDataVO.setTotal(paymentInfoVOPageVO.getTotal());
+                    filterDataVO.setCurrent(paymentInfoFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(paymentInfoFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
+                            / paymentInfoFilterROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (filterDataVO != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, filterDataVO, 10, TimeUnit.HOURS);
+                }
+
+            }
+        }
+        return SaResult.data(filterDataVO);
+
+    }
+
+    /**
+     * 根据教务员获取筛选缴费参数
+     *
+     * @return 教学计划
+     */
+    @GetMapping("/get_select_args_admin")
+    public SaResult getPaymentInformationArgsByCollege() {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        Object loginId = StpUtil.getLoginId();
+        PaymentInformationSelectArgs paymentInformationSelectArgs = null;
+
+        // 生成缓存键
+        String cacheKey = "paymentInformationSelectArgsAdmin:" + loginId.toString();
+
+        // 尝试从Redis中获取数据
+        paymentInformationSelectArgs = (PaymentInformationSelectArgs) redisTemplate.opsForValue().get(cacheKey);
+
+        if (paymentInformationSelectArgs == null) {
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, managerFilter);
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (paymentInformationSelectArgs != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, paymentInformationSelectArgs, 10, TimeUnit.HOURS);
+                }
+            }
+        }
+
+        return SaResult.data(paymentInformationSelectArgs);
     }
 }
 

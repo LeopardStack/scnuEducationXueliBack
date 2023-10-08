@@ -42,3 +42,5 @@ data_import_error_excel
 src/main/resources/data
 data_import_error_excel/studentStatusData/2023 数据插入失败的学生学籍数据.xlsx
 data_import_error_excel/studentStatusData/2022 数据插入失败的学生学籍数据.xlsx
+lib
+log

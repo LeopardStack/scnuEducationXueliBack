@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,73 +19,44 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Accessors(chain = true)
 public class CourseInformationVO {
 
-
-    /**
-     * 自增主键
-     */
     private Long id;
 
-    /**
-     * 年级
-     */
+    @ExcelProperty(index = 0, value = "年级")
     private String grade;
 
-    /**
-     * 专业名称
-     */
+    @ExcelProperty(index = 1, value = "专业名称")
     private String majorName;
 
-    /**
-     * 层次
-     */
+    @ExcelProperty(index = 2, value = "层次")
     private String level;
 
-    /**
-     * 学习形式
-     */
+    @ExcelProperty(index = 3, value = "学习形式")
     private String studyForm;
 
-    /**
-     * 行政班别
-     */
+    @ExcelProperty(index = 4, value = "行政班别")
     private String adminClass;
 
-    /**
-     * 课程名称
-     */
+    @ExcelProperty(index = 5, value = "课程名称")
     private String courseName;
 
-    /**
-     * 学时数
-     */
+    @ExcelProperty(index = 6, value = "学时数")
     private Integer studyHours;
 
-    /**
-     * 考核类型
-     */
+    @ExcelProperty(index = 7, value = "考核类型")
     private String assessmentType;
 
-    /**
-     * 授课方式
-     */
+    @ExcelProperty(index = 8, value = "授课方式")
     private String teachingMethod;
 
-    /**
-     * 课程类型
-     */
+    @ExcelProperty(index = 9, value = "课程类型")
     private String courseType;
 
-    /**
-     * 学分
-     */
+    @ExcelProperty(index = 10, value = "学分")
     private Integer credit;
 
-    /**
-     * 授课学期
-     */
+    @ExcelProperty(index = 11, value = "授课学期")
     private String teachingSemester;
 
     /**
@@ -93,4 +65,8 @@ public class CourseInformationVO {
     private String courseCode;
 
 
+    /**
+     * 班级名称
+     */
+    private String className;
 }
