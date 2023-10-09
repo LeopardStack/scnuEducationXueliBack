@@ -20,6 +20,9 @@ public class RabbitMQTest1 {
     @Value("${spring.rabbitmq.queue2}")
     private String queue2;
 
+    @Value("${spring.rabbitmq.queue5}")
+    private String queue5;
+
     @Autowired(required = false)
     private MessageSender messageSender;
 

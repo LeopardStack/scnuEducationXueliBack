@@ -45,14 +45,15 @@ public class TestUserInfoChange {
      */
     @Test
     public void addManager(){
+        log.info("生成学历教育部管理员账号");
 
-        List<PlatformUserRO> platformUserROList = new ArrayList<>();
-        PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("xuelijiaoyuTest1");
-        platformUserRO.setPassword("xuelijiaoyuTest12023@");
-        platformUserRO.setRoleId(3L);
-        platformUserROList.add(platformUserRO);
-        platformUserService.batchCreateUser(platformUserROList);
+//        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+//        PlatformUserRO platformUserRO = new PlatformUserRO();
+//        platformUserRO.setUsername("huangyanduan");
+//        platformUserRO.setPassword("huangyanduan2023@");
+//        platformUserRO.setRoleId(3L);
+//        platformUserROList.add(platformUserRO);
+//        platformUserService.batchCreateUser(platformUserROList);
     }
 
     /**

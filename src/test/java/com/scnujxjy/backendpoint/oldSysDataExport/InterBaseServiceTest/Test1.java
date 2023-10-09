@@ -87,12 +87,18 @@ public class Test1 {
         log.info(value_fwp + " " + value);
     }
 
+    /**
+     * 同步成绩
+     */
     @Test
     public void test5(){
         try {
-            oldDataSynchronize.synchronizeGradeInformationData(2022, 2021);
+            int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>().
+                    eq(ScoreInformationPO::getGrade, "" + 2015));
+            log.info("查看删除 2015年 所有成绩的结果 " + delete);
+            oldDataSynchronize.synchronizeGradeInformationData(2015, 2015, true);
         }catch (Exception e){
-            log.error("同步班级数据错误 " + e.toString());
+            log.error("同步成绩数据错误 " + e.toString());
         }
     }
 
@@ -150,7 +156,7 @@ public class Test1 {
 
         log.info("新旧系统成绩数量对比");
         startYear = 2023;
-        endYear = 2020;
+        endYear = 2015;
         allEqual = true;
         for(int i = startYear; i >= endYear; i--){
             Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
@@ -161,7 +167,7 @@ public class Test1 {
 
             if(new_gradeInformation_count != old_gradeInformation_count){
                 allEqual = false;
-                log.info(i + " 年，新系统学历教育教学计划数量 " + new_gradeInformation_count + " 旧系统学历教育教学计划数量 " +
+                log.info(i + " 年，新系统学历教育成绩数量 " + new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
                         old_gradeInformation_count + " 两者不同");
             }
         }
@@ -426,7 +432,7 @@ public class Test1 {
                     if(scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
                             eq(ScoreInformationPO::getGrade, "" + i)) == 0){
                         // 清除成绩
-                        oldDataSynchronize.synchronizeGradeInformationData(i, i);
+                        oldDataSynchronize.synchronizeGradeInformationData(i, i, true);
                     }
                 }catch (Exception e){
                     formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年清除成绩并同步旧系统成绩" +

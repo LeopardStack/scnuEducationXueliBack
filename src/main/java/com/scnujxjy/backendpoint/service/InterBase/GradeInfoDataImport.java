@@ -77,6 +77,8 @@ public class GradeInfoDataImport {
     private int error_grade_count = 0;
     private int fxl_grade_count = 0;
 
+    public static boolean update = false;
+
     // 记录额外的插入日志
     public List<String> insertLogs = Collections.synchronizedList(new ArrayList<>());
 
@@ -131,7 +133,7 @@ public class GradeInfoDataImport {
             scoreInformationPO.setCourseType(courseType);
             scoreInformationPO.setAssessmentType(studentData.get("FSHI"));
             String zp = studentData.get("ZP");
-            scoreInformationPO.setFinalScore(zp.trim());
+            scoreInformationPO.setFinalScore(zp != null ? zp.trim() : zp);
 
             /**
              * 政策文件规定 缺考、作弊要体现在成绩一栏中
@@ -150,7 +152,7 @@ public class GradeInfoDataImport {
 //                scoreInformationPO.setMakeupExam1Score(convertStringToDouble(studentData.get("BK")));
 
             String bk = studentData.get("BK");
-            scoreInformationPO.setMakeupExam1Score(bk.trim());
+            scoreInformationPO.setMakeupExam1Score(bk != null ? bk.trim() : bk);
 
 //            if (isDigit(bk) == 1) {
 //                scoreInformationPO.setMakeupExam1Score(bk.trim());
@@ -166,7 +168,7 @@ public class GradeInfoDataImport {
 //                scoreInformationPO.setMakeupExam2Score(convertStringToDouble(studentData.get("BK2")));
 
             String bk2 = studentData.get("BK2");
-            scoreInformationPO.setMakeupExam2Score(bk2.trim());
+            scoreInformationPO.setMakeupExam2Score(bk2 != null ? bk2.trim() : bk2);
 
 //            if (isDigit(bk2) == 1) {
 //                scoreInformationPO.setMakeupExam2Score(bk2.trim());
@@ -181,7 +183,7 @@ public class GradeInfoDataImport {
 
 //                scoreInformationPO.setPostGraduationScore(convertStringToDouble(studentData.get("JBK")));
             String jbk = studentData.get("JBK");
-            scoreInformationPO.setPostGraduationScore(jbk.trim());
+            scoreInformationPO.setPostGraduationScore(jbk != null ? jbk.trim() : jbk);
 
 //            if (isDigit(jbk) == 1) {
 //                scoreInformationPO.setPostGraduationScore(jbk.trim());
@@ -205,6 +207,18 @@ public class GradeInfoDataImport {
                 // 插入之前检查目前的这个实例变量是否已经和数据库中那一条记录是否是摸一样  如果是则不需要插入
                 int ident1 = scoreInformationMapper.countByAttributesExceptId(scoreInformationPO);
                 if(ident1 == 1){
+                    if(update){
+                        // 强制更新
+                        int i = scoreInformationMapper.updateBySelectedAttributes(scoreInformationPO);
+                        if(i == 1){
+                            return 0;
+                        }else if(i == 0){
+                            throw new RuntimeException("发现了一条除成绩部分其他都相同的记录，但是更新失败了 ");
+                        }
+                        else{
+                            throw new RuntimeException("更新成绩失败，更新了多条（大于1） ");
+                        }
+                    }
                     return 0;
                 }else if(ident1 == 0){
                     // 没有相同的，查看除了成绩和备注备份是否相同，如果相同则覆盖，不相同则添加一条成绩记录
