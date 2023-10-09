@@ -23,6 +23,7 @@ spring:
     queue2: test1
     queue3: data_export
     queue4: data_export2
+    queue5: data_synchronize_test_timeout
 
   servlet:
     multipart:

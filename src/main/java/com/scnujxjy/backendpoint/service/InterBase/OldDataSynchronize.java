@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.SCNUXLJYDatabase;
 import io.minio.UploadObjectArgs;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -31,7 +32,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 200;
+    public static final int CONSUMER_COUNT = 1000;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -378,51 +379,80 @@ public class OldDataSynchronize {
     /**
      * 同步旧系统与新系统的成绩数据
      */
-    public void synchronizeGradeInformationData(int startYear, int endYear) throws InterruptedException {
+    public void synchronizeGradeInformationData(int startYear, int endYear, boolean update) throws InterruptedException {
 
         for(int i = startYear; i >= endYear; i--){
-            GradeInfoDataImport gradeInfoDataImport = new GradeInfoDataImport();
-            ArrayList<HashMap<String, String>> gradeInfos = getGradeInfos("" + i);
-            gradeInfoDataImport.insertLogs.add("旧系统成绩数据总数 " + gradeInfos.size());
+            SCNUXLJYDatabase scnuxljyDatabase = null;
 
-            Integer integer = classInformationMapper.selectCount(null);
-            SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
-            Object value = scnuxljyDatabase.getValue("select count(*) from RESULT_VIEW_FULL");
-            Object value_fwp = scnuxljyDatabase.getValue("select count(*) from RESULT_VIEW_FULL where bshi LIKE 'WP%';");
-            gradeInfoDataImport.insertLogs.add("新系统中导入的成绩记录数 " + integer);
-            gradeInfoDataImport.insertLogs.add("旧系统中的总成绩记录数 " + value);
-            gradeInfoDataImport.insertLogs.add("新系统中的非学历教育成绩记录数 " + value_fwp);
+            try {
+                GradeInfoDataImport gradeInfoDataImport = new GradeInfoDataImport();
+                ArrayList<HashMap<String, String>> gradeInfos = getGradeInfos("" + i);
+                gradeInfoDataImport.insertLogs.add("旧系统成绩数据总数 " + gradeInfos.size());
 
+                // 获取新系统中指定年级的成绩记录总数
+                Integer integer = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                        eq(ScoreInformationPO::getGrade, "" + i));
+                scnuxljyDatabase = new SCNUXLJYDatabase();
+                int value = (int) scnuxljyDatabase.getValue("select count(*) from RESULT_VIEW_FULL where nj='" + i + "';");
+                // 获取旧系统中非学历教育生的成绩
+                int value_fwp = (int) scnuxljyDatabase.getValue("select count(*) from RESULT_VIEW_FULL where bshi LIKE 'WP%' and nj='" + i + "';");
+                // 获取旧系统中学历教育生的成绩
+                Object value_xl = scnuxljyDatabase.getValue("select count(*) from RESULT_VIEW_FULL where bshi not LIKE 'WP%' and nj='" + i + "';");
+                gradeInfoDataImport.insertLogs.add(i + "年新系统中导入的成绩记录数 " + integer);
+                gradeInfoDataImport.insertLogs.add(i + "年旧系统中的学历教育生成绩记录总数 " + value);
+                gradeInfoDataImport.insertLogs.add(i + "年旧系统中的非学历教育成绩记录总数 " + value_fwp);
 
-            for (HashMap<String, String> hashMap : gradeInfos) {
+                if(value_xl == integer){
+                    // 相等
+                    if(update){
+                        // 开启强制更新 哪怕记录都相同
+                        GradeInfoDataImport.update = true;
+                    }else{
+                        // 相等 不覆盖  直接跳过
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                        String currentDateTime = LocalDateTime.now().format(formatter);
+                        String relativePath = "data_import_error_excel/gradeInformationData/";
+                        String errorFileName = relativePath + currentDateTime + "_" + i + "导入成绩结果总览.txt";
+                        exportListToTxtAndUploadToMinio(gradeInfoDataImport.insertLogs,
+                                errorFileName, "datasynchronize");
+                        continue;
+                    }
+                }
 
-                gradeInfoDataImport.queue.put(hashMap); // Put the object in the queue
+                for (HashMap<String, String> hashMap : gradeInfos) {
+
+                    gradeInfoDataImport.queue.put(hashMap); // Put the object in the queue
+                }
+
+                // 传递毒药对象
+                for (int j = 0; j < CONSUMER_COUNT; j++) {
+                    HashMap<String, String> hashMap = new HashMap<>();
+                    hashMap.put("END", "TRUE");
+                    gradeInfoDataImport.queue.put(hashMap);
+                }
+
+                gradeInfoDataImport.latch.await();
+
+                if (gradeInfoDataImport.executorService != null) {
+                    gradeInfoDataImport.executorService.shutdown();
+                }
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                String currentDateTime = LocalDateTime.now().format(formatter);
+                String relativePath = "data_import_error_excel/gradeInformationData/";
+                String errorFileName = relativePath + currentDateTime + "_" + i + "导入成绩结果总览.txt";
+                String errorFileName2 = relativePath + currentDateTime + "_" + i + "导入成绩异常结果.xlsx";
+                gradeInfoDataImport.insertLogs.add("文凭班成绩总数为 " + gradeInfoDataImport.getFxl_grade_count());
+                gradeInfoDataImport.insertLogs.add("非文凭异常成绩总数为 " + gradeInfoDataImport.getError_grade_count());
+                exportListToTxtAndUploadToMinio(gradeInfoDataImport.insertLogs,
+                        errorFileName, "datasynchronize");
+                exportErrorListToExcelAndUploadToMinio(gradeInfoDataImport.errorList, ErrorGradeData.class,
+                        errorFileName2, "datasynchronize");
+            }catch (Exception e){
+                log.info("同步成绩出现问题 " + e.toString());
+            }finally {
+                scnuxljyDatabase.close();
             }
-
-            // 传递毒药对象
-            for (int j = 0; j < CONSUMER_COUNT; j++) {
-                HashMap<String, String> hashMap = new HashMap<>();
-                hashMap.put("END", "TRUE");
-                gradeInfoDataImport.queue.put(hashMap);
-            }
-
-            gradeInfoDataImport.latch.await();
-
-            if (gradeInfoDataImport.executorService != null) {
-                gradeInfoDataImport.executorService.shutdown();
-            }
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-            String currentDateTime = LocalDateTime.now().format(formatter);
-            String relativePath = "data_import_error_excel/gradeInformationData/";
-            String errorFileName = relativePath + currentDateTime + "_" + i  + "导入成绩结果总览.txt";
-            String errorFileName2 = relativePath + currentDateTime + "_" + i  + "导入成绩异常结果.xlsx";
-            gradeInfoDataImport.insertLogs.add("文凭班成绩总数为 " + gradeInfoDataImport.getFxl_grade_count());
-            gradeInfoDataImport.insertLogs.add("非文凭异常成绩总数为 " + gradeInfoDataImport.getError_grade_count());
-            exportListToTxtAndUploadToMinio(gradeInfoDataImport.insertLogs,
-                    errorFileName, "datasynchronize");
-            exportErrorListToExcelAndUploadToMinio(gradeInfoDataImport.errorList, ErrorGradeData.class,
-                    errorFileName2, "datasynchronize");
         }
     }
 
@@ -544,6 +574,10 @@ public class OldDataSynchronize {
     }
 
 
+    /**
+     * 同步所有旧系统数据，包含学籍、教学计划、学生照片、成绩、班级数据
+     */
+    @Async
     public void synchronizeAllData(){
         ArrayList<String> dataCheckLogs = new ArrayList<>();
 //        log.info(msg1);
@@ -678,7 +712,7 @@ public class OldDataSynchronize {
                     if(scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
                             eq(ScoreInformationPO::getGrade, "" + i)) == 0){
                         // 清除成绩
-                        synchronizeGradeInformationData(i, i);
+                        synchronizeGradeInformationData(i, i, true);
                     }
                 }catch (Exception e){
                     formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年清除成绩并同步旧系统成绩" +
@@ -702,5 +736,76 @@ public class OldDataSynchronize {
         String relativePath = "data_import_error_excel/statistics/";
         String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
         exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
+    }
+
+    @Async
+    public void printSynchronizeDataCheck(){
+        log.info("新旧系统学籍数据的校验");
+        int startYear = 2023;
+        int endYear = 2010;
+        SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+
+        for(int i = startYear; i >= endYear; i--){
+            Integer integer = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().eq(
+                    StudentStatusPO::getGrade, "" + i
+            ));
+
+            Object value_xl = scnuxljyDatabase.getValue("SELECT count(*) FROM STUDENT_VIEW_WITHPIC WHERE NJ='" + i +
+                    "' and bshi not like'WP%';");
+            log.info(i + " 年旧系统学历教育生数量 " + value_xl + " 新系统学历教育生数量 " + integer + ((int)value_xl == integer ? "  一致" : "  不同"));
+        }
+
+        log.info("新旧系统班级信息对比");
+        Integer new_class_count = classInformationMapper.selectCount(null);
+        Object old_class_count = scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
+        log.info("新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count);
+
+        log.info("新旧系统教学计划对比");
+        Integer new_teachingPlans_count = courseInformationMapper.selectCount(null);
+        Object old_teachingPlans_count = scnuxljyDatabase.getValue("select count(*) from courseDATA where bshi not LIKE 'WP%';");
+        log.info("新系统学历教育教学计划数量 " + new_teachingPlans_count + " 旧系统学历教育教学计划数量 " + old_teachingPlans_count);
+
+        startYear = 2023;
+        endYear = 2015;
+        boolean allEqual = true;
+        for(int i = startYear; i >= endYear; i--){
+            Integer new_teachingPlans_count1 = courseInformationMapper.selectCount(new LambdaQueryWrapper<CourseInformationPO>().
+                    eq(CourseInformationPO::getGrade, "" + i));
+            String year_c = i + "";
+            year_c = year_c.substring(year_c.length()-2);
+            int old_teachingPlans_count1 = (int) scnuxljyDatabase.getValue(
+                    "select count(*) from courseDATA where bshi not LIKE 'WP%' and bshi LIKE '" + year_c + "%';");
+
+            if(new_teachingPlans_count1 != old_teachingPlans_count1){
+                allEqual = false;
+                log.info(i + " 年，新系统学历教育教学计划数量 " + new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
+                        old_teachingPlans_count1 + " 两者不同");
+            }
+        }
+        if(allEqual){
+            log.info("新旧系统 " + startYear + " 年到 " + endYear + " 年的教学计划完全相等");
+        }
+
+
+        log.info("新旧系统成绩数量对比");
+        startYear = 2023;
+        endYear = 2020;
+        allEqual = true;
+        for(int i = startYear; i >= endYear; i--){
+            Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                    eq(ScoreInformationPO::getGrade, "" + i));
+
+            int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
+                    "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
+
+            if(new_gradeInformation_count != old_gradeInformation_count){
+                allEqual = false;
+                log.info(i + " 年，新系统学历教育教学计划数量 " + new_gradeInformation_count + " 旧系统学历教育教学计划数量 " +
+                        old_gradeInformation_count + " 两者不同");
+            }
+        }
+        if(allEqual){
+            log.info("新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
+        }
     }
 }

@@ -70,7 +70,7 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-    @Scheduled(cron = "0 51 0 * * ?")
+    @Scheduled(cron = "0 31 8 * * ?")
     public void executeAt1AM1520() {
         // 每晚 11点 校对新旧系统数据
         log.info("旧系统数据更新中...");
