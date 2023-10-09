@@ -383,4 +383,16 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     List<CourseSchedulePO> findDuplicateRecords(CourseSchedulePO courseSchedulePO);
 
 
+    @Select("SELECT * " +
+            "FROM course_schedule " +
+            "WHERE teaching_date >= CURRENT_DATE AND teaching_date < DATE_ADD(CURRENT_DATE, INTERVAL #{ daysAhead } DAY);")
+    List<CourseSchedulePO> findRecentRecords(int daysAhead);
+
+    @Select("SELECT * " +
+            "FROM course_schedule " +
+            "WHERE teaching_date = (SELECT MIN(teaching_date) " +
+            "FROM course_schedule " +
+            "WHERE teaching_date >= CURRENT_DATE);")
+    List<CourseSchedulePO> findminRecords();
+
 }

@@ -3,19 +3,25 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseInformationService;
+import com.scnujxjy.backendpoint.util.excelListener.CourseInformationListener;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,7 +30,7 @@ import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_AD
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
- * 课程信息表
+ * 教学计划信息操作
  *
  * @author leopard
  * @since 2023-08-14
@@ -35,6 +41,9 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
 public class CourseInformationController {
     @Resource
     private CourseInformationService courseInformationService;
+
+    @Resource
+    private ClassInformationService classInformationService;
 
     @Resource
     private CollegeAdminFilter collegeAdminFilter;
@@ -278,6 +287,36 @@ public class CourseInformationController {
 
         // 返回数据
         return SaResult.data(filterDataVO);
+    }
+
+
+    /**
+     * 上传教学计划
+     *
+     * @param file 上传的Excel文件
+     * @return 解析结果
+     */
+    @PostMapping("/upload-excel")
+    public SaResult uploadExcel(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("上传文件不能为空");
+        }else{
+            log.info("获取到了文件 " + file.getOriginalFilename());
+        }
+        try {
+            int headRowNumber = 1;  // 根据您的Excel调整
+            CourseInformationListener courseInformationListener =
+                    new CourseInformationListener(courseInformationService.getBaseMapper(), classInformationService.getBaseMapper(),
+                            "超级管理员参数");
+            ExcelReaderBuilder readerBuilder = EasyExcel.read(file.getInputStream(), CourseInformationVO.class, courseInformationListener);
+            readerBuilder.doReadAll();
+
+            // 您可以根据需要进一步处理解析后的数据
+            return SaResult.data("文件上传并解析成功");
+        } catch (Exception e) {
+            log.error("上传文件失败", e);
+            throw new RuntimeException("上传文件失败：" + e.getMessage());
+        }
     }
 
 

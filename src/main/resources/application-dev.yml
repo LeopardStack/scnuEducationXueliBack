@@ -1,5 +1,5 @@
 server:
-  port: 40000
+  port: 40001
 
 spring:
   jackson:
@@ -9,7 +9,7 @@ spring:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
   redis:
-    host: 113.108.140.173
+    host: 113.108.140.172
     port: 6379
     password: 12345A
 

@@ -60,6 +60,12 @@ public class CourseInformationVO {
     private String teachingSemester;
 
     /**
+     * 如果需要覆盖则读取它
+     */
+    @ExcelProperty(index = 12, value = "备注")
+    private String remark;
+
+    /**
      * 课程编号
      */
     private String courseCode;

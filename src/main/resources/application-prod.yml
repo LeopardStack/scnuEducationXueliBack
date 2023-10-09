@@ -15,9 +15,10 @@ spring:
     port: 8003
     username: rabbitmq
     password: password
-    queue1: test
+    queue1: data_synchronize
     queue2: test1
     queue3: data_export
+    queue4: data_export2
 
   servlet:
     multipart:

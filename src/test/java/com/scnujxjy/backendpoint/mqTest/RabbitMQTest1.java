@@ -30,9 +30,10 @@ public class RabbitMQTest1 {
 
     @Test
     public void test2(){
-        String context = "hello " + new Date();
-        System.out.println("Sender : " + context + " 测试消息堆积");
-        messageSender.send(queue2, context);
+//        String context = "hello " + new Date();
+//        System.out.println("Sender : " + context + " 测试消息堆积");
+//        messageSender.send(queue2, context);
+        messageSender.send(queue1, "数据同步");
     }
 
     @Test
