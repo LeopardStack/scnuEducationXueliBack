@@ -54,20 +54,23 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                     .collect(Collectors.toList());
 
             // 一次性查询所有相关的DownloadMessagePO
-            List<DownloadMessagePO> downloadMessages = downloadMessageMapper.selectList(
-                    new LambdaQueryWrapper<DownloadMessagePO>().in(DownloadMessagePO::getId, relatedMessageIds)
-            );
-
-            for (DownloadMessagePO downloadMessage : downloadMessages) {
-                DownloadMessageVO tempMsg = new DownloadMessageVO();
-                BeanUtils.copyProperties(downloadMessage, tempMsg);
-                tempMsg.setIsRead(platformMessagePOS.stream()
-                        .filter(po -> po.getRelatedMessageId().equals(downloadMessage.getId()))
-                        .findFirst()
-                        .map(PlatformMessagePO::getIsRead)
-                        .orElse(false));  // Set default value as false if not found
-                platformMessageVO.getDownloadMessagePOList().add(tempMsg);
+            if (relatedMessageIds != null && !relatedMessageIds.isEmpty()) {
+                List<DownloadMessagePO> downloadMessages = downloadMessageMapper.selectList(
+                        new LambdaQueryWrapper<DownloadMessagePO>().in(DownloadMessagePO::getId, relatedMessageIds)
+                );
+                for (DownloadMessagePO downloadMessage : downloadMessages) {
+                    DownloadMessageVO tempMsg = new DownloadMessageVO();
+                    BeanUtils.copyProperties(downloadMessage, tempMsg);
+                    tempMsg.setIsRead(platformMessagePOS.stream()
+                            .filter(po -> po.getRelatedMessageId().equals(downloadMessage.getId()))
+                            .findFirst()
+                            .map(PlatformMessagePO::getIsRead)
+                            .orElse(false));  // Set default value as false if not found
+                    platformMessageVO.getDownloadMessagePOList().add(tempMsg);
+                }
             }
+
+
 
             // 处理那些relatedMessageId为null的PlatformMessagePO
             for (PlatformMessagePO messagePO : platformMessagePOS) {
