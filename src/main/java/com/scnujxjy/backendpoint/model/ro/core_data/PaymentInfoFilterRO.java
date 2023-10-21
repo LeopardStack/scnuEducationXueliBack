@@ -110,4 +110,9 @@ public class PaymentInfoFilterRO {
      */
     private String teachingPoint;
 
+    /**
+     * 年级
+     */
+    private String grade;
+
 }

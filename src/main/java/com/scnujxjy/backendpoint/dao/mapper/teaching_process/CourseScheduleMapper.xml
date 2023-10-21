@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper">
+
+    <sql id="commonJoin">
+        FROM course_schedule cs
+        INNER JOIN class_information ci ON
+        cs.grade = ci.grade AND
+        cs.study_form = ci.study_form AND
+        cs.level = ci.level AND
+        cs.admin_class = ci.class_name AND
+        cs.major_name = ci.major_name
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if>
+        <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if>
+        <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if>
+        <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>
+        <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>
+        <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if>
+        <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) &gt;= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if>
+        <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) >= DATE(cs.teaching_date)  </if>
+        <if test='courseScheduleFilterROPageRO.college != null'>AND ci.college = #{courseScheduleFilterROPageRO.college} </if>
+        <if test='courseScheduleFilterROPageRO.courseName != null'>AND cs.course_name = #{courseScheduleFilterROPageRO.courseName} </if>
+        <if test='courseScheduleFilterROPageRO.level != null'>AND cs.level = #{courseScheduleFilterROPageRO.level} </if>
+        <if test='courseScheduleFilterROPageRO.studyForm != null'>AND cs.study_form = #{courseScheduleFilterROPageRO.studyForm} </if>
+    </sql>
+
+    <select id="selectCoursesInformationCount" resultType="Long">
+        SELECT COUNT(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="selectCoursesInformation" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO">
+        SELECT DISTINCT grade, major_name, class_hours, exam_type,  college, level, study_form, admin_class, teaching_class, course_name, main_teacher_name, main_teacher_id, main_teacher_identity, tutor_name, tutor_id, tutor_identity, teaching_method, teacher_username
+        FROM (
+        SELECT cs.grade, cs.major_name, cs.class_hours, cs.exam_type, ci.college, cs.level, cs.study_form, cs.admin_class, cs.teaching_class, cs.course_name, cs.main_teacher_name, cs.main_teacher_id, cs.main_teacher_identity, cs.tutor_name, cs.tutor_id, cs.tutor_identity, cs.teaching_method, cs.teacher_username
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY
+        CASE WHEN DATE(teaching_date) >= CURDATE() THEN 0 ELSE 1 END,
+        ABS(DATEDIFF(DATE(teaching_date), CURDATE()))
+        LIMIT #{pageNumber}, #{pageSize}
+        ) AS subquery
+    </select>
+
+    <select id="selectSchedulesInformation" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO">
+        SELECT id, grade, class_hours, exam_type, online_platform, major_name, college,
+               level, study_form, admin_class, teaching_class, course_name,
+               main_teacher_name, main_teacher_id, main_teacher_identity,
+               tutor_name, tutor_id, tutor_identity, teaching_method, teacher_username,
+        teaching_start_date, teaching_end_date
+        FROM (
+        SELECT cs.id, cs.grade, cs.major_name, ci.college, cs.level, cs.study_form,
+               cs.class_hours, cs.exam_type, cs.online_platform,
+               cs.admin_class, cs.teaching_class, cs.course_name, cs.main_teacher_name,
+               cs.main_teacher_id, cs.main_teacher_identity, cs.tutor_name, cs.tutor_id, cs.tutor_identity, cs.teaching_method, cs.teacher_username,
+        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '—', 1)) AS teaching_start_date,
+        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '—', -1)) AS teaching_end_date
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY
+        CASE WHEN DATE(teaching_date) >= CURDATE() THEN 0 ELSE 1 END,
+        ABS(DATEDIFF(DATE(teaching_date), CURDATE()))
+        LIMIT #{pageNumber}, #{pageSize}
+        ) AS subquery
+    </select>
+
+</mapper>

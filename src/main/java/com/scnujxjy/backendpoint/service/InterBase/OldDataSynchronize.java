@@ -2,11 +2,14 @@ package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -32,16 +35,28 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 1000;
+    public static final int CONSUMER_COUNT = 300;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private GraduationInfoMapper graduationInfoMapper;
+
+    @Resource
+    private PersonalInfoMapper personalInfoMapper;
+
+    @Resource
+    private OriginalEducationInfoMapper originalEducationInfoMapper;
 
     @Resource
     private CourseInformationMapper courseInformationMapper;
 
     @Resource
     private ClassInformationMapper classInformationMapper;
+
+    @Resource
+    private PaymentInfoMapper paymentInfoMapper;
 
     @Resource
     private ScoreInformationMapper scoreInformationMapper;
@@ -169,7 +184,7 @@ public class OldDataSynchronize {
             boolean updateInsert = true;
             SCNUXLJYDatabase scnuxljyDatabase = null;
             try{
-                // 检测新旧系统的成绩数目是否相同，相同则不需要更新
+                // 检测新旧系统的学籍数据数目是否相同，相同则不需要更新
                 Integer integer = studentStatusMapper.selectCount(new
                         LambdaQueryWrapper<StudentStatusPO>().eq(StudentStatusPO::getGrade,
                         i));
@@ -177,7 +192,8 @@ public class OldDataSynchronize {
                 studentStatusDataImport.updateCountMap.put(i + "年 新系统中导入的学籍数据记录数 ", Long.valueOf(integer));
 
                 scnuxljyDatabase = new SCNUXLJYDatabase();
-                Object value = scnuxljyDatabase.getValue("select count(*) from STUDENT_VIEW_WITHPIC where nj='" + i + "'");
+                Object value = scnuxljyDatabase.getValue("select count(*) from STUDENT_VIEW_WITHPIC where nj='" + i +
+                        "' and bshi not LIKE 'WP%';");
                 Object value_fwp = scnuxljyDatabase.getValue("select count(*) from STUDENT_VIEW_WITHPIC where nj='" + i +
                         "' and bshi LIKE 'WP%';");
 
@@ -199,7 +215,19 @@ public class OldDataSynchronize {
                 }
             }
 
-            if(updateInsert){
+            if(updateInsert || updateAny){
+                if(updateAny){
+                    // 删除所有学籍数据
+                    int delete1 = studentStatusMapper.delete(new LambdaQueryWrapper<StudentStatusPO>().
+                            eq(StudentStatusPO::getGrade, i + ""));
+                    int delete2 = graduationInfoMapper.delete(new LambdaQueryWrapper<GraduationInfoPO>().
+                            eq(GraduationInfoPO::getGrade, i + ""));
+                    int delete3 = personalInfoMapper.delete(new LambdaQueryWrapper<PersonalInfoPO>().
+                            eq(PersonalInfoPO::getGrade, i + ""));
+                    int delete4 = originalEducationInfoMapper.delete(new LambdaQueryWrapper<OriginalEducationInfoPO>().
+                            eq(OriginalEducationInfoPO::getGrade, i + ""));
+                }
+
                 ArrayList<HashMap<String, String>> studentStatusData = getStudentInfos(String.valueOf(i));
                 for (HashMap<String, String> hashMap : studentStatusData) {
 
@@ -377,6 +405,66 @@ public class OldDataSynchronize {
     }
 
     /**
+     * 同步旧系统与新系统的缴费数据
+     */
+    public void synchronizePaymentInfoData(boolean updateAny, boolean truncateTable) {
+        try {
+            PaymentInformationDataImport paymentInformationDataImport = new PaymentInformationDataImport();
+            paymentInformationDataImport.setUpdateAny(updateAny);
+
+            ArrayList<HashMap<String, String>> teachingPlans = getTeachingPlans();
+            paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + teachingPlans.size());
+
+            Integer integer = paymentInfoMapper.selectCount(null);
+            SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+            Object value = scnuxljyDatabase.getValue("select count(*) from CWPAY_VIEW");
+            paymentInformationDataImport.insertLogsList.add("新系统中导入的总缴费记录数 " + integer);
+            paymentInformationDataImport.insertLogsList.add("旧系统中的总缴费记录数 " + value);
+
+            if (integer != (int) value && updateAny && truncateTable) {
+                paymentInfoMapper.truncateTable();
+                if (paymentInfoMapper.selectList(null).size() == 0) {
+                    log.info("成功清除缴费表，开始缴费数据新旧系统数据同步");
+                }
+
+            }
+
+            for (HashMap<String, String> hashMap : teachingPlans) {
+
+                paymentInformationDataImport.queue.put(hashMap); // Put the object in the queue
+            }
+
+            // 传递毒药对象
+            for (int i = 0; i < CONSUMER_COUNT; i++) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                hashMap.put("END", "TRUE");
+                paymentInformationDataImport.queue.put(hashMap);
+            }
+
+            paymentInformationDataImport.latch.await();
+
+            if (paymentInformationDataImport.executorService != null) {
+                paymentInformationDataImport.executorService.shutdown();
+            }
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String currentDateTime = LocalDateTime.now().format(formatter);
+            String relativePath = "data_import_error_excel/paymentInformationData/";
+            String errorFileName = relativePath + currentDateTime + "_" + "导入缴费数据结果总览.txt";
+            String errorFileName1 = relativePath + currentDateTime + "_" + "导入缴费数据结果总览日志.txt";
+            paymentInformationDataImport.insertLogsList.add("插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
+            paymentInformationDataImport.insertLogsList.add("插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
+
+            exportMapToTxtAndUploadToMinio(paymentInformationDataImport.updateCountMap, errorFileName1,
+                    "datasynchronize");
+            exportListToTxtAndUploadToMinio(paymentInformationDataImport.insertLogsList,
+                    errorFileName, "datasynchronize");
+        }catch (Exception e){
+            log.error("校验同步缴费数据失败 ", e.toString());
+        }
+    }
+
+    /**
      * 同步旧系统与新系统的成绩数据
      */
     public void synchronizeGradeInformationData(int startYear, int endYear, boolean update) throws InterruptedException {
@@ -517,6 +605,20 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
+
+        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
+        dataCheckLogs.add(formattedMsg);
+
+        Integer new_pay_count = paymentInfoMapper.selectCount(null);
+        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
+        if(new_pay_count != old_pay_count){
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+            dataCheckLogs.add(formattedMsg);
+        }else{
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+            dataCheckLogs.add(formattedMsg);
+        }
+
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
         dataCheckLogs.add(formattedMsg);
 
@@ -647,11 +749,29 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
+
+        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
+        dataCheckLogs.add(formattedMsg);
+
+        Integer new_pay_count = paymentInfoMapper.selectCount(null);
+        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
+        if(new_pay_count != old_pay_count){
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+            dataCheckLogs.add(formattedMsg);
+        }else{
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+            dataCheckLogs.add(formattedMsg);
+            synchronizePaymentInfoData(true, true);
+        }
+
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
         dataCheckLogs.add(formattedMsg);
-//        Integer new_teachingPlans_count = courseInformationMapper.selectCount(null);
-//        Object old_teachingPlans_count = scnuxljyDatabase.getValue("select count(*) from courseDATA where bshi not LIKE 'WP%';");
-//        log.info("新系统学历教育教学计划数量 " + new_teachingPlans_count + " 旧系统学历教育教学计划数量 " + old_teachingPlans_count);
+
+
+
+        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
+        dataCheckLogs.add(formattedMsg);
+
 
         startYear = 2023;
         endYear = 2015;
@@ -698,7 +818,8 @@ public class OldDataSynchronize {
 
             int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
                     "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年，新系统学历教育教学计划数量 " + new_gradeInformation_count + " 旧系统学历教育教学计划数量 " +
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年，新系统学历教育成绩数量 " +
+                    new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
                     old_gradeInformation_count + (new_gradeInformation_count != old_gradeInformation_count
                     ? " 两者不同" : " 两者相同"));
             dataCheckLogs.add(formattedMsg);
@@ -736,6 +857,11 @@ public class OldDataSynchronize {
         String relativePath = "data_import_error_excel/statistics/";
         String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
         exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
+
+        log.info("新旧系统校验同步结束");
+        log.info("开始记录校验同步之后的新旧系统的数据差异");
+        calculateStatistics();
+
     }
 
     @Async

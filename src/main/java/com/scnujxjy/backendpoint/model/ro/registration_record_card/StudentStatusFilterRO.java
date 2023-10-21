@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro.registration_record_card;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -92,6 +93,7 @@ public class StudentStatusFilterRO {
     /**
      * 毕业日期
      */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date graduationDate;
 
     /**

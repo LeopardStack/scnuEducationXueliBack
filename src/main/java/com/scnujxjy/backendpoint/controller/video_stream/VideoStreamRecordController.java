@@ -17,9 +17,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
- * <p>
- * 直播记录表 前端控制器
- * </p>
+ * 直播记录管理
  *
  * @author leopard
  * @since 2023-08-21

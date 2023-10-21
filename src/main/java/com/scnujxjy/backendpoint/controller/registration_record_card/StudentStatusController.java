@@ -27,8 +27,7 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -302,8 +301,22 @@ public class StudentStatusController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    FilterDataVO studentStatusFilterDataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, collegeAdminFilter);
 
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(studentStatusFilterDataVO.getData());
+                    filterDataVO.setTotal(studentStatusFilterDataVO.getTotal());
+                    filterDataVO.setCurrent(studentStatusROPageRO.getPageNumber());
+                    filterDataVO.setSize(studentStatusROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) studentStatusFilterDataVO.getData().size()
+                            / studentStatusROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO studentStatusFilterDataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, managerFilter);
 
@@ -358,7 +371,7 @@ public class StudentStatusController {
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, managerFilter);
                 }
 
@@ -393,9 +406,9 @@ public class StudentStatusController {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
 
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
-                boolean send = messageSender.send(studentStatusROPageRO, managerFilter, userId);
+                boolean send = messageSender.sendExportMsg(studentStatusROPageRO, managerFilter, userId);
                 if(send){
                     return SaResult.ok("导出学籍数据成功");
                 }

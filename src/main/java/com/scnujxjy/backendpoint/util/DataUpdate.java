@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.util;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
@@ -8,6 +9,10 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationI
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
@@ -16,17 +21,16 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMappe
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -52,6 +56,8 @@ public class DataUpdate {
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
+    @Resource
+    private SingleLivingSetting singleLivingSetting;
 
     @Resource
     private GraduationInfoMapper graduationInfoMapper;
@@ -61,6 +67,119 @@ public class DataUpdate {
 
     @Resource
     private MessageSender messageSender;
+
+    @Transactional(rollbackFor = Exception.class)
+    boolean updateCourseScheduleInfoByVideo(CourseSchedulePO courseSchedulePO, String videoId){
+        // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime()));
+
+        for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+            // 更新时间
+            courseSchedulePO1.setOnlinePlatform(videoId);
+
+            int update = courseScheduleMapper.update(courseSchedulePO1, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO1.getId()));
+            if(update <= 0){
+                throw new RuntimeException("Failed to update record: " + courseSchedulePO1.getId());
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 定时的去开启删除直播间
+     */
+    @Scheduled(fixedRate = 60000)
+    public void dealWithLivingRooms(){
+        // 获取距离现在只有 1小时的排课表
+        List<CourseSchedulePO> recordsWithinCertainHour = courseScheduleMapper.findRecordsWithinCertainHour(1);
+        for(CourseSchedulePO courseSchedulePO: recordsWithinCertainHour){
+            // date 类型自带时间
+            Date teachingDate = courseSchedulePO.getTeachingDate();
+            /// 16:30 - 18:30
+            String teachingTime = courseSchedulePO.getTeachingTime();
+
+            Date start = null;
+            Date end = null;
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(teachingDate);
+            // 提取时间部分，例如 "16:30 - 18:30"
+            String[] timeParts = teachingTime.split("—");
+
+            String startTimeStr = timeParts[0];
+            int startHour = Integer.parseInt(startTimeStr.split(":")[0]);
+            int startMinute = Integer.parseInt(startTimeStr.split(":")[1]);
+            calendar.set(Calendar.HOUR_OF_DAY, startHour);
+            calendar.set(Calendar.MINUTE, startMinute);
+            start = calendar.getTime();
+
+            String endTimeStr = timeParts[1];
+            int endHour = Integer.parseInt(endTimeStr.split(":")[0]);
+            int endMinute = Integer.parseInt(endTimeStr.split(":")[1]);
+            calendar.set(Calendar.HOUR_OF_DAY, endHour);
+            calendar.set(Calendar.MINUTE, endMinute);
+            end = calendar.getTime();
+
+            String videoId = courseSchedulePO.getOnlinePlatform();
+            if (videoId == null) {
+                // 如果该排课表没有开启直播 现在就给她开通
+
+                try {
+                    ApiResponse channel = singleLivingSetting.createChannel(courseSchedulePO.getCourseName(), start, end, false, "N");
+                    log.info("创建直播间参数包括 " + start + "  " + end  +  "创建直播间返回值 " + channel.toString());
+                    if(channel.getCode().equals(200)){
+                        ChannelResponseData channelResponseData = channel.getData();
+                        VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
+                        videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
+                        videoStreamRecordPO.setChannelPasswd("" + channelResponseData.getChannelPasswd());
+                        int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
+
+                        ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId("" + channelResponseData.getChannelId());
+                        log.info("频道信息包括 " + channelInfoByChannelId1);
+                        if(channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()){
+                            log.info("创建频道成功");
+                        }else{
+                            log.info("创建失败");
+                        }
+                        if(insert > 0){
+                            updateCourseScheduleInfoByVideo(courseSchedulePO, "" + videoStreamRecordPO.getId());
+                            log.info("直播间创建成功！" + courseSchedulePO);
+                        }
+                        log.info(channel.toString());
+                        log.info("创建的直播间频道 " + channelResponseData.getChannelId() + " 频道密码 " + channelResponseData.getChannelPasswd());
+                    }
+                }catch (Exception e){
+                    log.error("创建直播间失败 " + courseSchedulePO);
+                }
+            }else{
+                // 获取当前的东八区时间
+                Calendar currentCalendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
+                Date currentTime = currentCalendar.getTime();
+
+                // 将 end 时间加上30分钟
+                Calendar endCalendar = Calendar.getInstance();
+                endCalendar.setTime(end);
+                endCalendar.add(Calendar.MINUTE, 30);
+
+                // 判断是否超过30分钟
+                if (endCalendar.getTime().before(currentTime)) {
+                    // 超过30分钟，执行删除直播间的操作
+                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+                            .eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform())));
+
+                    if (videoStreamRecordPO != null) {
+                        Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
+                        log.info("删除直播间 " + videoStreamRecordPO);
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * 每 600秒 轮询一次
@@ -147,10 +266,10 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-//    @Scheduled(cron = "0 35 8 * * ?")
-//    public void executeAt1AM1520() {
-//        // 每晚 11点 校对新旧系统数据
-//        log.info("旧系统数据更新中...");
-//        messageSender.send(queue1, "数据同步");
-//    }
+    @Scheduled(cron = "0 00 22 * * ?")
+    public void executeAt1AM1520() {
+        // 每晚 10 点 校对新旧系统数据
+        log.info("旧系统数据更新中...");
+        messageSender.send(queue1, "数据同步");
+    }
 }

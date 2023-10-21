@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.admission_information;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;

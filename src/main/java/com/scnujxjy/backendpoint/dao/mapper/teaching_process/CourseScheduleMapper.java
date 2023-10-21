@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -390,9 +393,228 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     @Select("SELECT * " +
             "FROM course_schedule " +
+            "WHERE " +
+            "TIMESTAMP(teaching_date, SUBSTRING_INDEX(teaching_time, '-', 1)) BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL #{hour} HOUR) " +
+            "OR " +
+            "TIMESTAMP(teaching_date, SUBSTRING_INDEX(teaching_time, '-', -1)) BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL #{hour} HOUR);")
+    List<CourseSchedulePO> findRecordsWithinCertainHour(@Param("hour") int hour);
+
+
+
+    @Select("SELECT * " +
+            "FROM course_schedule " +
             "WHERE teaching_date = (SELECT MIN(teaching_date) " +
             "FROM course_schedule " +
             "WHERE teaching_date >= CURRENT_DATE);")
     List<CourseSchedulePO> findminRecords();
+
+
+    List<ScheduleCourseInformationVO> selectCoursesInformation(@Param("courseScheduleFilterROPageRO")
+                                                               CourseScheduleFilterRO courseScheduleFilterROPageRO,
+                                                               @Param("pageSize")long pageSize, @Param("pageNumber")long pageNumber);
+
+    long selectCoursesInformationCount(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+
+    @Select("<script>" +
+            "SELECT DISTINCT cs.grade " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctGrades(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+    @Select("<script>" +
+            "SELECT DISTINCT college " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctCollegeNames(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+
+    @Select("<script>" +
+            "SELECT DISTINCT cs.study_form " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctStudyForms(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+
+    @Select("<script>" +
+            "SELECT DISTINCT cs.admin_class " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctClassNames(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+    @Select("<script>" +
+            "SELECT DISTINCT cs.major_name " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctMajorNames(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+    @Select("<script>" +
+            "SELECT DISTINCT cs.level " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctLevels(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+
+    @Select("<script>" +
+            "SELECT DISTINCT teaching_class " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctTeachingClasses(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+    @Select("<script>" +
+            "SELECT DISTINCT course_name " +
+            "   FROM course_schedule cs " +
+            "INNER JOIN class_information ci ON " +
+            "cs.grade = ci.grade AND " +
+            "cs.study_form = ci.study_form AND " +
+            "cs.level = ci.level AND " +
+            "cs.admin_class = ci.class_name AND " +
+            "cs.major_name = ci.major_name " +
+            "   WHERE 1=1 " +
+            "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>" +
+            "   <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(cs.teaching_date) >= DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.college != null'>AND DATE(ci.college) >= DATE(#{courseScheduleFilterROPageRO.college}) </if> " +
+            "   <if test='courseScheduleFilterROPageRO.courseName != null'>AND DATE(cs.course_name) >= DATE(#{courseScheduleFilterROPageRO.courseName}) </if> " +
+            "</script>")
+    List<String> getDistinctCourseNames(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+
+
+    /**
+     * 获取排课表详细信息
+     * @param courseScheduleFilterROPageRO
+     * @param pageSize
+     * @param pageNumber
+     * @return
+     */
+    List<SchedulesVO> selectSchedulesInformation(@Param("courseScheduleFilterROPageRO")
+                                                 CourseScheduleFilterRO courseScheduleFilterROPageRO,
+                                                 @Param("pageSize")long pageSize, @Param("pageNumber")long pageNumber);
+
 
 }

@@ -15,6 +15,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * 后台管理的首页，用于展示常用的数据
+ *
+ * @author leopard
+ * @since 2023-08-02
+ */
 @RestController
 @RequestMapping("/home")
 public class ChartController {

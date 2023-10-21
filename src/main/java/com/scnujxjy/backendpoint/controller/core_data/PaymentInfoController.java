@@ -7,12 +7,15 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
+import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,8 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -48,6 +50,9 @@ public class PaymentInfoController {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private MessageSender messageSender;
 
     /**
      * 通过id查询详情
@@ -183,8 +188,23 @@ public class PaymentInfoController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    // 查询二级学院管理员权限范围内的教学计划
+                    FilterDataVO paymentInfoVOPageVO = null;
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryPayInfoFilter(paymentInfoFilterROPageRO, collegeAdminFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(paymentInfoVOPageVO.getData());
+                    filterDataVO.setTotal(paymentInfoVOPageVO.getTotal());
+                    filterDataVO.setCurrent(paymentInfoFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(paymentInfoFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
+                            / paymentInfoFilterROPageRO.getPageSize()));
 
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO paymentInfoVOPageVO = null;
                     paymentInfoVOPageVO = paymentInfoService.
@@ -218,7 +238,7 @@ public class PaymentInfoController {
     /**
      * 根据教务员获取筛选缴费参数
      *
-     * @return 教学计划
+     * @return 缴费参数
      */
     @GetMapping("/get_select_args_admin")
     public SaResult getPaymentInformationArgsByCollege() {
@@ -240,7 +260,7 @@ public class PaymentInfoController {
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, managerFilter);
                 }
 
@@ -253,6 +273,36 @@ public class PaymentInfoController {
         }
 
         return SaResult.data(paymentInformationSelectArgs);
+    }
+
+    /**
+     * 采用消息队列来处理数据导出
+     * 根据二级学院教务员获取筛选参数
+     *
+     * @return 缴费数据
+     */
+    @PostMapping("/batch_export_payment_data")
+    public SaResult batchExportPaymentData(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        String userId = (String) StpUtil.getLoginId();
+        CourseInformationSelectArgs courseInformationSelectArgs = null;
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 二级学院管理员
+
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                // 继续教育学院管理员
+                boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
+                if(send){
+                    return SaResult.ok("导出学籍数据成功");
+                }
+            }
+        }
+        return SaResult.error("导出学籍数据失败！");
     }
 }
 

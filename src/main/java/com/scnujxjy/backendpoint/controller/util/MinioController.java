@@ -19,9 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * <p>
- * 获取 Minio 文件
- * </p>
+ * Minio 分部署存储
  *
  * @author 谢辉龙
  * @since 2023-09-23

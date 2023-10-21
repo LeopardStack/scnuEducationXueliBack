@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -20,6 +21,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -27,10 +29,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleFilterDataVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -62,6 +61,9 @@ public abstract class AbstractFilter {
 
     @Resource
     protected PaymentInfoMapper paymentInfoMapper;
+
+    @Resource
+    protected VideoStreamRecordsMapper videoStreamRecordsMapper;
 
     @Resource
     protected ScoreInformationMapper scoreInformationMapper;
@@ -207,5 +209,33 @@ public abstract class AbstractFilter {
      */
     public void exportClassInformationData(PageRO<ClassInformationFilterRO> pageRO, String userId, PlatformMessagePO platformMessagePO) {
 
+    }
+
+    /**
+     * 获取排课表的课程信息
+     * @param courseScheduleFilterROPageRO
+     * @return
+     */
+    public FilterDataVO filterScheduleCoursesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        return null;
+    }
+
+    /**
+     * 获取排课表课程筛选参数
+     * @return
+     */
+    public ScheduleCourseInformationSelectArgs filterScheduleCourseInformationSelectArgs() {
+        return null;
+    }
+
+    /**
+     * 获取排课表详细信息
+     * @return
+     */
+    public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        return null;
+    }
+
+    public void exportPaymentInfoData(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO, String userId, PlatformMessagePO platformMessagePO){
     }
 }

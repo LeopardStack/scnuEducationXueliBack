@@ -97,5 +97,12 @@ public class TeacherInformationController {
         }
         return SaResult.data(teacherInformationVOS);
     }
+
+    @GetMapping("/get_teacher_information")
+    public SaResult getTeacherInformation() {
+        // 数据查询
+
+        return SaResult.data(teacherInformationService.getTeacherInformation());
+    }
 }
 

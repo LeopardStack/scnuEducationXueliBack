@@ -41,4 +41,9 @@ public class PaymentInformationSelectArgs implements Serializable {
      * 学院
      */
     private List<String> collegeNames;
+
+    /**
+     * 学年
+     */
+    private List<String> academicYears;
 }

@@ -59,9 +59,9 @@ public class CodeGenerator {
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.platform_message");
-        pc.setEntity("dao.entity.platform_message");
-        pc.setController("controller.platform_message");
+        pc.setMapper("dao.mapper.teaching_process");
+        pc.setEntity("dao.entity.teaching_process");
+        pc.setController("controller.teaching_process");
         mpg.setPackageInfo(pc);
 
         // 策略配置

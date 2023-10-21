@@ -63,7 +63,7 @@ public class StpInterfaceConfig implements StpInterface {
         // 返回数据
         return permissionVOS.stream()
                 .filter(Objects::nonNull)
-                .map(PermissionVO::getPermissionName)
+                .map(PermissionVO::getResource)
                 .filter(StrUtil::isNotBlank)
                 .collect(Collectors.toList());
     }

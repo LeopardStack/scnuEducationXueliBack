@@ -31,9 +31,7 @@ import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_AD
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
- * <p>
- * 班级信息表 前端控制器
- * </p>
+ * 班级信息管理
  *
  * @author leopard
  * @since 2023-08-14

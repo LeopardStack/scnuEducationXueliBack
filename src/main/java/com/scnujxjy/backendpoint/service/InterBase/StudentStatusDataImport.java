@@ -345,6 +345,7 @@ public class StudentStatusDataImport {
             personalInfoPO.setEthnicity(studentData.get("MZ"));
             personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
             personalInfoPO.setIdNumber(studentData.get("SFZH"));
+            personalInfoPO.setName(studentData.get("XM"));
 
             personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
             personalInfoPO.setGrade(studentData.get("NJ"));

@@ -1,14 +1,24 @@
 package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.StudentFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,13 +29,14 @@ import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
- * <p>
- * 排课表 前端控制器
- * </p>
+ * 排课管理，比如直播、点播安排
  *
  * @author leopard
  * @since 2023-08-18
@@ -46,6 +57,9 @@ public class CourseScheduleController {
 
     @Resource
     private StudentFilter studentFilter;
+
+    @Resource
+    private ManagerFilter managerFilter;
 
     /**
      * 根据id查询排课表信息
@@ -253,6 +267,258 @@ public class CourseScheduleController {
         return SaResult.data(selectArgs);
     }
 
+
+    /**
+     * 获取不同角色权限范围内的排课表课程信息
+     * @param courseScheduleFilterROPageRO
+     * @return
+     */
+    @PostMapping("/select_schedule_courses")
+    public SaResult getScheduleCoursesInformation(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO){
+        // 校验参数
+        if (Objects.isNull(courseScheduleFilterROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleFilterROPageRO.getEntity())) {
+            courseScheduleFilterROPageRO.setEntity(new CourseScheduleFilterRO());
+        }
+
+        List<String> roleList = StpUtil.getRoleList();
+        PageVO<FilterDataVO> filterDataVO = null;
+        // 获取访问者 ID
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 查询二级学院管理员权限范围内的教学计划
+                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.allPageQueryScheduleCoursesInformationFilter(courseScheduleFilterROPageRO, collegeAdminFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(scheduleCoursesFilterDataVO.getData());
+                filterDataVO.setTotal(scheduleCoursesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                // 查询继续教育管理员权限范围内的教学计划
+                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.allPageQueryScheduleCoursesInformationFilter(courseScheduleFilterROPageRO, managerFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(scheduleCoursesFilterDataVO.getData());
+                filterDataVO.setTotal(scheduleCoursesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            }
+
+        }
+        return SaResult.data(filterDataVO);
+    }
+
+
+    /**
+     * 获取排课表课程筛选条件
+     *
+     * @return 排课表筛选条件
+     */
+    @GetMapping("/select_schedule_courses_args")
+    public SaResult getSelectScheduleCourseInformationArgs() {
+        List<String> roleList = StpUtil.getRoleList();
+        PageVO<FilterDataVO> filterDataVO = null;
+
+        ScheduleCourseInformationSelectArgs  scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
+        // 获取访问者 ID
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(collegeAdminFilter);
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
+            }
+        }
+
+        return SaResult.data(scheduleCourseInformationSelectArgs);
+    }
+
+
+    /**
+     * 获取不同角色权限范围内的排课表信息
+     * @param courseScheduleFilterROPageRO
+     * @return
+     */
+    @PostMapping("/select_schedules")
+    public SaResult getScheduleInformation(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO){
+        // 校验参数
+        if (Objects.isNull(courseScheduleFilterROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleFilterROPageRO.getEntity())) {
+            courseScheduleFilterROPageRO.setEntity(new CourseScheduleFilterRO());
+        }
+
+        List<String> roleList = StpUtil.getRoleList();
+        PageVO<FilterDataVO> filterDataVO = null;
+        // 获取访问者 ID
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 查询二级学院管理员权限范围内的教学计划
+                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, collegeAdminFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                // 查询继续教育管理员权限范围内的教学计划
+                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, managerFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            }
+
+        }
+        return SaResult.data(filterDataVO);
+    }
+
+
+    /**
+     * 修改排课表相关信息
+     * @param courseScheduleUpdateROPageRO
+     * @return
+     */
+    @PostMapping("/update_schedule_courses")
+    public SaResult updateScheduleCoursesInformation(@RequestBody CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleUpdateROPageRO)) {
+            return SaResult.error("未做任何修改");
+        }
+        try {
+            courseScheduleService.updateScheduleInfor(courseScheduleUpdateROPageRO);
+        }catch (Exception e){
+            return SaResult.error(e.toString());
+        }
+
+        log.info("更新的排课表信息为 " + courseScheduleUpdateROPageRO);
+        return SaResult.ok();
+    }
+
+    /**
+     * 删除排课表相关信息
+     * @return
+     */
+    @DeleteMapping("/delete_schedule_courses")
+    public SaResult deleteScheduleCoursesInformation(@RequestParam("scheduldId") Long scheduldId) {
+        // 校验参数
+        if (Objects.isNull(scheduldId)) {
+            return SaResult.error("scheduldId 不能为空");
+        }
+
+        try {
+            // 这里调用删除方法，不是更新方法
+            courseScheduleService.deleteScheduleInfor(scheduldId);
+        }catch (Exception e){
+            return SaResult.error(e.toString());
+        }
+
+        log.info("删除排课表 " + scheduldId);
+        return SaResult.ok();
+    }
+
+    /**
+     * 获取直播间信息
+     * @return
+     */
+    @GetMapping("/get_living_root_info")
+    public SaResult getLivingRoomInfo(@RequestParam("roomId") String roomId) {
+        // 校验参数
+        if (Objects.isNull(roomId)) {
+            return SaResult.error("roomId 不能为空");
+        }
+
+
+        try {
+            // 这里调用删除方法，不是更新方法
+            ChannelResponseBO livingRoomInformation = courseScheduleService.getLivingRoomInformation(roomId);
+            return SaResult.data(livingRoomInformation);
+        }catch (Exception e){
+            return SaResult.error(e.toString());
+        }
+    }
+
+    /**
+     * 修改教学班的课程简介信息
+     * @param courseExtraInformationRO
+     * @return
+     */
+    @PostMapping("/update_schedule_courses_extra_info")
+    public SaResult updateScheduleCoursesExtraInformation(@RequestBody CourseExtraInformationRO courseExtraInformationRO) {
+        // 校验参数
+        if (Objects.isNull(courseExtraInformationRO)) {
+            return SaResult.error("未做任何修改");
+        }
+        try {
+            courseScheduleService.updateScheduleExtraInfo(courseExtraInformationRO);
+        }catch (Exception e){
+            return SaResult.error(e.toString());
+        }
+
+        log.info("更新的教学班课程简介信息为 " + courseExtraInformationRO);
+        return SaResult.ok();
+    }
+
+    /**
+     * 获取教学班的课程简介信息
+     * @param courseExtraInformationRO
+     * @return
+     */
+    @PostMapping("/get_schedule_courses_extra_info")
+    public SaResult getScheduleCoursesExtraInformation(@RequestBody CourseExtraInformationRO courseExtraInformationRO) {
+        // 校验参数
+        if (Objects.isNull(courseExtraInformationRO)) {
+            return SaResult.error("未做任何修改");
+        }
+        CourseExtraInformationPO courseExtraInformationPO = new CourseExtraInformationPO();
+        try {
+            courseExtraInformationPO =  courseScheduleService.getScheduleExtraInfo(courseExtraInformationRO);
+        }catch (Exception e){
+            return SaResult.error(e.toString());
+        }
+
+        return SaResult.data(courseExtraInformationPO);
+    }
 
 }
 

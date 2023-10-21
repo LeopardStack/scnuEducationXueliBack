@@ -13,27 +13,40 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseExtraInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleFilterDataVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,6 +75,9 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     private StudentStatusMapper studentStatusMapper;
 
     @Resource
+    private TeacherInformationMapper teacherInformationMapper;
+
+    @Resource
     private ClassInformationMapper classInformationMapper;
 
     @Resource
@@ -70,6 +86,14 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     @Resource
     private CollegeInformationMapper collegeInformationMapper;
 
+    @Resource
+    private CourseExtraInformationMapper courseExtraInformationMapper;
+
+
+    @Resource
+    private VideoStreamRecordsMapper videoStreamRecordsMapper;
+    @Resource
+    private VideoStreamUtils videoStreamUtils;
     /**
      * 根据id查询排课表信息
      *
@@ -458,4 +482,294 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return selectCourseSchedules;
     }
 
+    /**
+     * 获取排课表的课程信息
+     * @param courseScheduleFilterROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO allPageQueryScheduleCoursesInformationFilter(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+        return filter.filterScheduleCoursesInformation(courseScheduleFilterROPageRO);
+    }
+
+    public ScheduleCourseInformationSelectArgs getSelectScheduleCourseInformationArgs(AbstractFilter filter) {
+        return filter.filterScheduleCourseInformationSelectArgs();
+    }
+
+    /**
+     * 获取排课表详细信息
+     * @param courseScheduleFilterROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO allPageQuerySchedulesInformationFilter(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+        return filter.filterSchedulesInformation(courseScheduleFilterROPageRO);
+    }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    boolean updateCourseScheduleInfoByTime(CourseSchedulePO courseSchedulePO, Date newDate, String newTime){
+        // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
+        List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime()));
+
+        for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+            // 更新时间
+            courseSchedulePO1.setTeachingDate(newDate);
+            courseSchedulePO1.setTeachingTime(newTime);
+
+            int update = getBaseMapper().update(courseSchedulePO1, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO1.getId()));
+            if(update <= 0){
+                throw new RuntimeException("Failed to update record: " + courseSchedulePO1.getId());
+            }
+        }
+        return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    boolean updateCourseScheduleInfoByTeacher(CourseSchedulePO courseSchedulePO, TeacherInformationPO teacherInformationPO){
+        // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
+        List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime()));
+
+        for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+            // 更新时间
+            courseSchedulePO1.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+            courseSchedulePO1.setMainTeacherName(teacherInformationPO.getName());
+            courseSchedulePO1.setMainTeacherId(teacherInformationPO.getWorkNumber());
+            courseSchedulePO1.setMainTeacherIdentity(teacherInformationPO.getIdCardNumber());
+
+            int update = getBaseMapper().update(courseSchedulePO1, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO1.getId()));
+            if(update <= 0){
+                throw new RuntimeException("Failed to update record: " + courseSchedulePO1.getId());
+            }
+        }
+        return true;
+    }
+
+    public void updateScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
+        if(courseScheduleUpdateROPageRO.getId() == null){
+            throw new RuntimeException("没有找到任何排课表信息，更新失败");
+        }else{
+            if(courseScheduleUpdateROPageRO.getTeachingStartDate() != null){
+                // 更新排课表的上课时间
+                Date start = courseScheduleUpdateROPageRO.getTeachingStartDate();
+
+                Date end = courseScheduleUpdateROPageRO.getTeachingEndDate();
+
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm"); // 修改这里
+                String formattedTime = sdf.format(start) + "—" + sdf.format(end);
+                log.info("更新后的时间 " + start + "\n" + formattedTime);
+
+                CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                        eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                boolean b = updateCourseScheduleInfoByTime(courseSchedulePO, start, formattedTime);
+                if(b){
+                    log.info("更新教学时间成功");
+                }else{
+                    throw new RuntimeException("更新成绩失败");
+                }
+            }
+
+            if(courseScheduleUpdateROPageRO.getTeacherName() != null){
+                // 更换老师
+                List<TeacherInformationPO> teacherInformationPOS = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                        eq(TeacherInformationPO::getName, courseScheduleUpdateROPageRO.getTeacherName()));
+                if(teacherInformationPOS.size() > 1){
+                    // 存在同名老师 必须提供 工号或者身份证号码
+                    String work_id = courseScheduleUpdateROPageRO.getTeacherId();
+                    String id_number = courseScheduleUpdateROPageRO.getTeacherIdentity();
+                    if(work_id != null){
+                        List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                                eq(TeacherInformationPO::getWorkNumber, work_id));
+                        if(teacherInformationPOS1.size() == 1){
+
+                            TeacherInformationPO teacherInformationPO = teacherInformationPOS1.get(0);
+
+                            CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                                    eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                            boolean update = updateCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                            if(update){
+                                log.info("更新课程教师成功");
+                            }else{
+                                throw new RuntimeException("更新排课表上课教师失败");
+                            }
+                            // 确定了这一名老师，开始更新
+                            log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS1.get(0));
+                        }else{
+                            // 工号确定不了 或者为空
+                            List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                                    eq(TeacherInformationPO::getIdCardNumber, id_number));
+                            if(teacherInformationPOS2.size() == 1){
+                                // 确定了这一名老师，开始更新
+                                TeacherInformationPO teacherInformationPO = teacherInformationPOS2.get(0);
+
+                                CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                                        eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                                boolean update = updateCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                                if(update){
+                                    log.info("更新课程教师成功");
+                                }else{
+                                    throw new RuntimeException("更新排课表上课教师失败");
+                                }
+                                log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS2.get(0));
+                            }else{
+                                throw new RuntimeException("更新失败，教师信息无法确定，请提供工号或者身份证号码");
+                            }
+                        }
+
+                    }
+                }else if(teacherInformationPOS.size() == 1){
+                    TeacherInformationPO teacherInformationPO = teacherInformationPOS.get(0);
+
+                    CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                            eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                    boolean update = updateCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                    if(update){
+                        log.info("更新课程教师成功");
+                    }else{
+                        throw new RuntimeException("更新排课表上课教师失败");
+                    }
+                    log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS.get(0));
+                }else{
+                    throw new RuntimeException("更新失败，教师信息错误");
+                }
+            }
+        }
+    }
+
+    public void deleteScheduleInfor(Long scheduldId) {
+        try {
+            CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                    eq(CourseSchedulePO::getId, scheduldId));
+            // 查询多少条排课表记录与它同教学班名
+            String teachingClassName = courseSchedulePO.getTeachingClass();
+            List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>().
+                    eq(CourseSchedulePO::getTeachingClass, teachingClassName));
+            // 计算直播间是否存在
+            if (courseSchedulePO.getOnlinePlatform() != null) {
+                // 要确定直播间在保利威那里是否被删除了
+                VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>().
+                        eq(VideoStreamRecordPO::getId, courseSchedulePO.getOnlinePlatform()));
+                // 调用保利威删除 API
+            Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
+                log.info("存在直播间 " + videoStreamRecordPO);
+            }
+
+            // 删除存在多个班合班一起上课的所有记录
+            List<Long> idsToDelete = courseSchedulePOS.stream()
+                    .map(CourseSchedulePO::getId) // Assuming getId returns the ID of the entity
+                    .collect(Collectors.toList());
+
+            int i = getBaseMapper().deleteBatchIds(idsToDelete);
+
+            log.info("删除排课表记录 " + i);
+        }catch (Exception e){
+            log.error("删除失败 " + e.toString());
+            throw new RuntimeException("删除失败 ");
+        }
+    }
+
+    /**
+     * 根据排课表中的记录来获取直播间信息
+     * @param roomId
+     */
+    public ChannelResponseBO getLivingRoomInformation(String roomId) {
+        try {
+            if (roomId != null) {
+                CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                        eq(CourseSchedulePO::getId, Long.parseLong(roomId)));
+                if(courseSchedulePO == null){
+                    throw new RuntimeException("不存在该排课表记录");
+                }
+                VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>().
+                        eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform()) ));
+                ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo(videoStreamRecordPO.getChannelId());
+                return channelBasicInfo;
+            }
+        }catch (Exception e){
+            log.error("获取直播间信息失败 " + roomId + " \n" + e.toString());
+            throw new RuntimeException("获取直播间信息失败");
+        }
+        return null;
+    }
+
+    /**
+     * 如果该排课表对应教学班里面的这一门课程没有相关的简介信息 就新增一个，那么
+     * 这个教学班所有上这门课的学生都会看到这个课程简介
+     * @param courseExtraInformationRO
+     */
+    public String updateScheduleExtraInfo(CourseExtraInformationRO courseExtraInformationRO) {
+        Integer integer = courseExtraInformationMapper.selectCount(new LambdaQueryWrapper<CourseExtraInformationPO>().
+                eq(CourseExtraInformationPO::getCourseScheduleId, courseExtraInformationRO.getCourseScheduleId()).
+                eq(CourseExtraInformationPO::getCourseName, courseExtraInformationRO.getCourseName()));
+        if(integer == 0){
+            // 没有课程简介信息 需要新增
+            CourseExtraInformationPO courseExtraInformationPO = new CourseExtraInformationPO();
+            courseExtraInformationPO.setCourseScheduleId(courseExtraInformationRO.getCourseScheduleId());
+            courseExtraInformationPO.setCourseDescription(courseExtraInformationRO.getCourseDescription());
+            courseExtraInformationPO.setCourseAnnouncement(courseExtraInformationRO.getCourseAnnouncement());
+            courseExtraInformationPO.setCourseTitle(courseExtraInformationRO.getCourseTitle());
+            courseExtraInformationPO.setCourseName(courseExtraInformationRO.getCourseName());
+
+            try {
+                int insert = courseExtraInformationMapper.insert(courseExtraInformationPO);
+                if (insert > 0) {
+                    return "新增课程简介成功！";
+                }
+            }catch (Exception e){
+                log.error("新增课程简介失败" + e.toString());
+                throw new RuntimeException("新增课程简介失败");
+            }
+        }else if(integer == 1){
+            // 存在，则覆盖
+            CourseExtraInformationPO courseExtraInformationPO = courseExtraInformationMapper.selectOne(new LambdaQueryWrapper<CourseExtraInformationPO>().
+                    eq(CourseExtraInformationPO::getCourseScheduleId, courseExtraInformationRO.getCourseScheduleId()).
+                    eq(CourseExtraInformationPO::getCourseName, courseExtraInformationRO.getCourseName()));
+
+            CourseExtraInformationPO courseExtraInformationPO1 = new CourseExtraInformationPO();
+            courseExtraInformationPO1.setCourseScheduleId(courseExtraInformationRO.getCourseScheduleId());
+            courseExtraInformationPO1.setCourseDescription(courseExtraInformationRO.getCourseDescription());
+            courseExtraInformationPO1.setCourseAnnouncement(courseExtraInformationRO.getCourseAnnouncement());
+            courseExtraInformationPO1.setCourseTitle(courseExtraInformationRO.getCourseTitle());
+            courseExtraInformationPO1.setCourseName(courseExtraInformationRO.getCourseName());
+            try {
+            int update = courseExtraInformationMapper.update(courseExtraInformationPO1, new LambdaQueryWrapper<CourseExtraInformationPO>().
+                    eq(CourseExtraInformationPO::getCourseId, courseExtraInformationPO.getCourseId()));
+            if(update > 0){
+                return "更新课程简介成功！";
+            }}catch (Exception e){
+                log.error("更新课程简介失败" + e.toString());
+                throw new RuntimeException("更新课程简介失败");
+            }
+        }else{
+            log.error("该排课表对应的课程存在多条课程简介记录，更新失败!" + courseExtraInformationRO);
+            throw new RuntimeException("该排课表对应的课程存在多条课程简介记录，更新失败!");
+        }
+
+        return "更新失败";
+    }
+
+    /**
+     * 获取教学班的课程简介信息
+     * @param courseExtraInformationRO
+     * @return
+     */
+    public CourseExtraInformationPO getScheduleExtraInfo(CourseExtraInformationRO courseExtraInformationRO) {
+        Long courseScheduleId = courseExtraInformationRO.getCourseScheduleId();
+        String courseName = courseExtraInformationRO.getCourseName();
+        CourseExtraInformationPO courseExtraInformationPO = courseExtraInformationMapper.selectOne(new LambdaQueryWrapper<CourseExtraInformationPO>().
+                eq(CourseExtraInformationPO::getCourseScheduleId, courseScheduleId).
+                eq(CourseExtraInformationPO::getCourseName, courseName));
+        if(courseExtraInformationPO != null){
+            return courseExtraInformationPO;
+        }
+        return null;
+    }
 }

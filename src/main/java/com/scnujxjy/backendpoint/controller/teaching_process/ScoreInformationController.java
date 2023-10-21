@@ -20,10 +20,16 @@ import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -33,9 +39,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
- * <p>
- * 成绩信息表 前端控制器
- * </p>
+ * 成绩信息管理
  *
  * @author leopard
  * @since 2023-09-10
@@ -134,9 +138,23 @@ public class ScoreInformationController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    //二级学院教务员查询学生成绩信息
+                    FilterDataVO gradeInfoVOPageVO = null;
+                    gradeInfoVOPageVO = scoreInformationService.
+                            allPageQueryGradinfoFilter(scoreInformationFilterROPageRO, collegeAdminFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(gradeInfoVOPageVO.getData());
+                    filterDataVO.setTotal(gradeInfoVOPageVO.getTotal());
+                    filterDataVO.setCurrent(scoreInformationFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(scoreInformationFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) gradeInfoVOPageVO.getData().size()
+                            / scoreInformationFilterROPageRO.getPageSize()));
 
+                    if (Objects.isNull(gradeInfoVOPageVO)) {
+                        throw dataNotFoundError();
+                    }
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-                    // 数据查询
+                    // 继续教育学院教务员查询学生成绩信息
                     FilterDataVO gradeInfoVOPageVO = null;
                     gradeInfoVOPageVO = scoreInformationService.
                             allPageQueryGradinfoFilter(scoreInformationFilterROPageRO, managerFilter);
@@ -225,7 +243,7 @@ public class ScoreInformationController {
 
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
-                boolean send = messageSender.send(scoreInformationFilterROPageRO, managerFilter, userId);
+                boolean send = messageSender.sendExportMsg(scoreInformationFilterROPageRO, managerFilter, userId);
                 if(send){
                     return SaResult.ok("导出学籍数据成功");
                 }
@@ -233,6 +251,64 @@ public class ScoreInformationController {
         }
         return SaResult.error("导出学籍数据失败！");
     }
+
+
+    /**
+     * 获取学生评优成绩表
+     *
+     * @return 成绩表
+     */
+    @PostMapping("/export_award_data")
+    public SaResult exportAwardData(@RequestBody Map<String, String> params) {
+        String studentId = params.get("studentId");
+        if (studentId == null || studentId.isEmpty()) {
+            throw dataMissError();
+        }
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = scoreInformationService.exportAwardData(studentId);
+            if(byteArrayOutputStream == null){
+                return SaResult.error("导出评优成绩单失败！");
+            }
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+//            String base64Encoded = Base64.getEncoder().encodeToString(bytes);
+            // 这里将字节流作为Base64字符串返回
+            return SaResult.ok().setData(bytes);
+        } catch (Exception e) {
+            return SaResult.error("导出评优成绩单失败！" + e.toString());
+        }
+    }
+
+
+    /**
+     * 下载评优成绩单
+     * @param params
+     * @return
+     */
+    @PostMapping("/export_award_data1")
+    public ResponseEntity<byte[]> exportAwardData1(@RequestBody Map<String, String> params) {
+        String studentId = params.get("studentId");
+        if (studentId == null || studentId.isEmpty()) {
+            throw dataMissError();
+        }
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = scoreInformationService.exportAwardData(studentId);
+            if(byteArrayOutputStream == null){
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            String encodedFilename = URLEncoder.encode(studentId + "_评优成绩单.xlsx", "UTF-8");
+            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(encodedFilename).build());
+            return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
 
 }
 

@@ -171,4 +171,14 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
         }
         return null;
     }
+
+    public List<Object> getTeacherInformation() {
+        List<Object> distinctTeacherNames = getBaseMapper().selectObjs(
+                new LambdaQueryWrapper<TeacherInformationPO>()
+                        .select(TeacherInformationPO::getName)
+                        .groupBy(TeacherInformationPO::getName)
+        );
+
+        return distinctTeacherNames;
+    }
 }

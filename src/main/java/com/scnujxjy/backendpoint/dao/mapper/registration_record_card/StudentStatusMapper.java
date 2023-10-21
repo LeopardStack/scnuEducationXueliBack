@@ -60,33 +60,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     @Select("SELECT * FROM student_status WHERE grade = #{grade}")
     List<StudentStatusPO> selectStudentsByGrade(String grade);
 
-    @Select("<script>" +
-            "SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name, pi.gender, pi.birth_date, " +
-            "pi.political_status, pi.ethnicity, pi.phone_number, pi.address, pi.entrance_photo " +
-            "FROM student_status ss " +
-            "LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number " +
-            "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
-            "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
-            "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
-            "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND ss.college = #{entity.college} </if>" +
-            "<if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>" +
-            "<if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>" +
-            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
-            "<if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>" +
-            "<if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>" +
-            "<if test='entity.academicStatus != null'>AND ss.academic_status = #{entity.academicStatus} </if>" +
-            "<if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>" +
-            "<if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>" +
-            "<if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.graduationDate != null'>AND gi.graduation_date = #{entity.graduationDate} </if>" +
-            "ORDER BY ss.grade DESC, ss.college, ss.major_name, ss.level, ci.class_name " +
-            "LIMIT #{l}, #{pageSize} " +
-            "</script>")
+
     List<StudentStatusAllVO> selectByFilterAndPageByManager0(@Param("entity") StudentStatusFilterRO entity, @Param("pageSize") Long pageSize, @Param("l") long l);
 
     /**
@@ -94,30 +68,6 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT COUNT(*) " +
-            "FROM student_status ss " +
-            "LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number " +
-            "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
-            "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
-            "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
-            "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND ss.college = #{entity.college} </if>" +
-            "<if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>" +
-            "<if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>" +
-            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
-            "<if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>" +
-            "<if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>" +
-            "<if test='entity.academicStatus != null'>AND ss.academic_status = #{entity.academicStatus} </if>" +
-            "<if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>" +
-            "<if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>" +
-            "<if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.graduationDate != null'>AND gi.graduation_date = #{entity.graduationDate} </if>" +
-            "</script>")
     long getCountByFilterAndPageManager0(@Param("entity") StudentStatusFilterRO entity);
 
 
@@ -126,32 +76,6 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name, pi.gender, pi.birth_date, " +
-            "pi.political_status, pi.ethnicity, pi.phone_number, pi.address, pi.entrance_photo " +
-            "FROM student_status ss " +
-            "LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number " +
-            "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
-            "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
-            "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
-            "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND ss.college = #{entity.college} </if>" +
-            "<if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>" +
-            "<if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>" +
-            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
-            "<if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>" +
-            "<if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>" +
-            "<if test='entity.academicStatus != null'>AND ss.academic_status = #{entity.academicStatus} </if>" +
-            "<if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>" +
-            "<if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>" +
-            "<if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.graduationDate != null'>AND gi.graduation_date = #{entity.graduationDate} </if>" +
-            "ORDER BY ss.grade DESC, ss.college, ss.major_name, ss.level, ci.class_name " +
-            "</script>")
     List<StudentStatusAllVO> downloadStudentStatusDataByManager0(@Param("entity") StudentStatusFilterRO entity);
 
 

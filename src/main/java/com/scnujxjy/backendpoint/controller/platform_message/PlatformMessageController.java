@@ -16,9 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * <p>
- * 平台消息表 前端控制器
- * </p>
+ * 平台消息表
  *
  * @author 谢辉龙
  * @since 2023-09-23

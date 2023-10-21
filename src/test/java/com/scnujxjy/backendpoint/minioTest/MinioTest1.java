@@ -141,7 +141,7 @@ public class MinioTest1 {
      */
     @Test
     public void testDeleteFile() {
-        String objectName = "test1.txt"; // 在bucket中的对象名，通常与文件名相同
+        String objectName = "学历教育部管理员权限.txt"; // 在bucket中的对象名，通常与文件名相同
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -163,8 +163,8 @@ public class MinioTest1 {
      */
     @Test
     public void test04(){
-        String filePath = "classpath:data/test1.txt"; // 替换为你的文件路径
-        String objectName = "test1.txt"; // 在bucket中的对象名，通常与文件名相同
+        String filePath = "classpath:data/学历教育部管理员权限.txt"; // 替换为你的文件路径
+        String objectName = "学历教育部管理员权限.txt"; // 在bucket中的对象名，通常与文件名相同
         String newBucket = "test01";
         try {
             Resource resource = resourceLoader.getResource(filePath);

@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.DegreeInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
@@ -32,6 +34,8 @@ public class Test1 {
 
     @Resource
     StudentStatusMapper studentStatusMapper;
+    @Resource
+    DegreeInfoMapper degreeInfoMapper;
 
 
     @Resource
@@ -45,6 +49,8 @@ public class Test1 {
 
     @Resource
     ScoreInformationMapper scoreInformationMapper;
+    @Resource
+    PaymentInfoMapper paymentInfoMapper;
 
     @Resource
     MessageSender messageSender;
@@ -55,7 +61,7 @@ public class Test1 {
     @Test
     public void test1(){
         try {
-            oldDataSynchronize.synchronizeStudentStatusData(2019, 1995, true);
+            oldDataSynchronize.synchronizeStudentStatusData(2023, 1995, true);
         }catch (Exception e){
             log.error("同步学籍数据错误 " + e.toString());
         }
@@ -92,13 +98,27 @@ public class Test1 {
      */
     @Test
     public void test5(){
+        int grade = 2021;
         try {
             int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>().
-                    eq(ScoreInformationPO::getGrade, "" + 2015));
-            log.info("查看删除 2015年 所有成绩的结果 " + delete);
-            oldDataSynchronize.synchronizeGradeInformationData(2015, 2015, true);
+                    eq(ScoreInformationPO::getGrade, "" + grade));
+            log.info("查看删除 " + 2021 + "年 所有成绩的结果 " + delete);
+            oldDataSynchronize.synchronizeGradeInformationData(grade, grade, true);
         }catch (Exception e){
             log.error("同步成绩数据错误 " + e.toString());
+        }
+    }
+
+    /**
+     * 同步缴费数据
+     */
+    @Test
+    public void test5_1(){
+        try {
+            paymentInfoMapper.truncateTable();
+            oldDataSynchronize.synchronizePaymentInfoData(true, true);
+        }catch (Exception e){
+            log.error("同步缴费数据错误 " + e.toString());
         }
     }
 
@@ -126,6 +146,17 @@ public class Test1 {
         Integer new_class_count = classInformationMapper.selectCount(null);
         Object old_class_count = scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
         log.info("新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count);
+
+        log.info("新旧系统缴费数据对比");
+
+        Integer new_pay_count = paymentInfoMapper.selectCount(null);
+        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
+        if(new_pay_count != old_pay_count){
+            log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+        }else{
+            log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+        }
+
 
         log.info("新旧系统教学计划对比");
         Integer new_teachingPlans_count = courseInformationMapper.selectCount(null);
@@ -537,5 +568,14 @@ public class Test1 {
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的学籍数据完全相等");
             dataCheckLogs.add(formattedMsg);
         }
+    }
+
+    @Test
+    public void test10(){
+        log.info("新旧系统获得学位信息对比");
+        SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+        Integer new_class_count = degreeInfoMapper.selectCount(null);
+        Object old_class_count = scnuxljyDatabase.getValue("SELECT count(*) FROM xwdata;");
+        log.info("新系统获得学位的数量 " + new_class_count + " 旧系统获得学位的数量 " + old_class_count);
     }
 }

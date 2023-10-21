@@ -29,6 +29,9 @@ public class MessageSender {
     @Value("${spring.rabbitmq.queue4}")
     private String queue4;
 
+//    @Value("${spring.rabbitmq.queue5}")
+//    private String queue5;
+
     @Autowired
     public MessageSender(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
@@ -55,7 +58,7 @@ public class MessageSender {
             message.put("filter", JSON.toJSONString(filter));
             message.put("userId", userId);
 
-            this.rabbitTemplate.convertAndSend(queue3, message.toJSONString());
+            this.rabbitTemplate.convertAndSend(queue1, message.toJSONString());
             log.info("成功发送消息 ");
             return true;
         } catch (AmqpException e) {

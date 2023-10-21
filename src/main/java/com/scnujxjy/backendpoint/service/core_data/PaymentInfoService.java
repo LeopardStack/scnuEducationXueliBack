@@ -7,11 +7,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
@@ -160,5 +162,23 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
      */
     public PaymentInformationSelectArgs getStudentStatusArgs(String loginId, AbstractFilter filter) {
         return filter.filterPaymentInformationSelectArgs();
+    }
+
+    /**
+     * 批量导出下载缴费数据
+     * @param pageRO
+     * @param filter
+     * @param userId
+     * @param platformMessagePO
+     */
+    public void generateBatchPaymentData(PageRO<PaymentInfoFilterRO> pageRO, AbstractFilter filter, String userId, PlatformMessagePO platformMessagePO) {
+        // 校验参数
+        if (Objects.isNull(pageRO)) {
+            log.error("导出班级信息数据参数缺失");
+
+        }
+
+
+        filter.exportPaymentInfoData(pageRO, userId, platformMessagePO);
     }
 }

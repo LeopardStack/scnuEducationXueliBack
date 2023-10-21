@@ -163,6 +163,12 @@ public class StudentStatusAllVO implements Serializable {
      */
     @ExcelProperty(index = 22, value = "地址")
     private String address;
+
+    /**
+     * 学费
+     */
+    @ExcelProperty(index = 23, value = "学费")
+    private Double tuition;
     /**
      * 入学照片
      */

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper">
+
+    <sql id="commonJoin">
+        FROM payment_info pi
+        LEFT JOIN student_status ss ON ss.student_number = pi.student_number
+        LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND pi.id = #{entity.id} </if>
+        <if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>
+        <if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>
+        <if test='entity.name != null'>AND pi.name = #{entity.name} </if>
+        <if test='entity.idCardNumber != null'>AND pi.id_card_number = #{entity.idCardNumber} </if>
+        <if test='entity.level != null'>AND ss.level = #{entity.level} </if>
+        <if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>
+        <if test='entity.paymentBeginDate != null'>AND DATE(pi.payment_date) >= DATE(#{entity.paymentBeginDate}) </if>
+        <if test='entity.paymentEndDate != null'>AND DATE(pi.payment_date) &lt;= DATE(#{entity.paymentEndDate}) </if>
+        <if test='entity.paymentDate != null'>AND DATE(pi.payment_date) = DATE(#{entity.paymentDate}) </if>
+        <if test='entity.paymentCategory != null'>AND pi.payment_category = #{entity.paymentCategory} </if>
+        <if test='entity.academicYear != null'>AND pi.academic_year = #{entity.academicYear} </if>
+        <if test='entity.paymentType != null'>AND pi.payment_type = #{entity.paymentType} </if>
+        <if test='entity.isPaid != null'>AND pi.is_paid = #{entity.isPaid} </if>
+        <if test='entity.paymentMethod != null'>AND pi.payment_method = #{entity.paymentMethod} </if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college} </if>
+        <if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>
+        <if test='entity.teachingPoint != null'>AND ci.class_name LIKE CONCAT(#{entity.teachingPoint}, '%') </if>
+        <if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>
+    </sql>
+
+    <select id="getCountStudentPayInfoByFilter" resultType="Long">
+        SELECT COUNT(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getStudentPayInfoByFilter" resultType="com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO">
+        SELECT pi.*, ci.class_name, ss.college, ss.grade, ss.study_form, ss.level
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        LIMIT #{l}, #{pageSize}
+    </select>
+
+    <select id="downloadPaymentInfoDataByManager0" resultType="com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO">
+        SELECT pi.*, ci.class_name, ss.college, ss.grade, ss.study_form, ss.level, REGEXP_REPLACE(ci.class_name, '\\d+$', '') AS teachingPoint
+
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctAcademicYears" resultType="String">
+        SELECT DISTINCT pi.academic_year
+
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+</mapper>

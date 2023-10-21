@@ -29,7 +29,6 @@ public class RolePermissionPO implements Serializable {
     /**
      * 角色id
      */
-    @TableId(type = IdType.AUTO)
     private Long roleId;
     /**
      * 权限id

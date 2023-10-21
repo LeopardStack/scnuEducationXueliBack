@@ -31,20 +31,19 @@ spring:
     username: root
     password: xhl2023@
     hikari:
-      maximum-pool-size: 1000 # 设置最大连接数为10000
+      maximum-pool-size: 1000 # 设置最大连接数为1000
+      leakDetectionThreshold: 60000  # set to 60 seconds for example
+      idleTimeout: 300000  # set to 5 minutes for example
 
-mybatis:
-  mapper-locations: classpath:com/scnujxjy/backendpoint/dao/mapper/*xml
+#配置日志
+mybatis-plus:
+  mapper-locations: classpath*:mappers/**/*xml
   type-aliases-package: com.scnujxjy.backendpoint.dao.entity
-  # 开启驼峰命名
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
 
-# 配置日志
-mybatis-plus:
-  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
 # 关闭 MyBatis 的日志
 # 设置日志输出
 logging:
