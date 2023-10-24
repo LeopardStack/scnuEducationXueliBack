@@ -1,4 +1,5 @@
 package com.scnujxjy.backendpoint.util;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,9 @@ public class HealthCheckTask {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -44,7 +48,7 @@ public class HealthCheckTask {
 
         try {
             // 尝试向MySQL执行一个简单的SQL
-//            platformUserMapper.healthCheck();
+            platformUserMapper.healthCheck();
             // 如果没有异常则打印连接成功的日志
             log.info("MySQL连接成功");
         } catch (Exception e) {
