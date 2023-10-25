@@ -1,14 +1,29 @@
 server:
-  port: 40002
+  port: 40001
 
 spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
   redis:
-    host: 192.168.52.133
+    host: 116.205.190.9
     port: 6379
     password: 12345A
+  # rabbitmq
+  rabbitmq:
+    host: 139.159.132.31
+    port: 5672
+    username: rabbitmq
+    password: password
+    queue1: data_synchronize_test
+    queue2: test1_test
+    queue3: data_export_test
+    queue4: data_export2_test
+    queue5: data_synchronize_test_timeout_test
+
   servlet:
     multipart:
       maxFileSize: 10GB
@@ -16,9 +31,12 @@ spring:
   ## mysql
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.52.133:3308/fxlplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    url: jdbc:mysql://124.71.34.208:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
+    hikari:
+      maximum-pool-size: 1000 # 设置最大连接数为1000
+      idleTimeout: 300000  # set to 5 minutes for example
 
 mybatis:
   mapper-locations: classpath:mapper/*xml
@@ -27,21 +45,25 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-# 配置日志
+#配置日志
 mybatis-plus:
+  mapper-locations: classpath*:mappers/**/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.dao.entity
   configuration:
+    map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-# 关闭 MyBatis 的日志
+#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
+
+# 设置日志输出
 logging:
-  level:
-    org.mybatis: DEBUG
+  config: src/main/resources/logback.xml
 
 
 minio:
-  url: http://192.168.52.133:9000/
-  accessKey: SnxU7beOfHZ7AVU4xdxS
-  secretKey: h3KgVWJLK4ejfAhWIe7Llh3AFWMgKuOdpIG02PEE
-  bucketName: miniofilesfxl
+  url: http://124.71.34.208:9000/
+  accessKey: 3FMLUJWXYWY185YOGG2B
+  secretKey: u+Leg+yN0jgRd+7xCEbLMUhSHoyKQjYBeZ4kYD9J
+  bucketName: xuelistudentpictures
 
 sa-token:
   # token名称 (同时也是cookie名称)

@@ -353,29 +353,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT pi.*, ci.class_name, ci.study_form, ci.level, pi2.name " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "LEFT JOIN student_status ss ON ss.student_number = pi.student_id " +
-            "LEFT JOIN personal_info pi2 ON pi2.id_number = ss.id_number AND pi2.grade = ss.grade " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-            "<if test='entity.status != null'>AND pi.status = #{entity.status} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<ScoreInformationDownloadVO> downloadScoreInformationDataByManager0(@Param("entity")ScoreInformationFilterRO entity);
 
 

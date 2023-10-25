@@ -234,7 +234,6 @@ public class ScoreInformationController {
 
         // 获取访问者 ID
         String userId = (String) StpUtil.getLoginId();
-        CourseInformationSelectArgs courseInformationSelectArgs = null;
         if (roleList.isEmpty()) {
             throw dataNotFoundError();
         } else {

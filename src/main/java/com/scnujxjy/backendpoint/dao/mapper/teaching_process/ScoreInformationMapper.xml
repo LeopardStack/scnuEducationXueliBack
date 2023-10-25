@@ -7,6 +7,10 @@
         LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier
         LEFT JOIN student_status ss ON ss.student_number = pi.student_id
         LEFT JOIN personal_info pi2 ON pi2.id_number = ss.id_number AND pi2.grade = ss.grade
+        <!-- Add LEFT JOIN for graduation_info table -->
+        <if test='entity.graduationDate != null'>
+            LEFT JOIN graduation_info gi ON gi.grade = ss.grade AND gi.id_number = ss.id_number
+        </if>
     </sql>
 
     <sql id="commonFilters">
@@ -23,6 +27,16 @@
         <if test='entity.level != null'>AND ci.level LIKE CONCAT(#{entity.level}, '%') </if>
         <if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>
         <if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>
+
+        <!-- Add conditions for graduationDate and graduation_info -->
+        <if test='entity.graduationDate != null'>
+            AND gi.id IS NOT NULL
+            <!-- Ensure the year and month of graduation_date matches with entity.graduationDate -->
+            AND YEAR(gi.graduation_date) = YEAR(#{entity.graduationDate})
+            AND MONTH(gi.graduation_date) = MONTH(#{entity.graduationDate})
+            <!-- Ensure graduation_number is not null -->
+            AND gi.graduation_number IS NOT NULL
+        </if>
     </sql>
 
     <select id="getCountStudentGradeInfoByFilter" resultType="Long">
@@ -56,6 +70,14 @@
         FROM score_information si JOIN student_status  ss ON si.student_id=ss.student_number JOIN class_information ci ON ss.class_identifier=ci.class_identifier
             JOIN personal_info pi ON pi.id_number=ss.id_number
         WHERE si.student_id = #{student_id}
+    </select>
+
+
+    <select id="downloadScoreInformationDataByManager0" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationDownloadVO">
+        SELECT pi.*, ci.class_name, ci.study_form, ci.level, pi2.name, pi2.political_status, pi2.ethnicity
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
     </select>
 
 
