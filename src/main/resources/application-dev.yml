@@ -75,7 +75,7 @@ sa-token:
   # 是否输出操作日志
   is-log: false
 
-
+# 开启 springboot exporter 能够被普罗米修斯监控到
 management:
   endpoints:
     web:

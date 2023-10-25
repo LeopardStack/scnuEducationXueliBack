@@ -92,7 +92,7 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-    @Scheduled(fixedRate = 60000)
+//    @Scheduled(fixedRate = 60000)
     public void dealWithLivingRooms(){
         // 获取距离现在只有 1小时的排课表
         List<CourseSchedulePO> recordsWithinCertainHour = courseScheduleMapper.findRecordsWithinCertainHour(1);
