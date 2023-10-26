@@ -4,6 +4,7 @@ package com.scnujxjy.backendpoint.util;
 public enum ResultCode {
     // 成功状态码
     SUCCESS(200, "成功"),
+    FAIL(0,"失败"),
 
     // 参数错误：10001-19999
     PARAM_IS_INVALID(10001, "参数无效"),
