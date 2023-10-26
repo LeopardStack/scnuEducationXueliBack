@@ -53,4 +53,10 @@ public class PlatformUserPO implements Serializable {
     private String username;
 
 
+    /**
+     * 微信 openId
+     */
+    private String wechatOpenId;
+
+
 }

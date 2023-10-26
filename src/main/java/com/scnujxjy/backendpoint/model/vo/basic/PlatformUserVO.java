@@ -35,4 +35,9 @@ public class PlatformUserVO {
      * 用户名，用于登录
      */
     private String username;
+
+    /**
+     * 微信 openId
+     */
+    private String wechatOpenId;
 }

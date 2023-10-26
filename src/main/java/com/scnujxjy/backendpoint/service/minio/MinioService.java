@@ -109,8 +109,8 @@ public class MinioService {
 
             return outputStream.toByteArray();
         } catch (Exception e) {
-            log.error("获取图片字节流失败: " + e.getMessage());
-            throw new RuntimeException("获取图片字节流失败: " + e.getMessage());
+            log.error(fileName + "获取图片字节流失败: " + e.getMessage());
+            throw new RuntimeException(fileName + "获取图片字节流失败: " + e.getMessage());
         }
     }
 
@@ -452,7 +452,9 @@ public class MinioService {
         }
     }
     private void uploadFile(String bucketName, File file, String rootDirPath, Map<String, Long> picCountMap, boolean update) throws Exception {
-        String objectName = file.getAbsolutePath().substring(rootDirPath.length() + 1).replace("\\", "/");
+        int index = file.getAbsolutePath().lastIndexOf(bucketName) + bucketName.length();
+        String objectName = file.getAbsolutePath().substring(index + 1).replace("\\", "/");
+
 
         // 根据objectName的值来更新计数器
         if (objectName.contains("import")) {

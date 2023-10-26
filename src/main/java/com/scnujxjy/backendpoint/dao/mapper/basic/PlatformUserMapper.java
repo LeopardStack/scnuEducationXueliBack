@@ -65,6 +65,6 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
     @Delete("DELETE FROM platform_user WHERE username = #{idNumber}")
     int deleteStudentByIdNumber(String idNumber);
 
-    @Select("SELECT  1 FROM platform_user;")
-    void healthCheck();
+    @Select("SELECT 1")
+    Long healthCheck();
 }

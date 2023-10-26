@@ -33,8 +33,8 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword(){
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName("M17047");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M170472023@");
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName("xuelijiaoyuTest1");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "xuelijiaoyuTest12023@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -217,6 +217,19 @@ public class TestUserInfoChange {
         String userName = "";
         platformUserService.getBaseMapper().deleteStudentByIdNumber(userName);
         log.info("成功删除了用户账号：" + userName);
+    }
+
+
+    /**
+     * 为华为云服务器的数据库添加用户
+     */
+    @Test
+    public void addStudentLoginAccountByGrade1(){
+        int gradeStart = 2023;
+        int gradeEnd = 2023;
+        for(int i = gradeStart; i >= gradeEnd; i--){
+            generateStudentAccount("" + i);
+        }
     }
 
 }

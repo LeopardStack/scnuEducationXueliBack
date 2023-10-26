@@ -758,10 +758,10 @@ public class OldDataSynchronize {
         if(new_pay_count != old_pay_count){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
             dataCheckLogs.add(formattedMsg);
+            synchronizePaymentInfoData(true, true);
         }else{
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
             dataCheckLogs.add(formattedMsg);
-            synchronizePaymentInfoData(true, true);
         }
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");

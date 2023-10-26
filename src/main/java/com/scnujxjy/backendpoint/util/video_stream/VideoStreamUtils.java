@@ -290,31 +290,38 @@ public class VideoStreamUtils {
 
         // 1、设置频道单点登录token
         OkHttpClient client = new OkHttpClient();
-        Map<String, String> requestMap = new HashMap<>();
-        requestMap.put("appId", appId);
-        long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
-        requestMap.put("timestamp", String.valueOf(beijingTimestamp));
-        requestMap.put("token", token);
+        Response response = null;
+        try {
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("appId", appId);
+            long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
+            requestMap.put("timestamp", String.valueOf(beijingTimestamp));
+            requestMap.put("token", token);
 
-        FormBody.Builder formBuilder = new FormBody.Builder()
-                .add("appId", appId)
-                .add("timestamp", timestamp)
-                .add("token", token)
-                .add("sign", LiveSignUtil.getSign(requestMap, appSecret));
-        Request request = new Request.Builder()
-                .url(url)
-                .post(formBuilder.build())
-                .build();
-        Response response = client.newCall(request).execute();
-        // TODO: 判断response返回是否成功
-        log.info("单点登录返回值 " + response.toString());
-        // 2、生成讲师授权登录地址
-        String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + channelId;
-        String authURL = "https://console.polyv.net/teacher/auth-login";
-        authURL += "?channelId=" + channelId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
-        log.info("讲师单点登录地址设置成功，跳转地址为：{}", authURL);
+            FormBody.Builder formBuilder = new FormBody.Builder()
+                    .add("appId", appId)
+                    .add("timestamp", timestamp)
+                    .add("token", token)
+                    .add("sign", LiveSignUtil.getSign(requestMap, appSecret));
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(formBuilder.build())
+                    .build();
+            response = client.newCall(request).execute();
+            // TODO: 判断response返回是否成功
+            log.info("单点登录返回值 " + response.toString());
+            // 2、生成讲师授权登录地址
+            String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + channelId;
+            String authURL = "https://console.polyv.net/teacher/auth-login";
+            authURL += "?channelId=" + channelId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+            log.info("讲师单点登录地址设置成功，跳转地址为：{}", authURL);
+            return authURL;
+        }finally {
+            if(response != null){
+                response.close();
+            }
+        }
 
-        return authURL;
     }
 
     /**

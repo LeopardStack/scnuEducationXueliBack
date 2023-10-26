@@ -4,9 +4,11 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.SM3;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.inverter.basic.PlatformUserInverter;
@@ -15,7 +17,9 @@ import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -42,6 +46,15 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
 
     @Resource
     private SM3 sm3;
+
+    @Value("${wechat.app-secret}")
+    private String wechatAppSecret;
+
+    @Value("${wechat.app-id}")
+    private String wechatAppId;
+
+    @Value("${wechat.request-url}")
+    private String requestUrl;
 
     /**
      * 根据userId获取用户信息
@@ -93,21 +106,63 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
      * @param platformUserRO 登录信息
      * @return true-成功，false-失败
      */
-    public Boolean userLogin(PlatformUserRO platformUserRO) {
+    public PlatformUserPO userLogin(PlatformUserRO platformUserRO) {
+
+        String openId = null;
+        if(platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0){
+            // 微信登录用户
+            String code = platformUserRO.getWechatOpenId();
+            try {
+                String url = requestUrl
+                        + "?appid=" + wechatAppId
+                        + "&secret=" + wechatAppSecret
+                        + "&js_code=" + code
+                        + "&grant_type=authorization_code";
+
+                RestTemplate restTemplate = new RestTemplate();
+                String response = restTemplate.getForObject(url, String.class);
+
+                log.info("请求微信的响应结果 \n" + response);
+                // {"errcode":40163,"errmsg":"code been used, rid: 6538ac7d-18c7e09b-572e68c3"}
+                // 使用Jackson库解析返回的JSON
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    openId = mapper.readTree(response).get("openid").asText();
+                    log.info("该用户的 openId 为 " + openId);
+                } catch (Exception e) {
+                    throw new RuntimeException("解析微信响应失败", e);
+                }
+
+                PlatformUserPO platformUserPO = baseMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
+                        eq(PlatformUserPO::getWechatOpenId, openId));
+                if(platformUserPO != null){
+                    return platformUserPO;
+                }
+            }catch (Exception e){
+                log.error("微信登录失败 " + e.toString());
+            }
+
+        }
         // 参数校验
         if (Objects.isNull(platformUserRO) || StrUtil.isBlank(platformUserRO.getUsername()) || StrUtil.isBlank(platformUserRO.getPassword())) {
-            log.error("参数缺失");
-            return false;
+            log.error("账号密码参数缺失");
+            return null;
         }
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
         PlatformUserPO platformUserPO = baseMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, platformUserRO.getUsername()).eq(PlatformUserPO::getPassword, platformUserRO.getPassword()));
         // 如果无法查询到，则说明密码错误
         if (Objects.isNull(platformUserPO)) {
-            return false;
+            return null;
         }
+        if(platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0){
+            platformUserPO.setWechatOpenId(openId);
+            baseMapper.updateById(platformUserPO);
+        }
+
         StpUtil.login(platformUserPO.getUserId());
-        return true;
+        return platformUserPO;
+
     }
 
     /**
