@@ -1,11 +1,14 @@
 package com.scnujxjy.backendpoint.model.ro.teaching_process;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.util.Date;
 
 @Builder
 @AllArgsConstructor
@@ -108,5 +111,13 @@ public class ScoreInformationFilterRO {
      */
     private String className;
 
+    /**
+     * 毕业时间
+     */
+    /**
+     * 毕业时间
+     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    private Date graduationDate;
 
 }

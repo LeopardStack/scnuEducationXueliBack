@@ -53,7 +53,7 @@ public class HealthCheckTask {
             log.info("MySQL连接成功");
         } catch (Exception e) {
             // 如果有异常则打印连接失败的日志
-            log.error("MySQL连接失败");
+            log.error("MySQL连接失败" + e.toString());
         }
     }
 

@@ -188,6 +188,21 @@ public class ManagerFilter  extends AbstractFilter {
         List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper1.
                 downloadStudentStatusDataByManager0(studentStatusFilter.getEntity());
 
+        // 使用流API和forEach操作来更新每个对象的毕业日期，将毕业日期、入学日期的日 统一改为 10 号
+        studentStatusVOS.stream().forEach(student -> {
+            Calendar calendar = Calendar.getInstance();
+
+            // 更新毕业日期
+            calendar.setTime(student.getGraduationDate());
+            calendar.set(Calendar.DAY_OF_MONTH, 10);
+            student.setGraduationDate(calendar.getTime());
+
+            // 更新入学日期
+            calendar.setTime(student.getEnrollmentDate());
+            calendar.set(Calendar.DAY_OF_MONTH, 10);
+            student.setEnrollmentDate(calendar.getTime());
+        });
+
         log.info("导出了 " + studentStatusVOS.size() + " 条学籍数据");
 
         // 为每个StudentStatusAllVO对象设置序号

@@ -90,3 +90,8 @@ management:
       prometheus:
         enabled: true
 
+wechat:
+  request-url: https://api.weixin.qq.com/sns/jscode2session
+  app-secret: 0ec180d59b9b076454e09a4fa4eff865
+  app-id: wxf06ee34ae8ba2687
+
