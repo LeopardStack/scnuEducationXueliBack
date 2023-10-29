@@ -2,18 +2,29 @@ package com.scnujxjy.backendpoint.service;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
 
 public interface SingleLivingService {
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException;
 
-    SaResult testGetChannelInfo();
+    SaResult deleteChannel(String[] channelArrays) throws IOException, NoSuchAlgorithmException;
 
-    SaResult setWatchCondition();
+    SaResult setRecordSetting(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
+
+    SaResult getTeacherChannelUrl(String channelId);
+
+    SaResult getStudentChannelUrl(String channelId);
+
+    SaResult getTutorChannelUrl(String channelId);
+
+    SaResult createTutor(String channelId, String tutorName);
+
+    SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest);
+
+//    SaResult setWatchCondition(String channelId);
 
 
 }

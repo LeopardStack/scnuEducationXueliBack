@@ -11,6 +11,8 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiRespons
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
@@ -20,15 +22,27 @@ import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.constant.LiveConstant;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoRequest;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelListRequest;
+import net.polyv.live.v1.entity.channel.playback.LiveMergeChannelVideoAsyncRequest;
+import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordRequest;
+import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
+import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
+import net.polyv.live.v2.entity.channel.operate.LiveCreateChannelListV2Request;
+import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
+import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
+import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -43,7 +57,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException {
-
         SaResult saResult = new SaResult();
         LiveRequestBody liveRequestBody = new LiveRequestBody();
         liveRequestBody.setName(channelCreateRequestBO.getLivingRoomTitle());
@@ -99,7 +112,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
         ApiResponse channel = JSON.parseObject(response, ApiResponse.class);
 
-        //设置频道直播间白名单，只有设置了频道白名单，后续才能设置白名单观看。
+        //设置频道直播间白名单，只有添加了白名单，后续才能设置观看条件为白名单。
         try {
             if (Objects.nonNull(channel.getData().getChannelId())) {
                 CreateChannelWhiteList(channel.getData().getChannelId().toString());
@@ -107,7 +120,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //设置指定频道的观看条件
+        //设置指定频道的观看条件为白名单
         if (Objects.nonNull(channel.getData().getChannelId())) {
             setWatchCondition(channel.getData().getChannelId().toString());
         }
@@ -118,34 +131,94 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-
     @Override
-    public SaResult testGetChannelInfo() {
-        return null;
+    public SaResult deleteChannel(String[] channelIds) throws IOException, NoSuchAlgorithmException {
+            SaResult saResult=new SaResult();
+            LiveDeleteChannelListRequest liveDeleteChannelListRequest = new LiveDeleteChannelListRequest();
+            Boolean liveDeleteChannelListResponse;
+            try {
+                liveDeleteChannelListRequest.setChannelIds(channelIds);
+                liveDeleteChannelListResponse = new LiveChannelOperateServiceImpl().deleteChannelList(
+                        liveDeleteChannelListRequest);
+                if (liveDeleteChannelListResponse != null && liveDeleteChannelListResponse) {
+                log.info("批量删除频道成功");
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult.setData(liveDeleteChannelListResponse);
+                return saResult;
+            }
+            } catch (PloyvSdkException e) {
+               e.printStackTrace();
+            } catch (Exception e) {
+                log.error("调用批量删除接口异常", e);
+                throw e;
+            }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
     }
 
-    @Override
-    public SaResult setWatchCondition() {
-        return null;
+//    /**
+//     * 设置指定频道的观看条件
+//     *
+//     * @param channelId 需要设置观看条件的频道ID
+//     * @return 响应字符串
+//     * @throws IOException
+//     * @throws NoSuchAlgorithmException
+//     */
+//    @Override
+    public SaResult setWatchCondition(String channelId) {
+        SaResult saResult=new SaResult();
+        LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
+        Boolean liveUpdateChannelAuthResponse;
+        try {
+            LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting().setAuthType(
+                    LiveConstant.AuthType.PHONE.getDesc())
+                    .setRank(1)
+                    .setEnabled("Y");
+            List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
+            authSettings.add(authSetting);
+
+            liveUpdateChannelAuthRequest.setChannelId(channelId)
+                    .setAuthSettings(authSettings);
+            liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(
+                    liveUpdateChannelAuthRequest);
+            //如果返回结果不为空并且为true，说明修改成功
+            if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
+                log.info("设置白名单观看条件成功");
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+            }
+            return saResult;
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("设置频道的白名单接口调用异常", e);
+        }
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setCode(ResultCode.FAIL.getCode());
+        return saResult;
     }
 
     /**
      * 修改频道回放设置
      *
-     * @param channelId 请求参数
+     * @param
      * @return 返回的JSON字符串
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public ChannelResponse setRecordSetting(String channelId,String playbackEnabled) throws IOException, NoSuchAlgorithmException {
+    @Override
+    public SaResult setRecordSetting(ChannelInfoRequest request) throws IOException, NoSuchAlgorithmException {
+        SaResult saResult=new SaResult();
         ChannelInfoData channelInfoData = new ChannelInfoData();
-        channelInfoData.setChannelId(channelId);
+        channelInfoData.setChannelId(request.getChannelId());
         channelInfoData.setGlobalSettingEnabled("N");
-        channelInfoData.setPlaybackEnabled(playbackEnabled);
+        channelInfoData.setPlaybackEnabled(request.getPlaybackEnabled());
         channelInfoData.setType("list");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
         channelInfoData.setOrigin("vod");
-
 
         String url = "http://api.polyv.net/live/v3/channel/playback/set-setting";
 
@@ -178,51 +251,112 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             // 解析响应为 PlaybackSettingResponse POJO
             playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {
             });
+            saResult.setCode(ResultCode.SUCCESS.getCode());
+            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+            saResult.setData(playbackResponse);
+            return saResult;
         } catch (Exception e) {
             log.error("设置频道 (" + channelInfoData.getChannelId() + ") 的回放参数失败 " + e.toString());
         }
-
-        return playbackResponse;
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setData(playbackResponse);
+        return saResult;
 
     }
 
-
-    /**
-     * 设置指定频道的观看条件
-     *
-     * @param channelId 需要设置观看条件的频道ID
-     * @return 响应字符串
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     */
-    public ResultCode setWatchCondition(String channelId) {
-        LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
-        Boolean liveUpdateChannelAuthResponse;
+    @Override
+    public SaResult getTeacherChannelUrl(String channelId)  {
+        SaResult saResult=new SaResult();
+        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+        LiveChannelInfoRequest liveChannelInfoRequest = new LiveChannelInfoRequest();
+        LiveChannelInfoResponse liveChannelInfoResponse;
         try {
-            LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting().setAuthType(
-                    LiveConstant.AuthType.PHONE.getDesc())
-                    .setRank(1)
-                    .setEnabled("Y");
-            List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
-            authSettings.add(authSetting);
-
-            liveUpdateChannelAuthRequest.setChannelId(channelId)
-                    .setAuthSettings(authSettings);
-            liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(
-                    liveUpdateChannelAuthRequest);
-            //如果返回结果不为空并且为true，说明修改成功
-            if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
-                log.info("设置白名单观看条件成功");
-                return ResultCode.SUCCESS;
+            //准备测试数据
+            liveChannelInfoRequest.setChannelId(channelId);
+            liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
+//            Assert.assertNotNull(liveChannelInfoResponse);
+            if (liveChannelInfoResponse != null) {
+                //to do something ......K4zqkS
+                log.debug("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                channelInfoResponse.setUrl("https://live.polyv.net/web-start/login?channelId="+channelId);
+                channelInfoResponse.setPassword(liveChannelInfoResponse.getChannelPasswd());
+                saResult.setData(channelInfoResponse);
+                return saResult;
             }
-            return ResultCode.FAIL;
         } catch (PloyvSdkException e) {
-            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
             e.printStackTrace();
         } catch (Exception e) {
-            log.error("设置频道的白名单接口调用异常", e);
+            log.error("调用教师单点登录链接接口异常", e);
         }
-        return ResultCode.FAIL;
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
+    @Override
+    public SaResult getStudentChannelUrl(String channelId) {
+        SaResult saResult=new SaResult();
+        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+        channelInfoResponse.setUrl("https://live.polyv.cn/watch/"+channelId);
+        saResult.setCode(ResultCode.SUCCESS.getCode());
+        saResult.setMsg(ResultCode.SUCCESS.getMessage());
+        saResult.setData(channelInfoResponse);
+        return saResult;
+    }
+
+    @Override
+    public SaResult getTutorChannelUrl(String channelId) {
+        SaResult saResult=new SaResult();
+        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+        channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId="+channelId);
+        saResult.setCode(ResultCode.SUCCESS.getCode());
+        saResult.setMsg(ResultCode.SUCCESS.getMessage());
+        saResult.setData(channelInfoResponse);
+        return saResult;
+    }
+
+    @Override
+    public SaResult createTutor(String channelId,String tutorName)  {
+        SaResult saResult=new SaResult();
+        LiveCreateAccountRequest liveCreateAccountRequest = new LiveCreateAccountRequest();
+        LiveCreateAccountResponse liveCreateAccountResponse;
+        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+        try {
+            liveCreateAccountRequest.setChannelId(channelId)
+                    .setRole("Assistant")
+                    .setActor("助教boy")
+                    .setNickName(tutorName)
+//                    .setPasswd(super.getRandomString(6))
+//            chatListEnabled：在线列表（仅支持助教）
+//            pageTurnEnabled：翻页（仅支持助教，且仅能设置一个助教有翻页权限）
+//            monitorEnabled：监播（仅支持助教，且仅能设置一个助教有监播权限）
+//            chatAuditEnabled：聊天审核（仅支持助教）
+                    .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
+                            LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
+                            .setCode(LiveConstant.RolePurview.PAGE_TURN_ENABLED.getCode())
+                            .setEnabled(LiveConstant.Flag.YES.getFlag())));
+            liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
+            if (liveCreateAccountResponse != null) {
+//                https://console.polyv.net/live/login.html?channelId=0024368180
+                log.info("测试创建角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
+                channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
+                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId="+liveCreateAccountResponse.getAccount());
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult.setData(channelInfoResponse);
+                return saResult;
+            }
+        } catch (PloyvSdkException e) {
+           e.printStackTrace();
+        } catch (Exception e) {
+            log.error("创建助教接口调用异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
     }
 
 
@@ -254,27 +388,90 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         }
     }
 
-    //批量删除直播间频道
-    public ResultCode testDeleteChannelList(String[] channelIds ) throws Exception, NoSuchAlgorithmException {
-        LiveDeleteChannelListRequest liveDeleteChannelListRequest = new LiveDeleteChannelListRequest();
-        Boolean liveDeleteChannelListResponse;
+    /**
+     * 修改名字和封面图
+     *
+     * @param
+     * @return 响应字符串
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    @Override
+    public SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest) {
+        SaResult saResult=new SaResult();
+        LiveUpdateChannelRequest liveUpdateChannelRequest = new LiveUpdateChannelRequest();
+        Boolean liveUpdateChannelResponse;
         try {
-            //准备测试数据
-            liveDeleteChannelListRequest.setChannelIds(channelIds);
-            liveDeleteChannelListResponse = new LiveChannelOperateServiceImpl().deleteChannelList(
-                    liveDeleteChannelListRequest);
-            if (liveDeleteChannelListResponse!=null && liveDeleteChannelListResponse) {
-                log.info("批量删除频道成功");
-                return ResultCode.SUCCESS;
+            liveUpdateChannelRequest.setChannelId(channelInfoRequest.getChannelId())
+                    .setName(channelInfoRequest.getChannelName())
+                    .setSplashImg(channelInfoRequest.getImgUrl());
+            liveUpdateChannelResponse = new LiveChannelOperateServiceImpl().updateChannel(liveUpdateChannelRequest);
+
+            if (liveUpdateChannelResponse!=null && liveUpdateChannelResponse) {
+                log.info("测试修改频道名字和封面图设置成功");
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
             }
         } catch (PloyvSdkException e) {
-            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage(),B
-            e.printStackTrace();
+          e.printStackTrace();
         } catch (Exception e) {
-            log.error("调用批量删除直播间接口异常", e);
-            throw e;
+            log.error("调用修改名字和封面图接口调用异常", e);
         }
-        return ResultCode.FAIL;
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
     }
 
+    public void testMergeMp4Record(String channelId)  {
+        LiveMergeMp4RecordRequest liveMergeMp4RecordRequest = new LiveMergeMp4RecordRequest();
+        LiveMergeMp4RecordResponse liveMergeMp4RecordResponse;
+        try {
+
+            liveMergeMp4RecordRequest.setChannelId(channelId)
+                    .setStartTime(new Date())
+                    .setEndTime(new Date())
+                    .setCallbackUrl(null)
+                    .setFileName("testMergeMp4");
+            liveMergeMp4RecordResponse = new LiveChannelPlaybackServiceImpl().mergeMp4Record(liveMergeMp4RecordRequest);
+//            Assert.assertNotNull(liveMergeMp4RecordResponse);
+            if (liveMergeMp4RecordResponse != null) {
+                //to do something ......
+                log.debug("测试导出合并的录制文件并回调mp4下载地址成功,{}", JSON.toJSONString(liveMergeMp4RecordResponse));
+                String fileUrl = liveMergeMp4RecordResponse.getFileUrl();
+                File file=new File(fileUrl);
+//                minioService.uploadStreamToMinio(inputStream,fileName,diyBucketName);
+            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("导出合并的录制文件接口调用异常", e);
+        }
+    }
+
+    public void testMergeChannelVideoAsync() throws Exception, NoSuchAlgorithmException {
+        LiveMergeChannelVideoAsyncRequest liveMergeChannelVideoAsyncRequest = new LiveMergeChannelVideoAsyncRequest();
+        Boolean liveMergeChannelVideoAsyncResponse;
+        try {
+            liveMergeChannelVideoAsyncRequest.setChannelId("4368180")
+                    .setFileIds("gq2or4951o")
+                    .setFileName("测试合并-可删除")
+                    .setCallbackUrl(null)
+                    .setAutoConvert("Y")
+                    .setMergeMp4("Y");
+            liveMergeChannelVideoAsyncResponse = new LiveChannelPlaybackServiceImpl().mergeChannelVideoAsync(
+                    liveMergeChannelVideoAsyncRequest);
+            if (liveMergeChannelVideoAsyncResponse!=null && liveMergeChannelVideoAsyncResponse) {
+                log.info("测试异步合并直播录制文件,具体是否成功以回调为准");
+            }
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
+            log.error(e.getMessage(), e);
+            // 异常返回做B端异常的业务逻辑，记录log 或者 上报到ETL 或者回滚事务
+            throw e;
+        } catch (Exception e) {
+            log.error("SDK调用异常", e);
+            throw e;
+        }
+    }
 }

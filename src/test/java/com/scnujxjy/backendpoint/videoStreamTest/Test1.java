@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
@@ -70,7 +71,16 @@ public class Test1 {
     @Test
     public void test3() throws Exception {
         SingleLivingServiceImpl sing=new SingleLivingServiceImpl();
-        sing.setWatchCondition("4368180");
+        String[] a=new String[]{"4360979","4360976"};
+        ChannelInfoRequest request=new ChannelInfoRequest();
+        request.setPlaybackEnabled("Y");
+        request.setChannelId("4368180");
+        sing.testMergeChannelVideoAsync();
+        sing.testMergeMp4Record("4368180");
+//        sing.GetStudentChannelUrl("4360331");
+//        sing.testGetChannelInfo("4368180");
+//        sing.deleteChannel(a);
+//        sing.setWatchCondition("4368180");
 //        sing.testCreateChannelWhiteList(Integer.valueOf("4368180"));
     }
 
