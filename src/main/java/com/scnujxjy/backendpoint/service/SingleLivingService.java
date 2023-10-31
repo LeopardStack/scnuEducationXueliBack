@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 public interface SingleLivingService {
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException;
 
-    SaResult deleteChannel(String[] channelArrays) throws IOException, NoSuchAlgorithmException;
+    SaResult deleteChannel(String channelIds) throws IOException, NoSuchAlgorithmException;
 
     SaResult setRecordSetting(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
 

@@ -2,22 +2,20 @@ package com.scnujxjy.backendpoint.controller.video_stream;
 
 
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
-import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
-import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Objects;
 
-import static com.scnujxjy.backendpoint.exception.DataException.*;
+import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
 /**
  * 直播记录管理
@@ -29,87 +27,22 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
 @RequestMapping("/SingleLiving")
 public class SingleLivingController {
 
-
     @Resource
     private SingleLivingService singleLivingService;
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
 
     /**
-     * 批量添加直播间
+     * 刪除直播间
      *
-     * @param
-     * @return 添加后的频道信息
-     */
-//    @PostMapping("/createChannel")
-//    public SaResult createChannel(@RequestBody ChannelCreateRequestBO channelCreateRequestBO) {
-//        if (CollUtil.isEmpty(videoStreamRecordROS)) {
-//            throw dataMissError();
-//        }
-//        singleLivingService.createChannel()
-//        if (CollUtil.isEmpty(generateVideoStream)) {
-//            return SaResult.error().setMsg("创建失败，请联系管理员");
-//        }
-//        return SaResult.data(generateVideoStream);
-//    }
-
-    /**
-     * 根据id查询直播间信息
-     *
-     * @param id 直播间id
-     * @return 直播间信息
-     */
-//    @GetMapping("/detail")
-//    public SaResult detailById(Long id) {
-//        if (Objects.isNull(id)) {
-//            throw dataMissError();
-//        }
-//        VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailById(id);
-//        if (Objects.isNull(videoStreamRecordVO)) {
-//            throw dataNotFoundError();
-//        }
-//        return SaResult.data(videoStreamRecordVO);
-//    }
-
-    /**
-     * 根据channelId查询直播间信息
-     *
-     * @param channelId 频道id
      * @return
      */
-//    @GetMapping("/detail/channelId")
-//    public SaResult detailByChannelId(String channelId) {
-//        if (StrUtil.isBlank(channelId)) {
-//            throw dataMissError();
-//        }
-//        VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailByChannelId(channelId);
-//        if (Objects.isNull(videoStreamRecordVO)) {
-//            throw dataNotFoundError();
-//        }
-//        return SaResult.data(videoStreamRecordVO);
-//    }
-
-    /**
-     * 开启或关闭直播间
-     *
-     * @param
-     * @param
-     * @return
-     */
-//    @GetMapping("/edit/status")
-//    public SaResult closeByChannelId(String channelId, Integer type) {
-//        if (StrUtil.isBlank(channelId) || Objects.isNull(type)) {
-//            throw dataMissError();
-//        }
-//        Boolean ok = videoStreamRecordService.closeVideoStream(channelId, type);
-//        return SaResult.data(ok);
-//    }
-
-
-    @PostMapping("/edit/deleteChannels")
-    public SaResult deleteChannels(@RequestBody String[] channelIds) throws IOException, NoSuchAlgorithmException {
-        if (channelIds.length<1) {
+    @PostMapping("/edit/deleteChannel")
+    public SaResult deleteChannels(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
-        return singleLivingService.deleteChannel(channelIds);
+        return singleLivingService.deleteChannel(channelId);
     }
 
 

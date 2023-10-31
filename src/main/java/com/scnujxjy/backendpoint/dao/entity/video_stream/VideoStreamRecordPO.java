@@ -55,6 +55,11 @@ public class VideoStreamRecordPO implements Serializable {
     private String channelPasswd;
 
     /**
+     * 助教密码
+     */
+    private String tutorPasswd;
+
+    /**
      * 频道主持人名称
      */
     private String publisher;
@@ -101,5 +106,9 @@ public class VideoStreamRecordPO implements Serializable {
      */
     private String watchUrl;
 
+    /**
+     * 助教观看链接
+     */
+    private String tutorUrl;
 
 }

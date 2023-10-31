@@ -3,13 +3,14 @@ package com.scnujxjy.backendpoint.service.video_stream;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
@@ -17,7 +18,6 @@ import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
-import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
@@ -25,26 +25,24 @@ import net.polyv.live.v1.constant.LiveConstant;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
-import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelListRequest;
+import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
 import net.polyv.live.v1.entity.channel.playback.LiveMergeChannelVideoAsyncRequest;
 import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordRequest;
 import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
+import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
-import net.polyv.live.v2.entity.channel.operate.LiveCreateChannelListV2Request;
 import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -54,6 +52,8 @@ import java.util.*;
 @Slf4j
 public class SingleLivingServiceImpl implements SingleLivingService {
 
+    @Resource
+    private VideoStreamRecordsMapper videoStreamRecordsMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException {
@@ -132,33 +132,31 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult deleteChannel(String[] channelIds) throws IOException, NoSuchAlgorithmException {
-            SaResult saResult=new SaResult();
-            LiveDeleteChannelListRequest liveDeleteChannelListRequest = new LiveDeleteChannelListRequest();
-            Boolean liveDeleteChannelListResponse;
-            try {
-                liveDeleteChannelListRequest.setChannelIds(channelIds);
-                liveDeleteChannelListResponse = new LiveChannelOperateServiceImpl().deleteChannelList(
-                        liveDeleteChannelListRequest);
-                if (liveDeleteChannelListResponse != null && liveDeleteChannelListResponse) {
+    public SaResult deleteChannel(String channelId) throws IOException, NoSuchAlgorithmException {
+        SaResult saResult = new SaResult();
+        LiveDeleteChannelRequest liveDeleteChannelRequest = new LiveDeleteChannelRequest();
+        Boolean liveDeleteChannelResponse;
+        try {
+            liveDeleteChannelRequest.setChannelId(channelId);
+            liveDeleteChannelResponse = new LiveChannelOperateServiceImpl().deleteChannel(liveDeleteChannelRequest);
+            if (liveDeleteChannelResponse != null && liveDeleteChannelResponse) {
                 log.info("批量删除频道成功");
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                saResult.setData(liveDeleteChannelListResponse);
                 return saResult;
             }
-            } catch (PloyvSdkException e) {
-               e.printStackTrace();
-            } catch (Exception e) {
-                log.error("调用批量删除接口异常", e);
-                throw e;
-            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("调用批量删除接口异常", e);
+            throw e;
+        }
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
 
-//    /**
+    //    /**
 //     * 设置指定频道的观看条件
 //     *
 //     * @param channelId 需要设置观看条件的频道ID
@@ -168,7 +166,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //     */
 //    @Override
     public SaResult setWatchCondition(String channelId) {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
         Boolean liveUpdateChannelAuthResponse;
         try {
@@ -188,8 +186,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 log.info("设置白名单观看条件成功");
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 saResult.setCode(ResultCode.SUCCESS.getCode());
+                return saResult;
             }
-            return saResult;
         } catch (PloyvSdkException e) {
             //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
             e.printStackTrace();
@@ -211,7 +209,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
      */
     @Override
     public SaResult setRecordSetting(ChannelInfoRequest request) throws IOException, NoSuchAlgorithmException {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         ChannelInfoData channelInfoData = new ChannelInfoData();
         channelInfoData.setChannelId(request.getChannelId());
         channelInfoData.setGlobalSettingEnabled("N");
@@ -256,7 +254,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             saResult.setData(playbackResponse);
             return saResult;
         } catch (Exception e) {
-            log.error("设置频道 (" + channelInfoData.getChannelId() + ") 的回放参数失败 " + e.toString());
+            log.error("设置频道 (" + channelInfoData.getChannelId() + ") 的回放参数失败 " + e);
         }
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
@@ -266,13 +264,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult getTeacherChannelUrl(String channelId)  {
-        SaResult saResult=new SaResult();
-        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+    public SaResult getTeacherChannelUrl(String channelId) {
+        SaResult saResult = new SaResult();
+        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
         LiveChannelInfoRequest liveChannelInfoRequest = new LiveChannelInfoRequest();
         LiveChannelInfoResponse liveChannelInfoResponse;
         try {
-            //准备测试数据
             liveChannelInfoRequest.setChannelId(channelId);
             liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
 //            Assert.assertNotNull(liveChannelInfoResponse);
@@ -281,7 +278,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 log.debug("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                channelInfoResponse.setUrl("https://live.polyv.net/web-start/login?channelId="+channelId);
+                channelInfoResponse.setUrl("https://live.polyv.net/web-start/login?channelId=" + channelId);
                 channelInfoResponse.setPassword(liveChannelInfoResponse.getChannelPasswd());
                 saResult.setData(channelInfoResponse);
                 return saResult;
@@ -298,9 +295,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult getStudentChannelUrl(String channelId) {
-        SaResult saResult=new SaResult();
-        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
-        channelInfoResponse.setUrl("https://live.polyv.cn/watch/"+channelId);
+        SaResult saResult = new SaResult();
+        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
+        channelInfoResponse.setUrl("https://live.polyv.cn/watch/" + channelId);
         saResult.setCode(ResultCode.SUCCESS.getCode());
         saResult.setMsg(ResultCode.SUCCESS.getMessage());
         saResult.setData(channelInfoResponse);
@@ -309,25 +306,35 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult getTutorChannelUrl(String channelId) {
-        SaResult saResult=new SaResult();
-        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
-        channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId="+channelId);
+        SaResult saResult = new SaResult();
+        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
+
+        QueryWrapper<VideoStreamRecordPO> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("channel_id", channelId);
+        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(queryWrapper);
+        if (StrUtil.isNotBlank(videoStreamRecordPO.getTutorUrl())) {
+            channelInfoResponse.setUrl(videoStreamRecordPO.getTutorUrl());
+        }
+        if (StrUtil.isNotBlank(videoStreamRecordPO.getTutorPasswd())) {
+            channelInfoResponse.setPassword(videoStreamRecordPO.getTutorPasswd());
+        }
         saResult.setCode(ResultCode.SUCCESS.getCode());
         saResult.setMsg(ResultCode.SUCCESS.getMessage());
         saResult.setData(channelInfoResponse);
         return saResult;
     }
 
+    //创建直播间时默认创建一个最高权限的助教老师
     @Override
-    public SaResult createTutor(String channelId,String tutorName)  {
-        SaResult saResult=new SaResult();
+    public SaResult createTutor(String channelId, String tutorName) {
+        SaResult saResult = new SaResult();
         LiveCreateAccountRequest liveCreateAccountRequest = new LiveCreateAccountRequest();
         LiveCreateAccountResponse liveCreateAccountResponse;
-        ChannelInfoResponse channelInfoResponse=new ChannelInfoResponse();
+        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
         try {
             liveCreateAccountRequest.setChannelId(channelId)
                     .setRole("Assistant")
-                    .setActor("助教boy")
+                    .setActor("助教")
                     .setNickName(tutorName)
 //                    .setPasswd(super.getRandomString(6))
 //            chatListEnabled：在线列表（仅支持助教）
@@ -336,21 +343,22 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //            chatAuditEnabled：聊天审核（仅支持助教）
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
-                            .setCode(LiveConstant.RolePurview.PAGE_TURN_ENABLED.getCode())
+//                            .setCode(LiveConstant.RolePurview.PAGE_TURN_ENABLED.getCode())
+                            .setCode(LiveConstant.RolePurview.MONITOR_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
             liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
             if (liveCreateAccountResponse != null) {
 //                https://console.polyv.net/live/login.html?channelId=0024368180
                 log.info("测试创建角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
                 channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
-                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId="+liveCreateAccountResponse.getAccount());
+                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 saResult.setData(channelInfoResponse);
                 return saResult;
             }
         } catch (PloyvSdkException e) {
-           e.printStackTrace();
+            e.printStackTrace();
         } catch (Exception e) {
             log.error("创建助教接口调用异常", e);
         }
@@ -388,6 +396,27 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         }
     }
 
+    //批量添加白名單
+    public void testUploadWhiteList(String channelId) throws Exception, NoSuchAlgorithmException {
+        LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
+        Boolean liveUploadWhiteListResponse;
+        try {
+//            String path = getClass().getResource("WhiteListTemplate.xlsx").getPath();
+            String path = "WhiteListTemplate.xlsx";
+            liveUploadWhiteListRequest.setChannelId(channelId)
+                    .setRank(1)
+                    .setFile(new File(path));
+            liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
+            if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
+                log.info("测试新增白名单成功");
+            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("SDK调用异常", e);
+        }
+    }
+
     /**
      * 修改名字和封面图
      *
@@ -398,7 +427,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
      */
     @Override
     public SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest) {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         LiveUpdateChannelRequest liveUpdateChannelRequest = new LiveUpdateChannelRequest();
         Boolean liveUpdateChannelResponse;
         try {
@@ -407,14 +436,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setSplashImg(channelInfoRequest.getImgUrl());
             liveUpdateChannelResponse = new LiveChannelOperateServiceImpl().updateChannel(liveUpdateChannelRequest);
 
-            if (liveUpdateChannelResponse!=null && liveUpdateChannelResponse) {
+            if (liveUpdateChannelResponse != null && liveUpdateChannelResponse) {
                 log.info("测试修改频道名字和封面图设置成功");
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 return saResult;
             }
         } catch (PloyvSdkException e) {
-          e.printStackTrace();
+            e.printStackTrace();
         } catch (Exception e) {
             log.error("调用修改名字和封面图接口调用异常", e);
         }
@@ -423,7 +452,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    public void testMergeMp4Record(String channelId)  {
+    public void testMergeMp4Record(String channelId) {
         LiveMergeMp4RecordRequest liveMergeMp4RecordRequest = new LiveMergeMp4RecordRequest();
         LiveMergeMp4RecordResponse liveMergeMp4RecordResponse;
         try {
@@ -439,7 +468,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 //to do something ......
                 log.debug("测试导出合并的录制文件并回调mp4下载地址成功,{}", JSON.toJSONString(liveMergeMp4RecordResponse));
                 String fileUrl = liveMergeMp4RecordResponse.getFileUrl();
-                File file=new File(fileUrl);
+                File file = new File(fileUrl);
 //                minioService.uploadStreamToMinio(inputStream,fileName,diyBucketName);
             }
         } catch (PloyvSdkException e) {
@@ -461,7 +490,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setMergeMp4("Y");
             liveMergeChannelVideoAsyncResponse = new LiveChannelPlaybackServiceImpl().mergeChannelVideoAsync(
                     liveMergeChannelVideoAsyncRequest);
-            if (liveMergeChannelVideoAsyncResponse!=null && liveMergeChannelVideoAsyncResponse) {
+            if (liveMergeChannelVideoAsyncResponse != null && liveMergeChannelVideoAsyncResponse) {
                 log.info("测试异步合并直播录制文件,具体是否成功以回调为准");
             }
         } catch (PloyvSdkException e) {

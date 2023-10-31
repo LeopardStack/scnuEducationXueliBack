@@ -23,6 +23,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -75,8 +77,10 @@ public class Test1 {
         ChannelInfoRequest request=new ChannelInfoRequest();
         request.setPlaybackEnabled("Y");
         request.setChannelId("4368180");
-        sing.testMergeChannelVideoAsync();
-        sing.testMergeMp4Record("4368180");
+        sing.createTutor("4389634","汤姆");
+//        sing.testUploadWhiteList("4368180");
+//        sing.testMergeChannelVideoAsync();
+//        sing.testMergeMp4Record("4368180");
 //        sing.GetStudentChannelUrl("4360331");
 //        sing.testGetChannelInfo("4368180");
 //        sing.deleteChannel(a);
