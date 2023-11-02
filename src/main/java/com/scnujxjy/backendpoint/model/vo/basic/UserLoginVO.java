@@ -38,5 +38,15 @@ public class UserLoginVO {
      * 用户登录ID，也就是平台用户表中的自增 id
      */
     private String userID;
+
+    /**
+     * 用户姓名
+     */
+    private String name;
+
+    /**
+     * 用户的微信 openId
+     */
+    private String openId;
 }
 

@@ -26,6 +26,7 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -229,9 +230,6 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
             return null;
         }
 
-//        CourseInformationFilterDataVO courseInformationFilterDataVO =
-
-
         return filter.filterCourseInformation(courseInformationROPageRO);
     }
 
@@ -242,5 +240,9 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
      */
     public CourseInformationSelectArgs getTeachingPlansArgsByCollege(String loginId, AbstractFilter filter) {
         return filter.filterCourseInformationSelectArgs();
+    }
+
+    public byte[] downloadTeachingPlans(PageRO<CourseInformationRO> courseInformationROPageRO, AbstractFilter filter) {
+        return filter.downloadTeachingPlans(courseInformationROPageRO);
     }
 }

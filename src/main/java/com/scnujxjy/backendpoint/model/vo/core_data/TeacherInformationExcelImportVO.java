@@ -135,4 +135,10 @@ public class TeacherInformationExcelImportVO {
      */
     @ExcelProperty(index = 18)
     private String teacherType1;
+
+    /**
+     * 教师类型2
+     */
+    @ExcelProperty(index = 19)
+    private String teacherType2;
 }

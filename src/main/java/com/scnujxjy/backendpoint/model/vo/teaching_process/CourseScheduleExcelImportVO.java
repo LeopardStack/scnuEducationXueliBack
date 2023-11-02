@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -144,4 +145,24 @@ public class CourseScheduleExcelImportVO {
      */
     @ExcelProperty(index = 21, value = "授课时间")
     private String teachingTime;
+
+    /**
+     * 是否覆盖
+     */
+    @ExcelProperty(index = 22, value = "是否覆盖")
+    private String cover;
+
+    /**
+     * 教师用户名
+     */
+    @ExcelIgnore
+    private String teacherUsername;
+
+    /**
+     * 助教用户名
+     */
+    @ExcelIgnore
+    private String teachingAssistantUsername;
 }
+
+

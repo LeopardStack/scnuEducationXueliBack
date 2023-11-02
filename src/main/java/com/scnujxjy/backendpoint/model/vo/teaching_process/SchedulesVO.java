@@ -109,6 +109,16 @@ public class SchedulesVO implements Serializable {
     private String onlinePlatform;
 
     /**
+     * 直播状态
+     */
+    private String livingStatus;
+
+    /**
+     * 频道号
+     */
+    private String channelId;
+
+    /**
      * 直播开始时间
      */
     private String teachingStartDate;

@@ -8,6 +8,7 @@ import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
@@ -30,6 +31,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -67,6 +69,12 @@ public abstract class AbstractFilter {
 
     @Resource
     protected ScoreInformationMapper scoreInformationMapper;
+
+    @Resource
+    protected TeacherInformationMapper teacherInformationMapper;
+
+    @Resource
+    protected ScnuXueliTools scnuXueliTools;
 
     /**
      * 筛选学籍数据的方法
@@ -237,5 +245,23 @@ public abstract class AbstractFilter {
     }
 
     public void exportPaymentInfoData(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO, String userId, PlatformMessagePO platformMessagePO){
+    }
+
+    /**
+     * 批量导出教学计划
+     * @param courseInformationROPageRO
+     * @return
+     */
+    public byte[] downloadTeachingPlans(PageRO<CourseInformationRO> courseInformationROPageRO) {
+        return null;
+    }
+
+    /**
+     * 获取排课表课程的筛选条件
+     * @param courseScheduleFilterRO
+     * @return
+     */
+    public ScheduleCourseInformationSelectArgs getCoursesArgs(CourseScheduleFilterRO courseScheduleFilterRO) {
+        return null;
     }
 }

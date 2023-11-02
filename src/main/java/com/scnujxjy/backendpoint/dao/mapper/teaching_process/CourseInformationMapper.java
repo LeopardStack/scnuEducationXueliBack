@@ -4,7 +4,9 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationManagerZeroVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import org.apache.ibatis.annotations.Delete;
@@ -127,64 +129,16 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    @Select({
-            "<script>",
-            "SELECT c.*, ci.class_name",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "<if test='filter.grade != null and filter.grade != \"\"'>",
-            "AND c.grade = #{filter.grade}",
-            "</if>",
-            "<if test='filter.majorName != null and filter.majorName != \"\"'>",
-            "AND c.majorName = #{filter.majorName}",
-            "</if>",
-            "<if test='filter.level != null and filter.level != \"\"'>",
-            "AND c.level = #{filter.level}",
-            "</if>",
-            "<if test='filter.studyForm != null and filter.studyForm != \"\"'>",
-            "AND c.studyForm = #{filter.studyForm}",
-            "</if>",
-            "<if test='filter.adminClass != null and filter.adminClass != \"\"'>",
-            "AND c.adminClass = #{filter.adminClass}",
-            "</if>",
-            "<if test='filter.courseName != null and filter.courseName != \"\"'>",
-            "AND c.courseName = #{filter.courseName}",
-            "</if>",
-            "<if test='filter.studyHours != null'>",
-            "AND c.studyHours = #{filter.studyHours}",
-            "</if>",
-            "<if test='filter.assessmentType != null and filter.assessmentType != \"\"'>",
-            "AND c.assessmentType = #{filter.assessmentType}",
-            "</if>",
-            "<if test='filter.teachingMethod != null and filter.teachingMethod != \"\"'>",
-            "AND c.teachingMethod = #{filter.teachingMethod}",
-            "</if>",
-            "<if test='filter.courseType != null and filter.courseType != \"\"'>",
-            "AND c.courseType = #{filter.courseType}",
-            "</if>",
-            "<if test='filter.credit != null'>",
-            "AND c.credit = #{filter.credit}",
-            "</if>",
-            "<if test='filter.teachingSemester != null and filter.teachingSemester != \"\"'>",
-            "AND c.teachingSemester = #{filter.teachingSemester}",
-            "</if>",
-            "<if test='filter.courseCode != null and filter.courseCode != \"\"'>",
-            "AND c.course_code = #{filter.courseCode}",
-            "</if>",
-            "<if test='filter.className != null and filter.className != \"\"'>",
-            "AND ci.class_name = #{filter.className}",
-            "</if>",
-            "ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code",
-            "<if test='pageSize != null and offset != null'>",
-            "LIMIT #{offset}, #{pageSize}",
-            "</if>",
-            "</script>"
-    })
-    List<CourseInformationVO> selectByFilterAndPage(@Param("filter") CourseInformationRO filter, @Param("pageSize") long pageSize, @Param("offset") long offset, @Param("college") String college);
+    List<CourseInformationVO> selectByFilterAndPage(@Param("filter") CourseInformationRO filter,
+                                                    @Param("pageSize") Long pageSize,
+                                                    @Param("offset") Long offset);
+
+    /**
+     * 查询教学计划中的某一门课程
+     * @param filter
+     * @return
+     */
+    CourseInformationVO selectSingleCourse(@Param("filter") CourseCoverChangeRO filter);
 
 
 
@@ -193,60 +147,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    @Select({
-            "<script>",
-            "SELECT count(*)",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "<if test='filter.grade != null and filter.grade != \"\"'>",
-            "AND c.grade = #{filter.grade}",
-            "</if>",
-            "<if test='filter.majorName != null and filter.majorName != \"\"'>",
-            "AND c.majorName = #{filter.majorName}",
-            "</if>",
-            "<if test='filter.level != null and filter.level != \"\"'>",
-            "AND c.level = #{filter.level}",
-            "</if>",
-            "<if test='filter.studyForm != null and filter.studyForm != \"\"'>",
-            "AND c.studyForm = #{filter.studyForm}",
-            "</if>",
-            "<if test='filter.adminClass != null and filter.adminClass != \"\"'>",
-            "AND c.adminClass = #{filter.adminClass}",
-            "</if>",
-            "<if test='filter.courseName != null and filter.courseName != \"\"'>",
-            "AND c.courseName = #{filter.courseName}",
-            "</if>",
-            "<if test='filter.studyHours != null'>",
-            "AND c.studyHours = #{filter.studyHours}",
-            "</if>",
-            "<if test='filter.assessmentType != null and filter.assessmentType != \"\"'>",
-            "AND c.assessmentType = #{filter.assessmentType}",
-            "</if>",
-            "<if test='filter.teachingMethod != null and filter.teachingMethod != \"\"'>",
-            "AND c.teachingMethod = #{filter.teachingMethod}",
-            "</if>",
-            "<if test='filter.courseType != null and filter.courseType != \"\"'>",
-            "AND c.courseType = #{filter.courseType}",
-            "</if>",
-            "<if test='filter.credit != null'>",
-            "AND c.credit = #{filter.credit}",
-            "</if>",
-            "<if test='filter.teachingSemester != null and filter.teachingSemester != \"\"'>",
-            "AND c.teachingSemester = #{filter.teachingSemester}",
-            "</if>",
-            "<if test='filter.courseCode != null and filter.courseCode != \"\"'>",
-            "AND c.course_code = #{filter.courseCode}",
-            "</if>",
-            "<if test='filter.className != null and filter.className != \"\"'>",
-            "AND ci.class_name = #{filter.className}",
-            "</if>",
-            "</script>"
-    })
-    long getCountByFilterAndPage(@Param("filter") CourseInformationRO filter, @Param("college") String college);
+    long getCountByFilterAndPage(@Param("filter") CourseInformationRO filter);
 
     // 获取年级的筛选参数
     @Select({
@@ -471,6 +372,68 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
     long getCountByFilterAndPageManager0(@Param("filter") CourseInformationRO filter);
 
 
+    /**
+     * 清空教学计划表
+     */
     @Delete("TRUNCATE TABLE course_information")
     void truncateTable();
+
+    /**
+     * 获取指定条件下的年龄（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctGrades(@Param("filter" ) CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的学院（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctCollegeNames(@Param("filter" ) CourseScheduleFilterRO filter);
+
+
+    /**
+     * 获取指定条件下的学习形式（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctStudyForms(@Param("filter" ) CourseScheduleFilterRO filter);
+
+
+    /**
+     * 获取指定条件下的班级名称（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctClassNames(@Param("filter" ) CourseScheduleFilterRO filter);
+
+
+    /**
+     * 获取指定条件下的层次（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctLevels(@Param("filter" ) CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的年龄（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctMajorNames(@Param("filter" ) CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的学期（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctSemasters(@Param("filter" ) CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的课程名称（去除重复项）
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctCourseNames(@Param("filter" ) CourseScheduleFilterRO filter);
 }

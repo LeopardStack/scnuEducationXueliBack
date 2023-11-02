@@ -14,7 +14,7 @@ public class CourseScheduleFilterDataVO {
     /**
      * 排课表记录
      */
-    List<CourseSchedulePO> courseSchedulePOS;
+    List<TeacherCourseScheduleVO> courseSchedulePOS;
     /**
      * 排课表总数据
      */

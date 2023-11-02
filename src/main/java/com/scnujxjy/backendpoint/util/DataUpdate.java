@@ -4,6 +4,7 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
@@ -20,6 +21,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMa
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
@@ -92,7 +94,7 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-//    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000)
     public void dealWithLivingRooms(){
         // 获取距离现在只有 1小时的排课表
         List<CourseSchedulePO> recordsWithinCertainHour = courseScheduleMapper.findRecordsWithinCertainHour(1);
@@ -266,10 +268,38 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-//    @Scheduled(cron = "0 00 22 * * ?")
+    @Scheduled(cron = "0 00 22 * * ?")
     public void executeAt1AM1520() {
         // 每晚 10 点 校对新旧系统数据
         log.info("旧系统数据更新中...");
         messageSender.send(queue1, "数据同步");
+    }
+
+    /**
+     * 检测一下 直播间的状态
+     */
+    @Scheduled(fixedRate = 300000)
+    public void checkLivingRoomStatus(){
+        log.info("执行直播间扫描");
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);
+        for(VideoStreamRecordPO videoStreamRecordPO: videoStreamRecordPOS){
+            String channelId = videoStreamRecordPO.getChannelId();
+            if(channelId == null){
+                int i = videoStreamRecordsMapper.deleteById(videoStreamRecordPO.getId());
+            }else{
+                ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo(channelId);
+                if(videoStreamRecordPO.getWatchStatus().equals(LiveStatusEnum.OVER.status)){
+                    // 彻底终止状态，直播间完全不会再用
+                    continue;
+                }
+                if(channelBasicInfo.getWatchStatus().equals(videoStreamRecordPO.getWatchStatus())){
+
+                }else{
+                    videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelBasicInfo.getWatchStatus()));
+                    int i = videoStreamRecordsMapper.updateById(videoStreamRecordPO);
+                    log.info("更新直播间状态 " + i + " " + channelBasicInfo);
+                }
+            }
+        }
     }
 }

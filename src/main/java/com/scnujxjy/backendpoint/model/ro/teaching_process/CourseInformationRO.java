@@ -33,6 +33,11 @@ public class CourseInformationRO {
     private String grade;
 
     /**
+     * 学院名称
+     */
+    private String college;
+
+    /**
      * 专业名称
      */
     private String majorName;
@@ -46,6 +51,11 @@ public class CourseInformationRO {
      * 学习形式
      */
     private String studyForm;
+
+    /**
+     * 学期
+     */
+    String semester;
 
     /**
      * 行政班别
@@ -97,10 +107,6 @@ public class CourseInformationRO {
      */
     private String className;
 
-    /**
-     * 学院名称
-     */
-    private String college;
 
 
 }

@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.entity.teaching_process;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -89,5 +90,9 @@ public class CourseSchedulePO implements Serializable {
     @ExcelProperty(value = "授课时间", index = 21)
     private String teachingTime;
 
+    @TableField(value = "teacher_username")
     private String teacherUsername;
+
+    @TableField(value = "teaching_assistant_username")
+    private String teachingAssistantUsername;
 }

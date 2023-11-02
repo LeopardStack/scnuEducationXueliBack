@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.platform_message;
 
+import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,5 +13,13 @@ import java.util.List;
 @NoArgsConstructor
 public class PlatformMessageVO {
 
+    /**
+     * 下载消息列表
+     */
     private List<DownloadMessageVO> downloadMessagePOList = new ArrayList<>();
+
+    /**
+     *
+     */
+    private List<UserUploadsPO> userUploadsPOList = new ArrayList<>();
 }

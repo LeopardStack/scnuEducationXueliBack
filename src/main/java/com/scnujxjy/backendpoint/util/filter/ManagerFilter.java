@@ -12,8 +12,10 @@ import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
@@ -26,6 +28,7 @@ import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
@@ -33,6 +36,7 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
@@ -44,12 +48,15 @@ import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.validator.constraints.Min;
+import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -137,6 +144,30 @@ public class ManagerFilter  extends AbstractFilter {
         courseInformationSelectArgs.setClassNames(classNames);
         courseInformationSelectArgs.setCollegeNames(collegeNames);
         return courseInformationSelectArgs;
+    }
+
+    /**
+     * 批量导出教学计划
+     * @param courseInformationROPageRO
+     * @return
+     */
+    @Override
+    public byte[] downloadTeachingPlans(PageRO<CourseInformationRO> courseInformationROPageRO) {
+
+        List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPage(courseInformationROPageRO.getEntity(),
+                null, null);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            // 将数据写入到 ByteArrayOutputStream
+            EasyExcel.write(outputStream, CourseInformationVO.class).sheet("Sheet1").doWrite(courseInformationVOS);
+        } finally {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return outputStream.toByteArray();
     }
 
     /**
@@ -677,30 +708,86 @@ public class ManagerFilter  extends AbstractFilter {
     public FilterDataVO filterScheduleCoursesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
 
 
-        List<ScheduleCourseInformationVO> scheduleCourseInformationVOS = courseScheduleMapper.selectCoursesInformation(courseScheduleFilterROPageRO.getEntity(),
+        // 获取教学计划
+        CourseInformationRO courseInformationRO = new CourseInformationRO();
+        BeanUtils.copyProperties(courseScheduleFilterROPageRO.getEntity(), courseInformationRO);
+
+        List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPage(courseInformationRO,
                 courseScheduleFilterROPageRO.getPageSize(),
                 (courseScheduleFilterROPageRO.getPageNumber() - 1) * courseScheduleFilterROPageRO.getPageSize());
 
+        List<CourseInformationScheduleVO> courseInformationScheduleVOS = new ArrayList<>();
+        // 首先获取教学计划中与排课表相对应的课程
+        for(CourseInformationVO courseInformationVO: courseInformationVOS){
+            CourseInformationScheduleVO courseInformationScheduleVO = new CourseInformationScheduleVO();
+            BeanUtils.copyProperties(courseInformationVO, courseInformationScheduleVO);
+            courseInformationScheduleVO.setMainTeachers(new ArrayList<>());
+            courseInformationScheduleVO.setTutors(new ArrayList<>());
 
-        FilterDataVO<ScheduleCourseInformationVO> filterDataVO = new FilterDataVO<>();
+            // 比较年级、专业、学习形式、层次、班级名称、课程名称
+            CourseScheduleFilterRO courseScheduleFilterRO = new CourseScheduleFilterRO();
+            courseScheduleFilterRO.setGrade(courseInformationVO.getGrade());
+            courseScheduleFilterRO.setMajorName(courseInformationVO.getMajorName());
+            courseScheduleFilterRO.setLevel(courseInformationVO.getLevel());
+            courseScheduleFilterRO.setStudyForm(courseInformationVO.getStudyForm());
+            courseScheduleFilterRO.setAdminClassName(courseInformationVO.getClassName());
+            courseScheduleFilterRO.setCourseName(courseInformationVO.getCourseName());
+            List<ScheduleCourseInformationVO> scheduleCourseInformationVOS = courseScheduleMapper.selectCoursesInformationWithoutPage(courseScheduleFilterRO);
+
+            for(ScheduleCourseInformationVO scheduleCourseInformationVO : scheduleCourseInformationVOS){
+//                courseInformationScheduleVO.setTeachingMethod(scheduleCourseInformationVO.getTeachingMethod());
+                // 获取主讲教师
+                if(scheduleCourseInformationVO.getTeacherUsername() != null) {
+                    TeacherInformationVO mainTeacher = new TeacherInformationVO();
+                    mainTeacher.setTeacherUsername(scheduleCourseInformationVO.getTeacherUsername());
+                    mainTeacher.setName(scheduleCourseInformationVO.getMainTeacherName());
+                    mainTeacher.setIdCardNumber(scheduleCourseInformationVO.getMainTeacherIdentity());
+                    mainTeacher.setWorkNumber(scheduleCourseInformationVO.getMainTeacherId());
+                    courseInformationScheduleVO.getMainTeachers().add(mainTeacher);
+                }
+
+                if(scheduleCourseInformationVO.getTeachingAssistantUsername() != null) {
+                    TeacherInformationVO tutor = new TeacherInformationVO();
+                    tutor.setTeacherUsername(scheduleCourseInformationVO.getTeachingAssistantUsername());
+                    tutor.setName(scheduleCourseInformationVO.getTutorName());
+                    tutor.setIdCardNumber(scheduleCourseInformationVO.getTutorIdentity());
+                    tutor.setWorkNumber(scheduleCourseInformationVO.getTutorId());
+                    courseInformationScheduleVO.getTutors().add(tutor);
+                }
+            }
+
+            if(courseScheduleFilterROPageRO.getEntity().getTeachingMethod() == null){
+                courseInformationScheduleVOS.add(courseInformationScheduleVO);
+            }
+            else if(courseScheduleFilterROPageRO.getEntity().getTeachingMethod() != null &&
+                    (!"线下".equals(courseScheduleFilterROPageRO.getEntity().getTeachingMethod()))){
+                courseInformationScheduleVOS.add(courseInformationScheduleVO);
+            }else{
+
+            }
+
+
+        }
+
+        FilterDataVO<CourseInformationScheduleVO> filterDataVO = new FilterDataVO<>();
         log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
-        long l = courseScheduleMapper.selectCoursesInformationCount(courseScheduleFilterROPageRO.getEntity());
+        long l = courseInformationMapper.getCountByFilterAndPage(courseInformationRO);
         filterDataVO.setTotal(l);
-        filterDataVO.setData(scheduleCourseInformationVOS);
+        filterDataVO.setData(courseInformationScheduleVOS);
 
         return filterDataVO;
     }
 
-
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
-     * 获取排课表课程数据筛选参数
+     * 获取排课表筛选参数
      * @return
      */
     @Override
     @LogExecutionTime
     public ScheduleCourseInformationSelectArgs filterScheduleCourseInformationSelectArgs() {
+
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
         CourseScheduleFilterRO filter = new CourseScheduleFilterRO();
 
@@ -739,6 +826,50 @@ public class ManagerFilter  extends AbstractFilter {
 
 
     /**
+     * 采用线程池技术，提高 SQL 查询筛选参数效率
+     * 获取排课表课程数据筛选参数
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public ScheduleCourseInformationSelectArgs getCoursesArgs(CourseScheduleFilterRO filter) {
+        ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
+
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> courseInformationMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> courseInformationMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> courseInformationMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctMajorNames(filter));
+        Future<List<String>> distinctSemastersFuture = executor.submit(() -> courseInformationMapper.getDistinctSemasters(filter));
+        Future<List<String>> distinctCourseNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctCourseNames(filter));
+
+        try {
+            scheduleCourseInformationSelectArgs.setGrades(distinctGradesFuture.get());
+
+            scheduleCourseInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            scheduleCourseInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            scheduleCourseInformationSelectArgs.setAdminClassNames(distinctClassNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            scheduleCourseInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setSemesters(distinctSemastersFuture.get());
+            scheduleCourseInformationSelectArgs.setCourseNames(distinctCourseNamesFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return scheduleCourseInformationSelectArgs;
+    }
+
+
+    /**
      * 获取排课表详细信息
      * @return
      */
@@ -751,36 +882,19 @@ public class ManagerFilter  extends AbstractFilter {
         for (SchedulesVO schedulesVO : schedulesVOS) {
             String onlinePlatform = schedulesVO.getOnlinePlatform();
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai")); // 为了设置时区为东八区
-
-            Date now = new Date();
-            Date teachingEndDate = null;
-            try {
-                String teachingEndDateStr = schedulesVO.getTeachingEndDate();
-                teachingEndDate = sdf.parse(teachingEndDateStr);
-            }catch (ParseException e){
-                log.error("直播日期解析失败" + e.toString());
-            }
-
-            // 如果结束时间在当前时间之前
-            if (teachingEndDate != null && teachingEndDate.before(now)) {
-                schedulesVO.setOnlinePlatform("已结束");
-            }
-            // 如果onlinePlatform为空或仅包含空格
-            else if (onlinePlatform == null || onlinePlatform.trim().isEmpty()) {
-                schedulesVO.setOnlinePlatform("已结束");
-            }
-            // 如果onlinePlatform不为空且与VideoStreamRecord的ID匹配
-            else {
+            if(onlinePlatform != null){
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
                         new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
 
                 if (videoStreamRecordPO != null) {
                     // 此处你只检查了videoStreamRecordPO是否为null，但没使用它的其他属性。
                     // 假设你只想检查它是否存在，并据此设置onlinePlatform
-                    schedulesVO.setOnlinePlatform("直播中");
+                    // 设置直播状态
+                    schedulesVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                    schedulesVO.setChannelId(videoStreamRecordPO.getChannelId());
                 }
+            }else{
+                schedulesVO.setLivingStatus("未开播");
             }
         }
 

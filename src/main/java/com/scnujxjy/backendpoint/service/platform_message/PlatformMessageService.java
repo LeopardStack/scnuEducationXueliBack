@@ -2,15 +2,20 @@ package com.scnujxjy.backendpoint.service.platform_message;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.UserUploadsMapper;
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.inverter.platform_message.PlatformMessageInverter;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.DownloadMessageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +43,18 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
     @Resource
     private DownloadMessageMapper downloadMessageMapper;
 
+    @Resource
+    private UserUploadsMapper userUploadsMapper;
+
+
     public PlatformMessageVO getUserMsg(String msgType) {
         PlatformMessageVO platformMessageVO = new PlatformMessageVO();
-        String userId = (String) StpUtil.getLoginId();
+        String userName = (String) StpUtil.getLoginId();
+
 
         // 获取与用户相关的所有PlatformMessagePO
         List<PlatformMessagePO> platformMessagePOS = baseMapper.selectList(
-                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userId)
+                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userName)
         );
 
         if (msgType.equals(MessageEnum.DOWNLOAD_MSG.getMessage_name())) {
@@ -78,17 +88,50 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                     DownloadMessageVO tempMsg = new DownloadMessageVO();
                     tempMsg.setCreatedAt(messagePO.getCreatedAt());
                     tempMsg.setIsRead(messagePO.getIsRead());
-                    tempMsg.setFileName(null);  // 文件名为空
+                    // 文件名为空
+                    tempMsg.setFileName(null);
                     platformMessageVO.getDownloadMessagePOList().add(tempMsg);
                 }
             }
 
             // 对整个downloadMessagePOList列表按照时间降序排序
             platformMessageVO.getDownloadMessagePOList().sort(Comparator.comparing(DownloadMessageVO::getCreatedAt).reversed());
+        }else if (msgType.equals(MessageEnum.UPLOAD_MSG.getMessage_name())) {
+            // 处理上传消息
+            List<UserUploadsPO> userUploadsPOS = userUploadsMapper.selectList(new LambdaQueryWrapper<UserUploadsPO>()
+                    .eq(UserUploadsPO::getUserName, userName)
+            );
+
+            // 按照时间顺序 新的时间在前面
+            List<UserUploadsPO> sortedList = userUploadsPOS.stream()
+                    .sorted(Comparator.comparing(UserUploadsPO::getUploadTime).reversed())
+                    .collect(Collectors.toList());
+            platformMessageVO.setUserUploadsPOList(sortedList);
         }
         return platformMessageVO;
     }
 
+    public PlatformMessageVO getUserMessage(PageRO<UserUploadsRO> userUploadsROPageRO) {
+        PlatformMessageVO platformMessageVO = new PlatformMessageVO();
+        String userName = (String) StpUtil.getLoginId();
+        UserUploadsRO entity = userUploadsROPageRO.getEntity();
+
+        if (entity.getMsgType().equals(MessageEnum.UPLOAD_MSG.getMessage_name())) {
+            // 创建一个Page对象，使用userUploadsROPageRO提供的分页参数
+            Page<UserUploadsPO> page = userUploadsROPageRO.getPage();
+
+            // 使用Page对象执行分页查询
+            Page<UserUploadsPO> resultPage = userUploadsMapper.selectPage(page, new LambdaQueryWrapper<UserUploadsPO>()
+                    .eq(UserUploadsPO::getUserName, userName)
+                    .orderByDesc(UserUploadsPO::getUploadTime)  // 按上传时间降序排序
+            );
+
+            // 从结果Page对象中获取结果列表
+            List<UserUploadsPO> sortedList = resultPage.getRecords();
+            platformMessageVO.setUserUploadsPOList(sortedList);
+        }
+        return platformMessageVO;
+    }
 
 }
 

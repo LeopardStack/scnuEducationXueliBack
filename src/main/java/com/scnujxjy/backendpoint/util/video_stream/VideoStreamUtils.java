@@ -29,10 +29,9 @@ import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoRequest;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelBasicInfoResponse;
-import net.polyv.live.v1.entity.channel.operate.LiveCreateSonChannelListRequest;
+import net.polyv.live.v1.entity.channel.operate.*;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogRequest;
 import net.polyv.live.v1.entity.channel.viewdata.LiveListChannelViewlogResponse;
 import net.polyv.live.v1.entity.quick.QuickCreateChannelResponse;
@@ -40,6 +39,9 @@ import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
+import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
+import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountRequest;
+import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountResponse;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -276,53 +278,69 @@ public class VideoStreamUtils {
      * @throws NoSuchAlgorithmException
      */
     public String generateTeacherSSOLink(String channelId) throws IOException, NoSuchAlgorithmException {
-        // 公共参数,填写自己的实际参数
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        //频道号
         String appId = LiveGlobalConfig.getAppId();
         String appSecret = LiveGlobalConfig.getAppSecret();
-        long beijingTimestamp1 = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
-        String timestamp = String.valueOf(beijingTimestamp1);
-
-        // 自定义的token，只能使用一次，且10秒内有效
+        //自定义的token，只能使用一次，且10秒内有效
         String token = UUID.randomUUID().toString().replaceAll("-", "");
         String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-token", channelId);
 
+        //1、设置频道单点登录token
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("token", token);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.postFormBody(url, requestMap);
+        //TODO 判断response返回是否成功
 
-
-        // 1、设置频道单点登录token
-        OkHttpClient client = new OkHttpClient();
-        Response response = null;
-        try {
-            Map<String, String> requestMap = new HashMap<>();
-            requestMap.put("appId", appId);
-            long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
-            requestMap.put("timestamp", String.valueOf(beijingTimestamp));
-            requestMap.put("token", token);
-
-            FormBody.Builder formBuilder = new FormBody.Builder()
-                    .add("appId", appId)
-                    .add("timestamp", timestamp)
-                    .add("token", token)
-                    .add("sign", LiveSignUtil.getSign(requestMap, appSecret));
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(formBuilder.build())
-                    .build();
-            response = client.newCall(request).execute();
-            // TODO: 判断response返回是否成功
-            log.info("单点登录返回值 " + response.toString());
-            // 2、生成讲师授权登录地址
-            String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + channelId;
-            String authURL = "https://console.polyv.net/teacher/auth-login";
-            authURL += "?channelId=" + channelId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
-            log.info("讲师单点登录地址设置成功，跳转地址为：{}", authURL);
-            return authURL;
-        }finally {
-            if(response != null){
-                response.close();
-            }
-        }
-
+        //2、生成讲师授权登录地址
+        String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + channelId;
+        String authURL = "https://console.polyv.net/teacher/auth-login";
+        authURL +=
+                "?channelId=" + channelId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+        log.info("讲师单点登录地址设置成功，跳转地址为：{}", authURL);
+        return authURL;
     }
+
+
+    /**
+     * 根据频道ID生成助教的单点登录链接
+     *
+     * @param channelId 频道ID
+     * @return 单点登录链接
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String generateTutorSSOLink(String channelId, String accountId) throws IOException, NoSuchAlgorithmException {
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        //频道号
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        //自定义的token，只能使用一次，且10秒内有效
+        String token = UUID.randomUUID().toString().replaceAll("-", "");
+        //助教账号
+        String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-account-token", accountId);
+
+        //1、设置助教单点登录token
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("token", token);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.postFormBody(url, requestMap);
+        //TODO 判断response返回是否成功
+
+        //2、生成助教授权登录地址
+        String redirectUrl = "https://console.polyv.net/assistant/?accountId=" + accountId;
+        String authURL = "https://console.polyv.net/teacher/auth-login";
+        authURL +=
+                "?channelId=" + accountId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+        log.info("助教单点登录设置成功，跳转地址为：{}", authURL);
+        return authURL;
+    }
+
 
     /**
      * 查询指定频道号下的所有角色信息
@@ -713,6 +731,83 @@ public class VideoStreamUtils {
 
         return channelResponse;
     }
+
+
+    /**
+     * 获取指定频道下的角色信息
+     * @throws Exception
+     * @throws NoSuchAlgorithmException
+     */
+    public LiveSonChannelInfoListResponse getRoleInfo(String channelId) throws Exception, NoSuchAlgorithmException {
+        LiveSonChannelInfoListRequest liveSonChannelInfoListRequest = new LiveSonChannelInfoListRequest();
+        LiveSonChannelInfoListResponse liveSonChannelInfoResponse;
+        try {
+            //准备测试数据
+            liveSonChannelInfoListRequest.setChannelId(channelId);
+            liveSonChannelInfoResponse = new LiveChannelOperateServiceImpl().getSonChannelInfoList(
+                    liveSonChannelInfoListRequest);
+            if (liveSonChannelInfoResponse != null) {
+                //to do something ......
+                log.info("查询频道号下所有角色信息成功{}", JSON.toJSONString(liveSonChannelInfoResponse));
+            }
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage(),B
+            log.error(e.getMessage(), e);
+            // 异常返回做B端异常的业务逻辑，记录log 或者 上报到ETL 或者回滚事务
+            throw e;
+        } catch (Exception e) {
+            log.error("SDK调用异常", e);
+            throw e;
+        }
+
+        return liveSonChannelInfoResponse;
+    }
+
+
+    /**
+     * 更新默认助教的权限信息
+     * @param channelId
+     */
+    public boolean generateTutor(String channelId, String name, String password) {
+        try {
+            // Step 1: 获取角色信息
+            LiveSonChannelInfoListResponse roleInfo = getRoleInfo(channelId);
+            if (roleInfo != null && !roleInfo.getSonChannelInfos().isEmpty()) {
+                LiveSonChannelInfoResponse liveSonChannelInfoResponse = roleInfo.getSonChannelInfos().get(0);// 假设助教是列表中的第一个角色
+                String account1 = liveSonChannelInfoResponse.getAccount();
+                // Step 2: 创建更新请求对象
+                LiveUpdateAccountRequest updateRequest = new LiveUpdateAccountRequest();
+                updateRequest.setChannelId(channelId)
+                        .setAccount(account1)
+                        .setPasswd(password)  // 你可以选择更新密码或保留原密码
+                        .setNickName("name")
+                        .setPurviewList(Arrays.asList(
+                                new LiveUpdateAccountRequest.Purview().setCode("chatListEnabled").setEnabled("Y"),
+                                new LiveUpdateAccountRequest.Purview().setCode("pageTurnEnabled").setEnabled("Y"),
+                                new LiveUpdateAccountRequest.Purview().setCode("chatAuditEnabled").setEnabled("Y")
+                        ));  // 设置新的权限
+
+                // Step 3: 调用 updateAccount 方法更新助教的权限
+                LiveUpdateAccountResponse updateResponse = new LiveChannelOperateServiceImpl().updateAccount(updateRequest);
+                if (updateResponse != null) {
+                    log.info("更新助教权限成功: {}", JSON.toJSONString(updateResponse));
+                    return true;
+
+                } else {
+                    log.error("更新助教权限失败");
+                }
+            } else {
+                log.error("未找到任何助教信息");
+            }
+        } catch (PloyvSdkException e) {
+            log.error("参数校验失败或服务器处理异常: {}", e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("SDK调用异常: {}", e.getMessage(), e);
+        }
+        return false;
+    }
+
+
 
     /**
      * 查询指定频道号的回放设置

@@ -57,5 +57,10 @@ public class CourseExtraInformationPO implements Serializable {
      */
     private String courseName;
 
+    /**
+     * 课程封面图 Minio 相对路径
+     */
+    private String courseCover;
+
 
 }

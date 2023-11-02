@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.livingTest;
 import cn.hutool.core.collection.ListUtil;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -275,6 +276,21 @@ public class LivingCreate {
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsService.
                 getBaseMapper().selectBatchIds(ListUtil.of(1L, 2L, 3L, 4L));
         log.info("查询的数据是:{}",videoStreamRecordPOS);
+    }
+
+
+    // 查询频道的基本信息
+    @Test
+    public void test6(){
+        try {
+            ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo("4401417");
+            if(channelBasicInfo != null && channelBasicInfo.getChannelId() != null){
+                log.info("直播间存在" + channelBasicInfo.getChannelId());
+            }
+            log.info(channelBasicInfo.toString());
+        }catch (Exception e){
+            log.info("直播间不存在" + e);
+        }
     }
 
 
