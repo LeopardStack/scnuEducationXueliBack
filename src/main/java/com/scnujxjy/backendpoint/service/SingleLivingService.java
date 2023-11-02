@@ -24,7 +24,5 @@ public interface SingleLivingService {
 
     SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest);
 
-//    SaResult setWatchCondition(String channelId);
-
-
+    SaResult GetChannelDetail(String channelId);
 }

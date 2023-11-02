@@ -1,15 +1,13 @@
 package com.scnujxjy.backendpoint.dao.mapper.registration_record_card;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.home.StatisticTableForGraduation;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -381,4 +379,30 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<Map<String, StatisticTableForGraduation>> getCountOfGraduation(@Param("startYear") int startYear, @Param("endYear") int endYear);
 
 
+    @Select("<script>" +
+            "SELECT student.id_number,student.name  FROM  course_schedule courschedule" +
+            "LEFT JOIN course_information courinfo" +
+            "on courschedule.grade=courinfo.grade AND courschedule.major_name = courinfo.major_name AND courschedule.course_name=courinfo.course_name" +
+            "LEFT JOIN class_information class on  courinfo.admin_class = class.class_identifier" +
+            "LEFT JOIN student_status student ON class.college = student.college and ci.admin_class=student.class_identifier" +
+            "WHERE 1=1 " +
+            "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
+            "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
+            "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
+            "<if test='entity.college != null'>AND ss.college = #{entity.college} </if>" +
+            "<if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>" +
+            "<if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>" +
+            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
+            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
+            "<if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>" +
+            "<if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>" +
+            "<if test='entity.academicStatus != null'>AND ss.academic_status = #{entity.academicStatus} </if>" +
+            "<if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>" +
+            "<if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>" +
+            "<if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>" +
+            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
+            "<if test='entity.graduationDate != null'>AND gi.graduation_date = #{entity.graduationDate} </if>" +
+            "ORDER BY ss.college" +
+            "</script>")
+    List<Map<String,String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
 }

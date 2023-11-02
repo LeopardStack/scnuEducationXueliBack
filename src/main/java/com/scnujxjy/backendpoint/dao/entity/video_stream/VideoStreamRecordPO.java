@@ -64,6 +64,8 @@ public class VideoStreamRecordPO implements Serializable {
      */
     private String publisher;
 
+    private Date teachingDate;
+
     /**
      * 直播开始时间
      */

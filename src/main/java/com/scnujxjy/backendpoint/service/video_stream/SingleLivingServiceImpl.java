@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -10,10 +11,12 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
@@ -35,6 +38,8 @@ import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
+import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Request;
+import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Response;
 import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
@@ -54,6 +59,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
+
+    @Resource
+    private StudentStatusMapper studentStatusMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException {
@@ -114,21 +122,48 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
         //设置频道直播间白名单，只有添加了白名单，后续才能设置观看条件为白名单。
         try {
-            if (Objects.nonNull(channel.getData().getChannelId())) {
-                CreateChannelWhiteList(channel.getData().getChannelId().toString());
+            if (channel.getCode()==200 && Objects.nonNull(channel.getData().getChannelId())) {
+                String channelId=channel.getData().getChannelId().toString();
+                File whiteListFile = createWhiteListFile();
+                SaResult saResult1 = UploadWhiteList(whiteListFile,channelId);
+                if (saResult1.getCode()==200){
+                    //设置指定频道的观看条件为白名单
+                    log.info("批量添加白名单成功");
+                    if (Objects.nonNull(channel.getData().getChannelId())) {
+                        SaResult saResult2 = setWatchCondition(channel.getData().getChannelId().toString());
+                        if (saResult2.getCode()==200){
+                            log.info("设置白名单观看条件成功");
+                            saResult.setCode(ResultCode.SUCCESS.getCode());
+                            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                            saResult.setData(channel);
+                            return saResult;
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //设置指定频道的观看条件为白名单
-        if (Objects.nonNull(channel.getData().getChannelId())) {
-            setWatchCondition(channel.getData().getChannelId().toString());
-        }
 
-        saResult.setCode(ResultCode.SUCCESS.getCode());
-        saResult.setMsg(ResultCode.SUCCESS.getMessage());
-        saResult.setData(channel);
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
+    }
+
+    private File createWhiteListFile() {
+        String templateFilePath = "temporaryWhiteList.xls";
+//        studentStatusMapper.getScheduleClassStudent();//检查sql后采用查询的返回的List
+        List<StudentWhiteListVO> StudentWhiteListVOS=new ArrayList<>();
+        StudentWhiteListVO studentWhiteListVO1=new StudentWhiteListVO();
+        studentWhiteListVO1.setCode("111");
+        studentWhiteListVO1.setName("aaaa");
+        StudentWhiteListVO studentWhiteListVO2=new StudentWhiteListVO();
+        studentWhiteListVO2.setCode("222");
+        studentWhiteListVO2.setName("bbbb");
+        StudentWhiteListVOS.add(studentWhiteListVO1);
+        StudentWhiteListVOS.add(studentWhiteListVO2);
+        EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(StudentWhiteListVOS);
+        return new File(templateFilePath);
     }
 
     @Override
@@ -183,7 +218,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     liveUpdateChannelAuthRequest);
             //如果返回结果不为空并且为true，说明修改成功
             if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
-                log.info("设置白名单观看条件成功");
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 return saResult;
@@ -367,6 +401,35 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
+    public SaResult UploadWhiteList(File file,String channelId) {
+        SaResult saResult=new SaResult();
+        LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
+        Boolean liveUploadWhiteListResponse;
+        try {
+            liveUploadWhiteListRequest.setChannelId(channelId)
+                    .setRank(1)
+                    .setFile(file);
+            liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
+
+            if (liveUploadWhiteListResponse!=null && liveUploadWhiteListResponse) {
+                boolean delete = file.delete();
+                if (delete){
+                    log.info("删除文件成功");
+                }
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
+            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("调用批量增加白名单接口异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
 
     //添加单个白名单
     public ResultCode CreateChannelWhiteList(String channelId) throws Exception {
@@ -396,26 +459,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         }
     }
 
-    //批量添加白名單
-    public void testUploadWhiteList(String channelId) throws Exception, NoSuchAlgorithmException {
-        LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
-        Boolean liveUploadWhiteListResponse;
-        try {
-//            String path = getClass().getResource("WhiteListTemplate.xlsx").getPath();
-            String path = "WhiteListTemplate.xlsx";
-            liveUploadWhiteListRequest.setChannelId(channelId)
-                    .setRank(1)
-                    .setFile(new File(path));
-            liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
-            if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
-                log.info("测试新增白名单成功");
-            }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            log.error("SDK调用异常", e);
-        }
-    }
 
     /**
      * 修改名字和封面图
@@ -503,4 +546,32 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             throw e;
         }
     }
+
+    //live：直播中 playback：回放中 end：已结束 waiting：等待中 unStart：未开始
+    @Override
+    public SaResult GetChannelDetail(String channelId) {
+        SaResult saResult=new SaResult();
+        LiveChannelBasicInfoV2Request liveChannelBasicInfoV2Request = new LiveChannelBasicInfoV2Request();
+        LiveChannelBasicInfoV2Response liveChannelBasicInfoV2Response;
+        try {
+            liveChannelBasicInfoV2Request.setChannelId(channelId);
+            liveChannelBasicInfoV2Response = new LiveChannelOperateServiceImpl().getChannelDetail(
+                    liveChannelBasicInfoV2Request);
+            if (liveChannelBasicInfoV2Response != null) {
+                log.info("观看夜返回码" + liveChannelBasicInfoV2Response.getWatchStatus());
+                log.info("观看夜返回描述" + liveChannelBasicInfoV2Response.getWatchStatusText());
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
+            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("查询调用异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
 }
