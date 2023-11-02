@@ -24,6 +24,8 @@ spring:
     queue4: data_export2_test
     queue5: data_synchronize_test_timeout_test
     queue6: data_upload_dev
+
+
   servlet:
     multipart:
       maxFileSize: 10GB
@@ -37,13 +39,6 @@ spring:
     hikari:
       maximum-pool-size: 1000 # 设置最大连接数为1000
       idleTimeout: 300000  # set to 5 minutes for example
-
-mybatis:
-  mapper-locations: classpath:mapper/*xml
-  type-aliases-package: com.scnujxjy.backendpoint.entity
-  # 开启驼峰命名
-  configuration:
-    map-underscore-to-camel-case: true
 
 #配置日志
 mybatis-plus:
