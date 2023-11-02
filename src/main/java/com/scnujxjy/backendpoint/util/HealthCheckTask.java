@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMappe
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,11 +55,14 @@ public class HealthCheckTask {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired(required = false)
+//    @Autowired(required = false)
 //    private PlatformUserMapper platformUserMapper;
 
     @Resource
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {

@@ -68,7 +68,7 @@ public class SingleLivingController {
         return singleLivingService.getTeacherChannelUrl(channelId);
     }
 
-    //返回学生单点登录链接
+    //返回学生登录链接
     @PostMapping("/edit/getStudentChannelUrl")
     public SaResult getStudentChannelUrl(String channelId){
         if (StrUtil.isBlank(channelId)) {
