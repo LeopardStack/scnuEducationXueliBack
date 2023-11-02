@@ -70,12 +70,15 @@ public class PlatformUserController {
                 }
             }
             String roleName = StpUtil.getRoleList().get(0);
-            if(!"学生".equals(roleName) && !"教师".equals(roleName)){
-                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员", roleName, (String) StpUtil.getLoginId());
+            String tmp = "管理员";
+            if(roleName.contains(tmp)){
+                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
+                        isLogin.getName(), isLogin.getWechatOpenId());
                 return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
             }
 
-            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId());
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
+                    isLogin.getName(), isLogin.getWechatOpenId());
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
@@ -112,12 +115,15 @@ public class PlatformUserController {
                 }
             }
             String roleName = StpUtil.getRoleList().get(0);
-            if(!"学生".equals(roleName) && !"教师".equals(roleName)){
-                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, "管理员", roleName, (String) StpUtil.getLoginId());
+            String tmp = "管理员";
+            if(roleName.contains(tmp)){
+                UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
+                        isLogin.getName(), isLogin.getWechatOpenId());
                 return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
             }
 
-            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId());
+            UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
+                    isLogin.getName(), isLogin.getWechatOpenId());
             return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

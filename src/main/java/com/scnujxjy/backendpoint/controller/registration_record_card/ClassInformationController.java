@@ -177,7 +177,21 @@ public class ClassInformationController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    // 查询二级学院管理员权限范围内的班级信息
+                    FilterDataVO filterDataVO1 = null;
+                    filterDataVO1 = classInformationService.allPageQueryPayInfoFilter(classInformationFilterROPageRO, collegeAdminFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(filterDataVO1.getData());
+                    filterDataVO.setTotal(filterDataVO1.getTotal());
+                    filterDataVO.setCurrent(classInformationFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(classInformationFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) filterDataVO1.getData().size()
+                            / classInformationFilterROPageRO.getPageSize()));
 
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        return SaResult.error("未找到任何班级信息");
+                    }
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的班级信息
                     FilterDataVO filterDataVO1 = null;
@@ -192,7 +206,7 @@ public class ClassInformationController {
 
                     // 数据校验
                     if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
+                        return SaResult.error("未找到任何班级信息");
                     }
                 }
 

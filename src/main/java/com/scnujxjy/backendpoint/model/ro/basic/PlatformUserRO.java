@@ -37,6 +37,12 @@ public class PlatformUserRO {
     private String username;
 
     /**
+     * 用户姓名
+     */
+    private String name;
+
+
+    /**
      * 微信 openId
      */
     private String wechatOpenId;

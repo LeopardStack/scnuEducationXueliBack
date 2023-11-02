@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CourseScheduleExcelOutputVO extends CourseScheduleExcelImportVO {
-    @ExcelProperty(index = 22, value = "导入结果")
+    @ExcelProperty(index = 23, value = "导入结果")
     private String errorMessage; // 用于存储导入失败的原因
 }

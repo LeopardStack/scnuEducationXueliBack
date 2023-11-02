@@ -1,8 +1,11 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
@@ -31,10 +34,13 @@ public class TestUserInfoChange {
     @Resource
     private StudentStatusMapper studentStatusMapper;
 
+    @Resource
+    private PersonalInfoMapper personalInfoMapper;
+
     @Test
     public void changePassword(){
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName("xuelijiaoyuTest1");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "xuelijiaoyuTest12023@");
+        PlatformUserVO platformUserVO = platformUserService.detailByuserName("M50129");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M501292023@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -156,9 +162,14 @@ public class TestUserInfoChange {
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
 
         for(StudentStatusPO studentStatusPO: studentStatusPOS){
+            // 获取学生的姓名
+            PersonalInfoPO personalInfoPO = personalInfoMapper.selectOne(new LambdaQueryWrapper<PersonalInfoPO>().
+                    eq(PersonalInfoPO::getGrade, studentStatusPO.getGrade()).
+                    eq(PersonalInfoPO::getIdNumber, studentStatusPO.getIdNumber()));
             PlatformUserRO platformUserRO = new PlatformUserRO();
             String userName = studentStatusPO.getIdNumber();
             platformUserRO.setUsername(userName);
+            platformUserRO.setName(personalInfoPO.getName());
             if(userName.length() >= 6) {
                 platformUserRO.setPassword(userName.substring(userName.length() - 6));
             } else {
@@ -167,6 +178,7 @@ public class TestUserInfoChange {
             platformUserRO.setRoleId(1L);
             // 检测是否该用户存在
             if(platformUserService.getBaseMapper().selectPlatformUsers1(userName).size() > 0){
+                // 存在账号，如果姓名为空 则更新姓名信息 以最新年份的个人信息为准
                 log.info("该用户已存在平台账户 " + platformUserRO.toString());
             }else{
                 platformUserROList.add(platformUserRO);

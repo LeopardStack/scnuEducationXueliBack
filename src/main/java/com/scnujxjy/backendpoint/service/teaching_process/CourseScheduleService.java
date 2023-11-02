@@ -10,10 +10,14 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.constant.enums.UploadType;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
@@ -23,10 +27,12 @@ import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseExtraInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.UserUploadsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
@@ -40,6 +46,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,6 +54,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -85,6 +95,12 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     @Resource
     private CollegeInformationMapper collegeInformationMapper;
+
+    @Resource
+    private UserUploadsMapper userUploadsMapper;
+
+    @Resource
+    private PlatformMessageMapper platformMessageMapper;
 
     @Resource
     private CourseExtraInformationMapper courseExtraInformationMapper;
@@ -252,7 +268,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
      * @param courseScheduleROPageRO 分页参数
      * @return 排课表分页信息
      */
-    public PageVO<CourseScheduleWithLiveInfoVO> allPageQueryCourseScheduleService(PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+    public PageVO<TeacherCourseScheduleVO> allPageQueryCourseScheduleService(PageRO<CourseScheduleRO> courseScheduleROPageRO) {
         // 校验参数
         if (Objects.isNull(courseScheduleROPageRO)) {
             log.error("参数缺失");
@@ -282,10 +298,10 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         long totalCount = baseMapper.countCourseSchedulesByConditions(collegeInformationPO.getCollegeName(), courseScheduleROPageRO);
 
         // 获取当前页的数据
-        List<CourseSchedulePO> courseSchedulePOS = baseMapper.getCourseSchedulesByConditions(collegeInformationPO.getCollegeName(), courseScheduleROPageRO);
+        List<TeacherCourseScheduleVO> courseSchedulePOS = baseMapper.getCourseSchedulesByConditions(collegeInformationPO.getCollegeName(), courseScheduleROPageRO);
 
         // 创建并返回分页信息
-        PageVO<CourseScheduleWithLiveInfoVO> result = new PageVO<>(courseScheduleInverter.po2LiveVO(courseSchedulePOS));
+        PageVO<TeacherCourseScheduleVO> result = new PageVO<>(courseSchedulePOS);
         result.setTotal(totalCount);
         result.setCurrent(courseScheduleROPageRO.getPageNumber());
         result.setSize(courseScheduleROPageRO.getPageSize());
@@ -302,7 +318,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
      * @param filter
      * @return
      */
-    public PageVO<CourseScheduleWithLiveInfoVO> allPageQueryCourseScheduleFilter(PageRO<CourseScheduleRO> courseScheduleROPageRO, AbstractFilter filter) {
+    public PageVO<TeacherCourseScheduleVO> allPageQueryCourseScheduleFilter(PageRO<CourseScheduleRO> courseScheduleROPageRO, AbstractFilter filter) {
         // 校验参数
         if (Objects.isNull(courseScheduleROPageRO)) {
             log.error("参数缺失");
@@ -312,7 +328,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         CourseScheduleFilterDataVO courseSchedulePOS = filter.filterCourseSchedule(courseScheduleROPageRO);
 
         // 创建并返回分页信息
-        PageVO<CourseScheduleWithLiveInfoVO> result = new PageVO<>(courseScheduleInverter.po2LiveVO(courseSchedulePOS.getCourseSchedulePOS()));
+        PageVO<TeacherCourseScheduleVO> result = new PageVO<>(courseSchedulePOS.getCourseSchedulePOS());
         result.setTotal(courseSchedulePOS.getTotal());
         result.setCurrent(courseScheduleROPageRO.getPageNumber());
         result.setSize(courseScheduleROPageRO.getPageSize());
@@ -508,7 +524,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
 
     @Transactional(rollbackFor = Exception.class)
-    boolean updateCourseScheduleInfoByTime(CourseSchedulePO courseSchedulePO, Date newDate, String newTime){
+    public boolean updateCourseScheduleInfoByTime(CourseSchedulePO courseSchedulePO, Date newDate, String newTime){
         // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
         List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                 .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
@@ -530,7 +546,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
     @Transactional(rollbackFor = Exception.class)
-    boolean updateCourseScheduleInfoByTeacher(CourseSchedulePO courseSchedulePO, TeacherInformationPO teacherInformationPO){
+    public boolean updateCourseScheduleInfoByTeacher(CourseSchedulePO courseSchedulePO, TeacherInformationPO teacherInformationPO){
         // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
         List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                 .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
@@ -553,6 +569,8 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return true;
     }
 
+    // 修改排课表记录的教师和上课时间
+    @Transactional(rollbackFor = {Exception.class, IllegalArgumentException.class})
     public void updateScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
         if(courseScheduleUpdateROPageRO.getId() == null){
             throw new RuntimeException("没有找到任何排课表信息，更新失败");
@@ -569,12 +587,48 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
                 CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
                         eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
-                boolean b = updateCourseScheduleInfoByTime(courseSchedulePO, start, formattedTime);
-                if(b){
-                    log.info("更新教学时间成功");
-                }else{
-                    throw new RuntimeException("更新成绩失败");
+//                courseSchedulePO.setTeachingDate(start);
+//                courseSchedulePO.setTeachingTime(formattedTime);
+                // 同一个时间、同一个老师、同一个教学班级、同一门课程 要改时间 全改 而且直播间得删除 并且重新让扫描器去重新创建
+                List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                        .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                        .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                        .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
+                        .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
+                        .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                );
+
+                if(courseSchedulePOS.isEmpty()){
+                    throw new IllegalArgumentException("修改排课表失败，没有找到对应的排课表");
                 }
+
+                for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+                    if(courseSchedulePO1.getOnlinePlatform() != null){
+                        // 存在直播间 看一下保利威该直播间是否还存在
+                        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+                                .eq(VideoStreamRecordPO::getId, courseSchedulePO1.getOnlinePlatform()));
+                        if(videoStreamRecordPO == null){
+                            // 不存在直播间 直接修改
+                            courseSchedulePO1.setTeachingDate(start);
+                            courseSchedulePO1.setTeachingTime(formattedTime);
+                            getBaseMapper().updateById(courseSchedulePO1);
+                        }else{
+                            // 修改有直播间记录的排课 不允许
+                            String channelId = videoStreamRecordPO.getChannelId();
+                            if(channelId != null){
+                                throw new IllegalArgumentException("不允许修改已直播过的排课记录");
+                            }
+                        }
+                    }else{
+                        // 不存在直播间 直接修改
+                        courseSchedulePO1.setTeachingDate(start);
+                        courseSchedulePO1.setTeachingTime(formattedTime);
+                        getBaseMapper().updateById(courseSchedulePO1);
+                    }
+                }
+                log.info("更新教学时间成功");
+
+//                throw new RuntimeException("更新成绩失败");
             }
 
             if(courseScheduleUpdateROPageRO.getTeacherName() != null){
@@ -772,4 +826,58 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         }
         return null;
     }
+
+
+    public long generateCourseScheduleListUploadMsg(String uploadFileUrl){
+        String userName = (String) StpUtil.getLoginId();
+        try{
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
+                    eq(PlatformUserPO::getUsername, userName));
+            // 生成一个上传消息 状态为处理中
+            // 获取当前的 LocalDateTime 实例
+            LocalDateTime now = LocalDateTime.now();
+
+            // 使用系统默认时区将 LocalDateTime 转换为 Instant
+            Instant instant = now.atZone(ZoneId.systemDefault()).toInstant();
+
+            // 将 Instant 转换为 java.util.Date
+            Date date = Date.from(instant);
+
+            UserUploadsPO userUploadsPO = new UserUploadsPO();
+            userUploadsPO.setUserName(platformUserPO.getUsername());
+            userUploadsPO.setUploadTime(date);
+            userUploadsPO.setUploadType(UploadType.COURSE_SCHEDULE_LIST.getUpload_type());
+            userUploadsPO.setFileUrl(uploadFileUrl);
+            userUploadsPO.setIsRead(false);
+            int insert = userUploadsMapper.insert(userUploadsPO);
+
+            log.info(userName + " 上传文件的消息已生成 " + insert);
+            Long generatedId = userUploadsPO.getId();
+            PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+            platformMessagePO.setCreatedAt(date);
+            platformMessagePO.setUserId(platformUserPO.getUsername());
+            platformMessagePO.setIsRead(false);
+            platformMessagePO.setRelatedMessageId(generatedId);
+            platformMessagePO.setMessageType(MessageEnum.UPLOAD_MSG.getMessage_name());
+            int insert1 = platformMessageMapper.insert(platformMessagePO);
+            log.info("用户上传文件的消息插入结果 "+ insert1);
+            return generatedId;
+
+        }catch (Exception e){
+            log.error(userName + " 生成上传文件的消息失败 " + e.toString());
+        }
+        return -1;
+    }
+
+
+    /**
+     * 获取课程筛选参数
+     * @param courseScheduleFilterRO 排课表课程筛选参数的其他筛选条件
+     * @param filter
+     * @return
+     */
+    public ScheduleCourseInformationSelectArgs getCoursesArgs(CourseScheduleFilterRO courseScheduleFilterRO, AbstractFilter filter) {
+       return  filter.getCoursesArgs(courseScheduleFilterRO);
+    }
+
 }

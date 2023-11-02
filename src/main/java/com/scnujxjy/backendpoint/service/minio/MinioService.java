@@ -62,17 +62,35 @@ public class MinioService {
     }
 
     /**
+     * 判断文件是否存在
+     * @param fileRelativeUrl 文件的相对路径
+     * @param targetBucketName 文件所在的桶名
+     * @return
+     */
+    public boolean isExist(String fileRelativeUrl, String targetBucketName){
+        boolean exists = false;
+        try {
+            minioClient.statObject(StatObjectArgs.builder().bucket(targetBucketName).object(fileRelativeUrl).build());
+            exists = true;  // 如果没有抛出异常，表示对象存在
+        } catch (ErrorResponseException e) {
+
+            // 对象不存在，exists保持为false
+        } catch (Exception e) {
+
+        }
+
+        return exists;
+    }
+
+    /**
      * 使用学生照片地址获取临时 7天的链接
      * @param fileName
      * @return
      */
     public String searchImage(String fileName) {
         try {
-            boolean exists = minioClient
-                    .statObject(StatObjectArgs.builder().bucket(bucketName).object(fileName).build()) != null;
-
-            if (!exists) {
-                return null; // 文件不存在
+            if(!isExist(fileName, bucketName)){
+                return  null;
             }
 
             String presignedUrl = minioClient.getPresignedObjectUrl(
@@ -166,6 +184,53 @@ public class MinioService {
             throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 使用 Minio 地址获取文件内容
+     * @param minioUrl Minio 文件地址，例如 "排课表导入/import/xuelijiaoyuTest1排课表信息导入（经管学院）(1)-2023-10-29T20:36:33.171.xlsx"
+     * @return 文件的字节流，如果文件不存在则返回 null
+     */
+    public InputStream getFileInputStreamFromMinio(String minioUrl) {
+        try {
+            // 找到第一个斜杠的位置
+            int firstSlashIndex = minioUrl.indexOf('/');
+            if (firstSlashIndex == -1) {
+                log.error("无效的 Minio URL: " + minioUrl);
+                return null;
+            }
+
+            // 提取桶名和文件名
+            String parsedBucketName = minioUrl.substring(0, firstSlashIndex);
+            String fileName = minioUrl.substring(firstSlashIndex + 1);
+
+            // 检查文件是否存在
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket(parsedBucketName).object(fileName).build()) != null;
+
+            if (!exists) {
+                return null; // 文件不存在
+            }
+
+            // 获取文件内容
+            InputStream inputStream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(parsedBucketName)
+                            .object(fileName)
+                            .build());
+
+            return inputStream;
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                return null; // 文件不存在
+            }
+            log.error("从 Minio 获取文件失败: " + e.getMessage());
+            throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("从 Minio 获取文件失败: " + e.getMessage());
+            throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
+        }
+    }
+
 
 
     /**

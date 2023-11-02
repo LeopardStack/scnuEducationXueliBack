@@ -27,6 +27,58 @@
         <if test='courseScheduleFilterROPageRO.studyForm != null'>AND cs.study_form = #{courseScheduleFilterROPageRO.studyForm} </if>
     </sql>
 
+    <sql id="teacherCommonFilters">
+        <if test='entity.grade != null'>AND
+            cs.grade = #{entity.grade} </if>
+        <if test='entity.majorName != null'>AND
+            cs.major_name = #{entity.majorName} </if>
+        <if test='entity.level != null'>AND
+            cs.level = #{entity.level} </if>
+        <if test='entity.studyForm != null'>AND
+            cs.study_form = #{entity.studyForm} </if>
+        <if test='entity.adminClass != null'>AND
+            cs.admin_class = #{entity.adminClass} </if>
+        <if test='entity.teachingClass != null'>AND
+            cs.teaching_class LIKE CONCAT('%', #{entity.teachingClass}, '%') </if>
+        <if test='entity.semester != null'>AND
+            cs.semester = #{entity.semester} </if>
+        <if test='entity.courseName != null'>AND
+            cs.course_name = #{entity.courseName} </if>
+        <if test='entity.teacherUsername != null'>AND
+            cs.teacher_username = #{entity.teacherUsername} </if>
+        <if test='entity.teachingAssistantUsername != null'>AND
+            cs.teaching_assistant_username = #{entity.teachingAssistantUsername} </if>
+        <if test='entity.teachingStartDate != null'>AND
+            DATE_FORMAT(cs.teaching_date, '%Y-%m') = DATE_FORMAT(#{entity.teachingStartDate}, '%Y-%m') </if>
+    </sql>
+
+    <sql id="teacherCommonFiltersDIY">
+        <if test='entity.grade != null'>AND
+            cs.grade = #{entity.grade} </if>
+        <if test='entity.majorName != null'>AND
+            cs.major_name = #{entity.majorName} </if>
+        <if test='entity.level != null'>AND
+            cs.level = #{entity.level} </if>
+        <if test='entity.studyForm != null'>AND
+            cs.study_form = #{entity.studyForm} </if>
+        <if test='entity.adminClass != null'>AND
+            cs.admin_class = #{entity.adminClass} </if>
+        <if test='entity.teachingClass != null'>AND
+            cs.teaching_class LIKE CONCAT('%', #{entity.teachingClass}, '%') </if>
+        <if test='entity.semester != null'>AND
+            cs.semester = #{entity.semester} </if>
+        <if test='entity.courseName != null'>AND
+            cs.course_name = #{entity.courseName} </if>
+        <if test='entity.teacherUsername != null'>AND
+            cs.teacher_username = #{entity.teacherUsername} </if>
+        <if test='entity.teachingAssistantUsername != null'>AND
+            cs.teaching_assistant_username = #{entity.teachingAssistantUsername} </if>
+        <if test='entity.teachingStartDate != null'>AND
+            DATE_FORMAT(cs.teaching_date, '%Y-%m-%d') >= DATE_FORMAT(#{entity.teachingStartDate}, '%Y-%m-%d') </if>
+        <if test='entity.teachingEndDate != null'>AND
+            DATE_FORMAT(#{entity.teachingEndDate}, '%Y-%m-%d') >= DATE_FORMAT(cs.teaching_date, '%Y-%m-%d') </if>
+    </sql>
+
     <select id="selectCoursesInformationCount" resultType="Long">
         SELECT COUNT(*)
         <include refid="commonJoin" />
@@ -34,20 +86,72 @@
         <include refid="commonFilters" />
     </select>
 
+    <!--    获取排课表课程信息   -->
     <select id="selectCoursesInformation" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO">
-        SELECT DISTINCT grade, major_name, class_hours, exam_type,  college, level, study_form, admin_class, teaching_class, course_name, main_teacher_name, main_teacher_id, main_teacher_identity, tutor_name, tutor_id, tutor_identity, teaching_method, teacher_username
-        FROM (
-        SELECT cs.grade, cs.major_name, cs.class_hours, cs.exam_type, ci.college, cs.level, cs.study_form, cs.admin_class, cs.teaching_class, cs.course_name, cs.main_teacher_name, cs.main_teacher_id, cs.main_teacher_identity, cs.tutor_name, cs.tutor_id, cs.tutor_identity, cs.teaching_method, cs.teacher_username
-        <include refid="commonJoin" />
+        SELECT DISTINCT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        course_name, teacher_username, ci.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_assistant_username FROM course_schedule cs
+        LEFT JOIN class_information ci
+        ON cs.grade = ci.grade
+        AND cs.major_name = ci.major_name
+        AND cs.`level` = ci.`level`
+        AND cs.study_form = ci.study_form
         WHERE 1=1
         <include refid="commonFilters" />
-        ORDER BY
-        CASE WHEN DATE(teaching_date) >= CURDATE() THEN 0 ELSE 1 END,
-        ABS(DATEDIFF(DATE(teaching_date), CURDATE()))
         LIMIT #{pageNumber}, #{pageSize}
-        ) AS subquery
     </select>
 
+
+    <!--    获取排课表课程信息   -->
+    <select id="selectCoursesInformationWithoutPage" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO">
+        SELECT DISTINCT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        course_name, teacher_username, ci.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_assistant_username FROM course_schedule cs
+        LEFT JOIN class_information ci
+        ON cs.grade = ci.grade
+        AND cs.major_name = ci.major_name
+        AND cs.`level` = ci.`level`
+        AND cs.study_form = ci.study_form
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <!--    获取教学计划中与排课表所匹配的所有课程 其他课程从教学计划中获取 有成绩的则显示课程已结束 当然对于补考的则另当别论   -->
+    <select id="selectCoursesInformationSchedule" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO">
+        SELECT DISTINCT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        cs.course_name, cs.teacher_username, ci2.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_assistant_username
+        FROM course_information ci
+        LEFT JOIN class_information ci2 ON ci.admin_class = ci2.class_identifier
+        LEFT JOIN course_schedule cs ON ci.grade = cs.grade AND ci2.class_name = cs.admin_class
+        AND ci.`level` = cs.`level` AND ci.study_form = cs.study_form
+        AND ci.course_name = cs.course_name
+        WHERE 1=1
+        <include refid="commonFilters" />
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <!--    获取排课表课程数量 -->
+    <select id="countCoursesInformation" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM (
+        SELECT DISTINCT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        course_name, teacher_username, ci.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_assistant_username
+        FROM course_schedule cs
+        LEFT JOIN class_information ci
+        ON cs.grade = ci.grade
+        AND cs.major_name = ci.major_name
+        AND cs.`level` = ci.`level`
+        AND cs.study_form = ci.study_form
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ) AS subquery;
+
+    </select>
+
+
+    <!--    获取排课表详细信息  -->
     <select id="selectSchedulesInformation" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO">
         SELECT id, grade, class_hours, exam_type, online_platform, major_name, college,
                level, study_form, admin_class, teaching_class, course_name,
@@ -70,5 +174,184 @@
         LIMIT #{pageNumber}, #{pageSize}
         ) AS subquery
     </select>
+
+    <!--    根据学生的教学计划获取其全部课程 -->
+    <select id="selectStudentAllCourses" resultType="com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO">
+        SELECT * FROM course_information ci LEFT JOIN student_status ss
+        ON ci.admin_class = ss.class_identifier
+        WHERE ss.id_number = #{studentIdNumber}
+    </select>
+
+    <!--    根据学生的教学计划 获取其本学期在学课程 -->
+    <select id="selectStudentLearningCoursesByCourseInformation">
+        SELECT
+            ci.*
+        FROM
+            course_information ci
+                LEFT JOIN
+            student_status ss ON ci.admin_class = ss.class_identifier
+        WHERE
+            ss.id_number = '445224199601163016' AND
+                ci.teaching_semester =
+                (
+                    -- 计算学年
+                            (YEAR(CURRENT_DATE) - ss.grade + 1) * 2
+                        -- 根据当前月份确定是春季学期还是秋季学期
+                        - CASE WHEN MONTH(CURRENT_DATE) BETWEEN 1 AND 6 THEN 1 ELSE 0 END
+            );
+    </select>
+
+    <!--    根据学生的排课表来获取其在学课程  -->
+    <select id="selectStudentLearningCourses" resultType="com.scnujxjy.backendpoint.model.ro.teaching_process.StudentLeaingCoursesByScheduleRO">
+        SELECT
+            sub.grade, sub.college, sub.major_name, sub.study_form, sub.level,
+            sub.admin_class, sub.teaching_class, sub.class_hours, sub.exam_type,
+            sub.main_teacher_id, sub.main_teacher_identity, sub.main_teacher_name,
+            sub.tutor_name, sub.tutor_id, sub.tutor_identity,
+            sub.course_name, sub.teacher_username
+        FROM
+            (
+                SELECT
+                    ss.grade, ss.college, ss.major_name, ss.study_form, ss.level,
+                    cs.admin_class, cs.teaching_class, cs.class_hours, cs.exam_type,
+                    cs.main_teacher_id, cs.main_teacher_identity, cs.main_teacher_name,
+                    cs.tutor_name, cs.tutor_id, cs.tutor_identity,
+                    cs.course_name, cs.teacher_username,
+                    ROW_NUMBER() OVER (
+                PARTITION BY cs.course_name, cs.main_teacher_name  -- 在这里指定两个字段
+                ORDER BY ss.grade
+            ) AS rn  -- 使用ROW_NUMBER()分配行号
+                FROM
+                    student_status ss
+                        LEFT JOIN
+                    class_information ci ON ss.class_identifier = ci.class_identifier
+                        LEFT JOIN
+                    course_schedule cs ON ci.grade = cs.grade
+                        AND ci.major_name = cs.major_name
+                        AND ci.study_form = cs.study_form
+                        AND ci.class_name = cs.admin_class
+                        AND ci.level = cs.level
+                WHERE
+                    id_number = #{studentIdNumber}
+            ) AS sub
+        WHERE
+            sub.rn = 1;  -- 选择每个组合的第一条记录
+    </select>
+
+    <!--    获取指定教师的全部授课的排课信息  -->
+    <select id="selectTeacherAllCourses" resultType="com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO">
+        SELECT *  FROM course_schedule WHERE teacher_username=#{teacherUsername}
+    </select>
+
+    <!--    获取指定教师的全部排课表的课程信息  -->
+    <select id="selectTeacherCoursesWithoutDate" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCoursesVO">
+        SELECT DISTINCT cs.id, cs.grade, cs.major_name, cs.level, cs.study_form,
+        cs.admin_class, cs.teaching_class, cs.course_name, ci1.class_identifier, ci2.course_cover
+        FROM course_schedule cs LEFT JOIN class_information ci1
+        ON cs.grade=ci1.grade and cs.major_name=ci1.major_name
+        and cs.`level` = ci1.`level` and cs.study_form=ci1.study_form
+        LEFT JOIN course_information ci2 ON ci2.admin_class=ci1.class_identifier
+        WHERE 1=1
+        <if test='entity.grade != null'>AND
+            cs.grade = #{entity.grade} </if>
+        <if test='entity.majorName != null'>AND
+            cs.major_name = #{entity.majorName} </if>
+        <if test='entity.level != null'>AND
+            cs.level = #{entity.level} </if>
+        <if test='entity.studyForm != null'>AND
+            cs.study_form = #{entity.studyForm} </if>
+        <if test='entity.adminClass != null'>AND
+            cs.admin_class = #{entity.adminClass} </if>
+        <if test='entity.teachingClass != null'>AND
+            cs.teaching_class LIKE CONCAT('%', #{entity.teachingClass}, '%') </if>
+        <if test='entity.semester != null'>AND
+            cs.semester = #{entity.semester} </if>
+        <if test='entity.courseName != null'>AND
+            cs.course_name = #{entity.courseName} </if>
+        <if test='entity.teacherUsername != null'>AND
+            cs.teacher_username = #{entity.teacherUsername} </if>
+        <if test='entity.teachingAssistantUsername != null'>AND
+            cs.teaching_assistant_username = #{entity.teachingAssistantUsername} </if>
+        <if test='entity.teachingStartDate != null'>AND
+            DATE_FORMAT(cs.teaching_date, '%Y-%m') = DATE_FORMAT(#{entity.teachingStartDate}, '%Y-%m') </if>
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <select id="selectTeacherCoursesWithoutDateCount" resultType="long">
+        SELECT COUNT(DISTINCT id)
+        FROM (
+        SELECT DISTINCT cs.id
+        FROM course_schedule cs LEFT JOIN class_information ci1
+        ON cs.grade=ci1.grade and cs.major_name=ci1.major_name
+        and cs.`level` = ci1.`level` and cs.study_form=ci1.study_form
+        LEFT JOIN course_information ci2 ON ci2.admin_class=ci1.class_identifier
+        WHERE 1=1
+        <include refid="teacherCommonFilters" />
+        ) AS sub_query
+    </select>
+
+
+    <select id="getCourseSchedulesByTeacherUserNameRecent" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
+        SELECT *, ci1.class_name, ci2.teaching_semester
+        FROM course_schedule cs
+        LEFT JOIN class_information ci1
+        ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+        and cs.level = ci1.level and cs.study_form = ci1.study_form
+        and cs.admin_class = ci1.class_name
+        LEFT JOIN course_information ci2
+        on ci2.admin_class = ci1.class_identifier
+        and ci2.course_name = cs.course_name
+        WHERE cs.teacher_username = #{teacher_username}
+        ORDER BY
+        CASE
+        WHEN CURDATE() > cs.teaching_date  THEN 1
+        ELSE 0
+        END ASC,
+        cs.teaching_date ASC
+        LIMIT #{pageNumber}, #{pageSize};
+    </select>
+
+    <select id="getCourseSchedulesByTeacherUserNameRecentCount" resultType="Long">
+        SELECT count(*)
+        FROM course_schedule cs
+                 LEFT JOIN class_information ci1
+                           ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+                               and cs.level = ci1.level and cs.study_form = ci1.study_form
+                               and cs.admin_class = ci1.class_name
+                 LEFT JOIN course_information ci2
+                           on ci2.admin_class = ci1.class_identifier
+                               and ci2.course_name = cs.course_name
+        WHERE cs.teacher_username = #{teacher_username}
+    </select>
+
+    <select id="getCourseSchedulesByTeacherUserName" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
+        SELECT *, ci1.class_name, ci2.teaching_semester
+        FROM course_schedule cs
+        LEFT JOIN class_information ci1
+        ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+        and cs.level = ci1.level and cs.study_form = ci1.study_form
+        and cs.admin_class = ci1.class_name
+        LEFT JOIN course_information ci2
+        on ci2.admin_class = ci1.class_identifier
+        and ci2.course_name = cs.course_name
+        WHERE cs.teacher_username = #{teacher_username}
+        <include refid="teacherCommonFiltersDIY" />
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <select id="countCourseSchedulesByTeacherUserName" resultType="Long">
+        SELECT count(*)
+        FROM course_schedule cs
+        LEFT JOIN class_information ci1
+        ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+        and cs.level = ci1.level and cs.study_form = ci1.study_form
+        and cs.admin_class = ci1.class_name
+        LEFT JOIN course_information ci2
+        on ci2.admin_class = ci1.class_identifier
+        and ci2.course_name = cs.course_name
+        WHERE cs.teacher_username = #{teacher_username}
+        <include refid="teacherCommonFiltersDIY" />
+    </select>
+
 
 </mapper>

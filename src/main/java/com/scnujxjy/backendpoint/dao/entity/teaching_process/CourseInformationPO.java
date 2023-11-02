@@ -100,5 +100,10 @@ public class CourseInformationPO implements Serializable {
      */
     private String courseCode;
 
+    /**
+     * 课程封面图 Minio 地址
+     */
+    private String courseCover;
+
 
 }

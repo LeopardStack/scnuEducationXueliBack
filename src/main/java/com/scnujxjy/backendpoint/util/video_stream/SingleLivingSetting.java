@@ -10,6 +10,7 @@ import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.config.LiveGlobalConfig;
+import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -44,7 +45,7 @@ public class SingleLivingSetting {
                                      boolean playRollback, String pureRtcEnabled) throws IOException, NoSuchAlgorithmException {
 
         LiveRequestBody liveRequestBody = new LiveRequestBody();
-        liveRequestBody.setName("有延迟学历教育第一次直播测试");
+        liveRequestBody.setName(livingRoomTitle);
         liveRequestBody.setNewScene("topclass");
         liveRequestBody.setTemplate("ppt");
         // 设置是否开启无延迟
@@ -101,11 +102,31 @@ public class SingleLivingSetting {
 
         if(channel.getCode().equals(200)){
             ChannelResponseData channelResponseData = channel.getData();
-            Integer channelId = channelResponseData.getChannelId();
+
+            String channelID = String.valueOf(channelResponseData.getChannelId());
+            try {
+                // 升级默认助教权限
+                LiveSonChannelInfoListResponse roleInfo = videoStreamUtils.getRoleInfo(channelID);
+                // 获取这个唯一助教的账号
+                String account = roleInfo.getSonChannelInfos().get(0).getAccount();
+
+
+                // 将这个默认助教设置为最高权限
+                boolean b = videoStreamUtils.generateTutor(channelID, "李四", "123456");
+                if (b) {
+                    log.info("生成助教成功!");
+                    String s = videoStreamUtils.generateTutorSSOLink(channelID, account);
+                    log.info("助教的单点登录链接为 " + s);
+                }
+            }catch (Exception e){
+                log.error("生成助教失败" + e.toString());
+            }
+
+
             if(playRollback){
 
                 ChannelInfoData channelInfoData = new ChannelInfoData();
-                channelInfoData.setChannelId(String.valueOf(channelId));
+                channelInfoData.setChannelId(channelID);
                 channelInfoData.setGlobalSettingEnabled("N");
                 channelInfoData.setPlaybackEnabled("Y");
                 channelInfoData.setType("list");
@@ -118,19 +139,18 @@ public class SingleLivingSetting {
                     log.info("频道回放信息包括 " + channelPlayBackInfoResponse);
                     if(channelPlayBackInfoResponse.getCode().equals(200)){
 
-                        log.info(channelId + "回放关闭设置成功");
+                        log.info(channelID + "回放关闭设置成功");
                         log.info("创建的直播间频道 " + channelResponseData.getChannelId() + " 频道密码 " + channelResponseData.getChannelPasswd());
+
                         return channel;
                     }else{
-                        log.info(channelId + "回放关闭设置失败");
+                        log.info(channelID + "回放关闭设置失败");
                     }
                 }catch (Exception e){
-                    log.error("设置 (" + channelId + ") 的频道回放信息失败 " + e.toString());
+                    log.error("设置 (" + channelID + ") 的频道回放信息失败 " + e.toString());
                 }
             }
 
-
-            videoStreamUtils.deleteView(String.valueOf(channelId));
         }else{
             log.error("创建直播间频道失败 " + channel);
         }

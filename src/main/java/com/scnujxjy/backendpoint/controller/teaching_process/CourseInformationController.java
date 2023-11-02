@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.alibaba.excel.EasyExcel;
@@ -297,6 +298,7 @@ public class CourseInformationController {
      * @return 解析结果
      */
     @PostMapping("/upload-excel")
+    @SaCheckPermission("教学计划.导入")
     public SaResult uploadExcel(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new RuntimeException("上传文件不能为空");
@@ -320,5 +322,36 @@ public class CourseInformationController {
     }
 
 
+    /**
+     * 下载教学计划
+     * @param courseInformationROPageRO
+     * @return
+     */
+    @PostMapping("/download_teaching_plans")
+    public SaResult DownloadTeachingPlans(@RequestBody PageRO<CourseInformationRO> courseInformationROPageRO) {
+
+        List<String> roleList = StpUtil.getRoleList();
+        log.info("登录角色 " + roleList);
+        byte[] bytes = null;
+        // 获取访问者 ID
+        if(roleList.isEmpty()){
+            return  SaResult.error("角色信息缺失，获取教学计划失败");
+        }else{
+            if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+                log.info("现在登录的是二级学院的管理员");
+                // 查询二级学院管理员权限范围内的教学计划
+                bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, collegeAdminFilter);
+
+
+            }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+                log.info("现在登录的是学历教育部的管理员");
+                // 查询继续教育学院管理员权限范围内的教学计划
+                bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, managerFilter);
+            }
+        }
+
+        // 返回数据
+        return SaResult.data(bytes);
+    }
 }
 

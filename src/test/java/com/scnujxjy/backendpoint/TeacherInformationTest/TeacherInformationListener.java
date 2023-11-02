@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.TeacherInformationTest;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
@@ -94,7 +95,7 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
     }
 
 
-    public static TeacherInformationPO from(TeacherInformationExcelImportVO vo) {
+    public static TeacherInformationPO from(TeacherInformationExcelImportVO vo, TeacherInformationMapper teacherInformationMapper) {
         TeacherInformationListener listener = new TeacherInformationListener(null);
         Date birthDate = null;
         if(vo.getIdCardNumber() != null && !vo.getIdCardNumber().isEmpty()){
@@ -102,6 +103,24 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
         }
         if (birthDate == null && vo.getBirthDate() != null) {
             birthDate = listener.convertBirthDate(vo.getBirthDate());
+        }
+
+        // 创建教师平台账号
+        String workNumber = vo.getWorkNumber();
+        String idNumber = vo.getIdCardNumber();
+        String teacherUserName = null;
+        List<TeacherInformationPO> teacherInformationPOS = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                eq(TeacherInformationPO::getTeacherUsername, "T" + workNumber));
+        if(teacherInformationPOS.size() == 0){
+            teacherUserName = "T" + workNumber;
+        }else{
+            List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                    eq(TeacherInformationPO::getTeacherUsername, "T" + idNumber));
+            if(teacherInformationPOS1.size() == 0){
+                teacherUserName = "T" + idNumber;
+            }else{
+                throw new IllegalArgumentException("该教师的平台账号无法创建，请提供唯一的工号/学号或者身份证号码");
+            }
         }
 
 
@@ -126,6 +145,8 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
                 .email(vo.getEmail())
                 .startTerm(vo.getStartTerm())
                 .teacherType1(vo.getTeacherType1())
+                .teacherType2(vo.getTeacherType2())
+                .teacherUsername(teacherUserName)
                 // 请注意，我没有为teacherType2提供值，因为VO中没有这个字段，您可能需要进行进一步的处理或提供一个默认值
                 .build();
     }
@@ -246,10 +267,11 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
                         .email(data.getEmail())
                         .startTerm(data.getStartTerm())
                         .teacherType1(data.getTeacherType1())
+                        .teacherType2(data.getTeacherType2())
                         .errorDescription("导入失败，数据库中存在与此相同或相似的老师: " + matchingTeacher.toString())
                         .build());
             } else {
-                TeacherInformationPO teacherInformationPO = from(data);
+                TeacherInformationPO teacherInformationPO = from(data, teacherInformationMapper);
 
                 // 插入数据库
                 teacherInformationMapper.insert(teacherInformationPO);

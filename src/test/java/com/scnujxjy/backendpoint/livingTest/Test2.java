@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.constant.LiveConstant;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
+import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
@@ -99,8 +100,8 @@ public class Test2 {
      */
     @Test
     public void test4(){
-        String channelID = "4328461";
-        String channelID1 = "4318691";
+        String channelID = "4400659";
+        String channelID1 = "4400659";
         try {
             ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
             ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId(channelID1);
@@ -125,6 +126,47 @@ public class Test2 {
             log.info("频道回放信息包括 " + channelPlayBackInfoResponse);
         }catch (Exception e){
             log.error("获取 (" + channelID + ") 的频道信息失败 " + e.toString());
+        }
+    }
+
+    /**
+     * 获取讲师的单点登录链接
+     */
+    @Test
+    public void testTeacherLogin(){
+        String channelID = "4400659";
+        try {
+            String s = videoStreamUtils.generateTeacherSSOLink(channelID);
+            ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
+            log.info("频道信息" + channelInfoByChannelId);
+            log.info("单点登录链接" + s);
+        }catch (Exception e){
+            log.error(e.toString());
+        }
+    }
+
+    /**
+     * 获取指定频道下的角色信息
+     */
+    @Test
+    public void testGetChannelRoleInfo(){
+        String channelID = "4401416";
+        try {
+            LiveSonChannelInfoListResponse roleInfo = videoStreamUtils.getRoleInfo(channelID);
+            // 获取这个唯一助教的账号
+            String account = roleInfo.getSonChannelInfos().get(0).getAccount();
+
+
+            // 将这个默认助教设置为最高权限
+            boolean b = videoStreamUtils.generateTutor(channelID, "李四",  "123456");
+            if(b){
+                log.info("生成助教成功!");
+                String s = videoStreamUtils.generateTutorSSOLink(channelID, account);
+                log.info("助教的单点登录链接为 " + s);
+            }
+            log.info("角色信息" + roleInfo);
+        }catch (Exception e){
+            log.error(e.toString());
         }
     }
 

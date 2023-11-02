@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,58 +22,71 @@ import lombok.experimental.Accessors;
 @Builder
 public class CourseInformationVO {
 
+    @ExcelIgnore
     private Long id;
 
     @ExcelProperty(index = 0, value = "年级")
     private String grade;
 
-    @ExcelProperty(index = 1, value = "专业名称")
+    @ExcelProperty(index = 1, value = "学院")
+    private String college;
+
+    @ExcelProperty(index = 2, value = "专业名称")
     private String majorName;
 
-    @ExcelProperty(index = 2, value = "层次")
+    @ExcelProperty(index = 3, value = "层次")
     private String level;
 
-    @ExcelProperty(index = 3, value = "学习形式")
+    @ExcelProperty(index = 4, value = "学习形式")
     private String studyForm;
 
-    @ExcelProperty(index = 4, value = "行政班别")
+
+    @ExcelIgnore
     private String adminClass;
 
-    @ExcelProperty(index = 5, value = "课程名称")
+    /**
+     * 班级名称
+     */
+    @ExcelProperty(index = 5, value = "行政班别")
+    private String className;
+
+    @ExcelProperty(index = 6, value = "课程名称")
     private String courseName;
 
-    @ExcelProperty(index = 6, value = "学时数")
+    @ExcelProperty(index = 7, value = "学时数")
     private Integer studyHours;
 
-    @ExcelProperty(index = 7, value = "考核类型")
+    @ExcelProperty(index = 8, value = "考核类型")
     private String assessmentType;
 
-    @ExcelProperty(index = 8, value = "授课方式")
+    @ExcelProperty(index = 9, value = "授课方式")
     private String teachingMethod;
 
-    @ExcelProperty(index = 9, value = "课程类型")
+    @ExcelProperty(index = 10, value = "课程类型")
     private String courseType;
 
-    @ExcelProperty(index = 10, value = "学分")
+    @ExcelProperty(index = 11, value = "学分")
     private Integer credit;
 
-    @ExcelProperty(index = 11, value = "授课学期")
+    @ExcelProperty(index = 12, value = "授课学期")
     private String teachingSemester;
 
     /**
      * 如果需要覆盖则读取它
      */
-    @ExcelProperty(index = 12, value = "备注")
+    @ExcelProperty(index = 13, value = "备注")
     private String remark;
 
     /**
      * 课程编号
      */
+    @ExcelProperty(index = 14, value = "课程编号")
     private String courseCode;
 
-
     /**
-     * 班级名称
+     * 课程封面图 Minio 地址
      */
-    private String className;
+    @ExcelIgnore
+    private String courseCover;
+
 }

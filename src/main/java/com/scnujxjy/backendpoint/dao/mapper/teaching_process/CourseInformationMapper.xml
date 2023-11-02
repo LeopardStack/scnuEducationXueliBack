@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper">
+
+    <sql id="commonJoin">
+        FROM course_information c
+        JOIN class_information ci ON c.admin_class = ci.class_identifier
+    </sql>
+
+    <sql id="commonFiltersForCourses">
+        <if test='filter.grade != null'>AND ci.grade = #{filter.grade}</if>
+        <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
+        <if test='filter.majorName != null'>AND c.major_name = #{filter.majorName}</if>
+        <if test='filter.level != null'>AND ci.level = #{filter.level}</if>
+        <if test='filter.studyForm != null'>AND ci.study_form = #{filter.studyForm}</if>
+        <if test='filter.semester != null'>AND c.teaching_semester = #{filter.semester}</if>
+        <if test='filter.adminClassName != null'>AND ci.class_name = #{filter.adminClassName}</if>
+        <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
+        <if test='filter.teachingMethod != null'>AND c.teaching_method = #{filter.teachingMethod}</if>
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='filter.grade != null'>AND c.grade = #{filter.grade}</if>
+        <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
+        <if test='filter.majorName != null'>AND c.major_name = #{filter.majorName}</if>
+        <if test='filter.level != null'>AND c.level = #{filter.level}</if>
+        <if test='filter.studyForm != null'>AND c.study_form = #{filter.studyForm}</if>
+        <if test='filter.adminClass != null'>AND c.admin_class = #{filter.adminClass}</if>
+        <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
+        <if test='filter.studyHours != null'>AND c.study_hours = #{filter.studyHours}</if>
+        <if test='filter.assessmentType != null'>AND c.assessment_type = #{filter.assessmentType}</if>
+        <if test='filter.teachingMethod != null'>AND c.teaching_method = #{filter.teachingMethod}</if>
+        <if test='filter.courseType != null'>AND c.course_type = #{filter.courseType}</if>
+        <if test='filter.credit != null'>AND c.credit = #{filter.credit}</if>
+        <if test='filter.semester != null'>AND c.teaching_semester = #{filter.semester}</if>
+        <if test='filter.courseCode != null'>AND c.course_code = #{filter.courseCode}</if>
+        <if test='filter.className != null'>AND ci.class_name = #{filter.className}</if>
+    </sql>
+
+    <select id="selectByFilterAndPage" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
+        SELECT c.*, ci.class_name, ci.college
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
+        <if test='pageSize != null and offset != null'>
+        LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+
+    <select id="getCountByFilterAndPage" resultType="Long">
+        SELECT count(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="selectSingleCourse" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
+        SELECT * FROM course_information ci
+        LEFT JOIN class_information ci2 ON ci.admin_class = ci2.class_identifier
+        WHERE ci.grade = #{filter.grade} and ci.`level` = #{filter.level}
+        and ci.study_form = #{filter.studyForm} and ci.admin_class = #{filter.className}
+          and ci.course_name = #{filter.courseName};
+    </select>
+
+    <select id="getDistinctGrades" resultType="String">
+        select distinct grade from course_information ci
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+    <select id="getDistinctCollegeNames" resultType="String">
+        select distinct ci2.college from course_information ci
+        LEFT JOIN class_information ci2
+        ON ci.admin_class=ci2.class_identifier
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+    <select id="getDistinctStudyForms" resultType="String">
+        select distinct ci2.study_form from course_information ci
+        LEFT JOIN class_information ci2
+        ON ci.admin_class=ci2.class_identifier
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+    <select id="getDistinctClassNames" resultType="String">
+        select distinct ci2.class_name from course_information ci
+        LEFT JOIN class_information ci2
+        ON ci.admin_class=ci2.class_identifier
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+    <select id="getDistinctLevels" resultType="String">
+        select distinct ci2.level from course_information ci
+        LEFT JOIN class_information ci2
+        ON ci.admin_class=ci2.class_identifier
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+    <select id="getDistinctMajorNames" resultType="String">
+        select distinct ci.major_name from course_information ci
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+
+    <select id="getDistinctSemasters" resultType="String">
+        select distinct ci.teaching_semester from course_information ci
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+
+    <select id="getDistinctCourseNames" resultType="String">
+        select distinct ci.course_name from course_information ci
+        LEFT JOIN class_information ci2
+        ON ci.admin_class=ci2.class_identifier
+        WHERE 1=1
+        <include refid="commonFiltersForCourses" />
+    </select>
+
+
+</mapper>

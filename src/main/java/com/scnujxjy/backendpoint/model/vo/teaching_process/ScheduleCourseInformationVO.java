@@ -87,9 +87,20 @@ public class ScheduleCourseInformationVO implements Serializable {
      */
     private String tutorIdentity;
 
+    /**
+     * 授课方式
+     */
     private String teachingMethod;
 
+    /**
+     * 主讲教师用户名
+     */
     private String teacherUsername;
+
+    /**
+     * 辅导教师用户名
+     */
+    private String teachingAssistantUsername;
 
     /**
      * 课程学习时长
@@ -100,4 +111,9 @@ public class ScheduleCourseInformationVO implements Serializable {
      * 课程类型
      */
     private String examType;
+
+    /**
+     * 课程封面 Minio 地址
+     */
+    private String courseCover;
 }

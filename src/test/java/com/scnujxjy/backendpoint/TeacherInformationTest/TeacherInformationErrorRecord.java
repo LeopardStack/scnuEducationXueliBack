@@ -72,6 +72,9 @@ public class TeacherInformationErrorRecord {
     @ExcelProperty(index = 19, value = "教师类型1")
     private String teacherType1;
 
-    @ExcelProperty(index = 20, value = "导入失败原因")
+    @ExcelProperty(index = 20, value = "教师类型2")
+    private String teacherType2;
+
+    @ExcelProperty(index = 21, value = "导入失败原因")
     private String errorDescription;
 }

@@ -52,6 +52,11 @@ public class PlatformUserPO implements Serializable {
      */
     private String username;
 
+    /**
+     * 用户姓名
+     */
+    private String name;
+
 
     /**
      * 微信 openId

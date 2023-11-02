@@ -40,6 +40,11 @@ public class CourseScheduleFilterRO implements Serializable {
     String college;
 
     /**
+     * 专业名称
+     */
+    String majorName;
+
+    /**
      * 学习形式
      */
     String studyForm;
@@ -64,11 +69,11 @@ public class CourseScheduleFilterRO implements Serializable {
      */
     String teachingClassName;
 
-
     /**
-     * 专业名称
+     * 授课方式
      */
-    String majorName;
+    String teachingMethod;
+
     /**
      * 课程名称
      */

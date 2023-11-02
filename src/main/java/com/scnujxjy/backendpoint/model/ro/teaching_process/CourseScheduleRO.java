@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro.teaching_process;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,6 +54,11 @@ public class CourseScheduleRO {
      * 学生人数
      */
     private Integer studentCount;
+
+    /**
+     * 学期
+     */
+    private String semester;
 
     /**
      * 课程名称
@@ -119,15 +125,13 @@ public class CourseScheduleRO {
      */
     private Date teachingDate;
 
-    /**
-     * 授课开始日期
-     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date teachingStartDate;
 
-    /**
-     * 授课结束日期
-     */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private Date teachingEndDate;
+
+
 
     /**
      * 授课时间
@@ -135,7 +139,12 @@ public class CourseScheduleRO {
     private String teachingTime;
 
     /**
-     * 教师平台用户名
+     * 主讲教师平台用户名
      */
     private String teacherUsername;
+
+    /**
+     * 辅导教师平台用户名
+     */
+    private String teachingAssistantUsername;
 }
