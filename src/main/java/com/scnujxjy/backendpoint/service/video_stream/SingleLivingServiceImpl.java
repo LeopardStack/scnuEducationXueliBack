@@ -306,7 +306,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             liveChannelInfoRequest.setChannelId(channelId);
             liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
-//            Assert.assertNotNull(liveChannelInfoResponse);
             if (liveChannelInfoResponse != null) {
                 //to do something ......K4zqkS
                 log.debug("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
