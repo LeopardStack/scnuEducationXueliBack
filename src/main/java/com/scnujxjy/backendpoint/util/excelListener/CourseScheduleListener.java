@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
@@ -160,30 +161,35 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
         // 将读取到的数据插入到数据库中
         try {
 
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(data.getTeachingDate());
+            try {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(data.getTeachingDate());
 
-            // 全角转半角
-            String teachingTime = data.getTeachingTime().replace("：", ":").replace("－", "-").replace("—", "-");
+                // 全角转半角
+                String teachingTime = data.getTeachingTime().replace("：", ":").replace("－", "-").replace("—", "-");
 
 
-            String[] timeParts = teachingTime.split("[:-]");
-            // 这会把 "8:30-11:30" 分为 "8", "30", "11", "30"
-            // 开始时间
-            int startHour = Integer.parseInt(timeParts[0].trim());
-            int startMinute = Integer.parseInt(timeParts[1].trim());
-            calendar.set(Calendar.HOUR_OF_DAY, startHour);
-            calendar.set(Calendar.MINUTE, startMinute);
-            Date startDateTime = calendar.getTime();
+                String[] timeParts = teachingTime.split("[:-]");
+                // 这会把 "8:30-11:30" 分为 "8", "30", "11", "30"
+                // 开始时间
+                int startHour = Integer.parseInt(timeParts[0].trim());
+                int startMinute = Integer.parseInt(timeParts[1].trim());
+                calendar.set(Calendar.HOUR_OF_DAY, startHour);
+                calendar.set(Calendar.MINUTE, startMinute);
+                Date startDateTime = calendar.getTime();
 
-            // 结束时间
-            int endHour = Integer.parseInt(timeParts[2].trim());
-            int endMinute = Integer.parseInt(timeParts[3].trim());
-            calendar.set(Calendar.HOUR_OF_DAY, endHour);
-            calendar.set(Calendar.MINUTE, endMinute);
-            Date endDateTime = calendar.getTime();
+                // 结束时间
+                int endHour = Integer.parseInt(timeParts[2].trim());
+                int endMinute = Integer.parseInt(timeParts[3].trim());
+                calendar.set(Calendar.HOUR_OF_DAY, endHour);
+                calendar.set(Calendar.MINUTE, endMinute);
+                Date endDateTime = calendar.getTime();
 
-            data.setTeachingTime(teachingTime);
+                data.setTeachingTime(teachingTime);
+            }catch (Exception e){
+                throw new RuntimeException("上课时间错误: " + data.getTeachingDate() + " " + data.getTeachingTime()
+                + " 上课时间请按照标准格式来写  eg.2023-10-16 15:00-17:00");
+            }
 
             // 你现在可以使用exactDateTime变量，这是一个具体的时间点。
 
@@ -197,10 +203,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             if (grade.matches("^\\d+$")) {
                 // grade 是一个整数
             } else {
-                // grade 不是一个整数
-                // 你可以在这里处理错误或抛出异常
-                // 使用正则表达式去除所有中文字符
-                grade = grade.replaceAll("[\u4e00-\u9fa5]", "");
+                throw new RuntimeException("年级错误: " + data.getGrade() + "年级必须是整数 ");
             }
 
 
@@ -434,7 +437,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     String workNumber = data.getMainTeacherId();    // 获取 Excel 中的主讲教师工号/学号
                     String idNumber = data.getMainTeacherIdentity();    // 获取 Excel 中的主讲教师的身份证号码
                     if (workNumber == null) {
-                        throw new RuntimeException("系统师资库中存在多名同名同姓的教师，请提供工号/学号");
+                        throw new RuntimeException("系统师资库中存在多名同名同姓的助教，请提供工号/学号");
                     }
                     List<TeacherInformationPO> tutorTeachers1 = teacherInformationMapper.selectByWorkNumber(workNumber.trim());
                     if (tutorTeachers.size() == 1) {
@@ -442,14 +445,14 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                         data.setTeachingAssistantUsername(teacherInformationPO.getTeacherUsername());
                     } else {
                         if (idNumber == null) {
-                            throw new RuntimeException("系统师资库中存在多名同名同姓的教师，请提供身份证号码");
+                            throw new RuntimeException("系统师资库中存在多名同名同姓的助教，请提供身份证号码");
                         }
                         List<TeacherInformationPO> tutorTeachers2 = teacherInformationMapper.selectByIdCardNumber(idNumber.trim());
                         if (tutorTeachers2.size() == 1) {
                             TeacherInformationPO teacherInformationPO = tutorTeachers2.get(0);
                             data.setTeachingAssistantUsername(teacherInformationPO.getTeacherUsername());
                         } else {
-                            throw new RuntimeException("系统师资库中存在多名同名同姓的教师，请提供工号/学号或者身份证号码");
+                            throw new RuntimeException("系统师资库中存在多名同名同姓的助教，请提供工号/学号或者身份证号码");
                         }
                     }
                 }
@@ -457,7 +460,20 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
 
             log.info("插入的一条数据为 " + outputData);
+            // 插入之前还要检查一下 online_platform 字段 看其是否是已经上过的可
+            String onlinePlatform = data.getOnlinePlatform();
+            if(onlinePlatform != null && !onlinePlatform.trim().isEmpty()){
+                if(LiveStatusEnum.END.status.equals(onlinePlatform)){
+
+                }else{
+                    data.setOnlinePlatform(null);
+                }
+            }
+
             // 年级、层次、学习形式、专业名称、行政班别、教学班别都没问题了 主讲老师也能找到唯一一个 接下来就可以将此排课记录写入数据库
+            if(data.getTeacherUsername() == null){
+                throw new IllegalArgumentException("非法数据 获取不到主讲老师的用户名");
+            }
             insertCourseScheduleData(data, outputData);
 
         }catch (Exception e){

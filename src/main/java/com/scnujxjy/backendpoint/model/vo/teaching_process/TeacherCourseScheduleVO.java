@@ -104,4 +104,9 @@ public class TeacherCourseScheduleVO implements Serializable {
      * 频道号
      */
     private String channelId;
+
+    /**
+     * 课程封面
+     */
+    private String courseCover;
 }

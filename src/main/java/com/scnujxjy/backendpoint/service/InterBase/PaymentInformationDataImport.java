@@ -111,30 +111,32 @@ public class PaymentInformationDataImport {
 
             String feeDateString = studentData.get("RQ");
             Date feeDate = null;
-            try {
-                feeDate = dateFormat1.parse(feeDateString);
-            } catch (ParseException e) {
+            if(feeDateString != null){
                 try {
-                    feeDate = dateFormat2.parse(feeDateString);
-                } catch (ParseException e1) {
+                    feeDate = dateFormat1.parse(feeDateString);
+                } catch (ParseException e) {
                     try {
-                        feeDate = dateFormat3.parse(feeDateString);
-                    } catch (ParseException e2) {
-                        errorPaymentInfoData.setStudentNumber(studentData.get("XHAO"));
-                        errorPaymentInfoData.setName(studentData.get("XM"));
-                        errorPaymentInfoData.setIdCardNumber(studentData.get("SFZH"));
-                        errorPaymentInfoData.setPaymentCategory(studentData.get("LB"));
-                        errorPaymentInfoData.setAcademicYear(studentData.get("XN"));
-                        errorPaymentInfoData.setPaymentType(studentData.get("JFFS"));
+                        feeDate = dateFormat2.parse(feeDateString);
+                    } catch (ParseException e1) {
+                        try {
+                            feeDate = dateFormat3.parse(feeDateString);
+                        } catch (ParseException e2) {
+                            errorPaymentInfoData.setStudentNumber(studentData.get("XHAO"));
+                            errorPaymentInfoData.setName(studentData.get("XM"));
+                            errorPaymentInfoData.setIdCardNumber(studentData.get("SFZH"));
+                            errorPaymentInfoData.setPaymentCategory(studentData.get("LB"));
+                            errorPaymentInfoData.setAcademicYear(studentData.get("XN"));
+                            errorPaymentInfoData.setPaymentType(studentData.get("JFFS"));
 //                errorPaymentInfoData.setam(studentData.get("JFFS"));
-                        errorPaymentInfoData.setErrorReason(e.toString());
-                        errorList.add(errorPaymentInfoData);
-                        log.error("缴费日期格式解析失败 " + e2.toString());
-                    }
+                            errorPaymentInfoData.setErrorReason(e.toString());
+                            errorList.add(errorPaymentInfoData);
+                            log.error("缴费日期格式解析失败 " + e2.toString());
+                        }
 
+                    }
                 }
+                paymentInfo.setPaymentDate(feeDate);
             }
-            paymentInfo.setPaymentDate(feeDate);
 
             paymentInfo.setPaymentCategory(studentData.get("LB"));
             paymentInfo.setAcademicYear(studentData.get("XN"));

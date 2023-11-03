@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -43,17 +44,53 @@ public class StudentFilter extends AbstractFilter {
         }
 
         // 使用 studentStatusMapper 获取学生的班级数据
-        StudentStatusPO studentStatusPOS = studentStatusMapper.
-                selectOne(Wrappers.<StudentStatusPO>lambdaQuery().eq(StudentStatusPO::getIdNumber, platformUserPO.getUsername()));
+        // 要考虑多学籍问题
+        // 只获取里面最大年级的
+//        StudentStatusPO studentStatusPOS = studentStatusMapper.
+//                selectOne(Wrappers.<StudentStatusPO>lambdaQuery().eq(StudentStatusPO::getIdNumber, platformUserPO.getUsername()));
+        // 获取与身份证号匹配的所有学籍信息
+        List<StudentStatusPO> studentStatusList = studentStatusMapper.selectList(
+                Wrappers.<StudentStatusPO>lambdaQuery().eq(StudentStatusPO::getIdNumber, platformUserPO.getUsername())
+        );
+
+// 使用流处理从所有学籍信息中筛选出最大年级的记录
+        StudentStatusPO maxGradeStatus = studentStatusList.stream()
+                .max(Comparator.comparing(StudentStatusPO::getGrade))
+                .orElse(null); // 如果没有找到任何记录，则返回null
+
         // 根据学籍信息中的班级标识 来获取班级信息 主要是年级、层次、学习形式、行政班别 从而进一步获取相应的排课表
         ClassInformationPO classInformationPO = classInformationMapper.selectOne(Wrappers.<ClassInformationPO>lambdaQuery().
-                eq(ClassInformationPO::getClassIdentifier, studentStatusPOS.getClassIdentifier()));
+                eq(ClassInformationPO::getClassIdentifier, maxGradeStatus.getClassIdentifier()));
 
 
 
         // 使用 courseScheduleMapper 获取数据
-        List<TeacherCourseScheduleVO> courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByStudentIdNumber(classInformationPO,
-                courseScheduleFilter);
+        List<TeacherCourseScheduleVO> courseSchedulePOS = new ArrayList<>();
+
+        CourseScheduleRO entity = new CourseScheduleRO();
+        BeanUtils.copyProperties(courseScheduleFilter.getEntity(), entity);
+        CourseScheduleRO entity1 = courseScheduleFilter.getEntity();
+        // 配置好 年级、专业、层次、学习形式、班级名称
+        entity.setGrade(classInformationPO.getGrade());
+        entity.setMajorName(classInformationPO.getMajorName());
+        entity.setLevel(classInformationPO.getLevel());
+        entity.setStudyForm(classInformationPO.getStudyForm());
+        entity.setAdminClass(classInformationPO.getClassName());
+        long total = 0;
+        if(scnuXueliTools.areAllFieldsNull(entity1)){
+            // 默认获取最近的排课
+            courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByStudentInfoRecent(entity,
+                    (courseScheduleFilter.getPageNumber()-1) * courseScheduleFilter.getPageSize(),
+                    courseScheduleFilter.getPageSize());
+            total =  courseScheduleMapper.getCourseSchedulesByStudentInfoRecentCount(entity);
+        }else{
+            courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByStudentInfo(entity,
+                    (courseScheduleFilter.getPageNumber()-1) * courseScheduleFilter.getPageSize(),
+                    courseScheduleFilter.getPageSize());
+            total =  courseScheduleMapper.countCourseSchedulesByStudentInfo(entity);
+        }
+
+
         for(TeacherCourseScheduleVO teacherCourseScheduleVO: courseSchedulePOS){
             String onlinePlatform = teacherCourseScheduleVO.getOnlinePlatform();
             if(onlinePlatform == null){
@@ -61,43 +98,24 @@ public class StudentFilter extends AbstractFilter {
             }else{
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>().
                         eq(VideoStreamRecordPO::getId, onlinePlatform));
-                String channelId = videoStreamRecordPO.getChannelId();
-                teacherCourseScheduleVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
-                teacherCourseScheduleVO.setChannelId(channelId);
+                if(videoStreamRecordPO != null){
+                    String channelId = videoStreamRecordPO.getChannelId();
+                    teacherCourseScheduleVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                    teacherCourseScheduleVO.setChannelId(channelId);
+                }else{
+                    log.info("获取排课表信息没有直播间信息" + teacherCourseScheduleVO);
+
+                    CourseSchedulePO courseSchedulePO = courseScheduleMapper.selectById(teacherCourseScheduleVO.getId());
+                    teacherCourseScheduleVO.setOnlinePlatform(null);
+                    courseSchedulePO.setOnlinePlatform(null);
+                    int i = courseScheduleMapper.updateById(courseSchedulePO);
+                    log.info("删除不存在的直播间 " + teacherCourseScheduleVO);
+                }
+
             }
         }
 
-        // 对courseSchedulePOS列表进行排序
-        Collections.sort(courseSchedulePOS, new Comparator<TeacherCourseScheduleVO>() {
-            @Override
-            public int compare(TeacherCourseScheduleVO o1, TeacherCourseScheduleVO o2) {
-                String status1 = o1.getLivingStatus();
-                String status2 = o2.getLivingStatus();
 
-                // 如果两个元素的livingStatus都是“未开始”或“已终止”，保持它们的顺序不变
-                if ((status1.equals(LiveStatusEnum.UN_START0.status) || status1.equals(LiveStatusEnum.OVER.status)) &&
-                        (status2.equals(LiveStatusEnum.UN_START0.status) || status2.equals(LiveStatusEnum.OVER.status))) {
-                    return 0;
-                }
-
-                // 如果第一个元素的livingStatus是“未开始”或“已终止”，将其放在后面
-                if (status1.equals(LiveStatusEnum.UN_START0.status) || status1.equals(LiveStatusEnum.OVER.status)) {
-                    return 1;
-                }
-
-                // 如果第二个元素的livingStatus是“未开始”或“已终止”，将其放在前面
-                if (status2.equals(LiveStatusEnum.UN_START0.status) || status2.equals(LiveStatusEnum.OVER.status)) {
-                    return -1;
-                }
-
-                // 在所有其他情况下，保持两个元素的顺序不变
-                return 0;
-            }
-        });
-
-
-        long total =  courseScheduleMapper.countCourseSchedulesByStudentIdNumber(classInformationPO,
-                courseScheduleFilter);
         courseScheduleFilterDataVO.setCourseSchedulePOS(courseSchedulePOS);
         courseScheduleFilterDataVO.setTotal(total);
         return courseScheduleFilterDataVO;

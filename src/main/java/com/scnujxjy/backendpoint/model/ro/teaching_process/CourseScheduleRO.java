@@ -125,10 +125,10 @@ public class CourseScheduleRO {
      */
     private Date teachingDate;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm", timezone="Asia/Shanghai")
     private Date teachingStartDate;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm", timezone="Asia/Shanghai")
     private Date teachingEndDate;
 
 

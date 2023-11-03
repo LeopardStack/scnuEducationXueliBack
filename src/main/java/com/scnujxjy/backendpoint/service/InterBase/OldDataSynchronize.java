@@ -411,9 +411,12 @@ public class OldDataSynchronize {
         try {
             PaymentInformationDataImport paymentInformationDataImport = new PaymentInformationDataImport();
             paymentInformationDataImport.setUpdateAny(updateAny);
+            ArrayList<HashMap<String, String>> studentFees = new ArrayList<>();
+            for(int i = 2023; i > 2000; i--){
+                studentFees.addAll(getStudentFees(String.valueOf(i)));
+            }
 
-            ArrayList<HashMap<String, String>> teachingPlans = getTeachingPlans();
-            paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + teachingPlans.size());
+            paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + studentFees.size());
 
             Integer integer = paymentInfoMapper.selectCount(null);
             SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
@@ -429,7 +432,7 @@ public class OldDataSynchronize {
 
             }
 
-            for (HashMap<String, String> hashMap : teachingPlans) {
+            for (HashMap<String, String> hashMap : studentFees) {
 
                 paymentInformationDataImport.queue.put(hashMap); // Put the object in the queue
             }

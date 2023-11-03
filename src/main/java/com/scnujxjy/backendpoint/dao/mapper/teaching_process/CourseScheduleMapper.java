@@ -57,7 +57,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      * 根据 主讲教师姓名、工号(学号)来获取所有的教学计划
      *
      * @param main_teacher_name 主讲教师姓名
-     * @param main_teacher_id 主讲教师工号（学号）
+     * @param main_teacher_id   主讲教师工号（学号）
      * @return 排课表集合，类型为 CourseSchedulePO
      */
     @Select("SELECT * FROM course_schedule WHERE main_teacher_name = #{main_teacher_name} AND main_teacher_id = #{main_teacher_id}")
@@ -66,7 +66,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     /**
      * 根据 主讲教师姓名、身份证号码来获取所有的教学计划
      *
-     * @param main_teacher_name 主讲教师姓名
+     * @param main_teacher_name     主讲教师姓名
      * @param main_teacher_identity 主讲教师身份证号码
      * @return 排课表集合，类型为 CourseSchedulePO
      */
@@ -77,8 +77,8 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      * 根据主讲教师姓名和工号（或身份证号码）来更新排课表中的平台账号字段
      *
      * @param main_teacher_name 主讲教师姓名
-     * @param main_teacher_id 主讲教师工号（或身份证号码）
-     * @param platform_account 教师的平台账号
+     * @param main_teacher_id   主讲教师工号（或身份证号码）
+     * @param platform_account  教师的平台账号
      */
     @Update("<script>"
             + "UPDATE course_schedule SET teacher_username = #{platform_account} "
@@ -99,6 +99,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取指定学院排课表中的年级数（不重复）
+     *
      * @param collegeName
      * @return
      */
@@ -214,6 +215,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取指定学院的排课表记录
+     *
      * @param collegeName
      * @return
      */
@@ -231,6 +233,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 动态条件查询指定学院的排课表记录
+     *
      * @param collegeName
      * @param ro
      * @return
@@ -241,6 +244,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 动态条件查询指定学院的排课表记录总数目
+     *
      * @param collegeName
      * @param ro
      * @return
@@ -252,6 +256,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 动态条件选择 教师的排课表
+     *
      * @param teacher_username
      * @param ro
      * @return
@@ -265,6 +270,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 选择最近的排课记录
+     *
      * @param teacher_username
      * @return
      */
@@ -272,13 +278,13 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
                                                                             @Param("pageNumber") Long pageNumber,
                                                                             @Param("pageSize") Long pageSize);
 
-    long getCourseSchedulesByTeacherUserNameRecentCount(@Param("teacher_username") String teacher_username,
-                                                        @Param("pageNumber") Long pageNumber,
-                                                        @Param("pageSize") Long pageSize);
+    long getCourseSchedulesByTeacherUserNameRecentCount(@Param("teacher_username") String teacher_username);
+
     /**
      * 动态条件查询指定学生的排课表记录总数目
+     *
      * @param class_information 班级信息
-     * @param ro 筛选条件
+     * @param ro                筛选条件
      * @return
      */
 
@@ -287,16 +293,18 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 动态条件查询指定学生的排课表记录
+     *
      * @param class_information 班级信息
-     * @param ro 筛选条件
+     * @param ro                筛选条件
      * @return
      */
     @SelectProvider(type = CourseScheduleSqlProvider.class, method = "getCourseSchedulesByStudentIdNumber")
     List<TeacherCourseScheduleVO> getCourseSchedulesByStudentIdNumber(@Param("class_information") ClassInformationPO class_information,
-                                                               @Param("ro") PageRO<CourseScheduleRO> ro);
+                                                                      @Param("ro") PageRO<CourseScheduleRO> ro);
 
     /**
      * 动态条件查询指定老师的排课表记录总数目
+     *
      * @param teacher_username
      * @param ro
      * @return
@@ -308,6 +316,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     /**
      * 根据 年级、专业名称、层次、学习形式、行政班别、主讲教师名字、授课日期、授课时间是否在数据库中
      * 存在一模一样的记录，存在则说明排课重复，需要选择是否覆盖
+     *
      * @param courseSchedulePO 导入的排课表记录
      * @return
      */
@@ -345,12 +354,9 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     int updateCourseScheduleByConditions(CourseSchedulePO courseSchedulePO);
 
 
-
-
-
-
     /**
      * 获取所有行政班别数据（不重复）
+     *
      * @return
      */
     @Select("SELECT DISTINCT admin_class " +
@@ -370,6 +376,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 通过 年级、专业名称、层次、学习形式、行政班别、课程名称、主讲教师、授课日期、授课时间 来查看是否存在重复的排课
+     *
      * @param courseSchedulePO 排课表记录
      * @return
      */
@@ -387,6 +394,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 通过 年级、专业名称、层次、学习形式、行政班别、教学班别、课程名称、主讲教师、授课日期、授课时间 来获取重复的排课
+     *
      * @param courseSchedulePO
      * @return
      */
@@ -418,7 +426,6 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     List<CourseSchedulePO> findRecordsWithinCertainHour(@Param("hour") int hour);
 
 
-
     @Select("SELECT * " +
             "FROM course_schedule " +
             "WHERE teaching_date = (SELECT MIN(teaching_date) " +
@@ -429,6 +436,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表课程信息
+     *
      * @param courseScheduleFilterROPageRO
      * @param pageSize
      * @param pageNumber
@@ -436,10 +444,11 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      */
     List<ScheduleCourseInformationVO> selectCoursesInformation(@Param("courseScheduleFilterROPageRO")
                                                                CourseScheduleFilterRO courseScheduleFilterROPageRO,
-                                                               @Param("pageSize")long pageSize, @Param("pageNumber")long pageNumber);
+                                                               @Param("pageSize") long pageSize, @Param("pageNumber") long pageNumber);
 
     /**
      * 获取排课表信息 不需要提供分页信息
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -447,18 +456,17 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
                                                                           CourseScheduleFilterRO courseScheduleFilterROPageRO);
 
 
-
-
     /**
      * 根据教学计划获取排课表中相对应的课程信息
+     *
      * @param courseScheduleFilterROPageRO
      * @param pageSize
      * @param pageNumber
      * @return
      */
     List<ScheduleCourseInformationVO> selectCoursesInformationSchedule(@Param("courseScheduleFilterROPageRO")
-                                                               CourseScheduleFilterRO courseScheduleFilterROPageRO,
-                                                               @Param("pageSize")long pageSize, @Param("pageNumber")long pageNumber);
+                                                                       CourseScheduleFilterRO courseScheduleFilterROPageRO,
+                                                                       @Param("pageSize") long pageSize, @Param("pageNumber") long pageNumber);
 
     long countCoursesInformation(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
 
@@ -653,9 +661,9 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     List<String> getDistinctCourseNames(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO courseScheduleFilterROPageRO);
 
 
-
     /**
      * 获取排课表详细信息
+     *
      * @param courseScheduleFilterROPageRO
      * @param pageSize
      * @param pageNumber
@@ -663,20 +671,21 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      */
     List<SchedulesVO> selectSchedulesInformation(@Param("courseScheduleFilterROPageRO")
                                                  CourseScheduleFilterRO courseScheduleFilterROPageRO,
-                                                 @Param("pageSize")long pageSize, @Param("pageNumber")long pageNumber);
+                                                 @Param("pageSize") long pageSize, @Param("pageNumber") long pageNumber);
 
 
     /**
      * 根据学生身份证号码获取所在班级的全部课程
      * 问题：学生存在多身份证号码一起读 因此优先获取最新年份的
+     *
      * @param studentIdNumber 学生身份证号码
      * @return
      */
     List<CourseInformationPO> selectStudentAllCourses(@Param("studentIdNumber") String studentIdNumber);
 
     /**
-     *
      * 获取指定教师所有的排课信息
+     *
      * @param teacherUsername 教师用户名
      * @return
      */
@@ -684,19 +693,40 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取指定教师指定条件下的所有的课程信息
+     *
      * @param entity
      * @param l
      * @param pageSize
      * @return
      */
-    List<TeacherCoursesVO> selectTeacherCoursesWithoutDate(@Param("entity")CourseScheduleRO entity,
-                                                           @Param("pageNumber")long l, @Param("pageSize")Long pageSize);
+    List<TeacherCoursesVO> selectTeacherCoursesWithoutDate(@Param("entity") CourseScheduleRO entity,
+                                                           @Param("pageNumber") long l, @Param("pageSize") Long pageSize);
 
     /**
      * 获取指定教师指定条件下的课程数量
+     *
      * @param entity
      * @return
      */
-    long selectTeacherCoursesWithoutDateCount(@Param("entity")CourseScheduleRO entity);
+    long selectTeacherCoursesWithoutDateCount(@Param("entity") CourseScheduleRO entity);
 
+    /**
+     * 将 onlinePlatform 字段更新为 null
+     *
+     * @param id 要更新的记录的ID
+     * @return 更新的记录数
+     */
+    Long updateOnlinePlatformToNull(Long id);
+
+    List<TeacherCourseScheduleVO> getCourseSchedulesByStudentInfoRecent(@Param("entity") CourseScheduleRO entity,
+                                                                        @Param("pageNumber") Long pageNumber,
+                                                                        @Param("pageSize") Long pageSize);
+
+    long getCourseSchedulesByStudentInfoRecentCount(@Param("entity") CourseScheduleRO entity);
+
+    List<TeacherCourseScheduleVO> getCourseSchedulesByStudentInfo(@Param("entity") CourseScheduleRO entity,
+                                                                  @Param("pageNumber") Long pageNumber,
+                                                                  @Param("pageSize") Long pageSize);
+
+    long countCourseSchedulesByStudentInfo(@Param("entity") CourseScheduleRO entity);
 }

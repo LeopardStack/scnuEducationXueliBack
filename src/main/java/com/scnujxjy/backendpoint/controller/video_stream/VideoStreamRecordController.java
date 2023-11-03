@@ -1,25 +1,21 @@
 package com.scnujxjy.backendpoint.controller.video_stream;
 
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
-import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
@@ -228,13 +224,11 @@ public class VideoStreamRecordController {
                 }catch (Exception e){
                     log.info("找不到该直播间信息，删除失败" + e);
                 }
-                courseSchedulePO.setOnlinePlatform("");
-                int i = courseScheduleService.getBaseMapper().updateById(courseSchedulePO);
 
-                UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                updateWrapper.set("online_platform", null).eq("id", courseSchedulePO.getId());
-                int update = courseScheduleService.getBaseMapper().update(null, updateWrapper);
-                log.info("update的值为"+update);
+
+                courseSchedulePO.setOnlinePlatform(null);
+
+                Long i = courseScheduleService.getBaseMapper().updateOnlinePlatformToNull(courseSchedulePO.getId());
 
                 return SaResult.ok("删除成功 " + i);
             }
@@ -330,5 +324,51 @@ public class VideoStreamRecordController {
             return SaResult.error("获取直播失败，请联系管理员").setCode(2000);
         }
     }
+
+
+    /**
+     * 单个添加直播间
+     *
+     * @param channelSetRO 排课表id
+     * @return 添加后的频道信息
+     */
+    @PostMapping("/set_living_args")
+    public SaResult createLivingRoom(@RequestBody ChannelSetRO channelSetRO) {
+        if (channelSetRO == null) {
+            return SaResult.error("创建直播间失败").setCode(2000);
+        }
+        if("Y".equals(channelSetRO.getPlayBack())){
+            boolean b = singleLivingSetting.setPlayBack(channelSetRO.getChannelId(), true, true);
+            if(b){
+                return SaResult.ok("设置回放成功");
+            }else{
+                return SaResult.error("设置回放失败").setCode(2000);
+            }
+        }else{
+            boolean b = singleLivingSetting.setPlayBack(channelSetRO.getChannelId(), false, true);
+            if(b){
+                return SaResult.ok("关闭回放成功");
+            }else{
+                return SaResult.error("关闭回放失败").setCode(2000);
+            }
+        }
+    }
+
+
+    /**
+     * 获取直播回放状态
+     *
+     * @param channelId 频道id
+     * @return
+     */
+    @GetMapping("/get_channel_playback")
+    public SaResult getChannelPlayBackState(@RequestParam("channelId")String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            return SaResult.error("获取回放失败").setCode(2000);
+        }
+        boolean playBackState = singleLivingSetting.getPlayBackState(channelId);
+        return SaResult.ok().setData(playBackState);
+    }
+
 }
 
