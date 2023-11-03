@@ -85,6 +85,12 @@ public class PlatformUserController {
         }
     }
 
+    @GetMapping("/logout")
+    public SaResult logOut(){
+        StpUtil.logout();
+        return SaResult.ok();
+    }
+
     /**
      * 用户采用微信登录
      *
