@@ -581,8 +581,8 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
                 Date end = courseScheduleUpdateROPageRO.getTeachingEndDate();
 
-                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm"); // 修改这里
-                String formattedTime = sdf.format(start) + "—" + sdf.format(end);
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                String formattedTime = sdf.format(start) + "-" + sdf.format(end);
                 log.info("更新后的时间 " + start + "\n" + formattedTime);
 
                 CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().

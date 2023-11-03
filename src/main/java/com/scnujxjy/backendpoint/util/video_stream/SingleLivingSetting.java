@@ -9,8 +9,11 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoDat
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
+import net.polyv.live.v1.entity.channel.playback.LiveChannelPlaybackEnabledInfoRequest;
+import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -155,5 +158,91 @@ public class SingleLivingSetting {
             log.error("创建直播间频道失败 " + channel);
         }
         return channel;
+    }
+
+
+    /**
+     * 设置指定直播间是否开启回放
+     * @param channelId
+     * @param playBack
+     * @param ident 该参数用来指定回放采用点播 还是 直播缓存
+     * @return
+     */
+    public boolean setPlayBack(String channelId, boolean playBack, boolean ident){
+        ChannelInfoData channelInfoData = new ChannelInfoData();
+        if(playBack){
+            // 开启回放
+
+            if(ident) {
+                // 直播缓存
+
+                channelInfoData.setChannelId(channelId);
+                channelInfoData.setGlobalSettingEnabled("N");
+                channelInfoData.setPlaybackEnabled("Y");
+                channelInfoData.setType("list");
+//        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
+                channelInfoData.setOrigin("playback");
+            }else {
+                channelInfoData.setChannelId(channelId);
+                channelInfoData.setGlobalSettingEnabled("N");
+                channelInfoData.setPlaybackEnabled("Y");
+                channelInfoData.setType("list");
+//        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
+                channelInfoData.setOrigin("vod");
+            }
+
+        }else{
+            // 关闭回放
+            channelInfoData.setChannelId(channelId);
+            channelInfoData.setGlobalSettingEnabled("N");
+            channelInfoData.setPlaybackEnabled("N");
+            channelInfoData.setType("list");
+//        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
+            channelInfoData.setOrigin("playback");
+        }
+        try {
+            ChannelResponse channelPlayBackInfoResponse =
+                    videoStreamUtils.setRecordSetting(channelInfoData);
+            log.info("频道回放信息包括 " + channelPlayBackInfoResponse);
+            if(channelPlayBackInfoResponse.getCode().equals(200)){
+                log.info("设置成功");
+                return true;
+            }else{
+                return false;
+            }
+        }catch (Exception e){
+            log.error("设置 (" + channelId + ") 的频道回放信息失败 " + e.toString());
+        }
+        return false;
+    }
+
+    /**
+     * 获取直播间的状态
+     * @param channelId
+     * @return
+     */
+    public boolean getPlayBackState(String channelId){
+        LiveChannelPlaybackEnabledInfoRequest liveChannelPlaybackEnabledInfoRequest =
+                new LiveChannelPlaybackEnabledInfoRequest();
+        String liveChannelPlaybackEnabledInfoResponse;
+        try {
+            liveChannelPlaybackEnabledInfoRequest.setChannelId(channelId);
+            liveChannelPlaybackEnabledInfoResponse = new LiveChannelPlaybackServiceImpl().getChannelPlayBackEnabledInfo(
+                    liveChannelPlaybackEnabledInfoRequest);
+            if(liveChannelPlaybackEnabledInfoResponse != null){
+                if ("Y".equals(liveChannelPlaybackEnabledInfoResponse)) {
+                    //to do something ......
+                    log.debug("测试查询频道的回放开关状态成功{}", liveChannelPlaybackEnabledInfoResponse);
+                    return true;
+                }
+            }
+            return false;
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
+            log.error(e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("SDK调用异常", e);
+        }
+        return false;
     }
 }

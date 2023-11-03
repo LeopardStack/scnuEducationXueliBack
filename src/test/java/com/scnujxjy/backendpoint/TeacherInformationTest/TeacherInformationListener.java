@@ -10,6 +10,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImpor
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -318,9 +319,21 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
             String currentDateTime = LocalDateTime.now().format(formatter);
             String relativePath = "data_import_error_excel/teacherInformation";
             String errorFileName = currentDateTime + "_errorImportTeacherInformation.xlsx";
+
+            // 创建目录
+            File directory = new File(relativePath);
+            if (!directory.exists()) {
+                boolean dirsCreated = directory.mkdirs();
+                if (!dirsCreated) {
+                    log.error("Failed to create directories: " + relativePath);
+                    return;  // 或者抛出异常
+                }
+            }
+
             EasyExcel.write(relativePath + "/" + errorFileName,
                     TeacherInformationErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
         }
+
 
         // 检查同名同性的教师
         checkForDuplicateTeachers();

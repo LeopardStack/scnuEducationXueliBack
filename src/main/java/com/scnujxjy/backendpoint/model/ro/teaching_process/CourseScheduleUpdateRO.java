@@ -28,14 +28,12 @@ public class CourseScheduleUpdateRO implements Serializable {
      * 直播开始时间
      */
 
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm", timezone="Asia/Shanghai")
     private Date teachingStartDate;
 
-    /**
-     * 直播结束时间
-     */
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
-    Date teachingEndDate;
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm", timezone="Asia/Shanghai")
+    private Date teachingEndDate;
+
 
     /**
      * 教师姓名

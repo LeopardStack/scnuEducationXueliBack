@@ -450,36 +450,19 @@ public class CollegeAdminFilter extends AbstractFilter {
         for (SchedulesVO schedulesVO : schedulesVOS) {
             String onlinePlatform = schedulesVO.getOnlinePlatform();
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            sdf.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai")); // 为了设置时区为东八区
-
-            Date now = new Date();
-            Date teachingEndDate = null;
-            try {
-                String teachingEndDateStr = schedulesVO.getTeachingEndDate();
-                teachingEndDate = sdf.parse(teachingEndDateStr);
-            }catch (ParseException e){
-                log.error("直播日期解析失败" + e.toString());
-            }
-
-            // 如果结束时间在当前时间之前
-            if (teachingEndDate != null && teachingEndDate.before(now)) {
-                schedulesVO.setOnlinePlatform("已结束");
-            }
-            // 如果onlinePlatform为空或仅包含空格
-            else if (onlinePlatform == null || onlinePlatform.trim().isEmpty()) {
-                schedulesVO.setOnlinePlatform("已结束");
-            }
-            // 如果onlinePlatform不为空且与VideoStreamRecord的ID匹配
-            else {
+            if(onlinePlatform != null){
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
                         new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
 
                 if (videoStreamRecordPO != null) {
                     // 此处你只检查了videoStreamRecordPO是否为null，但没使用它的其他属性。
                     // 假设你只想检查它是否存在，并据此设置onlinePlatform
-                    schedulesVO.setOnlinePlatform("直播中");
+                    // 设置直播状态
+                    schedulesVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                    schedulesVO.setChannelId(videoStreamRecordPO.getChannelId());
                 }
+            }else{
+                schedulesVO.setLivingStatus("未开播");
             }
         }
 

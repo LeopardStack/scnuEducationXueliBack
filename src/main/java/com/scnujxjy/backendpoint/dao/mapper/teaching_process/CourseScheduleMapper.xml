@@ -163,8 +163,8 @@
                cs.class_hours, cs.exam_type, cs.online_platform,
                cs.admin_class, cs.teaching_class, cs.course_name, cs.main_teacher_name,
                cs.main_teacher_id, cs.main_teacher_identity, cs.tutor_name, cs.tutor_id, cs.tutor_identity, cs.teaching_method, cs.teacher_username,
-        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '—', 1)) AS teaching_start_date,
-        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '—', -1)) AS teaching_end_date
+        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '-', 1)) AS teaching_start_date,
+        CONCAT(DATE_FORMAT(cs.teaching_date, '%Y-%m-%d'), ' ', SUBSTRING_INDEX(cs.teaching_time, '-', -1)) AS teaching_end_date
         <include refid="commonJoin" />
         WHERE 1=1
         <include refid="commonFilters" />
@@ -292,7 +292,7 @@
 
 
     <select id="getCourseSchedulesByTeacherUserNameRecent" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
-        SELECT *, ci1.class_name, ci2.teaching_semester
+        SELECT *, ci1.class_name, ci2.teaching_semester, ci2.course_cover
         FROM course_schedule cs
         LEFT JOIN class_information ci1
         ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
@@ -325,7 +325,7 @@
     </select>
 
     <select id="getCourseSchedulesByTeacherUserName" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
-        SELECT *, ci1.class_name, ci2.teaching_semester
+        SELECT *, ci1.class_name, ci2.teaching_semester, ci2.course_cover
         FROM course_schedule cs
         LEFT JOIN class_information ci1
         ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
@@ -353,5 +353,76 @@
         <include refid="teacherCommonFiltersDIY" />
     </select>
 
+
+    <update id="updateOnlinePlatformToNull" parameterType="Long">
+        UPDATE course_schedule
+        SET online_platform = NULL
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="getCourseSchedulesByStudentInfoRecent" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
+        SELECT *, ci1.class_name, ci2.teaching_semester, ci2.course_cover
+        FROM course_schedule cs
+                 LEFT JOIN class_information ci1
+                           ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+                               and cs.level = ci1.level and cs.study_form = ci1.study_form
+                               and cs.admin_class = ci1.class_name
+                 LEFT JOIN course_information ci2
+                           on ci2.admin_class = ci1.class_identifier
+                               and ci2.course_name = cs.course_name
+        WHERE 1=1
+        <include refid="teacherCommonFiltersDIY" />
+        ORDER BY
+            CASE
+                WHEN CURDATE() > cs.teaching_date  THEN 1
+                ELSE 0
+                END ASC,
+            cs.teaching_date ASC
+            LIMIT #{pageNumber}, #{pageSize};
+    </select>
+
+    <select id="getCourseSchedulesByStudentInfoRecentCount" resultType="Long">
+        SELECT count(*)
+        FROM course_schedule cs
+                 LEFT JOIN class_information ci1
+                           ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+                               and cs.level = ci1.level and cs.study_form = ci1.study_form
+                               and cs.admin_class = ci1.class_name
+                 LEFT JOIN course_information ci2
+                           on ci2.admin_class = ci1.class_identifier
+                               and ci2.course_name = cs.course_name
+        WHERE 1=1
+        <include refid="teacherCommonFiltersDIY" />
+    </select>
+
+    <select id="getCourseSchedulesByStudentInfo" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
+        SELECT *, ci1.class_name, ci2.teaching_semester, ci2.course_cover
+        FROM course_schedule cs
+        LEFT JOIN class_information ci1
+        ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+        and cs.level = ci1.level and cs.study_form = ci1.study_form
+        and cs.admin_class = ci1.class_name
+        LEFT JOIN course_information ci2
+        on ci2.admin_class = ci1.class_identifier
+        and ci2.course_name = cs.course_name
+        WHERE 1=1
+        <include refid="teacherCommonFiltersDIY" />
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <select id="countCourseSchedulesByStudentInfo" resultType="Long">
+        SELECT count(*)
+        FROM course_schedule cs
+        LEFT JOIN class_information ci1
+        ON cs.grade = ci1.grade and cs.major_name  = ci1.major_name
+        and cs.level = ci1.level and cs.study_form = ci1.study_form
+        and cs.admin_class = ci1.class_name
+        LEFT JOIN course_information ci2
+        on ci2.admin_class = ci1.class_identifier
+        and ci2.course_name = cs.course_name
+        WHERE 1=1
+        <include refid="teacherCommonFiltersDIY" />
+    </select>
 
 </mapper>

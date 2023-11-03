@@ -53,9 +53,7 @@ public class TeacherFilter extends AbstractFilter{
             courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByTeacherUserNameRecent(platformUserPO.getUsername(),
                     (courseScheduleFilter.getPageNumber()-1) * courseScheduleFilter.getPageSize(),
                     courseScheduleFilter.getPageSize());
-            total =  courseScheduleMapper.getCourseSchedulesByTeacherUserNameRecentCount(platformUserPO.getUsername(),
-                    (courseScheduleFilter.getPageNumber()-1) * courseScheduleFilter.getPageSize(),
-                    courseScheduleFilter.getPageSize());
+            total =  courseScheduleMapper.getCourseSchedulesByTeacherUserNameRecentCount(platformUserPO.getUsername());
         }else{
             courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByTeacherUserName(platformUserPO.getUsername(),
                     courseScheduleFilter.getEntity(), (courseScheduleFilter.getPageNumber()-1) * courseScheduleFilter.getPageSize(),
