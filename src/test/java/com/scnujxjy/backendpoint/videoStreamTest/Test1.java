@@ -2,6 +2,8 @@ package com.scnujxjy.backendpoint.videoStreamTest;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
@@ -32,6 +34,9 @@ import java.util.List;
 public class Test1 {
     @Resource
     private VideoStreamUtils videoStreamUtils;
+
+    @Resource
+    private TutorInformationMapper tutorInformationMapper;
 
     @Resource
     private SingleLivingService singleLivingService;
@@ -76,6 +81,12 @@ public class Test1 {
         ChannelInfoRequest request = new ChannelInfoRequest();
         request.setPlaybackEnabled("Y");
         request.setChannelId("4368180");
+        TutorInformation tutorInformation=new TutorInformation();
+        tutorInformation.setChannelId("123456");
+        tutorInformation.setTutorName("123");
+        tutorInformation.setTutorUrl("456");
+        tutorInformation.setUserId("789");
+        tutorInformationMapper.insert(tutorInformation);
 //        sing.getChannelDetail();
 //        sing.testUploadWhiteList();
 //        sing.createTutor("4389634", "汤姆");
@@ -88,6 +99,7 @@ public class Test1 {
 //        sing.setWatchCondition("4368180");
 //        sing.testCreateChannelWhiteList(Integer.valueOf("4368180"));
     }
+
 
 
     @Test

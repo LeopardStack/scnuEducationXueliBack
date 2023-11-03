@@ -8,10 +8,12 @@ import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
@@ -43,6 +45,7 @@ import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Response;
 import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -59,9 +62,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
-
     @Resource
-    private StudentStatusMapper studentStatusMapper;
+    private TutorInformationMapper tutorInformationMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException {
@@ -248,9 +250,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         channelInfoData.setChannelId(request.getChannelId());
         channelInfoData.setGlobalSettingEnabled("N");
         channelInfoData.setPlaybackEnabled(request.getPlaybackEnabled());
-        channelInfoData.setType("list");
+        channelInfoData.setType("single");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
-        channelInfoData.setOrigin("vod");
+        channelInfoData.setOrigin("record");
 
         String url = "http://api.polyv.net/live/v3/channel/playback/set-setting";
 
@@ -369,26 +371,35 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setRole("Assistant")
                     .setActor("助教")
                     .setNickName(tutorName)
-//                    .setPasswd(super.getRandomString(6))
 //            chatListEnabled：在线列表（仅支持助教）
 //            pageTurnEnabled：翻页（仅支持助教，且仅能设置一个助教有翻页权限）
 //            monitorEnabled：监播（仅支持助教，且仅能设置一个助教有监播权限）
 //            chatAuditEnabled：聊天审核（仅支持助教）
+
+
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
 //                            .setCode(LiveConstant.RolePurview.PAGE_TURN_ENABLED.getCode())
-                            .setCode(LiveConstant.RolePurview.MONITOR_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
             liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
             if (liveCreateAccountResponse != null) {
 //                https://console.polyv.net/live/login.html?channelId=0024368180
-                log.info("测试创建角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
+                log.info("创建角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
                 channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
                 channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                saResult.setData(channelInfoResponse);
-                return saResult;
+                //返回助教信息，同时插入助教表
+                TutorInformation tutorInformation=new TutorInformation();
+                tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
+                tutorInformation.setTutorName(tutorName);
+                tutorInformation.setChannelId(channelId);
+                tutorInformation.setUserId("123123");
+                int insert = tutorInformationMapper.insert(tutorInformation);
+                if (insert>0) {
+                    saResult.setCode(ResultCode.SUCCESS.getCode());
+                    saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                    saResult.setData(channelInfoResponse);
+                    return saResult;
+                }
             }
         } catch (PloyvSdkException e) {
             e.printStackTrace();

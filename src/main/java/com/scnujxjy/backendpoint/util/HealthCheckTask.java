@@ -6,10 +6,12 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
@@ -30,11 +32,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -63,6 +63,8 @@ public class HealthCheckTask {
 
     @Resource
     private ScnuXueliTools scnuXueliTools;
+    @Resource
+    private TutorInformationMapper tutorInformationMapper;
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {
@@ -146,7 +148,7 @@ public class HealthCheckTask {
                 Duration duration = Duration.between(formattedNowTime, formattedCourseStartTime);//时间较晚的后面，课程时间在后面
                 long minuteDiff = duration.toMinutes();
                 //如果二者之差小于60分钟，则创建直播间
-                if (minuteDiff <= 60) {
+                if (minuteDiff <= 60 && StrUtil.isBlank(courseSchedulePO.getOnlinePlatform())) {
                     try {
                         ChannelCreateRequestBO channelCreateRequestBO = new ChannelCreateRequestBO();
                         channelCreateRequestBO.setLivingRoomTitle(courseSchedulePO.getCourseName());
@@ -162,34 +164,54 @@ public class HealthCheckTask {
                             String channelId = apiResponse.getData().getChannelId().toString();
                             log.info("创建频道成功,频道号为：" + channelId);
 
+                            List<CourseSchedulePO> courseSchedulePOList =  courseSchedulePOS.stream().
+                                    filter(cs -> cs.getTeachingClass().equals(courseSchedulePO.getTeachingClass()) &&
+                                            cs.getTeachingDate().equals(courseSchedulePO.getTeachingDate()) &&
+                                            cs.getTeachingTime().equals(courseSchedulePO.getTeachingTime()) &&
+                                            cs.getTeacherUsername().equals(courseSchedulePO.getTeacherUsername()) &&
+                                            cs.getCourseName().equals(courseSchedulePO.getCourseName())).collect(Collectors.toList());
+
                             //创建监播权的助教并得到该助教链接及密码
-                            String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" : courseSchedulePO.getTutorName();
-                            SaResult tutorInformation = singleLivingService.createTutor(channelId, totorName);
-                            if (tutorInformation.getCode() == 200) {
+                            for (int i=0; i<courseSchedulePOList.size();i++){
+                                String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师"+i : courseSchedulePO.getTutorName();
+                                singleLivingService.createTutor(channelId, totorName);
+                            }
+
+                            QueryWrapper<TutorInformation> tutorQueryWrapper = new QueryWrapper<>();
+                            tutorQueryWrapper.eq("channel_id", channelId);
+                            Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
+
+
+                            if (integer==courseSchedulePOList.size()) {
                                 log.info(channelId + "创建助教成功");
-                                ChannelInfoResponse channelInfoResponse = (ChannelInfoResponse) tutorInformation.getData();
+//                                ChannelInfoResponse channelInfoResponse = (ChannelInfoResponse) tutorInformation.getData();
 
                                 //将直播间数据插入直播记录表中
                                 VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
                                 videoStreamRecordPO.setChannelId(channelId);
                                 videoStreamRecordPO.setName(courseSchedulePO.getCourseName());
                                 videoStreamRecordPO.setChannelPasswd(apiResponse.getData().getChannelPasswd());
-                                videoStreamRecordPO.setWatchStatus("waiting");
-                                videoStreamRecordPO.setTutorUrl(channelInfoResponse.getUrl());
-                                videoStreamRecordPO.setTutorPasswd(channelInfoResponse.getPassword());
+                                videoStreamRecordPO.setWatchStatus("等待中");
+//                                videoStreamRecordPO.setTutorUrl(channelInfoResponse.getUrl());
+//                                videoStreamRecordPO.setTutorPasswd(channelInfoResponse.getPassword());
 //                                videoStreamRecordPO.setTeachingDate(()localDate);
                                 videoStreamRecordPO.setStartTime(sdf.parse(localDate + " " + courseStartTime));
                                 videoStreamRecordPO.setEndTime(sdf.parse(localDate + " " + courseEndTime));
-
                                 int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
                                 if (insert > 0) {
                                     log.info("直播间数据插入直播表成功，频道id为：" + channelId);
-                                    UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                                    updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", courseSchedulePO.getId());
-                                    int update = courseScheduleMapper.update(null, updateWrapper);
-                                    if (update > 0) {
-                                        log.info(channelId + "课程状态更新为待开播状态成功");
+
+                                    int count=0;
+                                    for (CourseSchedulePO schedulePO:courseSchedulePOList) {
+                                        UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                                        updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", schedulePO.getId());
+                                        int update = courseScheduleMapper.update(null, updateWrapper);
+                                        count=count+update;
                                     }
+                                    if (count==courseSchedulePOList.size()) {
+                                        log.info("创建直播间且合班情况，成功");
+                                    }
+
                                 }
                             }
                         }

@@ -8,6 +8,7 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
@@ -227,8 +228,13 @@ public class VideoStreamRecordController {
                 }catch (Exception e){
                     log.info("找不到该直播间信息，删除失败" + e);
                 }
-                courseSchedulePO.setOnlinePlatform(null);
+                courseSchedulePO.setOnlinePlatform("");
                 int i = courseScheduleService.getBaseMapper().updateById(courseSchedulePO);
+
+                UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                updateWrapper.set("online_platform", null).eq("id", courseSchedulePO.getId());
+                int update = courseScheduleService.getBaseMapper().update(null, updateWrapper);
+                log.info("update的值为"+update);
 
                 return SaResult.ok("删除成功 " + i);
             }
