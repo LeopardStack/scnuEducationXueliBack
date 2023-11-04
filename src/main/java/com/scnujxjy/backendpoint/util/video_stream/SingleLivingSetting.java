@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -179,9 +180,9 @@ public class SingleLivingSetting {
                 channelInfoData.setChannelId(channelId);
                 channelInfoData.setGlobalSettingEnabled("N");
                 channelInfoData.setPlaybackEnabled("Y");
-                channelInfoData.setType("list");
+                channelInfoData.setType("single");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
-                channelInfoData.setOrigin("playback");
+                channelInfoData.setOrigin("record");
             }else {
                 channelInfoData.setChannelId(channelId);
                 channelInfoData.setGlobalSettingEnabled("N");
@@ -245,4 +246,6 @@ public class SingleLivingSetting {
         }
         return false;
     }
+
+
 }

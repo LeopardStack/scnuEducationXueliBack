@@ -2,8 +2,11 @@ package com.scnujxjy.backendpoint.livingTest;
 
 import cn.hutool.core.collection.ListUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
+import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,9 @@ public class LivingCreate {
 
     @Autowired
     private VideoStreamUtils videoStreamUtils;
+
+    @javax.annotation.Resource
+    private CourseScheduleService scheduleService;
 
 
     /**
@@ -294,4 +300,29 @@ public class LivingCreate {
     }
 
 
+    /**
+     * 获取所有的直播间
+     */
+    @Test
+    public void test7(){
+        List<String> allChannels = videoStreamUtils.getAllChannels();
+        log.info("\n"+ allChannels);
+        for(String s: allChannels){
+            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsService.getBaseMapper().selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+                    .eq(VideoStreamRecordPO::getChannelId, s));
+            if(videoStreamRecordPO == null){
+                Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(s);
+                log.info("删除直播间 " + s);
+            }else{
+                List<CourseSchedulePO> courseSchedulePO = scheduleService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                        .eq(CourseSchedulePO::getOnlinePlatform, "" + videoStreamRecordPO.getId()));
+                if(!courseSchedulePO.isEmpty()){
+                    // 存在不能删除它
+                }else{
+                    Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(s);
+                    log.info("删除直播间 " + s);
+                }
+            }
+        }
+    }
 }

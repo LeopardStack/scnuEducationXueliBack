@@ -94,7 +94,7 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-    @Scheduled(fixedRate = 60000)
+//    @Scheduled(fixedRate = 60000)
     public void dealWithLivingRooms(){
         // 获取距离现在只有 1小时的排课表
         List<CourseSchedulePO> recordsWithinCertainHour = courseScheduleMapper.findRecordsWithinCertainHour(1);
@@ -149,7 +149,6 @@ public class DataUpdate {
                         }
                         if(insert > 0){
                             List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                                    .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
                                     .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
                                     .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
                                     .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
@@ -290,7 +289,7 @@ public class DataUpdate {
     /**
      * 检测一下 直播间的状态
      */
-    @Scheduled(fixedRate = 300000)
+//    @Scheduled(fixedRate = 300000)
     public void checkLivingRoomStatus(){
         log.info("执行直播间扫描");
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);
