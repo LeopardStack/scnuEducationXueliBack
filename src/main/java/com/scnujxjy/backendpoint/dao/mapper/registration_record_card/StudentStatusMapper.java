@@ -381,12 +381,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     @Select("<script>" +
             " SELECT  pi.name,pi.id_number FROM course_schedule cs" +
-            " LEFT JOIN course_information coi" +
+            " LEFT JOIN class_information coi" +
             " ON cs.grade = coi.grade and cs.major_name=coi.major_name and cs.study_form=coi.study_form" +
-            " and cs.course_name=coi.course_name and cs.level=coi.level" +
-            " LEFT JOIN student_status ss ON coi.admin_class = ss.class_identifier" +
+            " and cs.admin_class=coi.class_name and cs.level=coi.level" +
+            " LEFT JOIN student_status ss ON coi.class_identifier = ss.class_identifier" +
             " LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade" +
-            " WHERE 1=1 " +
+            " WHERE pi.id_number is not null  " +
             "<if test='entity.grade != null'>AND cs.grade = #{entity.grade} </if>" +
             "<if test='entity.majorName != null'>AND cs.major_name = #{entity.majorName} </if>" +
             "<if test='entity.studyForm != null'>AND cs.study_form = #{entity.studyForm} </if>" +

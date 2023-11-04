@@ -390,7 +390,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //            monitorEnabled：监播（仅支持助教，且仅能设置一个助教有监播权限）
 //            chatAuditEnabled：聊天审核（仅支持助教）
 
-
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
 //                            .setCode(LiveConstant.RolePurview.CHAT_AUDIT.getCode())
