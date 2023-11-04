@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.controller.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewLogFirstResponse;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
@@ -43,6 +44,15 @@ public class SingleLivingController {
             throw dataMissError();
         }
         return singleLivingService.deleteChannel(channelId);
+    }
+
+    @PostMapping("/edit/getChannelView")
+    public ViewLogFirstResponse getChannelView(@RequestBody ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || StrUtil.isBlank(channelInfoRequest.getCurrentDay()) ||
+                StrUtil.isBlank(channelInfoRequest.getStartTime()) || StrUtil.isBlank(channelInfoRequest.getEndTime())) {
+            throw dataMissError();
+        }
+        return singleLivingService.getChannelCardPush(channelInfoRequest);
     }
 
 

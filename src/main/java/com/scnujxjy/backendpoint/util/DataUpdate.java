@@ -286,7 +286,7 @@ public class DataUpdate {
     /**
      * 检测一下 直播间的状态
      */
-//    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 300000)
     public void checkLivingRoomStatus(){
         log.info("执行直播间扫描");
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);

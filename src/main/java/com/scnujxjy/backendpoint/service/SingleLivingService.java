@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewLogFirstResponse;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 
@@ -26,4 +27,6 @@ public interface SingleLivingService {
     SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest);
 
     SaResult GetChannelDetail(String channelId);
+
+    ViewLogFirstResponse getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
 }

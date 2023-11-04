@@ -7,13 +7,11 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
@@ -22,6 +20,7 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
+import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -52,8 +51,11 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -66,6 +68,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     private TutorInformationMapper tutorInformationMapper;
     @Resource
     private StudentStatusMapper studentStatusMapper;
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -128,6 +132,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             if (channel.getCode()==200 && Objects.nonNull(channel.getData().getChannelId())) {
                 String channelId=channel.getData().getChannelId().toString();
+
+
+
                 File whiteListFile = createWhiteListFile(courseSchedulePO);
                 SaResult saResult1 = UploadWhiteList(whiteListFile,channelId);
                 if (saResult1.getCode()==200){
@@ -154,17 +161,63 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
+
+    @Override
+    public ViewLogFirstResponse getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        //业务参数
+        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog",channelInfoRequest.getChannelId());
+        String currentDay = channelInfoRequest.getCurrentDay();
+        String startTime = channelInfoRequest.getStartTime();
+
+        LocalDateTime startDateTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        long startTimestamp = startDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+        String endTime = channelInfoRequest.getEndTime();
+        LocalDateTime endDateTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        long endTimestamp = endDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+
+        //http 调用逻辑
+        Map<String,String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp",timestamp);
+        requestMap.put("currentDay",currentDay);
+//        requestMap.put("page",page);
+//        requestMap.put("pageSize",pageSize);
+        requestMap.put("startTime",String.valueOf(startTimestamp));
+        requestMap.put("endTime",String.valueOf(endTimestamp));
+        requestMap.put("param3","live");
+        requestMap.put("sign",LiveSignUtil.getSign(requestMap, appSecret));
+
+//        String response = PolyvHttpUtil.postJsonBody(url, body, null);
+        String s =HttpUtil.get(url, requestMap);
+        ViewLogFirstResponse viewLogFirstResponse = JSON.parseObject(s, ViewLogFirstResponse.class);
+        log.info("测试分页查询频道直播观看详情数据，返回值：{}",viewLogFirstResponse);
+        return viewLogFirstResponse;
+    }
+
+
+
     private File createWhiteListFile(CourseSchedulePO courseSchedulePO) {
         String templateFilePath = "temporaryWhiteList.xls";
         List<StudentWhiteListVO> StudentWhiteListVOS =new ArrayList<>();
 
-        List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(courseSchedulePO);
+        //查出排课表的所有排课信息
+        QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
+        courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
+                .eq("main_teacher_name",courseSchedulePO.getMainTeacherName());
 
-        for (Map<String, String> sc : scheduleClassStudent) {
-            StudentWhiteListVO studentWhiteListVO=new StudentWhiteListVO();
-            studentWhiteListVO.setName(sc.get("name"));
-            studentWhiteListVO.setCode(sc.get("id_number"));
-            StudentWhiteListVOS.add(studentWhiteListVO); // 将studentWhiteListVO添加到集合中
+        List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
+
+        for (CourseSchedulePO schedulePO:schedulePOList) {
+            List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(schedulePO);
+            for (Map<String, String> sc : scheduleClassStudent) {
+                StudentWhiteListVO studentWhiteListVO=new StudentWhiteListVO();
+                studentWhiteListVO.setName(sc.get("name"));
+                studentWhiteListVO.setCode(sc.get("id_number"));
+                StudentWhiteListVOS.add(studentWhiteListVO); // 将studentWhiteListVO添加到集合中
+            }
         }
 
         EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(StudentWhiteListVOS);

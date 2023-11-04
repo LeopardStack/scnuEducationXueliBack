@@ -379,20 +379,34 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<Map<String, StatisticTableForGraduation>> getCountOfGraduation(@Param("startYear") int startYear, @Param("endYear") int endYear);
 
 
+//    @Select("<script>" +
+//            " SELECT  pi.name,pi.id_number FROM course_schedule cs" +
+//            " LEFT JOIN class_information coi" +
+//            " ON cs.grade = coi.grade and cs.major_name=coi.major_name and cs.study_form=coi.study_form" +
+//            " and cs.admin_class=coi.class_name and cs.level=coi.level" +
+//            " LEFT JOIN student_status ss ON coi.class_identifier = ss.class_identifier" +
+//            " LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade" +
+//            " WHERE pi.id_number is not null  " +
+//            "<if test='entity.grade != null'>AND cs.grade = #{entity.grade} </if>" +
+//            "<if test='entity.majorName != null'>AND cs.major_name = #{entity.majorName} </if>" +
+//            "<if test='entity.studyForm != null'>AND cs.study_form = #{entity.studyForm} </if>" +
+//            "<if test='entity.courseName != null'>AND cs.course_name = #{entity.courseName} </if>" +
+//            "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>"+
+//            "</script>")
     @Select("<script>" +
-            " SELECT  pi.name,pi.id_number FROM course_schedule cs" +
+            " SELECT DISTINCT pi.name,pi.id_number FROM course_schedule cs" +
             " LEFT JOIN class_information coi" +
-            " ON cs.grade = coi.grade and cs.major_name=coi.major_name and cs.study_form=coi.study_form" +
-            " and cs.admin_class=coi.class_name and cs.level=coi.level" +
+            " ON cs.admin_class=coi.class_name and  cs.major_name=coi.major_name and cs.grade = coi.grade and cs.study_form=coi.study_form" +
+            " and cs.level=coi.level" +
             " LEFT JOIN student_status ss ON coi.class_identifier = ss.class_identifier" +
             " LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade" +
             " WHERE pi.id_number is not null  " +
+            "<if test='entity.adminClass != null'>AND cs.admin_class = #{entity.adminClass} </if>" +
             "<if test='entity.grade != null'>AND cs.grade = #{entity.grade} </if>" +
             "<if test='entity.majorName != null'>AND cs.major_name = #{entity.majorName} </if>" +
             "<if test='entity.studyForm != null'>AND cs.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.courseName != null'>AND cs.course_name = #{entity.courseName} </if>" +
             "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>"+
-
             "</script>")
     List<Map<String,String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
 }
+

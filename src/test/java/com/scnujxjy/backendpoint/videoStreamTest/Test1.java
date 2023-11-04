@@ -81,16 +81,18 @@ public class Test1 {
     @Test
     public void test3() throws Exception {
         SingleLivingServiceImpl sing = new SingleLivingServiceImpl();
-        String[] a = new String[]{"4360979", "4360976"};
-        ChannelInfoRequest request = new ChannelInfoRequest();
-        request.setPlaybackEnabled("Y");
-        request.setChannelId("4368180");
-        TutorInformation tutorInformation=new TutorInformation();
-        tutorInformation.setChannelId("123456");
-        tutorInformation.setTutorName("123");
-        tutorInformation.setTutorUrl("456");
-        tutorInformation.setUserId("789");
-        tutorInformationMapper.insert(tutorInformation);
+//        sing.getChannelCardPush("4417168");
+
+//        String[] a = new String[]{"4360979", "4360976"};
+//        ChannelInfoRequest request = new ChannelInfoRequest();
+//        request.setPlaybackEnabled("Y");
+//        request.setChannelId("4368180");
+//        TutorInformation tutorInformation=new TutorInformation();
+//        tutorInformation.setChannelId("123456");
+//        tutorInformation.setTutorName("123");
+//        tutorInformation.setTutorUrl("456");
+//        tutorInformation.setUserId("789");
+//        tutorInformationMapper.insert(tutorInformation);
 //        sing.getChannelDetail();
 //        sing.testUploadWhiteList();
 //        sing.createTutor("4389634", "汤姆");
@@ -188,6 +190,41 @@ public class Test1 {
         }
     }
 
+    @Test
+    public void testPageViewlog() throws IOException, NoSuchAlgorithmException {
+//        //公共参数,填写自己的实际参数
+//        String appId = super.appId;
+//        String appSecret = super.appSecret;
+//        String userId = super.userId;
+//        String timestamp = String.valueOf(System.currentTimeMillis());
+//        //业务参数
+//        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog","1965681");
+//        String currentDay = "2021-1-20";
+//        String page = "1";
+//        String pageSize = "10";
+//        String startTime = "1611072000000";
+//        String endTime = "1611158400000";
+//        String param1 = "1b448be323";
+//        String param2 = "管理员";
+//        String param3 = "live";
+//        //http 调用逻辑
+//        Map<String,String> requestMap = new HashMap<>();
+//        requestMap.put("appId", appId);
+//        requestMap.put("timestamp",timestamp);
+//        requestMap.put("currentDay",currentDay);
+//        requestMap.put("page",page);
+//        requestMap.put("pageSize",pageSize);
+//        requestMap.put("startTime",startTime);
+//        requestMap.put("endTime",endTime);
+//        requestMap.put("param1",param1);
+//        requestMap.put("param2",param2);
+//        requestMap.put("param3",param3);
+//        requestMap.put("sign",LiveSignUtil.getSign(requestMap, appSecret));
+//        String response = HttpUtil.get(url, requestMap);
+//        log.info("测试分页查询频道直播观看详情数据，返回值：{}",response);
+//        //do somethings
+
+    }
 
     /**
      * 創建頻道
