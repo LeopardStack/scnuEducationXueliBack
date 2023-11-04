@@ -2,7 +2,9 @@ package com.scnujxjy.backendpoint.videoStreamTest;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
@@ -24,10 +26,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @SpringBootTest
 @Slf4j
@@ -41,17 +40,22 @@ public class Test1 {
     @Resource
     private SingleLivingService singleLivingService;
 
+    @Resource
+    private StudentStatusMapper studentStatusMapper;
+
     /**
      * 获取指定频道号的角色信息
      */
     @Test
     public void test1() {
-        try {
-            videoStreamUtils.getAccountsByChannelId("4252181");
-        } catch (Exception e) {
-            log.error(e.toString());
-        }
-
+        CourseSchedulePO courseSchedulePO=new CourseSchedulePO();
+        courseSchedulePO.setCourseName("幼儿音乐教育");//230751 class
+        courseSchedulePO.setGrade("2023");
+        courseSchedulePO.setMajorName("学前教育");
+        courseSchedulePO.setStudyForm("函授");
+        courseSchedulePO.setLevel("专升本1");
+        List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(courseSchedulePO);
+        System.out.println(scheduleClassStudent);
     }
 
     @Test
@@ -71,7 +75,7 @@ public class Test1 {
         channelCreateRequestBO.setEndDate(oneHourLater);
         channelCreateRequestBO.setPlayRollback(true);
         channelCreateRequestBO.setPureRtcEnabled("Y");
-        singleLivingService.createChannel(channelCreateRequestBO);
+//        singleLivingService.createChannel(channelCreateRequestBO);
     }
 
     @Test

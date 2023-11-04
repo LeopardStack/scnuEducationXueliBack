@@ -6,6 +6,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
@@ -45,7 +46,6 @@ import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Response;
 import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -64,9 +64,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
     @Resource
     private TutorInformationMapper tutorInformationMapper;
+    @Resource
+    private StudentStatusMapper studentStatusMapper;
 
     @Override
-    public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO) throws IOException, NoSuchAlgorithmException {
+    public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
         SaResult saResult = new SaResult();
         LiveRequestBody liveRequestBody = new LiveRequestBody();
         liveRequestBody.setName(channelCreateRequestBO.getLivingRoomTitle());
@@ -126,7 +128,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             if (channel.getCode()==200 && Objects.nonNull(channel.getData().getChannelId())) {
                 String channelId=channel.getData().getChannelId().toString();
-                File whiteListFile = createWhiteListFile();
+                File whiteListFile = createWhiteListFile(courseSchedulePO);
                 SaResult saResult1 = UploadWhiteList(whiteListFile,channelId);
                 if (saResult1.getCode()==200){
                     //设置指定频道的观看条件为白名单
@@ -152,18 +154,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    private File createWhiteListFile() {
+    private File createWhiteListFile(CourseSchedulePO courseSchedulePO) {
         String templateFilePath = "temporaryWhiteList.xls";
-//        studentStatusMapper.getScheduleClassStudent();//检查sql后采用查询的返回的List
-        List<StudentWhiteListVO> StudentWhiteListVOS=new ArrayList<>();
-        StudentWhiteListVO studentWhiteListVO1=new StudentWhiteListVO();
-        studentWhiteListVO1.setCode("111");
-        studentWhiteListVO1.setName("aaaa");
-        StudentWhiteListVO studentWhiteListVO2=new StudentWhiteListVO();
-        studentWhiteListVO2.setCode("222");
-        studentWhiteListVO2.setName("bbbb");
-        StudentWhiteListVOS.add(studentWhiteListVO1);
-        StudentWhiteListVOS.add(studentWhiteListVO2);
+        List<StudentWhiteListVO> StudentWhiteListVOS =new ArrayList<>();
+
+        List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(courseSchedulePO);
+
+        for (Map<String, String> sc : scheduleClassStudent) {
+            StudentWhiteListVO studentWhiteListVO=new StudentWhiteListVO();
+            studentWhiteListVO.setName(sc.get("name"));
+            studentWhiteListVO.setCode(sc.get("id_number"));
+            StudentWhiteListVOS.add(studentWhiteListVO); // 将studentWhiteListVO添加到集合中
+        }
+
         EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(StudentWhiteListVOS);
         return new File(templateFilePath);
     }

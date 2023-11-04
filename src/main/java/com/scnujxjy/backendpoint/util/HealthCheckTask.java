@@ -149,6 +149,7 @@ public class HealthCheckTask {
                 long minuteDiff = duration.toMinutes();
                 //如果二者之差小于60分钟，则创建直播间
                 if (minuteDiff <= 60 && StrUtil.isBlank(courseSchedulePO.getOnlinePlatform())) {
+//                if (courseSchedulePO.getLevel().equals("专升本1")))) {
                     try {
                         ChannelCreateRequestBO channelCreateRequestBO = new ChannelCreateRequestBO();
                         channelCreateRequestBO.setLivingRoomTitle(courseSchedulePO.getCourseName());
@@ -158,7 +159,7 @@ public class HealthCheckTask {
                         channelCreateRequestBO.setPlayRollback(false);
                         channelCreateRequestBO.setStartDate(sdf.parse(localDate + " " + courseStartTime));//2023-07-22 14:30
                         channelCreateRequestBO.setEndDate(sdf.parse(localDate + " " + courseEndTime));//2023-07-22 15:30
-                        SaResult channel = singleLivingService.createChannel(channelCreateRequestBO);
+                        SaResult channel = singleLivingService.createChannel(channelCreateRequestBO,courseSchedulePO);
                         if (channel.getCode() == 200 && Objects.nonNull(channel.getData())) {
                             ApiResponse apiResponse = (ApiResponse) channel.getData();
                             String channelId = apiResponse.getData().getChannelId().toString();
