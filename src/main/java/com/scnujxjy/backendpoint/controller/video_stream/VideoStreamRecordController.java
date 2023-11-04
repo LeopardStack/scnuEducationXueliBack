@@ -6,6 +6,7 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
@@ -184,9 +185,15 @@ public class VideoStreamRecordController {
                         return SaResult.error("创建直播间失败，插入数据库失败").setCode(2000);
                     }
                     for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+
                         courseSchedulePO.setOnlinePlatform(String.valueOf(courseSchedulePO1.getId()));
-                        boolean b = courseScheduleService.updateById(courseSchedulePO1);
-                        if(insert > 0 && b){
+                        UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                        updateWrapper.set("online_platform",id).eq("id", courseSchedulePO1.getId());
+
+                        int update = courseScheduleService.getBaseMapper().update(null, updateWrapper);
+
+//                        boolean b = courseScheduleService.updateById(courseSchedulePO1);
+                        if(insert > 0 && update>0){
                             log.info("新增直播间，直播间信息插入成功 " + courseSchedulePO1);
                         }
                     }

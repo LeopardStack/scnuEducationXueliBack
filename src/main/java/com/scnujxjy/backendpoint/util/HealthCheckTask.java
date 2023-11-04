@@ -162,8 +162,8 @@ public class HealthCheckTask {
                             //创建时，将排课表中的所有该门课的直播间都建为统一。
                             QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
                             courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
-                                    .eq("main_teacher_name", courseSchedulePO.getMainTeacherName());
-//                                    .and(i -> i.isNull("online_platform").or().eq("online_platform", ""));
+                                    .eq("main_teacher_name", courseSchedulePO.getMainTeacherName())
+                                    .and(i -> i.isNull("online_platform").or().eq("online_platform", ""));
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
 

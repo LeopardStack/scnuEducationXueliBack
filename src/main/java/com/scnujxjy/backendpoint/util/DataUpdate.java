@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.util;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
@@ -101,7 +102,7 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-    @Scheduled(fixedRate = 60000)
+//    @Scheduled(fixedRate = 60000)
     public void dealWithLivingRooms() {
         if (!schedule) {
             // 如果配置为 false，直接返回

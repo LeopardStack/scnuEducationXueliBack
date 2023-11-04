@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
@@ -408,5 +409,10 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>"+
             "</script>")
     List<Map<String,String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
+
+    List<StudentStatusAllVO> getStudentStatusInfoByTeacher(@Param("entity")StudentStatusTeacherFilterRO entity,
+                                                           @Param("pageNumber")Long pageNumber, @Param("pageSize")long pageSize);
+
+    long getStudentStatusInfoByTeacherCount(@Param("entity") StudentStatusTeacherFilterRO entity);
 }
 
