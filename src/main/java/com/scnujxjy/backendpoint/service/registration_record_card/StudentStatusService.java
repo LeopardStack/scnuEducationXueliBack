@@ -16,6 +16,7 @@ import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
@@ -25,6 +26,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.beans.BeanUtils;
@@ -378,5 +380,9 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
 
 
         filter.exportScoreInformationData(pageRO, userId);
+    }
+
+    public FilterDataVO getStudentStatusInfoByTeacher(PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO, AbstractFilter filter) {
+        return filter.getStudentStatusInfoByTeacher(studentStatusROPageRO);
     }
 }

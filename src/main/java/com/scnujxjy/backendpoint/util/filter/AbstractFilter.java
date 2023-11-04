@@ -17,10 +17,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMap
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.*;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -263,5 +260,23 @@ public abstract class AbstractFilter {
      */
     public ScheduleCourseInformationSelectArgs getCoursesArgs(CourseScheduleFilterRO courseScheduleFilterRO) {
         return null;
+    }
+
+    /**
+     * 获取教师的排课表信息 只返回不同时间的各个课程
+     * @param courseScheduleROPageRO
+     * @return
+     */
+    public PageVO<TeacherSchedulesVO> getTeacherCourschedules(PageRO<CourseScheduleRO> courseScheduleROPageRO) {
+        return null;
+    }
+
+    /**
+     * 教师获取学生信息
+     * @param studentStatusROPageRO
+     * @return
+     */
+    public FilterDataVO getStudentStatusInfoByTeacher(PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO) {
+        return  null;
     }
 }

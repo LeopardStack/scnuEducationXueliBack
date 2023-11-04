@@ -161,8 +161,8 @@ public class CourseScheduleController {
             courseScheduleROPageRO.setEntity(new CourseScheduleRO());
         }
         // 查询数据
-        PageVO<TeacherCourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.
-                allPageQueryCourseScheduleFilter(courseScheduleROPageRO, teacherFilter);
+        PageVO<TeacherSchedulesVO> courseScheduleVOPageVO = courseScheduleService.
+                getTeacherCourschedules(courseScheduleROPageRO, teacherFilter);
         // 数据校验
         if (Objects.isNull(courseScheduleVOPageVO)) {
             throw dataNotFoundError();

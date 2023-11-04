@@ -27,6 +27,7 @@ import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +71,15 @@ public class DataUpdate {
     @Resource
     private MessageSender messageSender;
 
+    @Value("${run.checkLivingStatusScan}")
+    private boolean checkLivingStatusScan;
+
+    @Value("${run.schedule}")
+    private boolean schedule;
+
+    @Value("${run.oldDataSynchronizeStatus}")
+    private boolean oldDataSynchronizeStatus;
+
     @Transactional(rollbackFor = Exception.class)
     boolean updateCourseScheduleInfoByVideo(CourseSchedulePO courseSchedulePO, String videoId){
         // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
@@ -94,8 +104,12 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-//    @Scheduled(fixedRate = 60000)
-    public void dealWithLivingRooms(){
+    @Scheduled(fixedRate = 60000)
+    public void dealWithLivingRooms() {
+        if (!schedule) {
+            // 如果配置为 false，直接返回
+            return;
+        }
         // 获取距离现在只有 1小时的排课表
         List<CourseSchedulePO> recordsWithinCertainHour = courseScheduleMapper.findRecordsWithinCertainHour(1);
         for(CourseSchedulePO courseSchedulePO: recordsWithinCertainHour){
@@ -281,6 +295,10 @@ public class DataUpdate {
 
     @Scheduled(cron = "0 00 22 * * ?")
     public void executeAt1AM1520() {
+        if (!oldDataSynchronizeStatus) {
+            // 如果配置为 false，直接返回
+            return;
+        }
         // 每晚 10 点 校对新旧系统数据
         log.info("旧系统数据更新中...");
         messageSender.send(queue1, "数据同步");
@@ -289,8 +307,12 @@ public class DataUpdate {
     /**
      * 检测一下 直播间的状态
      */
-//    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 300000)
     public void checkLivingRoomStatus(){
+        if (!checkLivingStatusScan) {
+            // 如果配置为 false，直接返回
+            return;
+        }
         log.info("执行直播间扫描");
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);
         for(VideoStreamRecordPO videoStreamRecordPO: videoStreamRecordPOS){

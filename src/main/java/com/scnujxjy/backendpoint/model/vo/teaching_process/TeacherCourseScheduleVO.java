@@ -18,7 +18,6 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("course_schedule")
 public class TeacherCourseScheduleVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

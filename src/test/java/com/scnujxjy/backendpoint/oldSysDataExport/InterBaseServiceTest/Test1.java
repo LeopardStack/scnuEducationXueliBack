@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.oldSysDataExport.InterBaseServiceTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
@@ -116,7 +117,10 @@ public class Test1 {
     public void test5_1(){
         try {
             paymentInfoMapper.truncateTable();
-            oldDataSynchronize.synchronizePaymentInfoData(true, true);
+            for(int year=2023; year >= 2000; year--){
+                oldDataSynchronize.synchronizePaymentInfoData(true, true, String.valueOf(year));
+            }
+
         }catch (Exception e){
             log.error("同步缴费数据错误 " + e.toString());
         }
@@ -147,14 +151,19 @@ public class Test1 {
         Object old_class_count = scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
         log.info("新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count);
 
+
         log.info("新旧系统缴费数据对比");
 
-        Integer new_pay_count = paymentInfoMapper.selectCount(null);
-        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
-        if(new_pay_count != old_pay_count){
-            log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
-        }else{
-            log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+        for(int payYear = 2023; payYear >= 2000; payYear--){
+            Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+            int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
+            if(new_pay_count != old_pay_count){
+                log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+                int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+            }else{
+                log.info("新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+
+            }
         }
 
 
@@ -666,7 +675,11 @@ public class Test1 {
         if(new_pay_count != old_pay_count){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
             dataCheckLogs.add(formattedMsg);
-            oldDataSynchronize.synchronizePaymentInfoData(true, true);
+            paymentInfoMapper.truncateTable();
+            for(int year = 2023; year >= 2000; year--){
+                oldDataSynchronize.synchronizePaymentInfoData(true, true, String.valueOf(year));
+            }
+
         }else{
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
             dataCheckLogs.add(formattedMsg);

@@ -5,6 +5,7 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
@@ -381,4 +382,8 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<Map<String, StatisticTableForGraduation>> getCountOfGraduation(@Param("startYear") int startYear, @Param("endYear") int endYear);
 
 
+    List<StudentStatusAllVO> getStudentStatusInfoByTeacher(@Param("entity")StudentStatusTeacherFilterRO entity,
+                                                           @Param("pageNumber")Long pageNumber, @Param("pageSize")long pageSize);
+
+    long getStudentStatusInfoByTeacherCount(@Param("entity")StudentStatusTeacherFilterRO entity);
 }

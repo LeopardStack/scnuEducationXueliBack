@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
@@ -25,7 +26,7 @@ import static com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize.CON
 @AllArgsConstructor
 @NoArgsConstructor
 class ErrorPaymentInfoData extends PaymentInfoPO {
-    @ExcelProperty(value = "导入失败原因", index = 12)
+    @ExcelProperty(value = "导入失败原因", index = 13)
     private String errorReason;
 }
 
@@ -141,6 +142,8 @@ public class PaymentInformationDataImport {
             paymentInfo.setPaymentCategory(studentData.get("LB"));
             paymentInfo.setAcademicYear(studentData.get("XN"));
             paymentInfo.setPaymentType(studentData.get("JFFS"));
+            paymentInfo.setGrade(studentData.get("NJ"));
+            paymentInfo.setClassIdentifier(studentData.get("BSHI"));
             String fee = studentData.get("JINE");
             if (fee == null) {
                 throw new RuntimeException("学费金额为空 " + studentData.toString());
@@ -153,8 +156,22 @@ public class PaymentInformationDataImport {
             paymentInfo.setPaymentMethod("学年");
             paymentInfo.setIsPaid("是");
             synchronized(this) {
-                paymentInfoMapper.insert(paymentInfo);
-                success_insert += 1;
+                PaymentInfoPO paymentInfoPO = paymentInfoMapper.selectOne(new LambdaQueryWrapper<PaymentInfoPO>()
+                        .eq(PaymentInfoPO::getGrade, paymentInfo.getGrade())
+                        .eq(PaymentInfoPO::getPaymentDate, paymentInfo.getPaymentDate())
+                        .eq(PaymentInfoPO::getIdCardNumber, paymentInfo.getIdCardNumber())
+                        .eq(PaymentInfoPO::getClassIdentifier, paymentInfo.getClassIdentifier())
+                );
+                if(paymentInfoPO != null){
+                    if(updateAny){
+                        int i = paymentInfoMapper.updateById(paymentInfoPO);
+                        success_insert += 1;
+                    }
+                }else{
+                    paymentInfoMapper.insert(paymentInfo);
+                    success_insert += 1;
+                }
+
             }
             return 1;
         } catch (Exception e) {

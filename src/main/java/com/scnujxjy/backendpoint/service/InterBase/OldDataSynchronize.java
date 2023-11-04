@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
@@ -407,14 +408,11 @@ public class OldDataSynchronize {
     /**
      * 同步旧系统与新系统的缴费数据
      */
-    public void synchronizePaymentInfoData(boolean updateAny, boolean truncateTable) {
+    public void synchronizePaymentInfoData(boolean updateAny, boolean truncateTable, String year) {
         try {
             PaymentInformationDataImport paymentInformationDataImport = new PaymentInformationDataImport();
             paymentInformationDataImport.setUpdateAny(updateAny);
-            ArrayList<HashMap<String, String>> studentFees = new ArrayList<>();
-            for(int i = 2023; i > 2000; i--){
-                studentFees.addAll(getStudentFees(String.valueOf(i)));
-            }
+            ArrayList<HashMap<String, String>> studentFees = getStudentFees(year);
 
             paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + studentFees.size());
 
@@ -424,13 +422,6 @@ public class OldDataSynchronize {
             paymentInformationDataImport.insertLogsList.add("新系统中导入的总缴费记录数 " + integer);
             paymentInformationDataImport.insertLogsList.add("旧系统中的总缴费记录数 " + value);
 
-            if (integer != (int) value && updateAny && truncateTable) {
-                paymentInfoMapper.truncateTable();
-                if (paymentInfoMapper.selectList(null).size() == 0) {
-                    log.info("成功清除缴费表，开始缴费数据新旧系统数据同步");
-                }
-
-            }
 
             for (HashMap<String, String> hashMap : studentFees) {
 
@@ -612,14 +603,16 @@ public class OldDataSynchronize {
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
         dataCheckLogs.add(formattedMsg);
 
-        Integer new_pay_count = paymentInfoMapper.selectCount(null);
-        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
-        if(new_pay_count != old_pay_count){
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
-            dataCheckLogs.add(formattedMsg);
-        }else{
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
-            dataCheckLogs.add(formattedMsg);
+        for(int payYear = 2023; payYear >= 2000; payYear--){
+            Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+            int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
+            if(new_pay_count != old_pay_count){
+                formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+                dataCheckLogs.add(formattedMsg);
+            }else{
+                formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+                dataCheckLogs.add(formattedMsg);
+            }
         }
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
@@ -756,16 +749,22 @@ public class OldDataSynchronize {
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
         dataCheckLogs.add(formattedMsg);
 
-        Integer new_pay_count = paymentInfoMapper.selectCount(null);
-        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
-        if(new_pay_count != old_pay_count){
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
-            dataCheckLogs.add(formattedMsg);
-            synchronizePaymentInfoData(true, true);
-        }else{
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
-            dataCheckLogs.add(formattedMsg);
+        for(int payYear = 2023; payYear >= 2000; payYear--){
+            Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+            int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
+            if(new_pay_count != old_pay_count){
+                formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+                dataCheckLogs.add(formattedMsg);
+                int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+                synchronizePaymentInfoData(true, true, String.valueOf(payYear));
+            }else{
+                formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+                dataCheckLogs.add(formattedMsg);
+            }
         }
+//        Integer new_pay_count = paymentInfoMapper.selectCount(null);
+//        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
+
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
         dataCheckLogs.add(formattedMsg);
