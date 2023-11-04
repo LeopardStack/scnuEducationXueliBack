@@ -179,14 +179,14 @@ public class Test2 {
      */
     @Test
     public void test6(){
-        String channelID = "4276449";
+        String channelID = "4416383";
         ChannelInfoData channelInfoData = new ChannelInfoData();
         channelInfoData.setChannelId(channelID);
         channelInfoData.setGlobalSettingEnabled("N");
         channelInfoData.setPlaybackEnabled("Y");
-        channelInfoData.setType("list");
+        channelInfoData.setType("single");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
-        channelInfoData.setOrigin("vod");
+        channelInfoData.setOrigin("record");
 
         try {
             ChannelResponse channelPlayBackInfoResponse =

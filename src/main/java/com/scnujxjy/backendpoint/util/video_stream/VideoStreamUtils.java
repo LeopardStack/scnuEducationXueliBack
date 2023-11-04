@@ -9,6 +9,8 @@ import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.obs.shade.okhttp3.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
@@ -890,6 +892,49 @@ public class VideoStreamUtils {
 
         return playbackResponse;
 
+    }
+
+
+    public List<String> getAllChannels(){
+        List<String> channelIdList = new ArrayList<>();
+
+        try {
+            String appId = LiveGlobalConfig.getAppId();
+            String appSecret = LiveGlobalConfig.getAppSecret();
+            String userId = LiveGlobalConfig.getUserId();
+            String timestamp = String.valueOf(System.currentTimeMillis());
+
+            // 业务参数
+            String url = "http://api.polyv.net/live/v3/user/channels";
+
+
+            // HTTP 调用逻辑
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("appId", appId);
+            requestMap.put("timestamp", timestamp);
+
+            requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+            String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil .get(url, requestMap);
+            log.info("测试查询频道列表，返回值：{}", response);
+
+            // 解析 JSON 响应
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(response);
+
+            if (rootNode.has("code") && rootNode.get("code").asInt() == 200) {
+                JsonNode channelsNode = rootNode.get("data").get("channels");
+
+                if (channelsNode.isArray()) {
+                    for (JsonNode channelNode : channelsNode) {
+                        channelIdList.add(channelNode.asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("获取所有直播间 ID 失败 " + e.toString());
+        }
+
+        return channelIdList;
     }
 
 

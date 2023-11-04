@@ -591,7 +591,6 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 //                courseSchedulePO.setTeachingTime(formattedTime);
                 // 同一个时间、同一个老师、同一个教学班级、同一门课程 要改时间 全改 而且直播间得删除 并且重新让扫描器去重新创建
                 List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                        .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
                         .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
                         .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
                         .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())

@@ -146,7 +146,6 @@ public class DataUpdate {
                         }
                         if(insert > 0){
                             List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                                    .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
                                     .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
                                     .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
                                     .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
@@ -287,7 +286,7 @@ public class DataUpdate {
     /**
      * 检测一下 直播间的状态
      */
-    @Scheduled(fixedRate = 300000)
+//    @Scheduled(fixedRate = 300000)
     public void checkLivingRoomStatus(){
         log.info("执行直播间扫描");
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);

@@ -154,6 +154,7 @@ public class VideoStreamRecordController {
         try {
             CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>()
                     .eq(CourseSchedulePO::getId, courseInformationRO.getId()));
+
             ScnuTimeInterval timeInterval = scnuXueliTools.getTimeInterval(courseSchedulePO.getTeachingDate(), courseSchedulePO.getTeachingTime());
 
             ApiResponse channel = singleLivingSetting.createChannel(courseSchedulePO.getCourseName(), timeInterval.getStart(), timeInterval.getEnd(),
@@ -171,29 +172,42 @@ public class VideoStreamRecordController {
                     log.info("创建频道成功");
                     videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelInfoByChannelId1.getData().getWatchStatus()));
                     int insert = videoStreamRecordService.getBaseMapper().insert(videoStreamRecordPO);
-                    // 更新排课表的在线平台资源
-                    courseSchedulePO.setOnlinePlatform(String.valueOf(videoStreamRecordPO.getId()));
-                    boolean b = courseScheduleService.updateById(courseSchedulePO);
+                    // 更新排课表的在线平台资源 要考虑合班
+                    List<CourseSchedulePO> courseSchedulePOS = courseScheduleService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                            .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                            .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
+                            .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
+                            .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                    );
+                    Long id = videoStreamRecordPO.getId();
+                    if(id == null){
+                        return SaResult.error("创建直播间失败，插入数据库失败").setCode(2000);
+                    }
+                    for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+                        courseSchedulePO.setOnlinePlatform(String.valueOf(courseSchedulePO1.getId()));
+                        boolean b = courseScheduleService.updateById(courseSchedulePO1);
+                        if(insert > 0 && b){
+                            log.info("新增直播间，直播间信息插入成功 " + courseSchedulePO1);
+                        }
+                    }
 
 
                     log.info(channel.toString());
                     log.info("创建的直播间频道 " + channelResponseData.getChannelId() + " 频道密码 " + channelResponseData.getChannelPasswd());
-                    if(insert > 0){
-                        log.info("直播间信息插入成功");
-                    }
+
 
                     return SaResult.ok("创建频道成功");
                 }else{
                     log.error("创建直播间失败 " + channelInfoByChannelId1);
-                    return SaResult.error("创建直播间失败");
+                    return SaResult.error("创建直播间失败").setCode(2000);
                 }
 
             }
         }catch (Exception e){
             log.error("创建直播间失败 " + e.toString());
-            return SaResult.error("创建直播间失败");
+            return SaResult.error("创建直播间失败").setCode(2000);
         }
-        return SaResult.error("创建直播间失败");
+        return SaResult.error("创建直播间失败").setCode(2000);
     }
 
     /**
@@ -208,7 +222,6 @@ public class VideoStreamRecordController {
         log.info("获取到了 排课表 ID" + id);
         CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById((id));
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
                 .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
                 .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
                 .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
@@ -340,7 +353,7 @@ public class VideoStreamRecordController {
 
 
     /**
-     * 单个添加直播间
+     * 设置回放
      *
      * @param channelSetRO 排课表id
      * @return 添加后的频道信息
