@@ -393,22 +393,6 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "<if test='entity.courseName != null'>AND cs.course_name = #{entity.courseName} </if>" +
             "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>"+
 
-
-//            "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
-//            "<if test='entity.college != null'>AND ss.college = #{entity.college} </if>" +
-//            "<if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>" +
-//            "<if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>" +
-//            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
-//            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
-//            "<if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>" +
-//            "<if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>" +
-//            "<if test='entity.academicStatus != null'>AND ss.academic_status = #{entity.academicStatus} </if>" +
-//            "<if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>" +
-//            "<if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>" +
-//            "<if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>" +
-//            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-//            "<if test='entity.graduationDate != null'>AND gi.graduation_date = #{entity.graduationDate} </if>" +
-//            "ORDER BY ss.college" +
             "</script>")
     List<Map<String,String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
 }

@@ -30,6 +30,11 @@ public class TutorInformation {
     private String tutorUrl;
 
     /**
+     * 频道密码
+     */
+    private String tutorPassword;
+
+    /**
      * 助教密码
      */
     private String userId;

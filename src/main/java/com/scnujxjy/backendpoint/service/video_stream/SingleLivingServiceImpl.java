@@ -343,18 +343,29 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult getTutorChannelUrl(String channelId) {
+    public SaResult getTutorChannelUrl(String channelId,String userId) {
         SaResult saResult = new SaResult();
         ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
+        TutorInformation tutorInformation=new TutorInformation();
 
-        QueryWrapper<VideoStreamRecordPO> queryWrapper = new QueryWrapper<>();
+        QueryWrapper<TutorInformation> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("channel_id", channelId);
-        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(queryWrapper);
-        if (StrUtil.isNotBlank(videoStreamRecordPO.getTutorUrl())) {
-            channelInfoResponse.setUrl(videoStreamRecordPO.getTutorUrl());
+        queryWrapper.eq("user_id", userId);
+        Integer integer = tutorInformationMapper.selectCount(queryWrapper);
+        if (integer==0){//说明该用户助教信息没被返回过
+            QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
+            queryWrapper1.eq("channel_id", channelId)
+            .and(wrapper -> wrapper.isNull("userid").or().eq("userid", ""));
+            tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
+        }else {//说明查过，该助教信息中有userId
+            tutorInformation= tutorInformationMapper.selectOne(queryWrapper);
         }
-        if (StrUtil.isNotBlank(videoStreamRecordPO.getTutorPasswd())) {
-            channelInfoResponse.setPassword(videoStreamRecordPO.getTutorPasswd());
+
+        if (StrUtil.isNotBlank(tutorInformation.getTutorUrl())) {
+            channelInfoResponse.setUrl(tutorInformation.getTutorUrl());
+        }
+        if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
+            channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
         }
         saResult.setCode(ResultCode.SUCCESS.getCode());
         saResult.setMsg(ResultCode.SUCCESS.getMessage());
@@ -362,7 +373,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    //创建直播间时默认创建一个最高权限的助教老师
+    //创建直播间时默认创建普通高级的助教老师
     @Override
     public SaResult createTutor(String channelId, String tutorName) {
         SaResult saResult = new SaResult();
@@ -382,7 +393,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
-//                            .setCode(LiveConstant.RolePurview.PAGE_TURN_ENABLED.getCode())
+//                            .setCode(LiveConstant.RolePurview.CHAT_AUDIT.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
             liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
             if (liveCreateAccountResponse != null) {
@@ -395,7 +406,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 tutorInformation.setTutorName(tutorName);
                 tutorInformation.setChannelId(channelId);
-                tutorInformation.setUserId("123123");
+                tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
+
                 int insert = tutorInformationMapper.insert(tutorInformation);
                 if (insert>0) {
                     saResult.setCode(ResultCode.SUCCESS.getCode());

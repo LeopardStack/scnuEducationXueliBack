@@ -79,11 +79,11 @@ public class SingleLivingController {
 
     //返回助教单点登录链接
     @PostMapping("/edit/getTutorChannelUrl")
-    public  SaResult getTutorChannelUrl(String channelId){
+    public  SaResult getTutorChannelUrl(String channelId,String userId){
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
-        return singleLivingService.getTutorChannelUrl(channelId);
+        return singleLivingService.getTutorChannelUrl(channelId,userId);
     }
 
     @PostMapping("/edit/UpdateChannelNameAndImg")

@@ -19,7 +19,7 @@ public interface SingleLivingService {
 
     SaResult getStudentChannelUrl(String channelId);
 
-    SaResult getTutorChannelUrl(String channelId);
+    SaResult getTutorChannelUrl(String channelId,String userId);
 
     SaResult createTutor(String channelId, String tutorName);
 
