@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,6 +42,7 @@ public class PlatformUserController {
     @Resource
     private PlatformRoleService platformRoleService;
 
+
     /**
      * 用户登录接口
      *
@@ -49,7 +51,10 @@ public class PlatformUserController {
      * <p>token在Header中</p>
      */
     @PostMapping("/login")
-    public SaResult userLogin(@RequestBody PlatformUserRO platformUserRO) {
+    public SaResult userLogin(@RequestBody PlatformUserRO platformUserRO, HttpServletRequest request) {
+
+
+
         // 参数校验，登录名、密码不可或缺
         if (Objects.isNull(platformUserRO) || StrUtil.isBlank(platformUserRO.getUsername()) || StrUtil.isBlank(platformUserRO.getPassword())) {
             return SaResult.error("账户、密码不允许为空，登录失败");
@@ -69,12 +74,15 @@ public class PlatformUserController {
                     return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
                 }
             }
+
             String roleName = StpUtil.getRoleList().get(0);
             String tmp = "管理员";
             if(roleName.contains(tmp)){
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
-                return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
+
+                return SaResult.data("成功登录 " + platformUserRO.getUsername())
+                        .set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),

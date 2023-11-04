@@ -211,32 +211,45 @@ public class VideoStreamRecordController {
     public SaResult deleteLivingRoom(@RequestParam("id") Long id) {
         log.info("获取到了 排课表 ID" + id);
         CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById((id));
-        if(courseSchedulePO == null){
-            return SaResult.error("删除直播间失败, 该 id 找不到排课信息").setCode(2000);
-        }else{
-            String onlinePlatform = courseSchedulePO.getOnlinePlatform();
-            if(onlinePlatform == null){
-                return SaResult.ok("直播已删除，不需要重复删除");
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
+                .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
+                .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+        );
+        int count = 0;
+        for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+            if(courseSchedulePO1 == null){
+                return SaResult.error("删除直播间失败, 该 id 找不到排课信息").setCode(2000);
             }else{
-                try {
-                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordService.getBaseMapper().selectById(Long.parseLong(onlinePlatform));
-                    if(videoStreamRecordPO != null && videoStreamRecordPO.getChannelId() != null){
-                        String channelId = videoStreamRecordPO.getChannelId();
-                        Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(channelId);
-                        int i = videoStreamRecordService.getBaseMapper().deleteById(videoStreamRecordPO.getId());
+                String onlinePlatform = courseSchedulePO1.getOnlinePlatform();
+                if(onlinePlatform == null){
+                    return SaResult.ok("直播已删除，不需要重复删除");
+                }else{
+                    try {
+                        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordService.getBaseMapper().selectById(Long.parseLong(onlinePlatform));
+                        if(videoStreamRecordPO != null && videoStreamRecordPO.getChannelId() != null){
+                            String channelId = videoStreamRecordPO.getChannelId();
+                            Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(channelId);
+                            int i = videoStreamRecordService.getBaseMapper().deleteById(videoStreamRecordPO.getId());
+                        }
+                    }catch (Exception e){
+                        log.info("找不到该直播间信息，删除失败" + e);
                     }
-                }catch (Exception e){
-                    log.info("找不到该直播间信息，删除失败" + e);
+
+
+                    courseSchedulePO1.setOnlinePlatform(null);
+
+                    Long i = courseScheduleService.getBaseMapper().updateOnlinePlatformToNull(courseSchedulePO1.getId());
+
+                    count += 1;
                 }
-
-
-                courseSchedulePO.setOnlinePlatform(null);
-
-                Long i = courseScheduleService.getBaseMapper().updateOnlinePlatformToNull(courseSchedulePO.getId());
-
-                return SaResult.ok("删除成功 " + i);
             }
         }
+
+        return SaResult.ok("删除成功 " + count);
+
     }
 
     /**
