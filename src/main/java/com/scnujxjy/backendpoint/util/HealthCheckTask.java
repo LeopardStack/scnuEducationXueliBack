@@ -112,8 +112,6 @@ public class HealthCheckTask {
     @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void getCourses() {
         StopWatch stopWatch = new StopWatch();
-
-
         stopWatch.start();
         String pattern = "yyyy-MM-dd HH:mm";
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
@@ -166,7 +164,7 @@ public class HealthCheckTask {
                             log.info("创建频道成功,频道号为：" + channelId);
 
                             List<CourseSchedulePO> courseSchedulePOList =  courseSchedulePOS.stream().
-                                    filter(cs -> cs.getTeachingClass().equals(courseSchedulePO.getTeachingClass()) &&
+                                    filter(cs ->
                                             cs.getTeachingDate().equals(courseSchedulePO.getTeachingDate()) &&
                                             cs.getTeachingTime().equals(courseSchedulePO.getTeachingTime()) &&
                                             cs.getTeacherUsername().equals(courseSchedulePO.getTeacherUsername()) &&
