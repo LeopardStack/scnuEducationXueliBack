@@ -47,7 +47,7 @@ public class SingleLivingController {
     }
 
     @PostMapping("/edit/getChannelView")
-    public ViewLogFirstResponse getChannelView(@RequestBody ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+    public SaResult getChannelView(@RequestBody ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
         if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || StrUtil.isBlank(channelInfoRequest.getCurrentDay()) ||
                 StrUtil.isBlank(channelInfoRequest.getStartTime()) || StrUtil.isBlank(channelInfoRequest.getEndTime())) {
             throw dataMissError();

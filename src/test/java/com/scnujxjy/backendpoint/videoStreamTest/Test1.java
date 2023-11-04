@@ -81,7 +81,12 @@ public class Test1 {
     @Test
     public void test3() throws Exception {
         SingleLivingServiceImpl sing = new SingleLivingServiceImpl();
-//        sing.getChannelCardPush("4417168");
+        ChannelInfoRequest request = new ChannelInfoRequest();
+        request.setChannelId("4417168");
+        request.setCurrentDay("2023-11-04");
+        request.setStartTime("2023-11-04 23:00");
+        request.setEndTime("2023-11-04 23:50");
+        sing.getChannelCardPush(request);
 
 //        String[] a = new String[]{"4360979", "4360976"};
 //        ChannelInfoRequest request = new ChannelInfoRequest();

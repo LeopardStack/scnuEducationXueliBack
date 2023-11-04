@@ -130,17 +130,17 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
         //设置频道直播间白名单，只有添加了白名单，后续才能设置观看条件为白名单。
         try {
-            if (channel.getCode()==200 && Objects.nonNull(channel.getData().getChannelId())) {
-                String channelId=channel.getData().getChannelId().toString();
+            if (channel.getCode() == 200 && Objects.nonNull(channel.getData().getChannelId())) {
+                String channelId = channel.getData().getChannelId().toString();
 
                 File whiteListFile = createWhiteListFile(courseSchedulePO);
-                SaResult saResult1 = UploadWhiteList(whiteListFile,channelId);
-                if (saResult1.getCode()==200){
+                SaResult saResult1 = UploadWhiteList(whiteListFile, channelId);
+                if (saResult1.getCode() == 200) {
                     //设置指定频道的观看条件为白名单
                     log.info("批量添加白名单成功");
                     if (Objects.nonNull(channel.getData().getChannelId())) {
                         SaResult saResult2 = setWatchCondition(channel.getData().getChannelId().toString());
-                        if (saResult2.getCode()==200){
+                        if (saResult2.getCode() == 200) {
                             log.info("设置白名单观看条件成功");
                             saResult.setCode(ResultCode.SUCCESS.getCode());
                             saResult.setMsg(ResultCode.SUCCESS.getMessage());
@@ -161,12 +161,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
 
     @Override
-    public ViewLogFirstResponse getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+    public SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+        SaResult saResult=new SaResult();
+
         String appId = LiveGlobalConfig.getAppId();
         String appSecret = LiveGlobalConfig.getAppSecret();
         String timestamp = String.valueOf(System.currentTimeMillis());
         //业务参数
-        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog",channelInfoRequest.getChannelId());
+        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog", channelInfoRequest.getChannelId());
         String currentDay = channelInfoRequest.getCurrentDay();
         String startTime = channelInfoRequest.getStartTime();
 
@@ -177,41 +179,62 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         long endTimestamp = endDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
 
         //http 调用逻辑
-        Map<String,String> requestMap = new HashMap<>();
+        Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", appId);
-        requestMap.put("timestamp",timestamp);
-        requestMap.put("currentDay",currentDay);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("currentDay", currentDay);
 //        requestMap.put("page",page);
 //        requestMap.put("pageSize",pageSize);
-        requestMap.put("startTime",String.valueOf(startTimestamp));
-        requestMap.put("endTime",String.valueOf(endTimestamp));
-        requestMap.put("param3","live");
-        requestMap.put("sign",LiveSignUtil.getSign(requestMap, appSecret));
+        requestMap.put("startTime", String.valueOf(startTimestamp));
+        requestMap.put("endTime", String.valueOf(endTimestamp));
+        requestMap.put("param3", "live");
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
 
 //        String response = PolyvHttpUtil.postJsonBody(url, body, null);
-        String s =HttpUtil.get(url, requestMap);
+        String s = HttpUtil.get(url, requestMap);
         ViewLogFirstResponse viewLogFirstResponse = JSON.parseObject(s, ViewLogFirstResponse.class);
-        log.info("测试分页查询频道直播观看详情数据，返回值：{}",viewLogFirstResponse);
-        return viewLogFirstResponse;
-    }
+        log.info("测试分页查询频道直播观看详情数据，返回值：{}", viewLogFirstResponse);
+        List<ViewLogResponse> viewLogResponseList=new ArrayList<>();
+        if (viewLogFirstResponse != null && viewLogFirstResponse.getCode() == 200) {
+            List<ViewLogThirdResponse> contents = viewLogFirstResponse.getData().getContents();
 
+            for (ViewLogThirdResponse viewLogThirdResponse:contents) {
+                ViewLogResponse viewLogResponse=new ViewLogResponse();
+                viewLogResponse.setChannelId(channelInfoRequest.getChannelId());
+                viewLogResponse.setParam1(viewLogThirdResponse.getParam1());
+                viewLogResponse.setParam2(viewLogThirdResponse.getParam2());
+                viewLogResponse.setPlayDuration(viewLogThirdResponse.getPlayDuration());
+                viewLogResponse.setFirstActiveTime(viewLogThirdResponse.getFirstActiveTime());
+                viewLogResponse.setLastActiveTime(viewLogThirdResponse.getLastActiveTime());
+                viewLogResponseList.add(viewLogResponse);
+            }
+
+            saResult.setCode(ResultCode.SUCCESS.getCode());
+            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+            saResult.setData(viewLogResponseList);
+            return saResult;
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
 
 
     private File createWhiteListFile(CourseSchedulePO courseSchedulePO) {
         String templateFilePath = "temporaryWhiteList.xls";
-        List<StudentWhiteListVO> StudentWhiteListVOS =new ArrayList<>();
+        List<StudentWhiteListVO> StudentWhiteListVOS = new ArrayList<>();
 
         //查出排课表的所有排课信息
         QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
         courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
-                .eq("main_teacher_name",courseSchedulePO.getMainTeacherName());
+                .eq("main_teacher_name", courseSchedulePO.getMainTeacherName());
 
         List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
 
-        for (CourseSchedulePO schedulePO:schedulePOList) {
+        for (CourseSchedulePO schedulePO : schedulePOList) {
             List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(schedulePO);
             for (Map<String, String> sc : scheduleClassStudent) {
-                StudentWhiteListVO studentWhiteListVO=new StudentWhiteListVO();
+                StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO();
                 studentWhiteListVO.setName(sc.get("name"));
                 studentWhiteListVO.setCode(sc.get("id_number"));
                 StudentWhiteListVOS.add(studentWhiteListVO); // 将studentWhiteListVO添加到集合中
@@ -394,22 +417,22 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult getTutorChannelUrl(String channelId,String userId) {
+    public SaResult getTutorChannelUrl(String channelId, String userId) {
         SaResult saResult = new SaResult();
         ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
-        TutorInformation tutorInformation=new TutorInformation();
+        TutorInformation tutorInformation = new TutorInformation();
 
         QueryWrapper<TutorInformation> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("channel_id", channelId);
         queryWrapper.eq("user_id", userId);
         Integer integer = tutorInformationMapper.selectCount(queryWrapper);
-        if (integer==0){//说明该用户助教信息没被返回过
+        if (integer == 0) {//说明该用户助教信息没被返回过
             QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
             queryWrapper1.eq("channel_id", channelId)
-            .and(wrapper -> wrapper.isNull("userid").or().eq("userid", ""));
+                    .and(wrapper -> wrapper.isNull("userid").or().eq("userid", ""));
             tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
-        }else {//说明查过，该助教信息中有userId
-            tutorInformation= tutorInformationMapper.selectOne(queryWrapper);
+        } else {//说明查过，该助教信息中有userId
+            tutorInformation = tutorInformationMapper.selectOne(queryWrapper);
         }
 
         if (StrUtil.isNotBlank(tutorInformation.getTutorUrl())) {
@@ -452,14 +475,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
                 channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 //返回助教信息，同时插入助教表
-                TutorInformation tutorInformation=new TutorInformation();
+                TutorInformation tutorInformation = new TutorInformation();
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 tutorInformation.setTutorName(tutorName);
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
 
                 int insert = tutorInformationMapper.insert(tutorInformation);
-                if (insert>0) {
+                if (insert > 0) {
                     saResult.setCode(ResultCode.SUCCESS.getCode());
                     saResult.setMsg(ResultCode.SUCCESS.getMessage());
                     saResult.setData(channelInfoResponse);
@@ -476,8 +499,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    public SaResult UploadWhiteList(File file,String channelId) {
-        SaResult saResult=new SaResult();
+    public SaResult UploadWhiteList(File file, String channelId) {
+        SaResult saResult = new SaResult();
         LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
         Boolean liveUploadWhiteListResponse;
         try {
@@ -486,9 +509,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setFile(file);
             liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
 
-            if (liveUploadWhiteListResponse!=null && liveUploadWhiteListResponse) {
+            if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
                 boolean delete = file.delete();
-                if (delete){
+                if (delete) {
                     log.info("删除文件成功");
                 }
                 saResult.setCode(ResultCode.SUCCESS.getCode());
@@ -509,7 +532,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     //添加单个白名单
     @Override
     public SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         LiveCreateChannelWhiteListRequest liveCreateChannelWhiteListRequest = new LiveCreateChannelWhiteListRequest();
         Boolean liveCreateChannelWhiteListResponse;
         try {
@@ -519,14 +542,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setName(channelInfoRequest.getName());
             liveCreateChannelWhiteListResponse = new LiveWebAuthServiceImpl().createChannelWhiteList(
                     liveCreateChannelWhiteListRequest);
-            if (liveCreateChannelWhiteListResponse!=null && liveCreateChannelWhiteListResponse) {
+            if (liveCreateChannelWhiteListResponse != null && liveCreateChannelWhiteListResponse) {
                 log.info("测试添加单个白名单-频道白名单成功");
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 return saResult;
             }
         } catch (PloyvSdkException e) {
-          e.printStackTrace();
+            e.printStackTrace();
         } catch (Exception e) {
             log.error("添加白名单接口调用异常", e);
         }
@@ -627,7 +650,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     //live：直播中 playback：回放中 end：已结束 waiting：等待中 unStart：未开始
     @Override
     public SaResult GetChannelDetail(String channelId) {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         LiveChannelBasicInfoV2Request liveChannelBasicInfoV2Request = new LiveChannelBasicInfoV2Request();
         LiveChannelBasicInfoV2Response liveChannelBasicInfoV2Response;
         try {
