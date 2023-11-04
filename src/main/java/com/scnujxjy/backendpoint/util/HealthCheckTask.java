@@ -1,7 +1,6 @@
 package com.scnujxjy.backendpoint.util;
 
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.date.StopWatch;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -31,7 +30,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -140,8 +138,12 @@ public class HealthCheckTask {
 
                 Duration duration = Duration.between(formattedNowTime, formattedCourseStartTime);//时间较晚的后面，课程时间在后面
                 long minuteDiff = duration.toMinutes();
-                //如果二者之差大于0小于60分钟，则创建直播间
-                if (minuteDiff >= 0 && minuteDiff <= 60 && StrUtil.isBlank(courseSchedulePO.getOnlinePlatform())) {
+                //如果二者之差大于0小于60分钟，并且online为空，才去创建直播间
+
+                courseSchedulePO = courseScheduleMapper.selectById(courseSchedulePO.getId());
+                String OnlinePlatform = courseSchedulePO.getOnlinePlatform();
+
+                if (minuteDiff >= 0 && minuteDiff <= 60 && StrUtil.isBlank(OnlinePlatform)) {
                     try {
                         ChannelCreateRequestBO channelCreateRequestBO = new ChannelCreateRequestBO();
                         channelCreateRequestBO.setLivingRoomTitle(courseSchedulePO.getCourseName());
@@ -151,7 +153,7 @@ public class HealthCheckTask {
                         channelCreateRequestBO.setPlayRollback(false);
                         channelCreateRequestBO.setStartDate(sdf.parse(localDate + " " + courseStartTime));//2023-07-22 14:30
                         channelCreateRequestBO.setEndDate(sdf.parse(localDate + " " + courseEndTime));//2023-07-22 15:30
-                        SaResult channel = singleLivingService.createChannel(channelCreateRequestBO,courseSchedulePO);
+                        SaResult channel = singleLivingService.createChannel(channelCreateRequestBO, courseSchedulePO);
                         if (channel.getCode() == 200 && Objects.nonNull(channel.getData())) {
                             ApiResponse apiResponse = (ApiResponse) channel.getData();
                             String channelId = apiResponse.getData().getChannelId().toString();
@@ -160,9 +162,7 @@ public class HealthCheckTask {
                             //创建时，将排课表中的所有该门课的直播间都建为统一。
                             QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
                             courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
-                                    .eq("main_teacher_name",courseSchedulePO.getMainTeacherName());
-//                                    .eq("major_name",courseSchedulePO.getMajorName());
-//                                    .eq("study_form",courseSchedulePO.getStudyForm());
+                                    .eq("main_teacher_name", courseSchedulePO.getMainTeacherName());
 //                                    .and(i -> i.isNull("online_platform").or().eq("online_platform", ""));
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
@@ -175,8 +175,8 @@ public class HealthCheckTask {
 //                                            cs.getCourseName().equals(courseSchedulePO.getCourseName())).collect(Collectors.toList());
 
                             //创建监播权的助教并得到该助教链接及密码
-                            for (int i=0; i<schedulePOList.size();i++){
-                                String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师"+i : courseSchedulePO.getTutorName();
+                            for (int i = 0; i < schedulePOList.size(); i++) {
+                                String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" + i : courseSchedulePO.getTutorName();
                                 singleLivingService.createTutor(channelId, totorName);
                             }
 
@@ -185,7 +185,7 @@ public class HealthCheckTask {
                             tutorQueryWrapper.eq("channel_id", channelId);
                             Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
 
-                            if (integer==schedulePOList.size()) {
+                            if (integer == schedulePOList.size()) {
                                 log.info(channelId + "创建助教成功");
 //                                ChannelInfoResponse channelInfoResponse = (ChannelInfoResponse) tutorInformation.getData();
 
@@ -203,14 +203,14 @@ public class HealthCheckTask {
                                 int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
                                 if (insert > 0) {
                                     log.info("直播间数据插入直播表成功，频道id为：" + channelId);
-                                    int count=0;
-                                    for (CourseSchedulePO schedulePO:schedulePOList) {
+                                    int count = 0;
+                                    for (CourseSchedulePO schedulePO : schedulePOList) {
                                         UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
                                         updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", schedulePO.getId());
                                         int update = courseScheduleMapper.update(null, updateWrapper);
-                                        count=count+update;
+                                        count = count + update;
                                     }
-                                    if (count==schedulePOList.size()) {
+                                    if (count == schedulePOList.size()) {
                                         log.info("创建直播间且合班情况，成功");
                                     }
 
@@ -227,6 +227,7 @@ public class HealthCheckTask {
         }
 
     }
+
     @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void updateWhiteList() {
         //先查出一小时内开好课的课程。然后将白名单
@@ -234,9 +235,7 @@ public class HealthCheckTask {
     }
 
 
-
-
-//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
+    //    @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void updateWatchStatus() {
         //获取当天日期
         ZoneId zoneId = ZoneId.of("Asia/Shanghai");
@@ -246,7 +245,7 @@ public class HealthCheckTask {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         String nowTime = now.format(formatter);
 
-        
+
         //live（直播中）、end（直播结束）、playback（回放中）、waiting（等待直播）
         QueryWrapper<VideoStreamRecordPO> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("teaching_date", localDate)// 先筛选日期为今天的
@@ -254,11 +253,10 @@ public class HealthCheckTask {
                 .in("watch_status", "waiting", "live", "end");
 
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(queryWrapper);//这样就拿到了所有的直播记录
-        for (VideoStreamRecordPO videoStreamRecordPO:videoStreamRecordPOS) {
+        for (VideoStreamRecordPO videoStreamRecordPO : videoStreamRecordPOS) {
             singleLivingService.GetChannelDetail(videoStreamRecordPO.getChannelId());
             //找出所有的观看页面
         }
-
 
 
     }
