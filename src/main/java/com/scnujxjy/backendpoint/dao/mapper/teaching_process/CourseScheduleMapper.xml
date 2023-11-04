@@ -425,4 +425,25 @@
         <include refid="teacherCommonFiltersDIY" />
     </select>
 
+
+<!--    优化 获取教师排课表的 全部排课记录 将合班的子记录抽象成一个数组 暴露公共属性 -->
+    <select id="getCourseSchedulesByTeacherUserNameRecentBetter" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO">
+        SELECT
+            cs.*
+        FROM
+            course_schedule cs
+        WHERE
+            cs.teacher_username = #{teacher_username}
+        ORDER BY
+            -- First, we differentiate between future and past dates
+            CASE
+                WHEN cs.teaching_date >= CURDATE() THEN 0
+                ELSE 1
+                END,
+            -- Then, within each group, we order by date and time respectively
+            cs.teaching_date,
+            -- Assume teaching_time can be ordered as a string directly, because it's in HH:MM-HH:MM format
+            cs.teaching_time DESC;
+    </select>
+
 </mapper>

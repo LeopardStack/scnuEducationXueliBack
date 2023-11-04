@@ -85,8 +85,8 @@ public class TestUserInfoChange {
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("T20185566");
-        platformUserRO.setPassword("185566");
+        platformUserRO.setUsername("T17026");
+        platformUserRO.setPassword("T17026");
         platformUserRO.setRoleId(2L);
         platformUserROList.add(platformUserRO);
         platformUserService.batchCreateUser(platformUserROList);

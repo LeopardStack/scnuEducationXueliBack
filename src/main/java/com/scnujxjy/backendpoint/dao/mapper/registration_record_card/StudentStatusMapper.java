@@ -379,7 +379,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<Map<String, StatisticTableForGraduation>> getCountOfGraduation(@Param("startYear") int startYear, @Param("endYear") int endYear);
 
 
-//    @Select("<script>" +
+  //    @Select("<script>" +
 //            " SELECT  pi.name,pi.id_number FROM course_schedule cs" +
 //            " LEFT JOIN class_information coi" +
 //            " ON cs.grade = coi.grade and cs.major_name=coi.major_name and cs.study_form=coi.study_form" +

@@ -1,6 +1,5 @@
 package com.scnujxjy.backendpoint.util.excelListener;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
@@ -23,6 +22,8 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelOu
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.util.StringUtil;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -475,9 +476,11 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             if(data.getTeacherUsername() == null){
                 throw new IllegalArgumentException("非法数据 获取不到主讲老师的用户名");
             }
-            if (StrUtil.isBlank(outputData.getErrorMessage())) {
+            // 一旦出现任何错误不要再执行插入语句了
+            if(StringUtils.isBlank(outputData.getErrorMessage())){
                 insertCourseScheduleData(data, outputData);
             }
+
 
         }catch (Exception e){
             log.error("插入数据失败 " + data.toString() + "\n" + e.toString());

@@ -6,6 +6,7 @@ import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentAllStatusInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
@@ -17,6 +18,7 @@ import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusS
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -52,6 +54,9 @@ public class StudentStatusController {
 
     @Resource
     private CollegeAdminFilter collegeAdminFilter;
+
+    @Resource
+    private TeacherFilter teacherFilter;
 
     @Resource
     private ManagerFilter managerFilter;
@@ -333,6 +338,59 @@ public class StudentStatusController {
                         throw dataNotFoundError();
                     }
                 }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (filterDataVO != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, filterDataVO, 10, TimeUnit.HOURS);
+                }
+
+            }
+        }
+        return SaResult.data(filterDataVO);
+
+    }
+
+
+    /**
+     * 教师获取学生信息
+     *
+     * @param studentStatusROPageRO 分页参数
+     * @return 学籍信息列表
+     */
+    @PostMapping("/get_students_by_teacher")
+    public SaResult getStudentStatusInfoByTeacher(@RequestBody PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO) {
+        // 校验参数
+        if (Objects.isNull(studentStatusROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(studentStatusROPageRO.getEntity())) {
+            studentStatusROPageRO.setEntity(new StudentStatusTeacherFilterRO());
+        }
+
+        // 生成缓存键
+        String cacheKey = StpUtil.getLoginIdAsString() +  "studentStatus:" + studentStatusROPageRO.toString();
+
+        // 从Redis中尝试获取缓存
+        PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
+
+        if (filterDataVO == null) {
+
+            List<String> roleList = StpUtil.getRoleList();
+//        PageVO<FilterDataVO> filterDataVO = null;
+            // 获取访问者 ID
+            if (roleList.isEmpty()) {
+                return SaResult.error("查询学生失败，角色信息缺失").setCode(2000);
+            } else {
+                FilterDataVO studentStatusFilterDataVO = studentStatusService.getStudentStatusInfoByTeacher(studentStatusROPageRO, teacherFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(studentStatusFilterDataVO.getData());
+                filterDataVO.setTotal(studentStatusFilterDataVO.getTotal());
+                filterDataVO.setCurrent(studentStatusROPageRO.getPageNumber());
+                filterDataVO.setSize(studentStatusROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) studentStatusFilterDataVO.getData().size()
+                        / studentStatusROPageRO.getPageSize()));
 
                 // 如果获取的数据不为空，则放入Redis
                 if (filterDataVO != null) {

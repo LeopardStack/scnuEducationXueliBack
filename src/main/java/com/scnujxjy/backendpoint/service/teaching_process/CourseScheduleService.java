@@ -49,6 +49,7 @@ import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -879,4 +880,14 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
        return  filter.getCoursesArgs(courseScheduleFilterRO);
     }
 
+    /**
+     * 获取教师的排课表信息 只返回不同时间的各个课程
+     * @param courseScheduleROPageRO
+     * @param filter
+     * @return
+     */
+    public PageVO<TeacherSchedulesVO> getTeacherCourschedules(PageRO<CourseScheduleRO> courseScheduleROPageRO, AbstractFilter filter) {
+
+        return filter.getTeacherCourschedules(courseScheduleROPageRO);
+    }
 }

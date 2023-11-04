@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.dao.entity.core_data;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -103,6 +104,18 @@ public class PaymentInfoPO implements Serializable {
      */
     @ExcelProperty(value = "缴费方式", index = 11)
     private String paymentMethod;
+
+    /**
+     * 年级
+     */
+    @ExcelProperty(value = "年级", index = 12)
+    private String grade;
+
+    /**
+     * 班级标识
+     */
+    @ExcelIgnore
+    private String classIdentifier;
 
 
 }

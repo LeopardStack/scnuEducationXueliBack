@@ -1,5 +1,9 @@
 server:
   port: 40000
+run:
+  schedule: false  # 设置为 true 以启动定时任务，设置为 false 则不运行
+  oldDataSynchronizeStatus: true  # 开启旧系统同步
+  checkLivingStatusScan: true  # 开启直播状态
 
 spring:
   autoconfigure:
