@@ -107,7 +107,7 @@ public class DataUpdate {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(teachingDate);
             // 提取时间部分，例如 "16:30 - 18:30"
-            String[] timeParts = teachingTime.split("—");
+            String[] timeParts = teachingTime.split("-");
 
             String startTimeStr = timeParts[0];
             int startHour = Integer.parseInt(startTimeStr.split(":")[0]);
@@ -145,8 +145,19 @@ public class DataUpdate {
                             log.info("创建失败");
                         }
                         if(insert > 0){
-                            updateCourseScheduleInfoByVideo(courseSchedulePO, "" + videoStreamRecordPO.getId());
-                            log.info("直播间创建成功！" + courseSchedulePO);
+                            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                                    .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
+                                    .eq(CourseSchedulePO::getTeachingDate, courseSchedulePO.getTeachingDate())
+                                    .eq(CourseSchedulePO::getTeachingTime, courseSchedulePO.getTeachingTime())
+                                    .eq(CourseSchedulePO::getTeacherUsername, courseSchedulePO.getTeacherUsername())
+                                    .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
+                            );
+                            for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
+                                boolean b = updateCourseScheduleInfoByVideo(courseSchedulePO1, "" + videoStreamRecordPO.getId());
+                                log.info("直播间创建成功！" + courseSchedulePO);
+                            }
+
+
                         }
                         log.info(channel.toString());
                         log.info("创建的直播间频道 " + channelResponseData.getChannelId() + " 频道密码 " + channelResponseData.getChannelPasswd());
@@ -155,26 +166,27 @@ public class DataUpdate {
                     log.error("创建直播间失败 " + courseSchedulePO);
                 }
             }else{
+                log.info("删除直播间暂时不做 videoStreamRecordId " + videoId);
                 // 获取当前的东八区时间
-                Calendar currentCalendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
-                Date currentTime = currentCalendar.getTime();
-
-                // 将 end 时间加上30分钟
-                Calendar endCalendar = Calendar.getInstance();
-                endCalendar.setTime(end);
-                endCalendar.add(Calendar.MINUTE, 30);
-
-                // 判断是否超过30分钟
-                if (endCalendar.getTime().before(currentTime)) {
-                    // 超过30分钟，执行删除直播间的操作
-                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
-                            .eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform())));
-
-                    if (videoStreamRecordPO != null) {
-                        Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
-                        log.info("删除直播间 " + videoStreamRecordPO);
-                    }
-                }
+//                Calendar currentCalendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
+//                Date currentTime = currentCalendar.getTime();
+//
+//                // 将 end 时间加上30分钟
+//                Calendar endCalendar = Calendar.getInstance();
+//                endCalendar.setTime(end);
+//                endCalendar.add(Calendar.MINUTE, 30);
+//
+//                // 判断是否超过30分钟
+//                if (endCalendar.getTime().before(currentTime)) {
+//                    // 超过30分钟，执行删除直播间的操作
+//                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+//                            .eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform())));
+//
+//                    if (videoStreamRecordPO != null) {
+//                        Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
+//                        log.info("删除直播间 " + videoStreamRecordPO);
+//                    }
+//                }
             }
         }
     }
@@ -280,16 +292,17 @@ public class DataUpdate {
         log.info("执行直播间扫描");
         List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(null);
         for(VideoStreamRecordPO videoStreamRecordPO: videoStreamRecordPOS){
+            log.info("扫描 " + videoStreamRecordPO);
             String channelId = videoStreamRecordPO.getChannelId();
             if(channelId == null){
                 int i = videoStreamRecordsMapper.deleteById(videoStreamRecordPO.getId());
             }else{
                 ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo(channelId);
-                if(videoStreamRecordPO.getWatchStatus().equals(LiveStatusEnum.OVER.status)){
+                if(videoStreamRecordPO.getWatchStatus() != null && videoStreamRecordPO.getWatchStatus().equals(LiveStatusEnum.OVER.status)){
                     // 彻底终止状态，直播间完全不会再用
                     continue;
                 }
-                if(channelBasicInfo.getWatchStatus().equals(videoStreamRecordPO.getWatchStatus())){
+                if(videoStreamRecordPO.getWatchStatus() != null && channelBasicInfo.getWatchStatus().equals(videoStreamRecordPO.getWatchStatus())){
 
                 }else{
                     videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelBasicInfo.getWatchStatus()));
