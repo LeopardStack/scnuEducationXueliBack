@@ -106,5 +106,15 @@ public class SingleLivingController {
         return singleLivingService.UpdateChannelNameAndImg(request);
     }
 
+
+    @PostMapping("/edit/addChannelWhiteStudent")
+    public SaResult addChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId()) || StrUtil.isBlank(request.getCode()) || StrUtil.isBlank(request.getChannelName())) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.addChannelWhiteStudent(request);
+    }
 }
 

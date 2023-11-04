@@ -133,8 +133,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             if (channel.getCode()==200 && Objects.nonNull(channel.getData().getChannelId())) {
                 String channelId=channel.getData().getChannelId().toString();
 
-
-
                 File whiteListFile = createWhiteListFile(courseSchedulePO);
                 SaResult saResult1 = UploadWhiteList(whiteListFile,channelId);
                 if (saResult1.getCode()==200){
@@ -509,31 +507,33 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
 
     //添加单个白名单
-    public ResultCode CreateChannelWhiteList(String channelId) throws Exception {
+    @Override
+    public SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
+        SaResult saResult=new SaResult();
         LiveCreateChannelWhiteListRequest liveCreateChannelWhiteListRequest = new LiveCreateChannelWhiteListRequest();
         Boolean liveCreateChannelWhiteListResponse;
         try {
             liveCreateChannelWhiteListRequest.setRank(1)
-                    .setChannelId(channelId)
-                    .setCode("441424")
-                    .setName("学员1");
+                    .setChannelId(channelInfoRequest.getChannelId())
+                    .setCode(channelInfoRequest.getCode())
+                    .setName(channelInfoRequest.getName());
             liveCreateChannelWhiteListResponse = new LiveWebAuthServiceImpl().createChannelWhiteList(
                     liveCreateChannelWhiteListRequest);
-//            Assert.assertNotNull(liveCreateChannelWhiteListResponse);
-            if (liveCreateChannelWhiteListResponse) {
-                //to do something ......
-                log.info("测试添加单个白名单-全局白名单成功");
-                return ResultCode.SUCCESS;
+            if (liveCreateChannelWhiteListResponse!=null && liveCreateChannelWhiteListResponse) {
+                log.info("测试添加单个白名单-频道白名单成功");
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
             }
-            return ResultCode.FAIL;
         } catch (PloyvSdkException e) {
-            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
-            log.error(e.getMessage(), e);
-            throw e;
+          e.printStackTrace();
         } catch (Exception e) {
-            log.error("SDK调用异常", e);
-            throw e;
+            log.error("添加白名单接口调用异常", e);
         }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+
     }
 
 

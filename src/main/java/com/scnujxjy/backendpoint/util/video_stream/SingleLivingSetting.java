@@ -19,12 +19,10 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -36,11 +34,12 @@ public class SingleLivingSetting {
 
     /**
      * 创建频道
+     *
      * @param livingRoomTitle 直播间标题
-     * @param startDate 直播开始时间
-     * @param endDate 直播截止时间
-     * @param playRollback 是否开启回放 true 开启
-     * @param pureRtcEnabled 使用开启无延迟 Y 开启 N 不开启
+     * @param startDate       直播开始时间
+     * @param endDate         直播截止时间
+     * @param playRollback    是否开启回放 true 开启
+     * @param pureRtcEnabled  使用开启无延迟 Y 开启 N 不开启
      * @return
      * @throws IOException
      * @throws NoSuchAlgorithmException
@@ -104,7 +103,7 @@ public class SingleLivingSetting {
 
         ApiResponse channel = JSON.parseObject(response, ApiResponse.class);
 
-        if(channel.getCode().equals(200)){
+        if (channel.getCode().equals(200)) {
             ChannelResponseData channelResponseData = channel.getData();
 
             String channelID = String.valueOf(channelResponseData.getChannelId());
@@ -122,12 +121,12 @@ public class SingleLivingSetting {
                     String s = videoStreamUtils.generateTutorSSOLink(channelID, account);
                     log.info("助教的单点登录链接为 " + s);
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("生成助教失败" + e.toString());
             }
 
 
-            if(playRollback){
+            if (playRollback) {
 
                 ChannelInfoData channelInfoData = new ChannelInfoData();
                 channelInfoData.setChannelId(channelID);
@@ -141,21 +140,21 @@ public class SingleLivingSetting {
                     ChannelResponse channelPlayBackInfoResponse =
                             videoStreamUtils.setRecordSetting(channelInfoData);
                     log.info("频道回放信息包括 " + channelPlayBackInfoResponse);
-                    if(channelPlayBackInfoResponse.getCode().equals(200)){
+                    if (channelPlayBackInfoResponse.getCode().equals(200)) {
 
                         log.info(channelID + "回放关闭设置成功");
                         log.info("创建的直播间频道 " + channelResponseData.getChannelId() + " 频道密码 " + channelResponseData.getChannelPasswd());
 
                         return channel;
-                    }else{
+                    } else {
                         log.info(channelID + "回放关闭设置失败");
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     log.error("设置 (" + channelID + ") 的频道回放信息失败 " + e.toString());
                 }
             }
 
-        }else{
+        } else {
             log.error("创建直播间频道失败 " + channel);
         }
         return channel;
@@ -164,17 +163,18 @@ public class SingleLivingSetting {
 
     /**
      * 设置指定直播间是否开启回放
+     *
      * @param channelId
      * @param playBack
-     * @param ident 该参数用来指定回放采用点播 还是 直播缓存
+     * @param ident     该参数用来指定回放采用点播 还是 直播缓存
      * @return
      */
-    public boolean setPlayBack(String channelId, boolean playBack, boolean ident){
+    public boolean setPlayBack(String channelId, boolean playBack, boolean ident) {
         ChannelInfoData channelInfoData = new ChannelInfoData();
-        if(playBack){
+        if (playBack) {
             // 开启回放
 
-            if(ident) {
+            if (ident) {
                 // 直播缓存
 
                 channelInfoData.setChannelId(channelId);
@@ -183,7 +183,7 @@ public class SingleLivingSetting {
                 channelInfoData.setType("single");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
                 channelInfoData.setOrigin("record");
-            }else {
+            } else {
                 channelInfoData.setChannelId(channelId);
                 channelInfoData.setGlobalSettingEnabled("N");
                 channelInfoData.setPlaybackEnabled("Y");
@@ -192,7 +192,7 @@ public class SingleLivingSetting {
                 channelInfoData.setOrigin("vod");
             }
 
-        }else{
+        } else {
             // 关闭回放
             channelInfoData.setChannelId(channelId);
             channelInfoData.setGlobalSettingEnabled("N");
@@ -205,13 +205,13 @@ public class SingleLivingSetting {
             ChannelResponse channelPlayBackInfoResponse =
                     videoStreamUtils.setRecordSetting(channelInfoData);
             log.info("频道回放信息包括 " + channelPlayBackInfoResponse);
-            if(channelPlayBackInfoResponse.getCode().equals(200)){
+            if (channelPlayBackInfoResponse.getCode().equals(200)) {
                 log.info("设置成功");
                 return true;
-            }else{
+            } else {
                 return false;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("设置 (" + channelId + ") 的频道回放信息失败 " + e.toString());
         }
         return false;
@@ -219,10 +219,11 @@ public class SingleLivingSetting {
 
     /**
      * 获取直播间的状态
+     *
      * @param channelId
      * @return
      */
-    public boolean getPlayBackState(String channelId){
+    public boolean getPlayBackState(String channelId) {
         LiveChannelPlaybackEnabledInfoRequest liveChannelPlaybackEnabledInfoRequest =
                 new LiveChannelPlaybackEnabledInfoRequest();
         String liveChannelPlaybackEnabledInfoResponse;
@@ -230,7 +231,7 @@ public class SingleLivingSetting {
             liveChannelPlaybackEnabledInfoRequest.setChannelId(channelId);
             liveChannelPlaybackEnabledInfoResponse = new LiveChannelPlaybackServiceImpl().getChannelPlayBackEnabledInfo(
                     liveChannelPlaybackEnabledInfoRequest);
-            if(liveChannelPlaybackEnabledInfoResponse != null){
+            if (liveChannelPlaybackEnabledInfoResponse != null) {
                 if ("Y".equals(liveChannelPlaybackEnabledInfoResponse)) {
                     //to do something ......
                     log.debug("测试查询频道的回放开关状态成功{}", liveChannelPlaybackEnabledInfoResponse);

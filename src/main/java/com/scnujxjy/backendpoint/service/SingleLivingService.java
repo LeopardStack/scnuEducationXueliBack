@@ -28,5 +28,7 @@ public interface SingleLivingService {
 
     SaResult GetChannelDetail(String channelId);
 
+    SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
+
     ViewLogFirstResponse getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
 }
