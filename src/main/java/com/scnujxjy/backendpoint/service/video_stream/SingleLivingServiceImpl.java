@@ -287,7 +287,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting().setAuthType(
                     LiveConstant.AuthType.PHONE.getDesc())
                     .setRank(1)
-                    .setEnabled("Y");
+                    .setEnabled("Y")
+                    .setAuthTips("请输入你的身份证号码");;
             List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
             authSettings.add(authSetting);
 

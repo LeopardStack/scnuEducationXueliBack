@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.util;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -27,8 +28,10 @@ import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -104,6 +107,20 @@ public class HealthCheckTask {
         }
     }
 
+    public int getUniqueAdminClassCount(List<CourseSchedulePO> schedulePOList) {
+        Set<String> uniqueAdminClasses = new HashSet<>();
+
+        for (CourseSchedulePO schedule : schedulePOList) {
+            // 假设getAdminClass()是SchedulePO对象获取adminClass值的方法
+            if (schedule.getAdminClass() != null) {
+                uniqueAdminClasses.add(schedule.getAdminClass());
+            }
+        }
+
+        // uniqueAdminClasses的大小就是不重复的adminClass的数量
+        return uniqueAdminClasses.size();
+    }
+
     @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void getCourses() {
         String pattern = "yyyy-MM-dd HH:mm";
@@ -167,6 +184,7 @@ public class HealthCheckTask {
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
 
+
 //                            List<CourseSchedulePO> courseSchedulePOList =  courseSchedulePOS.stream().
 //                                    filter(cs ->
 ////                                            cs.getTeachingDate().equals(courseSchedulePO.getTeachingDate()) &&
@@ -175,7 +193,7 @@ public class HealthCheckTask {
 //                                            cs.getCourseName().equals(courseSchedulePO.getCourseName())).collect(Collectors.toList());
 
                             //创建监播权的助教并得到该助教链接及密码
-                            for (int i = 0; i < schedulePOList.size(); i++) {
+                            for (int i = 0; i < 5; i++) {
                                 String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" + i : courseSchedulePO.getTutorName();
                                 singleLivingService.createTutor(channelId, totorName);
                             }

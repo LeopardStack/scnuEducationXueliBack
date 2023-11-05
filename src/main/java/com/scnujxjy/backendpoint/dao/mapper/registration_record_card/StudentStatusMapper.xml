@@ -83,7 +83,7 @@
     <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>
     <if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>
     <if test='entity.name != null'>AND pi.name = #{entity.name} </if>
-    <if test='entity.className != null'>AND ss.class_name LIKE CONCAT('%', #{entity.className}, '%') </if>
+    <if test='entity.className != null'>AND ci.class_name LIKE CONCAT('%', #{entity.className}, '%') </if>
     AND ci.class_identifier IN
     <foreach item="classIdentifier" collection="entity.classIdentifiers"
              open="(" separator="," close=")">
@@ -100,7 +100,7 @@
         <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>
         <if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>
         <if test='entity.name != null'>AND pi.name = #{entity.name} </if>
-        <if test='entity.className != null'>AND ss.class_name LIKE CONCAT('%', #{entity.className}, '%') </if>
+        <if test='entity.className != null'>AND ci.class_name LIKE CONCAT('%', #{entity.className}, '%') </if>
         AND ss.class_identifier IN
         <foreach item="classIdentifier" collection="entity.classIdentifiers"
                  open="(" separator="," close=")">
