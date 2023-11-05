@@ -138,6 +138,7 @@ public class HealthCheckTask {
         if (courseSchedulePOS.size() > 0) {
             for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
 
+
                 //1、获得排课表的开始和结束时间
                 String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
                 String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));//获取14:30, 2:00
