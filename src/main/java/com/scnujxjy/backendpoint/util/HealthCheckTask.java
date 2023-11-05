@@ -193,8 +193,12 @@ public class HealthCheckTask {
 //                                            cs.getTeacherUsername().equals(courseSchedulePO.getTeacherUsername()) &&
 //                                            cs.getCourseName().equals(courseSchedulePO.getCourseName())).collect(Collectors.toList());
 
+                            Integer maxTutorCount = 10;
+                            if (schedulePOList.size() < 10) {
+                                maxTutorCount = schedulePOList.size();
+                            }
                             //创建监播权的助教并得到该助教链接及密码
-                            for (int i = 0; i < 5; i++) {
+                            for (int i = 0; i < maxTutorCount; i++) {
                                 String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" + i : courseSchedulePO.getTutorName();
                                 singleLivingService.createTutor(channelId, totorName);
                             }
@@ -204,38 +208,39 @@ public class HealthCheckTask {
                             tutorQueryWrapper.eq("channel_id", channelId);
                             Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
 
-                            if (integer == schedulePOList.size()) {
+                            if (integer .equals( maxTutorCount)) {
                                 log.info(channelId + "创建助教成功");
+                            }
 //                                ChannelInfoResponse channelInfoResponse = (ChannelInfoResponse) tutorInformation.getData();
 
-                                //将直播间数据插入直播记录表中
-                                VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
-                                videoStreamRecordPO.setChannelId(channelId);
-                                videoStreamRecordPO.setName(courseSchedulePO.getCourseName());
-                                videoStreamRecordPO.setChannelPasswd(apiResponse.getData().getChannelPasswd());
-                                videoStreamRecordPO.setWatchStatus("等待中");
+                            //将直播间数据插入直播记录表中
+                            VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
+                            videoStreamRecordPO.setChannelId(channelId);
+                            videoStreamRecordPO.setName(courseSchedulePO.getCourseName());
+                            videoStreamRecordPO.setChannelPasswd(apiResponse.getData().getChannelPasswd());
+                            videoStreamRecordPO.setWatchStatus("等待中");
 //                                videoStreamRecordPO.setTutorUrl(channelInfoResponse.getUrl());
 //                                videoStreamRecordPO.setTutorPasswd(channelInfoResponse.getPassword());
 //                                videoStreamRecordPO.setTeachingDate(()localDate);
-                                videoStreamRecordPO.setStartTime(sdf.parse(localDate + " " + courseStartTime));
-                                videoStreamRecordPO.setEndTime(sdf.parse(localDate + " " + courseEndTime));
-                                int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
-                                if (insert > 0) {
-                                    log.info("直播间数据插入直播表成功，频道id为：" + channelId);
-                                    int count = 0;
-                                    for (CourseSchedulePO schedulePO : schedulePOList) {
-                                        UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                                        updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", schedulePO.getId());
-                                        int update = courseScheduleMapper.update(null, updateWrapper);
-                                        count = count + update;
-                                    }
-                                    if (count == schedulePOList.size()) {
-                                        log.info("创建直播间且合班情况，成功");
-                                    }
-
+                            videoStreamRecordPO.setStartTime(sdf.parse(localDate + " " + courseStartTime));
+                            videoStreamRecordPO.setEndTime(sdf.parse(localDate + " " + courseEndTime));
+                            int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
+                            if (insert > 0) {
+                                log.info("直播间数据插入直播表成功，频道id为：" + channelId);
+                                int count = 0;
+                                for (CourseSchedulePO schedulePO : schedulePOList) {
+                                    UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                                    updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", schedulePO.getId());
+                                    int update = courseScheduleMapper.update(null, updateWrapper);
+                                    count = count + update;
                                 }
+                                if (count == schedulePOList.size()) {
+                                    log.info("创建直播间且合班情况，成功");
+                                }
+
                             }
                         }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
