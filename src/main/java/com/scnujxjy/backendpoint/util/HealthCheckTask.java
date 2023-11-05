@@ -197,6 +197,7 @@ public class HealthCheckTask {
                             if (schedulePOList.size() < 10) {
                                 maxTutorCount = schedulePOList.size();
                             }
+
                             //创建监播权的助教并得到该助教链接及密码
                             for (int i = 0; i < maxTutorCount; i++) {
                                 String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" + i : courseSchedulePO.getTutorName();
@@ -219,9 +220,6 @@ public class HealthCheckTask {
                             videoStreamRecordPO.setName(courseSchedulePO.getCourseName());
                             videoStreamRecordPO.setChannelPasswd(apiResponse.getData().getChannelPasswd());
                             videoStreamRecordPO.setWatchStatus("等待中");
-//                                videoStreamRecordPO.setTutorUrl(channelInfoResponse.getUrl());
-//                                videoStreamRecordPO.setTutorPasswd(channelInfoResponse.getPassword());
-//                                videoStreamRecordPO.setTeachingDate(()localDate);
                             videoStreamRecordPO.setStartTime(sdf.parse(localDate + " " + courseStartTime));
                             videoStreamRecordPO.setEndTime(sdf.parse(localDate + " " + courseEndTime));
                             int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
