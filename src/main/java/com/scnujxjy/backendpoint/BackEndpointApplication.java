@@ -20,14 +20,4 @@ public class BackEndpointApplication {
     public static void main(String[] args) {
         SpringApplication.run(BackEndpointApplication.class, args);
     }
-
-    /**
-     * 注入摘要加密算法
-     *
-     * @return sm3
-     */
-    @Bean
-    public SM3 sm3() {
-        return SmUtil.sm3();
-    }
 }

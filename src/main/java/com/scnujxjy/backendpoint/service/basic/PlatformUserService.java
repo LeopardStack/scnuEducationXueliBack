@@ -44,9 +44,6 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     @Resource
     private PlatformRoleService platformRoleService;
 
-    @Resource
-    private SM3 sm3;
-
     @Value("${wechat.app-secret}")
     private String wechatAppSecret;
 
@@ -88,10 +85,10 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         }
         // 查询数据
         List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(userName);
-        if(platformUserPOS.size() > 1){
+        if (platformUserPOS.size() > 1) {
             log.error("该账号存在多名用户 " + userName);
             return null;
-        }else if(platformUserPOS.size() == 0){
+        } else if (platformUserPOS.size() == 0) {
             log.error("该账号不存在 " + userName);
             return null;
         }
@@ -109,7 +106,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     public PlatformUserPO userLogin(PlatformUserRO platformUserRO) {
 
         String openId = null;
-        if(platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0){
+        if (platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0) {
             // 微信登录用户
             String code = platformUserRO.getWechatOpenId();
             try {
@@ -135,10 +132,10 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
 
                 PlatformUserPO platformUserPO = baseMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
                         eq(PlatformUserPO::getWechatOpenId, openId));
-                if(platformUserPO != null){
+                if (platformUserPO != null) {
                     return platformUserPO;
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("微信登录失败 " + e.toString());
             }
 
@@ -148,6 +145,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
             log.error("账号密码参数缺失");
             return null;
         }
+        SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
         PlatformUserPO platformUserPO = baseMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, platformUserRO.getUsername()).eq(PlatformUserPO::getPassword, platformUserRO.getPassword()));
@@ -155,7 +153,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         if (Objects.isNull(platformUserPO)) {
             return null;
         }
-        if(platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0){
+        if (platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0) {
             platformUserPO.setWechatOpenId(openId);
             baseMapper.updateById(platformUserPO);
         }
@@ -307,7 +305,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
             platformUserRO.setUserId(platformUserPO.getUserId());
             return true;
         }
-
+        SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
 
@@ -318,7 +316,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     /**
      * 根据userId更改用户密码
      *
-     * @param userId 用户id
+     * @param userId      用户id
      * @param newPassword 新密码
      * @return true-成功，false-失败
      */
@@ -328,7 +326,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
             log.error("参数缺失");
             return false;
         }
-
+        SM3 sm3 = new SM3();
         // 密码加密
         String encryptedPassword = sm3.digestHex(newPassword);
 
