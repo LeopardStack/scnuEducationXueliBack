@@ -194,10 +194,14 @@ public class TeacherFilter extends AbstractFilter{
                                     teacherSchedulesVO.getVideoStreamRecordROList().add(videoStreamRecordPO1);
                                 }
                             } else {
-                                // 删除不存在的直播间信息ID
-                                Long id = teacherCourseScheduleVO.getId();
-                                courseScheduleMapper.updateOnlinePlatformToNull(id);
-                                throw new IllegalArgumentException("存在教师的排课表中有直播间信息ID，但是直播间信息不存在" + courseScheduleFilter.getEntity().toString());
+                                if(videoStreamId.equals("已结束")){
+                                    continue;
+                                }else{
+                                    // 删除不存在的直播间信息ID
+                                    Long id = teacherCourseScheduleVO.getId();
+                                    courseScheduleMapper.updateOnlinePlatformToNull(id);
+                                    throw new IllegalArgumentException("存在教师的排课表中有直播间信息ID，但是直播间信息不存在" + courseScheduleFilter.getEntity().toString());
+                                }
                             }
                         } catch (Exception e) {
                             throw new IllegalArgumentException("获取不到合法的直播间信息 " + e.toString());

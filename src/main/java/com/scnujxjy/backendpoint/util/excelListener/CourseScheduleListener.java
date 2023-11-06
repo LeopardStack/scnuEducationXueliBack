@@ -322,75 +322,77 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             // 如果教学班别写了  说明要开始合班 或者说它手工补充了教学班别（单个行政班别）
             // 但无论怎样 如果出现了教学班别 下一行数据中的教学班别如果和这个教学班别相同则说明下一个行数据与其合班
             // 但是不允许出现重复（数据库和现有的 Excel 的数据）的教学班别，如果出现让程序自动加个序号直到没有重复
-            if(commonClassB == null){
-                // 读取第一条排课记录
-                String adminClass = data.getAdminClass();
-                String teachingClass = data.getTeachingClass();
-                if(teachingClass == null || teachingClass.trim().length() == 0){
-                    // 行政班单独成班
-                    String newTeachingClass = adminClass;
-                    int count = 1;
-                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
-                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
-                        newTeachingClass = adminClass + count;
-                        count += 1;
-                    }
-                    data.setTeachingClass(newTeachingClass);
-                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
-                    commonClassSet.add(newTeachingClass);
-                    finalNewTeachingClass = newTeachingClass;
-                }else{
-                    // 教学班别被人工设置了
-                    String newTeachingClass = data.getTeachingClass();
-                    int count = 1;
-                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
-                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
-                        newTeachingClass = adminClass + count;
-                        count += 1;
-                    }
-                    data.setTeachingClass(newTeachingClass);
-                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
-                    commonClassSet.add(newTeachingClass);
-                    finalNewTeachingClass = newTeachingClass;
-                }
-            }else{
-                // 读取第一条以后的排课记录
-                String adminClass = data.getAdminClass();
-                String teachingClass = data.getTeachingClass();
-                if(teachingClass == null || teachingClass.trim().length() == 0){
-                    // 说明没合班 而且单独一个班作为教学班
-                    String newTeachingClass = adminClass;
-                    int count = 1;
-                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
-                    while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
-                        newTeachingClass = adminClass + count;
-                        count += 1;
-                    }
-                    data.setTeachingClass(newTeachingClass);
-                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
-                    commonClassSet.add(newTeachingClass);
-                    finalNewTeachingClass = newTeachingClass;
-                }else{
-                    // 可能要合班，人工设置了教学班，字符串长度不为 0
-                    if(teachingClass.trim().equals(this.commonClassB.trim())){
-                        // 与上一行的教学班别相等
-                        data.setTeachingClass(this.finalNewTeachingClass);
-                    }else{
-                        // 不相等 与上一行的教学班别不同，那就直接先成立一个教学班 后面是否合班再看
-                        String newTeachingClass = data.getTeachingClass();
-                        int count = 1;
-                        List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
-                        while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
-                            newTeachingClass = adminClass + count;
-                            count += 1;
-                        }
-                        data.setTeachingClass(newTeachingClass);
-                        // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
-                        commonClassSet.add(newTeachingClass);
-                        finalNewTeachingClass = newTeachingClass;
-                    }
-                }
-            }
+//            if(commonClassB == null){
+//                // 读取第一条排课记录
+//                String adminClass = data.getAdminClass();
+//                String teachingClass = data.getTeachingClass();
+//                if(teachingClass == null || teachingClass.trim().length() == 0){
+//                    // 行政班单独成班
+//                    String newTeachingClass = adminClass;
+//                    int count = 1;
+//                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+//                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
+//                        newTeachingClass = adminClass + count;
+//                        count += 1;
+//                    }
+//                    data.setTeachingClass(newTeachingClass);
+//                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+//                    commonClassSet.add(newTeachingClass);
+//                    finalNewTeachingClass = newTeachingClass;
+//                }else{
+//                    // 教学班别被人工设置了
+//                    String newTeachingClass = data.getTeachingClass();
+//                    int count = 1;
+//                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+//                    while (allDistinctTeachingClasses.contains(newTeachingClass)){
+//                        newTeachingClass = adminClass + count;
+//                        count += 1;
+//                    }
+//                    data.setTeachingClass(newTeachingClass);
+//                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+//                    commonClassSet.add(newTeachingClass);
+//                    finalNewTeachingClass = newTeachingClass;
+//                }
+//            }else{
+//                // 读取第一条以后的排课记录
+//                String adminClass = data.getAdminClass();
+//                String teachingClass = data.getTeachingClass();
+//                if(teachingClass == null || teachingClass.trim().length() == 0){
+//                    // 说明没合班 而且单独一个班作为教学班
+//                    String newTeachingClass = adminClass;
+//                    int count = 1;
+//                    List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+//                    while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
+//                        newTeachingClass = adminClass + count;
+//                        count += 1;
+//                    }
+//                    data.setTeachingClass(newTeachingClass);
+//                    // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+//                    commonClassSet.add(newTeachingClass);
+//                    finalNewTeachingClass = newTeachingClass;
+//                }else{
+//                    // 可能要合班，人工设置了教学班，字符串长度不为 0
+//                    if(teachingClass.trim().equals(this.commonClassB.trim())){
+//                        // 与上一行的教学班别相等
+//                        data.setTeachingClass(this.finalNewTeachingClass);
+//                    }else{
+//                        // 不相等 与上一行的教学班别不同，那就直接先成立一个教学班 后面是否合班再看
+//                        String newTeachingClass = data.getTeachingClass();
+//                        int count = 1;
+//                        List<String> allDistinctTeachingClasses = courseScheduleMapper.getAllDistinctTeachingClasses();
+//                        while (allDistinctTeachingClasses.contains(newTeachingClass) || commonClassSet.contains(newTeachingClass)){
+//                            newTeachingClass = adminClass + count;
+//                            count += 1;
+//                        }
+//                        data.setTeachingClass(newTeachingClass);
+//                        // 设好教学班后 一定要建立本地的 教学班别记录 防止后续数据重复
+//                        commonClassSet.add(newTeachingClass);
+//                        finalNewTeachingClass = newTeachingClass;
+//                    }
+//                }
+//            }
+            // 教学班不需要写了 直接用规范的格式 老师姓名 + 课程
+            data.setTeachingClass(data.getMainTeacherName() + "-" + data.getCourseName());
 
             // 进行主讲教师判断
             String mainTeacherName = data.getMainTeacherName();
