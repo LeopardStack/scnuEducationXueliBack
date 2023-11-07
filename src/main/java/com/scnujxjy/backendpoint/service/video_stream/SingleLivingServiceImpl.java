@@ -6,6 +6,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
@@ -162,7 +163,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
 
         String appId = LiveGlobalConfig.getAppId();
         String appSecret = LiveGlobalConfig.getAppSecret();
@@ -194,12 +195,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         String s = HttpUtil.get(url, requestMap);
         ViewLogFirstResponse viewLogFirstResponse = JSON.parseObject(s, ViewLogFirstResponse.class);
         log.info("测试分页查询频道直播观看详情数据，返回值：{}", viewLogFirstResponse);
-        List<ViewLogResponse> viewLogResponseList=new ArrayList<>();
+        List<ViewLogResponse> viewLogResponseList = new ArrayList<>();
         if (viewLogFirstResponse != null && viewLogFirstResponse.getCode() == 200) {
             List<ViewLogThirdResponse> contents = viewLogFirstResponse.getData().getContents();
 
-            for (ViewLogThirdResponse viewLogThirdResponse:contents) {
-                ViewLogResponse viewLogResponse=new ViewLogResponse();
+            for (ViewLogThirdResponse viewLogThirdResponse : contents) {
+                ViewLogResponse viewLogResponse = new ViewLogResponse();
                 viewLogResponse.setChannelId(channelInfoRequest.getChannelId());
                 viewLogResponse.setParam1(viewLogThirdResponse.getParam1());
                 viewLogResponse.setParam2(viewLogThirdResponse.getParam2());
@@ -288,7 +289,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     LiveConstant.AuthType.PHONE.getDesc())
                     .setRank(1)
                     .setEnabled("Y")
-                    .setAuthTips("请输入你的身份证号码");;
+                    .setAuthTips("请输入你的身份证号码");
+            ;
             List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
             authSettings.add(authSetting);
 
@@ -421,26 +423,48 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     public SaResult getTutorChannelUrl(String channelId, String userId) {
         SaResult saResult = new SaResult();
         ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
-        TutorInformation tutorInformation = new TutorInformation();
+        TutorInformation tutorInformation;
 
-        QueryWrapper<TutorInformation> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("channel_id", channelId);
-        queryWrapper.eq("user_id", userId);
-        Integer integer = tutorInformationMapper.selectCount(queryWrapper);
-        if (integer == 0) {//说明该用户助教信息没被返回过
-            QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
-            queryWrapper1.eq("channel_id", channelId)
-                    .and(wrapper -> wrapper.isNull("userid").or().eq("userid", ""));
-            tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
-        } else {//说明查过，该助教信息中有userId
-            tutorInformation = tutorInformationMapper.selectOne(queryWrapper);
-        }
+        try {
+            QueryWrapper<TutorInformation> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("channel_id", channelId);
+            queryWrapper.eq("user_id", userId);
+            Integer integer = tutorInformationMapper.selectCount(queryWrapper);
+            if (integer == 0) {//说明该用户助教信息没被返回过
+                QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
+                queryWrapper1.eq("channel_id", channelId)
+                        .and(wrapper -> wrapper.isNull("user_id").or().eq("user_id", ""));
+                tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
 
-        if (StrUtil.isNotBlank(tutorInformation.getTutorUrl())) {
-            channelInfoResponse.setUrl(tutorInformation.getTutorUrl());
-        }
-        if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
-            channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
+                if (tutorInformation == null) {//如果找不到该频道已经找不到userId为空的助教了，表示用完了那就返回错误联系管理员
+                    saResult.setCode(ResultCode.GET_TUTOR_FAIL.getCode());
+                    saResult.setMsg(ResultCode.GET_TUTOR_FAIL.getMessage());
+                    return saResult;
+                }
+
+                //同时将该userId更新到该条助教信息中
+                UpdateWrapper<TutorInformation> updateWrapper = new UpdateWrapper<>();
+                updateWrapper.set("user_id", userId)
+                        .eq("id", tutorInformation.getId());
+                int update = tutorInformationMapper.update(null, updateWrapper);
+                if (update > 0) {
+                    log.info("更新助教userId成功");
+                }
+            } else {//说明查过，该助教信息中有userId
+                tutorInformation = tutorInformationMapper.selectOne(queryWrapper);
+            }
+
+            if (StrUtil.isNotBlank(tutorInformation.getTutorUrl())) {
+                channelInfoResponse.setUrl(tutorInformation.getTutorUrl());
+            }
+            if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
+                channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg(ResultCode.FAIL.getMessage());
+            return saResult;
         }
         saResult.setCode(ResultCode.SUCCESS.getCode());
         saResult.setMsg(ResultCode.SUCCESS.getMessage());
