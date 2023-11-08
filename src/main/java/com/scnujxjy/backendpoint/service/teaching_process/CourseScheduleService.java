@@ -44,20 +44,20 @@ import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateR
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
-import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
-import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
-import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.analysis.function.Abs;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -572,19 +572,30 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     // 修改排课表记录的教师和上课时间
     @Transactional(rollbackFor = {Exception.class, IllegalArgumentException.class})
-    public void updateScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
+    public void updateScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) throws ParseException {
         if(courseScheduleUpdateROPageRO.getId() == null){
             throw new RuntimeException("没有找到任何排课表信息，更新失败");
         }else{
             if(courseScheduleUpdateROPageRO.getTeachingStartDate() != null){
                 // 更新排课表的上课时间
                 Date start = courseScheduleUpdateROPageRO.getTeachingStartDate();
-
                 Date end = courseScheduleUpdateROPageRO.getTeachingEndDate();
 
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
                 String formattedTime = sdf.format(start) + "-" + sdf.format(end);
                 log.info("更新后的时间 " + start + "\n" + formattedTime);
+
+                //修改后的课程开始时间必须是当前时间的一小时后，不然就距离上课不到1小时了
+                Date current = new Date();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(current);
+                calendar.add(Calendar.HOUR_OF_DAY, 1);
+                Date afterOneHour = calendar.getTime();//一小时后的时间
+
+                int compareResult = start.compareTo(afterOneHour);//将课程开始时间与现在时间进行比较，返回一个整数值
+                if(compareResult <= 0) {    // 课程开始在现在之前
+                    throw new IllegalArgumentException("修改后的课程开始时间必须在当前时间的一小时后");
+                }
 
                 CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
                         eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
@@ -602,22 +613,43 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                     throw new IllegalArgumentException("修改排课表失败，没有找到对应的排课表");
                 }
 
+
                 for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
                     if(courseSchedulePO1.getOnlinePlatform() != null){
                         // 存在直播间 看一下保利威该直播间是否还存在
-                        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
-                                .eq(VideoStreamRecordPO::getId, courseSchedulePO1.getOnlinePlatform()));
-                        if(videoStreamRecordPO == null){
-                            // 不存在直播间 直接修改
+//                        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+//                                .eq(VideoStreamRecordPO::getId, courseSchedulePO1.getOnlinePlatform()));
+//
+                        LocalDateTime now = LocalDateTime.now();
+                        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm");
+                        String formattedNowDateTime = now.format(dateTimeFormatter);//获取当前时间,格式为2023-11-08 21:43
+
+                        //将数据库的Sun Nov 12 00:00:00 CST 2023转为"2023-11-08"
+                        Date teachingDate = courseSchedulePO1.getTeachingDate();
+                        LocalDate teachingDate1 = teachingDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                        String formattedStartDate = teachingDate1.format(outputFormatter);
+                        //获取课程开始时间14:30—17:00前面的14:30
+                        String teachingTime = courseSchedulePO1.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
+                        String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));
+                        //得到开始时间"2023-11-08 14:30"
+                        String startTime=formattedStartDate+" "+courseStartTime;//获取课程开始时间
+
+                        //计算二者时间差
+                        DateTimeFormatter df2 = DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm");
+                        LocalDateTime formattedNowTime = LocalDateTime.parse(formattedNowDateTime, df2);
+                        LocalDateTime formattedCourseStartTime = LocalDateTime.parse(startTime, df2);
+                        long milliseconds = ChronoUnit.MILLIS.between(formattedNowTime, formattedCourseStartTime);//formattedCourseStartTime-formattedNowTime
+                        long minuteDiff=milliseconds/ (1000 * 60);
+
+                        if( minuteDiff>60 ) {//到课程开始时间还有60分钟以上，允许修改
                             courseSchedulePO1.setTeachingDate(start);
                             courseSchedulePO1.setTeachingTime(formattedTime);
                             getBaseMapper().updateById(courseSchedulePO1);
+                        }else if(minuteDiff>=0 && minuteDiff<60){// 距离开始只剩1小时
+                            throw new IllegalArgumentException("距离开课时间不足1小时，不允许修改");
                         }else{
-                            // 修改有直播间记录的排课 不允许
-                            String channelId = videoStreamRecordPO.getChannelId();
-                            if(channelId != null){
-                                throw new IllegalArgumentException("不允许修改已直播过的排课记录");
-                            }
+                            throw new IllegalArgumentException("课程已经开始，不允许修改");
                         }
                     }else{
                         // 不存在直播间 直接修改
