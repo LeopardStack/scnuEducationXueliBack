@@ -163,6 +163,13 @@ public class CourseScheduleExcelImportVO {
      */
     @ExcelIgnore
     private String teachingAssistantUsername;
+
+
+    /**
+     * 排课表批次，用来唯一确定一次合班的排课表记录
+     */
+    @ExcelIgnore
+    private Long batchIndex;
 }
 
 
