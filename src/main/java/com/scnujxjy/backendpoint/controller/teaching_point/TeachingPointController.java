@@ -5,6 +5,7 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,5 +46,17 @@ public class TeachingPointController {
             throw dataNotFoundError();
         }
         return SaResult.data(scoreInformationVOPageVO);
+    }
+
+    @PostMapping("/detail-student-all-status")
+    public SaResult selectTeachingPointStudentAllStatus(@RequestBody PageRO<StudentStatusRO> studentStatusROPageRO) {
+        if (Objects.isNull(studentStatusROPageRO)) {
+            throw dataMissError();
+        }
+        PageVO<StudentStatusAllVO> studentStatusAllVOPageVO = teachingPointFilter.selectTeachingPointStudentAllStatus(studentStatusROPageRO);
+        if (Objects.isNull(studentStatusAllVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(studentStatusAllVOPageVO);
     }
 }

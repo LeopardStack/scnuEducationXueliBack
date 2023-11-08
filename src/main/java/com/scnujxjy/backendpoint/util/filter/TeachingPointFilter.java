@@ -3,34 +3,30 @@ package com.scnujxjy.backendpoint.util.filter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
-import cn.hutool.core.util.PageUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.db.Page;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
-import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.inverter.teaching_process.ScoreInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointAdminInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
-import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
-import com.scnujxjy.backendpoint.service.registration_record_card.PersonalInfoService;
-import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointAdminInformationService;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
 import org.springframework.stereotype.Component;
 
@@ -67,6 +63,10 @@ public class TeachingPointFilter extends AbstractFilter {
 
     @Resource
     private PersonalInfoMapper personalInfoMapper;
+
+    @Resource
+    private GraduationInfoMapper graduationInfoMapper;
+
 
     /**
      * 条件筛选指定教学点学生信息；
@@ -183,6 +183,46 @@ public class TeachingPointFilter extends AbstractFilter {
                 })
                 .collect(Collectors.toList());
         return new PageVO<>(studentStatusROPageRO, (long) scoreInformationPOS.size(), scoreInformationVOS);
+    }
+
+    /**
+     * 根据教学点查询学生的学籍信息;
+     * 学籍信息：StudentStatus + PersonalInformation
+     *
+     * @param studentStatusROPageRO 条件分页查询参数
+     * @return 条件分页查询学生学籍信息结果
+     */
+    public PageVO<StudentStatusAllVO> selectTeachingPointStudentAllStatus(PageRO<StudentStatusRO> studentStatusROPageRO) {
+        if (Objects.isNull(studentStatusROPageRO)) {
+            return null;
+        }
+        StudentStatusRO studentStatusRO = studentStatusROPageRO.getEntity();
+        if (Objects.isNull(studentStatusRO)) {
+            studentStatusRO = new StudentStatusRO();
+        }
+        // 条件查询：该教学点下的学生
+        List<StudentStatusVO> studentStatusVOS = selectTeachingPointStudent(studentStatusRO);
+        if (CollUtil.isEmpty(studentStatusVOS)) {
+            return null;
+        }
+        // 分页，先分页再查询PersonalInformation加快效率
+        List<StudentStatusVO> pageStudentStatusVOS = ListUtil.page(Math.toIntExact(studentStatusROPageRO.getPageNumber()), Math.toIntExact(studentStatusROPageRO.getPageSize()), studentStatusVOS);
+        List<StudentStatusAllVO> studentStatusAllVOS = pageStudentStatusVOS.stream()
+                .map(ele -> {
+                    // 填充PersonalInformation
+                    PersonalInfoPO personalInfoPO = new PersonalInfoPO();
+                    GraduationInfoPO graduationInfoPO = new GraduationInfoPO();
+                    if (StrUtil.isNotBlank(ele.getIdNumber()) && StrUtil.isNotBlank(ele.getGrade())) {
+                        personalInfoPO = personalInfoMapper.selectOne(Wrappers.<PersonalInfoPO>lambdaQuery()
+                                .eq(PersonalInfoPO::getIdNumber, ele.getIdNumber())
+                                .eq(PersonalInfoPO::getGrade, ele.getGrade()));
+                        graduationInfoPO = graduationInfoMapper.selectOne(Wrappers.<GraduationInfoPO>lambdaQuery()
+                                .eq(GraduationInfoPO::getIdNumber, ele.getIdNumber())
+                                .eq(GraduationInfoPO::getGrade, ele.getGrade()));
+                    }
+                    return studentStatusInverter.po2VO(ele, personalInfoPO, graduationInfoPO);
+                }).collect(Collectors.toList());
+        return new PageVO<>(studentStatusROPageRO, (long) studentStatusVOS.size(), studentStatusAllVOS);
     }
 
 
