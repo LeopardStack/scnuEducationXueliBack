@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInf
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
@@ -24,26 +25,26 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMap
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseInformationInverter;
+import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
 import com.scnujxjy.backendpoint.inverter.teaching_process.ScoreInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -84,6 +85,9 @@ public class TeachingPointFilter extends AbstractFilter {
 
     @Resource
     private CourseInformationInverter courseInformationInverter;
+
+    @Resource
+    private CourseScheduleInverter courseScheduleInverter;
 
 
     /**
@@ -350,6 +354,62 @@ public class TeachingPointFilter extends AbstractFilter {
                     return courseInformationInverter.classInformation2VO(classInformationPO, ele);
                 }).collect(Collectors.toList());
         return new PageVO<>(courseInformationROPageRO, (long) courseInformationPOS.size(), courseInformationVOS);
+    }
+
+    /**
+     * 条件查询分页查询指定教学点排课信息
+     *
+     * @param courseScheduleFilterROPageRO 排课表分页条件查询参数
+     * @return 分页条件查询指定教学点排课信息结果
+     */
+    public PageVO<SchedulesVO> selectTeachingPointCourseSchedule(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        if (Objects.isNull(courseScheduleFilterROPageRO)) {
+            return null;
+        }
+        CourseScheduleFilterRO courseScheduleFilterRO = courseScheduleFilterROPageRO.getEntity();
+        if (Objects.isNull(courseScheduleFilterRO)) {
+            courseScheduleFilterRO = new CourseScheduleFilterRO();
+        }
+        // 查询指定教学点的班级信息
+        StudentStatusRO studentStatusRO = studentStatusInverter.courseScheduleFilterRO2RO(courseScheduleFilterRO);
+        List<ClassInformationPO> classInformationPOS = selectTeachingPointClassInformation(studentStatusRO);
+        if (CollUtil.isEmpty(classInformationPOS)) {
+            return null;
+        }
+        // 班级信息和排课表之间信息是通过年级、学习形式、层次、行政班级、专业名称来确定的，因此要先确定这些信息，去重
+        List<ClassInformationPO> afterConsultClassInformationSet = new LinkedList<>();
+        Set<String> gradeStudyFormLevelAdminClassMajorNameSet = new HashSet<>();
+        for (ClassInformationPO classInformationPO : classInformationPOS) {
+            String gradeStudyFormLevelAdminClassMajorName = classInformationPO.getGrade() + classInformationPO.getStudyForm() + classInformationPO.getLevel() + classInformationPO.getClassName() + classInformationPO.getMajorName();
+            if (!gradeStudyFormLevelAdminClassMajorNameSet.contains(gradeStudyFormLevelAdminClassMajorName)) {
+                gradeStudyFormLevelAdminClassMajorNameSet.add(gradeStudyFormLevelAdminClassMajorName);
+                afterConsultClassInformationSet.add(classInformationPO);
+            }
+        }
+        // 从去重后的班级信息集合中遍历查询排课信息
+        List<CourseSchedulePO> classInformationResult = new LinkedList<>();
+        afterConsultClassInformationSet.stream()
+                .filter(ele -> StrUtil.isNotBlank(ele.getGrade()) && StrUtil.isNotBlank(ele.getStudyForm()) && StrUtil.isNotBlank(ele.getLevel()) && StrUtil.isNotBlank(ele.getClassName()) && StrUtil.isNotBlank(ele.getMajorName()))
+                .map(ele -> courseScheduleMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery()
+                        .eq(CourseSchedulePO::getGrade, ele.getGrade())
+                        .eq(CourseSchedulePO::getStudyForm, ele.getStudyForm())
+                        .eq(CourseSchedulePO::getLevel, ele.getLevel())
+                        .eq(CourseSchedulePO::getAdminClass, ele.getClassName())
+                        .eq(CourseSchedulePO::getMajorName, ele.getMajorName())))
+                .filter(CollUtil::isNotEmpty)
+                .forEach(classInformationResult::addAll);
+        if (CollUtil.isEmpty(classInformationResult)) {
+            return null;
+        }
+        List<SchedulesVO> schedulesVOS = classInformationResult.stream()
+                .filter(Objects::nonNull)
+                .map(ele -> courseScheduleInverter.po2SchedulesVO(ele))
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(schedulesVOS)) {
+            return null;
+        }
+        List<SchedulesVO> pageSchedulesVOS = ListUtil.page(Math.toIntExact(courseScheduleFilterROPageRO.getPageNumber()), Math.toIntExact(courseScheduleFilterROPageRO.getPageSize()), schedulesVOS);
+        return new PageVO<>(courseScheduleFilterROPageRO, (long) schedulesVOS.size(), pageSchedulesVOS);
     }
 
 

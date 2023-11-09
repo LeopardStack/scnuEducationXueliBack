@@ -5,9 +5,11 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -105,5 +107,23 @@ public class TeachingPointController {
             throw dataNotFoundError();
         }
         return SaResult.data(courseInformationVOPageVO);
+    }
+
+    /**
+     * 分页条件查询教学点课程表
+     *
+     * @param courseScheduleFilterROPageRO 分页条件查询参数
+     * @return 分页条件查询教学点课程表结果
+     */
+    @PostMapping("/detail-course-schedule")
+    public SaResult selectTeachingPointCourseSchedule(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        if (Objects.isNull(courseScheduleFilterROPageRO)) {
+            throw dataMissError();
+        }
+        PageVO<SchedulesVO> schedulesVOPageVO = teachingPointFilter.selectTeachingPointCourseSchedule(courseScheduleFilterROPageRO);
+        if (Objects.isNull(schedulesVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(schedulesVOPageVO);
     }
 }
