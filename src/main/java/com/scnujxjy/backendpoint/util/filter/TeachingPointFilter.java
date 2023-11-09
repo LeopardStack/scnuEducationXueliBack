@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationI
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
@@ -22,14 +23,17 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInf
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
+import com.scnujxjy.backendpoint.inverter.teaching_process.CourseInformationInverter;
 import com.scnujxjy.backendpoint.inverter.teaching_process.ScoreInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
@@ -78,17 +82,19 @@ public class TeachingPointFilter extends AbstractFilter {
     @Resource
     private PaymentInfoInverter paymentInfoInverter;
 
+    @Resource
+    private CourseInformationInverter courseInformationInverter;
+
+
     /**
-     * 条件筛选指定教学点学生信息；
-     * 从Token中获取到UserId，根据UserId定位教学点TeachingPointId；
-     * 根据TeachingPointId定位教学点信息Alias；
-     * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
-     * 通过ClassIdentifier筛选出所有的学生信息；
+     * 根据教学点查询班级信息；
+     * 条件查询、分页查询；
+     * 筛选条件：行政班别（班级名称）、年级、学院名称、专业名称、层次、学习形式、
      *
-     * @param studentStatusRO 条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别、学号
-     * @return 查询指定教学点、筛选后的学生信息
+     * @param studentStatusRO 传递的筛选条件参数
+     * @return 班级信息结果
      */
-    private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusRO studentStatusRO) {
+    private List<ClassInformationPO> selectTeachingPointClassInformation(StudentStatusRO studentStatusRO) {
         if (Objects.isNull(studentStatusRO)) {
             studentStatusRO = new StudentStatusRO();
         }
@@ -105,10 +111,37 @@ public class TeachingPointFilter extends AbstractFilter {
         if (Objects.isNull(teachingPointInformationVO) || StrUtil.isBlank(teachingPointInformationVO.getAlias())) {
             return null;
         }
-        // 根据TeachingPointId定位教学点信息Alias，筛选：行政班别
+        // 根据TeachingPointId定位教学点信息Alias，筛选：行政班别、年级、学院名称、专业名称、层次、学习形式、
         List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(Wrappers.<ClassInformationPO>lambdaQuery()
                 .like(ClassInformationPO::getClassName, teachingPointInformationVO.getAlias())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getClassName()), ClassInformationPO::getClassName, studentStatusRO.getClassName()));
+                .eq(StrUtil.isNotBlank(studentStatusRO.getClassName()), ClassInformationPO::getClassName, studentStatusRO.getClassName())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getGrade()), ClassInformationPO::getGrade, studentStatusRO.getGrade())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getCollege()), ClassInformationPO::getCollege, studentStatusRO.getCollege())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getMajorName()), ClassInformationPO::getMajorName, studentStatusRO.getMajorName())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getLevel()), ClassInformationPO::getLevel, studentStatusRO.getLevel())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyForm()), ClassInformationPO::getStudyForm, studentStatusRO.getStudyForm()));
+        if (CollUtil.isEmpty(classInformationPOS)) {
+            return null;
+        }
+        return classInformationPOS;
+    }
+
+    /**
+     * 条件筛选指定教学点学生信息；
+     * 从Token中获取到UserId，根据UserId定位教学点TeachingPointId；
+     * 根据TeachingPointId定位教学点信息Alias；
+     * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
+     * 通过ClassIdentifier筛选出所有的学生信息；
+     *
+     * @param studentStatusRO 条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别、学号
+     * @return 查询指定教学点、筛选后的学生信息
+     */
+    private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusRO studentStatusRO) {
+        if (Objects.isNull(studentStatusRO)) {
+            studentStatusRO = new StudentStatusRO();
+        }
+        // 查询指定教学点的班级信息
+        List<ClassInformationPO> classInformationPOS = selectTeachingPointClassInformation(studentStatusRO);
         if (CollUtil.isEmpty(classInformationPOS)) {
             return null;
         }
@@ -119,14 +152,9 @@ public class TeachingPointFilter extends AbstractFilter {
         if (CollUtil.isEmpty(classInformationIdentifierSet)) {
             return null;
         }
-        // 通过ClassIdentifier筛选出所有的学生信息，筛选年级、学院名称、专业名称、层次、学习形式、学号
+        // 通过ClassIdentifier筛选出所有的学生信息，筛选学号
         LambdaQueryWrapper<StudentStatusPO> wrapper = Wrappers.<StudentStatusPO>lambdaQuery()
                 .in(StudentStatusPO::getClassIdentifier, classInformationIdentifierSet)
-                .eq(StrUtil.isNotBlank(studentStatusRO.getGrade()), StudentStatusPO::getGrade, studentStatusRO.getGrade())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getCollege()), StudentStatusPO::getCollege, studentStatusRO.getCollege())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getMajorName()), StudentStatusPO::getMajorName, studentStatusRO.getMajorName())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getLevel()), StudentStatusPO::getLevel, studentStatusRO.getLevel())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyForm()), StudentStatusPO::getStudyForm, studentStatusRO.getStudyForm())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusRO.getStudentNumber());
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
         if (CollUtil.isEmpty(studentStatusPOS)) {
@@ -145,7 +173,7 @@ public class TeachingPointFilter extends AbstractFilter {
     /**
      * 分页条件查询指定教学点学生成绩；
      *
-     * @param studentStatusROPageRO 分页条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别
+     * @param studentStatusROPageRO 分页条件查询参数，筛选项：学号
      * @return 分页条件查询后的学生成绩
      */
     public PageVO<ScoreInformationVO> selectTeachingPointStudentScoreInformation(PageRO<StudentStatusRO> studentStatusROPageRO) {
@@ -253,7 +281,7 @@ public class TeachingPointFilter extends AbstractFilter {
             paymentInfoFilterRO = new PaymentInfoFilterRO();
         }
         // 转换参数，使用查询学生中的筛选：年级、学院、专业名称、层次、学习形式 、行政班别、学号
-        StudentStatusRO studentStatusRO = studentStatusInverter.payInformationFilterRO2RO(paymentInfoFilterRO);
+        StudentStatusRO studentStatusRO = studentStatusInverter.paymentInformationFilterRO2RO(paymentInfoFilterRO);
         if (Objects.isNull(studentStatusRO)) {
             return null;
         }
@@ -277,5 +305,52 @@ public class TeachingPointFilter extends AbstractFilter {
         }
         return new PageVO<>(paymentInfoFilterROPageRO, (long) studentStatusVOS.size(), paymentInfoVOS);
     }
+
+    /**
+     * 根据教学点查询教学计划信息；
+     * 支持条件查询和分页查询；
+     * 筛选条件：年级、学院、专业名称、层次、学习形式、行政班别
+     *
+     * @param courseInformationROPageRO 条件查询分页查询参数
+     * @return 分页查询条件查询结果
+     */
+    public PageVO<CourseInformationVO> selectTeachingPointCourseInformation(PageRO<CourseInformationRO> courseInformationROPageRO) {
+        if (Objects.isNull(courseInformationROPageRO)) {
+            return null;
+        }
+        CourseInformationRO courseInformationRO = courseInformationROPageRO.getEntity();
+        if (Objects.isNull(courseInformationRO)) {
+            courseInformationRO = new CourseInformationRO();
+        }
+        // 查询指定教学点的班级信息
+        StudentStatusRO studentStatusRO = studentStatusInverter.courseInformationRO2RO(courseInformationRO);
+        List<ClassInformationPO> classInformationPOS = selectTeachingPointClassInformation(studentStatusRO);
+        if (CollUtil.isEmpty(classInformationPOS)) {
+            return null;
+        }
+        // 获取其中的ClassIdentifier集合
+        Map<String, ClassInformationPO> classIdentifier2ClassInformationMap = classInformationPOS.stream()
+                .collect(Collectors.toMap(ClassInformationPO::getClassIdentifier, Function.identity(), (key1, key2) -> key2));
+        Set<String> classIdentifierSet = classIdentifier2ClassInformationMap.keySet();
+        if (CollUtil.isEmpty(classIdentifierSet)) {
+            return null;
+        }
+        // 根据ClassIdentifier在 CourseInformation 中查询课程信息
+        List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectList(Wrappers.<CourseInformationPO>lambdaQuery().in(CourseInformationPO::getAdminClass, classIdentifierSet));
+        if (CollUtil.isEmpty(courseInformationPOS)) {
+            return null;
+        }
+        List<CourseInformationPO> pageCourseInformationPOS = ListUtil.page(Math.toIntExact(courseInformationROPageRO.getPageNumber()), Math.toIntExact(courseInformationROPageRO.getPageSize()), courseInformationPOS);
+        if (CollUtil.isEmpty(pageCourseInformationPOS)) {
+            return null;
+        }
+        List<CourseInformationVO> courseInformationVOS = pageCourseInformationPOS.stream()
+                .map(ele -> {
+                    ClassInformationPO classInformationPO = classIdentifier2ClassInformationMap.getOrDefault(ele.getAdminClass(), ClassInformationPO.builder().className("未知班级").build());
+                    return courseInformationInverter.classInformation2VO(classInformationPO, ele);
+                }).collect(Collectors.toList());
+        return new PageVO<>(courseInformationROPageRO, (long) courseInformationPOS.size(), courseInformationVOS);
+    }
+
 
 }

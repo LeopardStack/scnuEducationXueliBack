@@ -5,6 +5,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInf
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import org.mapstruct.Mapper;
@@ -29,11 +30,14 @@ public abstract class StudentStatusInverter {
     public abstract StudentStatusAllVO po2VO(StudentStatusVO studentStatusVO, PersonalInfoPO personalInfoPO, GraduationInfoPO graduationInfoPO);
 
     @Mappings({})
-    public abstract StudentStatusRO payInformationFilterRO2RO(PaymentInfoFilterRO filterRO);
+    public abstract StudentStatusRO paymentInformationFilterRO2RO(PaymentInfoFilterRO filterRO);
 
     @Mappings({})
     public abstract List<StudentStatusVO> po2VO(List<StudentStatusPO> studentStatusPOS);
 
     @Mappings({})
     public abstract StudentStatusPO ro2PO(StudentStatusRO studentStatusRO);
+
+    @Mappings({})
+    public abstract StudentStatusRO courseInformationRO2RO(CourseInformationRO courseInformationRO);
 }

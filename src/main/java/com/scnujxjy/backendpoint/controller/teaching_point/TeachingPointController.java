@@ -4,8 +4,10 @@ import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -85,5 +87,23 @@ public class TeachingPointController {
             throw dataNotFoundError();
         }
         return SaResult.data(paymentInfoVOPageVO);
+    }
+
+    /**
+     * 分页条件查询教学点课程信息
+     *
+     * @param courseInformationROPageRO 分页条件查询参数
+     * @return 分页条件查询教学点课程信息结果
+     */
+    @PostMapping("/detail-course-information")
+    public SaResult selectTeachingPointCourseInformation(@RequestBody PageRO<CourseInformationRO> courseInformationROPageRO) {
+        if (Objects.isNull(courseInformationROPageRO)) {
+            throw dataMissError();
+        }
+        PageVO<CourseInformationVO> courseInformationVOPageVO = teachingPointFilter.selectTeachingPointCourseInformation(courseInformationROPageRO);
+        if (Objects.isNull(courseInformationVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(courseInformationVOPageVO);
     }
 }
