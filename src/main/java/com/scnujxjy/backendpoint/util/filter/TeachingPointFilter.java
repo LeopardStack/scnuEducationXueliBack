@@ -137,7 +137,7 @@ public class TeachingPointFilter extends AbstractFilter {
      * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
      * 通过ClassIdentifier筛选出所有的学生信息；
      *
-     * @param studentStatusRO 条件查询参数，筛选项：学号、考生号、证件号码
+     * @param studentStatusRO 条件查询参数，筛选项：学号、考生号、证件号码、学制、学习状态
      * @return 查询指定教学点、筛选后的学生信息
      */
     private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusRO studentStatusRO) {
@@ -161,7 +161,9 @@ public class TeachingPointFilter extends AbstractFilter {
                 .in(StudentStatusPO::getClassIdentifier, classInformationIdentifierSet)
                 .eq(StrUtil.isNotBlank(studentStatusRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusRO.getStudentNumber())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getAdmissionNumber()), StudentStatusPO::getAdmissionNumber, studentStatusRO.getAdmissionNumber())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getIdNumber()), StudentStatusPO::getIdNumber, studentStatusRO.getIdNumber());
+                .eq(StrUtil.isNotBlank(studentStatusRO.getIdNumber()), StudentStatusPO::getIdNumber, studentStatusRO.getIdNumber())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getAcademicStatus()), StudentStatusPO::getAcademicStatus, studentStatusRO.getAcademicStatus())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyDuration()), StudentStatusPO::getStudyDuration, studentStatusRO.getStudyDuration())
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
         if (CollUtil.isEmpty(studentStatusPOS)) {
             return null;
@@ -179,7 +181,7 @@ public class TeachingPointFilter extends AbstractFilter {
     /**
      * 分页条件查询指定教学点学生成绩；
      *
-     * @param studentStatusROPageRO 分页条件查询参数，筛选项：学号
+     * @param studentStatusROPageRO 分页条件查询参数，筛选项：学号、课程名称
      * @return 分页条件查询后的学生成绩
      */
     public PageVO<ScoreInformationVO> selectTeachingPointStudentScoreInformation(PageRO<StudentStatusRO> studentStatusROPageRO) {
