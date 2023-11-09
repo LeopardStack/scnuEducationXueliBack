@@ -163,7 +163,7 @@ public class TeachingPointFilter extends AbstractFilter {
                 .eq(StrUtil.isNotBlank(studentStatusRO.getAdmissionNumber()), StudentStatusPO::getAdmissionNumber, studentStatusRO.getAdmissionNumber())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getIdNumber()), StudentStatusPO::getIdNumber, studentStatusRO.getIdNumber())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getAcademicStatus()), StudentStatusPO::getAcademicStatus, studentStatusRO.getAcademicStatus())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyDuration()), StudentStatusPO::getStudyDuration, studentStatusRO.getStudyDuration())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyDuration()), StudentStatusPO::getStudyDuration, studentStatusRO.getStudyDuration());
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
         if (CollUtil.isEmpty(studentStatusPOS)) {
             return null;
