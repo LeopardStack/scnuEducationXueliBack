@@ -93,7 +93,7 @@ public class TeachingPointFilter extends AbstractFilter {
     /**
      * 根据教学点查询班级信息；
      * 条件查询、分页查询；
-     * 筛选条件：行政班别（班级名称）、年级、学院名称、专业名称、层次、学习形式、
+     * 筛选条件：行政班别（班级名称）、年级、学院名称、专业名称、层次、学习形式
      *
      * @param studentStatusRO 传递的筛选条件参数
      * @return 班级信息结果
@@ -137,7 +137,7 @@ public class TeachingPointFilter extends AbstractFilter {
      * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
      * 通过ClassIdentifier筛选出所有的学生信息；
      *
-     * @param studentStatusRO 条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别、学号
+     * @param studentStatusRO 条件查询参数，筛选项：学号、考生号、证件号码
      * @return 查询指定教学点、筛选后的学生信息
      */
     private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusRO studentStatusRO) {
@@ -159,7 +159,9 @@ public class TeachingPointFilter extends AbstractFilter {
         // 通过ClassIdentifier筛选出所有的学生信息，筛选学号
         LambdaQueryWrapper<StudentStatusPO> wrapper = Wrappers.<StudentStatusPO>lambdaQuery()
                 .in(StudentStatusPO::getClassIdentifier, classInformationIdentifierSet)
-                .eq(StrUtil.isNotBlank(studentStatusRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusRO.getStudentNumber());
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusRO.getStudentNumber())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getAdmissionNumber()), StudentStatusPO::getAdmissionNumber, studentStatusRO.getAdmissionNumber())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getIdNumber()), StudentStatusPO::getIdNumber, studentStatusRO.getIdNumber());
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
         if (CollUtil.isEmpty(studentStatusPOS)) {
             return null;
@@ -201,7 +203,9 @@ public class TeachingPointFilter extends AbstractFilter {
             return null;
         }
         // 查询学生的成绩
-        List<ScoreInformationPO> scoreInformationPOS = scoreInformationMapper.selectList(Wrappers.<ScoreInformationPO>lambdaQuery().in(ScoreInformationPO::getStudentId, studentIdSet));
+        List<ScoreInformationPO> scoreInformationPOS = scoreInformationMapper.selectList(Wrappers.<ScoreInformationPO>lambdaQuery()
+                .in(ScoreInformationPO::getStudentId, studentIdSet)
+                .eq(StrUtil.isNotBlank(studentStatusRO.getCourseName()), ScoreInformationPO::getCourseName, studentStatusRO.getCourseName()));
         if (CollUtil.isEmpty(scoreInformationPOS)) {
             return null;
         }
@@ -295,25 +299,37 @@ public class TeachingPointFilter extends AbstractFilter {
         }
         // 根据学生分页，提高查询效率
         List<StudentStatusVO> pageStudentStatusVOS = ListUtil.page(Math.toIntExact(paymentInfoFilterROPageRO.getPageNumber()), Math.toIntExact(paymentInfoFilterROPageRO.getPageSize()), studentStatusVOS);
-        List<PaymentInfoVO> paymentInfoVOS = pageStudentStatusVOS.stream()
+        List<PaymentInfoVO> paymentInfoVOS = new ArrayList<>();
+        pageStudentStatusVOS.stream()
+                .filter(ele -> StrUtil.isNotBlank(ele.getStudentNumber()))
                 .map(ele -> {
-                    PaymentInfoPO paymentInfoPO = new PaymentInfoPO();
-                    if (StrUtil.isNotBlank(ele.getStudentNumber())) {
-                        paymentInfoPO = paymentInfoMapper.selectOne(Wrappers.<PaymentInfoPO>lambdaQuery().eq(PaymentInfoPO::getStudentNumber, ele.getStudentNumber()));
-                    }
-                    return paymentInfoInverter.po2VO(ele, paymentInfoPO);
+                    List<PaymentInfoPO> paymentInfoPOS = paymentInfoMapper.selectList(Wrappers.<PaymentInfoPO>lambdaQuery().eq(PaymentInfoPO::getStudentNumber, ele.getStudentNumber()));
+                    return paymentInfoPOS.stream()
+                            .filter(Objects::nonNull)
+                            .map(paymentInfoPO -> paymentInfoInverter.po2VO(ele, paymentInfoPO))
+                            .collect(Collectors.toList());
                 })
-                .collect(Collectors.toList());
+                .forEach(paymentInfoVOS::addAll);
         if (CollUtil.isEmpty(paymentInfoVOS)) {
             return null;
         }
-        return new PageVO<>(paymentInfoFilterROPageRO, (long) studentStatusVOS.size(), paymentInfoVOS);
+        paymentInfoVOS = ListUtil.page(Math.toIntExact(paymentInfoFilterROPageRO.getPageNumber()), Math.toIntExact(paymentInfoFilterROPageRO.getPageSize()), paymentInfoVOS);
+        // 查找数量
+        Set<String> studentNumberSet = studentStatusVOS.stream()
+                .map(StudentStatusVO::getStudentNumber)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(studentNumberSet)) {
+            return null;
+        }
+        Integer count = paymentInfoMapper.selectCount(Wrappers.<PaymentInfoPO>lambdaQuery().in(PaymentInfoPO::getStudentNumber, studentNumberSet));
+        return new PageVO<>(paymentInfoFilterROPageRO, (long) count, paymentInfoVOS);
     }
 
     /**
      * 根据教学点查询教学计划信息；
      * 支持条件查询和分页查询；
-     * 筛选条件：年级、学院、专业名称、层次、学习形式、行政班别
+     * 筛选条件：年级、学院、专业名称、层次、学习形式、行政班别、课程名称
      *
      * @param courseInformationROPageRO 条件查询分页查询参数
      * @return 分页查询条件查询结果
@@ -340,7 +356,9 @@ public class TeachingPointFilter extends AbstractFilter {
             return null;
         }
         // 根据ClassIdentifier在 CourseInformation 中查询课程信息
-        List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectList(Wrappers.<CourseInformationPO>lambdaQuery().in(CourseInformationPO::getAdminClass, classIdentifierSet));
+        List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectList(Wrappers.<CourseInformationPO>lambdaQuery()
+                .in(CourseInformationPO::getAdminClass, classIdentifierSet)
+                .eq(StrUtil.isNotBlank(courseInformationRO.getCourseName()), CourseInformationPO::getCourseName, courseInformationRO.getCourseName()));
         if (CollUtil.isEmpty(courseInformationPOS)) {
             return null;
         }

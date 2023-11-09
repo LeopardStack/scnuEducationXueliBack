@@ -89,4 +89,9 @@ public class StudentStatusRO {
      */
     private String className;
 
+    /**
+     * 课程名称，用于筛选
+     */
+    private String courseName;
+
 }
