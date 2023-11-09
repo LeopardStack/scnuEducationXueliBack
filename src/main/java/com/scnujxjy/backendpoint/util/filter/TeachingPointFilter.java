@@ -6,23 +6,28 @@ import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.inverter.teaching_process.ScoreInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
@@ -67,6 +72,11 @@ public class TeachingPointFilter extends AbstractFilter {
     @Resource
     private GraduationInfoMapper graduationInfoMapper;
 
+    @Resource
+    private PaymentInfoMapper paymentInfoMapper;
+
+    @Resource
+    private PaymentInfoInverter paymentInfoInverter;
 
     /**
      * 条件筛选指定教学点学生信息；
@@ -75,7 +85,7 @@ public class TeachingPointFilter extends AbstractFilter {
      * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
      * 通过ClassIdentifier筛选出所有的学生信息；
      *
-     * @param studentStatusRO 条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别
+     * @param studentStatusRO 条件查询参数，筛选项：年级、学院、专业名称、层次、学习形式 、行政班别、学号
      * @return 查询指定教学点、筛选后的学生信息
      */
     private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusRO studentStatusRO) {
@@ -109,14 +119,15 @@ public class TeachingPointFilter extends AbstractFilter {
         if (CollUtil.isEmpty(classInformationIdentifierSet)) {
             return null;
         }
-        // 通过ClassIdentifier筛选出所有的学生信息，筛选年级、学院名称、专业名称、层次、学习形式
+        // 通过ClassIdentifier筛选出所有的学生信息，筛选年级、学院名称、专业名称、层次、学习形式、学号
         LambdaQueryWrapper<StudentStatusPO> wrapper = Wrappers.<StudentStatusPO>lambdaQuery()
                 .in(StudentStatusPO::getClassIdentifier, classInformationIdentifierSet)
                 .eq(StrUtil.isNotBlank(studentStatusRO.getGrade()), StudentStatusPO::getGrade, studentStatusRO.getGrade())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getCollege()), StudentStatusPO::getCollege, studentStatusRO.getCollege())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getMajorName()), StudentStatusPO::getMajorName, studentStatusRO.getMajorName())
                 .eq(StrUtil.isNotBlank(studentStatusRO.getLevel()), StudentStatusPO::getLevel, studentStatusRO.getLevel())
-                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyForm()), StudentStatusPO::getStudyForm, studentStatusRO.getStudyForm());
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudyForm()), StudentStatusPO::getStudyForm, studentStatusRO.getStudyForm())
+                .eq(StrUtil.isNotBlank(studentStatusRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusRO.getStudentNumber());
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
         if (CollUtil.isEmpty(studentStatusPOS)) {
             return null;
@@ -225,5 +236,46 @@ public class TeachingPointFilter extends AbstractFilter {
         return new PageVO<>(studentStatusROPageRO, (long) studentStatusVOS.size(), studentStatusAllVOS);
     }
 
+    /**
+     * 根据教学点查询学生缴费信息；
+     * 支持条件查询和分页查询；
+     * 年级、学院、专业名称、层次、学习形式 、行政班别、学号
+     *
+     * @param paymentInfoFilterROPageRO 条件查询分页查询参数
+     * @return 分页查询条件查询结果
+     */
+    public PageVO<PaymentInfoVO> selectTeachingPointPaymentInformation(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        if (Objects.isNull(paymentInfoFilterROPageRO)) {
+            return null;
+        }
+        PaymentInfoFilterRO paymentInfoFilterRO = paymentInfoFilterROPageRO.getEntity();
+        if (Objects.isNull(paymentInfoFilterRO)) {
+            paymentInfoFilterRO = new PaymentInfoFilterRO();
+        }
+        // 转换参数，使用查询学生中的筛选：年级、学院、专业名称、层次、学习形式 、行政班别、学号
+        StudentStatusRO studentStatusRO = studentStatusInverter.payInformationFilterRO2RO(paymentInfoFilterRO);
+        if (Objects.isNull(studentStatusRO)) {
+            return null;
+        }
+        List<StudentStatusVO> studentStatusVOS = selectTeachingPointStudent(studentStatusRO);
+        if (CollUtil.isEmpty(studentStatusVOS)) {
+            return null;
+        }
+        // 根据学生分页，提高查询效率
+        List<StudentStatusVO> pageStudentStatusVOS = ListUtil.page(Math.toIntExact(paymentInfoFilterROPageRO.getPageNumber()), Math.toIntExact(paymentInfoFilterROPageRO.getPageSize()), studentStatusVOS);
+        List<PaymentInfoVO> paymentInfoVOS = pageStudentStatusVOS.stream()
+                .map(ele -> {
+                    PaymentInfoPO paymentInfoPO = new PaymentInfoPO();
+                    if (StrUtil.isNotBlank(ele.getStudentNumber())) {
+                        paymentInfoPO = paymentInfoMapper.selectOne(Wrappers.<PaymentInfoPO>lambdaQuery().eq(PaymentInfoPO::getStudentNumber, ele.getStudentNumber()));
+                    }
+                    return paymentInfoInverter.po2VO(ele, paymentInfoPO);
+                })
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(paymentInfoVOS)) {
+            return null;
+        }
+        return new PageVO<>(paymentInfoFilterROPageRO, (long) studentStatusVOS.size(), paymentInfoVOS);
+    }
 
 }

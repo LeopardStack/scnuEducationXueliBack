@@ -2,8 +2,10 @@ package com.scnujxjy.backendpoint.controller.teaching_point;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -48,6 +50,13 @@ public class TeachingPointController {
         return SaResult.data(scoreInformationVOPageVO);
     }
 
+    /**
+     * 根据教学点查询学生的学籍信息；
+     * 可以进行条件分页查询；
+     *
+     * @param studentStatusROPageRO 条件分页查询条件参数
+     * @return 教学点的学生学籍信息
+     */
     @PostMapping("/detail-student-all-status")
     public SaResult selectTeachingPointStudentAllStatus(@RequestBody PageRO<StudentStatusRO> studentStatusROPageRO) {
         if (Objects.isNull(studentStatusROPageRO)) {
@@ -58,5 +67,23 @@ public class TeachingPointController {
             throw dataNotFoundError();
         }
         return SaResult.data(studentStatusAllVOPageVO);
+    }
+
+    /**
+     * 分页条件查询教学点学生的缴费信息
+     *
+     * @param paymentInfoROPageRO 分页条件查询参数
+     * @return 分页条件查询教学点缴费信息结果
+     */
+    @PostMapping("/detail-student-pay-information")
+    public SaResult selectTeachingPointStudentPayInformation(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoROPageRO) {
+        if (Objects.isNull(paymentInfoROPageRO)) {
+            throw dataMissError();
+        }
+        PageVO<PaymentInfoVO> paymentInfoVOPageVO = teachingPointFilter.selectTeachingPointPaymentInformation(paymentInfoROPageRO);
+        if (Objects.isNull(paymentInfoVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(paymentInfoVOPageVO);
     }
 }

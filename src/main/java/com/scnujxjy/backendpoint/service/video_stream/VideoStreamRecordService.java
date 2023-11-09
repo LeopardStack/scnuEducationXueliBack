@@ -27,8 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -192,6 +190,7 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
                     .desc("测试用直播间")
                     .nickname(videoStreamRecordRO.getMainTeacherName())
                     .build();
+            log.info("直播间信息：{}", channelRequestBO);
             ChannelResponseBO channelResponseBO = videoStreamUtils.createTeachChannel(channelRequestBO);
             String channelId = channelResponseBO.getChannelId();
             if (Objects.isNull(channelResponseBO)) {
@@ -205,6 +204,8 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             // 设置观看链接以及教师链接
             mainRecordRO.setUrl(String.format(TEACHER_URL_FORMAT, channelId));
             mainRecordRO.setWatchUrl(String.format(WATCH_URL_FORMAT, channelId));
+            mainRecordRO.setEndTime(videoStreamRecordRO.getEndTime());
+            log.info("直播间信息：{}", mainRecordRO);
             // 主频道信息入库
             VideoStreamRecordVO videoStreamRecordVO = create(mainRecordRO);
             if (Objects.isNull(videoStreamRecordVO)) {

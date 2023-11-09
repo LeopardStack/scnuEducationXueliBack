@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.inverter.registration_record_card;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
@@ -26,6 +27,9 @@ public abstract class StudentStatusInverter {
             @Mapping(target = "studentNumber", source = "studentStatusVO.studentNumber")
     })
     public abstract StudentStatusAllVO po2VO(StudentStatusVO studentStatusVO, PersonalInfoPO personalInfoPO, GraduationInfoPO graduationInfoPO);
+
+    @Mappings({})
+    public abstract StudentStatusRO payInformationFilterRO2RO(PaymentInfoFilterRO filterRO);
 
     @Mappings({})
     public abstract List<StudentStatusVO> po2VO(List<StudentStatusPO> studentStatusPOS);
