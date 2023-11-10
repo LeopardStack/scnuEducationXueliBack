@@ -494,6 +494,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
                 channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
             }
+            if (StrUtil.isNotBlank(tutorInformation.getAccount())){
+                channelInfoResponse.setAccount(tutorInformation.getAccount());
+            }
+
+
         } catch (Exception e) {
             e.printStackTrace();
             saResult.setCode(ResultCode.FAIL.getCode());

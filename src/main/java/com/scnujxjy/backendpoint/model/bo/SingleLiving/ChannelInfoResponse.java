@@ -6,4 +6,5 @@ import lombok.Data;
 public class ChannelInfoResponse {
     private String url;
     private String password;
+    private String account;
 }
