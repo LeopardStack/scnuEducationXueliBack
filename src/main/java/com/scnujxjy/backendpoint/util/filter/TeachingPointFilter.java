@@ -7,15 +7,19 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
@@ -40,6 +44,7 @@ import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -48,6 +53,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class TeachingPointFilter extends AbstractFilter {
     @Resource
     private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
@@ -102,7 +108,7 @@ public class TeachingPointFilter extends AbstractFilter {
             studentStatusFilterRO = new StudentStatusFilterRO();
         }
         // 从Token中获取到UserId，根据UserId定位教学点TeachingPointId；
-        String loginId = (String) StpUtil.getLoginId();
+        String loginId =  StpUtil.getLoginIdAsString().replace("M", "");
         if (StrUtil.isBlank(loginId)) {
             return null;
         }
@@ -240,43 +246,44 @@ public class TeachingPointFilter extends AbstractFilter {
      * 根据教学点查询学生的学籍信息;
      * 学籍信息：StudentStatus + PersonalInformation
      *
-     * @param studentStatusFilterROPageRO 条件分页查询参数
+     * @param studentStatusFilter 条件分页查询参数
      * @return 条件分页查询学生学籍信息结果
      */
     @Override
-    public FilterDataVO<StudentStatusAllVO> filterStudentStatus(PageRO<StudentStatusFilterRO> studentStatusFilterROPageRO) {
-        if (Objects.isNull(studentStatusFilterROPageRO)) {
+    public FilterDataVO<StudentStatusAllVO> filterStudentStatus(PageRO<StudentStatusFilterRO> studentStatusFilter) {
+        FilterDataVO<StudentStatusAllVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+
+
+
+        String loginId =  StpUtil.getLoginIdAsString().replace("M", "");
+        if (StrUtil.isBlank(loginId)) {
             return null;
         }
-        StudentStatusFilterRO studentStatusFilterRO = studentStatusFilterROPageRO.getEntity();
-        if (Objects.isNull(studentStatusFilterRO)) {
-            studentStatusFilterRO = new StudentStatusFilterRO();
+        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
+        Set<String> classNames = new HashSet<>();
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
+        for(TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS){
+            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
+            String alias = teachingPointInformationPO.getAlias();
+            classNames.add(alias);
         }
-        // 条件查询：该教学点下的学生
-        List<StudentStatusVO> studentStatusVOS = selectTeachingPointStudent(studentStatusFilterRO);
-        if (CollUtil.isEmpty(studentStatusVOS)) {
-            return null;
-        }
-        // 查询PersonalInformation
-        List<StudentStatusAllVO> studentStatusAllVOS = studentStatusVOS.stream()
-                .map(ele -> {
-                    // 填充PersonalInformation
-                    PersonalInfoPO personalInfoPO = new PersonalInfoPO();
-                    GraduationInfoPO graduationInfoPO = new GraduationInfoPO();
-                    if (StrUtil.isNotBlank(ele.getIdNumber()) && StrUtil.isNotBlank(ele.getGrade())) {
-                        personalInfoPO = personalInfoMapper.selectOne(Wrappers.<PersonalInfoPO>lambdaQuery()
-                                .eq(PersonalInfoPO::getIdNumber, ele.getIdNumber())
-                                .eq(PersonalInfoPO::getGrade, ele.getGrade()));
-                        graduationInfoPO = graduationInfoMapper.selectOne(Wrappers.<GraduationInfoPO>lambdaQuery()
-                                .eq(GraduationInfoPO::getIdNumber, ele.getIdNumber())
-                                .eq(GraduationInfoPO::getGrade, ele.getGrade()));
-                    }
-                    return studentStatusInverter.po2VO(ele, personalInfoPO, graduationInfoPO);
-                }).collect(Collectors.toList());
-        FilterDataVO<StudentStatusAllVO> studentStatusAllVOFilterDataVO = new FilterDataVO<>();
-        studentStatusAllVOFilterDataVO.setData(studentStatusAllVOS);
-        studentStatusAllVOFilterDataVO.setTotal(studentStatusAllVOS.size());
-        return studentStatusAllVOFilterDataVO;
+
+
+        studentStatusFilter.getEntity().setClassNames(classNames);
+
+        log.info("学籍数据查询参数 " + studentStatusFilter.getEntity());
+        // 使用 courseInformationMapper 获取数据
+        List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper.selectByFilterAndPageByTeachingPoint(studentStatusFilter.getEntity(),
+                studentStatusFilter.getPageSize(),
+                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() -1));
+        long total =  studentStatusMapper.selectByFilterAndPageByTeachingPointCount(studentStatusFilter.getEntity());
+        studentStatusVOFilterDataVO.setData(studentStatusVOS);
+        studentStatusVOFilterDataVO.setTotal(total);
+
+        return studentStatusVOFilterDataVO;
     }
 
     /**

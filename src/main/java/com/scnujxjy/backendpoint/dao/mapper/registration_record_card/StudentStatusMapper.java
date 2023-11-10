@@ -414,5 +414,16 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
                                                            @Param("pageNumber")Long pageNumber, @Param("pageSize")long pageSize);
 
     long getStudentStatusInfoByTeacherCount(@Param("entity") StudentStatusTeacherFilterRO entity);
+
+    /**
+     * 获取教学点的所有学生信息
+     * @param entity
+     * @param pageSize
+     * @param l
+     * @return
+     */
+    List<StudentStatusAllVO> selectByFilterAndPageByTeachingPoint(@Param("entity") StudentStatusFilterRO entity, @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    long selectByFilterAndPageByTeachingPointCount(@Param("entity") StudentStatusFilterRO entity);
 }
 

@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -105,6 +107,12 @@ public class StudentStatusFilterRO {
      * 学生姓名
      */
     private String name;
+
+
+    /**
+     * 班级名称集合
+     */
+    private Set<String> classNames;
 
 
 }

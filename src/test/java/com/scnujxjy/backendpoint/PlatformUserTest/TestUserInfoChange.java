@@ -5,8 +5,12 @@ import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -33,6 +37,9 @@ public class TestUserInfoChange {
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
 
     @Resource
     private PersonalInfoMapper personalInfoMapper;
@@ -89,6 +96,28 @@ public class TestUserInfoChange {
         platformUserRO.setPassword("T17026");
         platformUserRO.setRoleId(2L);
         platformUserROList.add(platformUserRO);
+        platformUserService.batchCreateUser(platformUserROList);
+    }
+
+    /**
+     * 生成教学点的教务员账号
+     */
+    @Test
+    public void addTeachingPointAdmin(){
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(null);
+        for(TeachingPointAdminInformationPO teachingPointAdminInformationPO: teachingPointAdminInformationPOS ){
+            PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUsername, "M" + teachingPointAdminInformationPO.getIdCardNumber()));
+            if(platformUserPO == null){
+                String userName = "M" + teachingPointAdminInformationPO.getIdCardNumber();
+                PlatformUserRO platformUserRO = new PlatformUserRO();
+                platformUserRO.setUsername(userName);
+                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+                platformUserRO.setRoleId(7L);
+                platformUserROList.add(platformUserRO);
+            }
+        }
         platformUserService.batchCreateUser(platformUserROList);
     }
 

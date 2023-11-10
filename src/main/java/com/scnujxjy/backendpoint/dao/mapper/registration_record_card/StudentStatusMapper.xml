@@ -108,4 +108,34 @@
         </foreach>
     </select>
 
+
+    <select id="selectByFilterAndPageByTeachingPoint" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO">
+        SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name, pi.gender, pi.birth_date,
+        pi.political_status, pi.ethnicity, pi.phone_number, pi.address, pi.entrance_photo
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <if test='entity.classNames != null and entity.classNames.size() > 0'>
+            AND ci.class_name IN
+            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
+                #{className}
+            </foreach>
+        </if>
+        <include refid="commonFilters" />
+        --         ORDER BY ss.grade DESC, ss.college, ss.major_name, ss.level, ci.class_name
+        LIMIT #{l}, #{pageSize}
+    </select>
+
+    <select id="selectByFilterAndPageByTeachingPointCount" resultType="Long">
+        SELECT count(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <if test='entity.classNames != null and entity.classNames.size() > 0'>
+            AND ci.class_name IN
+            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
+                #{className}
+            </foreach>
+        </if>
+        <include refid="commonFilters" />
+    </select>
+
 </mapper>

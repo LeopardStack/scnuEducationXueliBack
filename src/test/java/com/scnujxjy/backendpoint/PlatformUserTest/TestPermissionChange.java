@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @SpringBootTest
@@ -88,5 +90,24 @@ public class TestPermissionChange {
                 .eq(CollegeAdminInformationPO::getCollegeId, collegeInformationPO.getCollegeId())
         );
         log.info(college + " 的账号信息如下 \n" + collegeAdminInformationPOs);
+    }
+
+
+    /**
+     * 赋予教学点教务员查询权限
+     */
+    @Test
+    public void test3(){
+        ArrayList<Long> list = new ArrayList<>(Arrays.asList(3L, 6L, 8L, 9L, 11L, 12L, 14L, 15L)); // Create an ArrayList of Long values
+
+        for(Long permissionId : list){
+            RolePermissionPO rolePermissionPO = new RolePermissionPO(); // Create a new RolePermissionPO object
+            rolePermissionPO.setRoleId(7L); // Set the roleId to 7L
+            rolePermissionPO.setPermissionId(permissionId); // Set the permissionId to 3L
+
+            rolePermissionService.getBaseMapper().insert(rolePermissionPO); // Insert the RolePermissionPO object into the database using a service or mapper
+        }
+
+
     }
 }
