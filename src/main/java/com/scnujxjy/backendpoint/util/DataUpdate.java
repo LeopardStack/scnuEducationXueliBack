@@ -102,7 +102,7 @@ public class DataUpdate {
     /**
      * 定时的去开启删除直播间
      */
-//    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000)
     public void dealWithLivingRooms() {
         if (!schedule) {
             // 如果配置为 false，直接返回
@@ -291,7 +291,7 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-    @Scheduled(cron = "0 00 22 * * ?")
+    @Scheduled(cron = "0 00 22 * * ?", zone="Asia/Shanghai")
     public void executeAt1AM1520() {
         if (!oldDataSynchronizeStatus) {
             // 如果配置为 false，直接返回

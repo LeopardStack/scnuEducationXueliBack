@@ -250,7 +250,7 @@ public class HealthCheckTask {
 
     }
 
-    @Scheduled(fixedRate = 60_000) // 每60s触发一次
+//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void updateWhiteList() {
         //先查出一小时内开好课的课程。然后将白名单
 

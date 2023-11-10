@@ -173,6 +173,9 @@ public class VideoStreamRecordController {
                 VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
                 videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
                 videoStreamRecordPO.setChannelPasswd("" + channelResponseData.getChannelPasswd());
+                videoStreamRecordPO.setName(courseSchedulePO.getCourseName());
+                videoStreamRecordPO.setStartTime( timeInterval.getStart());
+                videoStreamRecordPO.setEndTime( timeInterval.getEnd());
 
                 ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId("" + channelResponseData.getChannelId());
                 log.info("频道信息包括 " + channelInfoByChannelId1);
@@ -254,13 +257,15 @@ public class VideoStreamRecordController {
                         VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordService.getBaseMapper().selectById(Long.parseLong(onlinePlatform));
                         if (videoStreamRecordPO != null && videoStreamRecordPO.getChannelId() != null) {
                             String channelId = videoStreamRecordPO.getChannelId();
-                            Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(channelId);
+//                            Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(channelId);//无需对后台直播间操作
                             int i = videoStreamRecordService.getBaseMapper().deleteById(videoStreamRecordPO.getId());
+                            if (i>0){
+                                log.info("删除直播间表成功,频道号为："+channelId);
+                            }
                         }
                     } catch (Exception e) {
                         log.info("找不到该直播间信息，删除失败" + e);
                     }
-
 
                     courseSchedulePO1.setOnlinePlatform(null);
 

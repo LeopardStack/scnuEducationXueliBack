@@ -21,6 +21,7 @@ public enum ResultCode {
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
     ADD_NEW_ROLE_FAIL(30002, "添加新的角色信息失败"),
     ADD_NEW_ROLE_FAIL_2(30003, "添加重复的角色信息"),
+    GET_TUTOR_FAIL(2000, "该频道助教数不足，请联系管理员添加"),
 
     // 添加新权限失败
     ADD_NEW_PERMISSION_FAIL(40001, "添加新的权限信息失败"),
