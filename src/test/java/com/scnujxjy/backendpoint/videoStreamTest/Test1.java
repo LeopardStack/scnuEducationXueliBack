@@ -83,7 +83,7 @@ public class Test1 {
         SingleLivingServiceImpl sing = new SingleLivingServiceImpl();
         ChannelInfoRequest request = new ChannelInfoRequest();
         request.setChannelId("4417168");
-        sing.testConcurrence();
+//        sing.testConcurrence();
 //        sing.viewlogDetailTest("430221198412180829");
 //        request.setCurrentDay("2023-11-04");
 //        request.setStartTime("2023-11-04 23:00");

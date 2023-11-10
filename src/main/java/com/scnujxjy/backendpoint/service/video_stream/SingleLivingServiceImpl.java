@@ -179,8 +179,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     public SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
         log.info("获取请求观看数据接口入参为:{}", channelViewRequest);
         SaResult saResult = new SaResult();
-    public SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
-        SaResult saResult = new SaResult();
 
         String appId = LiveGlobalConfig.getAppId();
         String appSecret = LiveGlobalConfig.getAppSecret();
@@ -470,7 +468,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 queryWrapper1.eq("channel_id", channelId)
                         .and(wrapper -> wrapper.isNull("user_id").or().eq("user_id", ""));
                 List<TutorInformation> tutorInformations = tutorInformationMapper.selectList(queryWrapper1);
-                tutorInformation=tutorInformations.get(0);
+                tutorInformation = tutorInformations.get(0);
 
                 if (tutorInformation == null) {//如果找不到该频道已经找不到userId为空的助教了，表示用完了那就返回错误联系管理员
                     saResult.setCode(ResultCode.GET_TUTOR_FAIL.getCode());
@@ -621,6 +619,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
 
+
+
     /**
      * 修改名字和封面图
      *
@@ -753,24 +753,21 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
         String response = HttpUtil.get(url, requestMap);
         ViewFirstStudentResponse viewLogFirstResponse = JSON.parseObject(response, ViewFirstStudentResponse.class);
-        if (viewLogFirstResponse.getSuccess() && "success".equals(viewLogFirstResponse.getStatus()) ){
+        if (viewLogFirstResponse.getSuccess() && "success".equals(viewLogFirstResponse.getStatus())) {
             log.info("查询观众的所有直播场次观看信息成功:{}", response);
             Content[] contents = viewLogFirstResponse.getData().getContents();
-//            for (Content content:contents) {
-//
-//            }
             saResult.setCode(ResultCode.SUCCESS.getCode());
             saResult.setMsg(ResultCode.SUCCESS.getMessage());
             saResult.setData(viewLogFirstResponse);
             return saResult;
         }
-    /**
-     * 根据批次 id 获取助教所有信息；
-     * TutorInformation + TeacherInformation
-     *
-     * @param batchIndex
-     * @return
-     */
+
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
+    @Override
     public List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex) {
         if (Objects.isNull(batchIndex)) {
             return null;
@@ -811,41 +808,4 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 .collect(Collectors.toList());
         return tutorAllInformationList;
     }
-}
-
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
-    }
-
-    /**
-     * 查询频道历史并发数据
-     * @throws IOException
-     */
-    public void testConcurrence() throws IOException, NoSuchAlgorithmException {
-        //公共参数,填写自己的实际参数
-        String appId = LiveGlobalConfig.getAppId();
-        String appSecret = LiveGlobalConfig.getAppSecret();
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        //业务参数
-        String url = "http://api.polyv.net/live/v3/channel/statistics/concurrence";
-        String channelId = "4417542";
-        String startDate = "2023-11-05";
-        String endDate = "2023-11-06";
-
-        //http 调用逻辑
-        Map<String,String> requestMap = new HashMap<>();
-        requestMap.put("appId", appId);
-        requestMap.put("timestamp",timestamp);
-//        requestMap.put("userId",userId);
-        requestMap.put("channelId",channelId);
-        requestMap.put("startDate",startDate);
-        requestMap.put("endDate",endDate);
-        requestMap.put("sign",LiveSignUtil.getSign(requestMap, appSecret));
-        String response = HttpUtil.get(url, requestMap);
-        log.info("测试查询频道历史并发数据，返回值：{}",response);
-
-    }
-
-
 }

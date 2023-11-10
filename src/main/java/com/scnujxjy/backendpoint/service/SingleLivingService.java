@@ -34,9 +34,7 @@ public interface SingleLivingService {
 
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
-    SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
-
-    public List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
+    List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
     SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException;
 
