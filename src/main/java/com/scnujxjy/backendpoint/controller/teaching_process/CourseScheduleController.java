@@ -32,8 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -487,6 +486,22 @@ public class CourseScheduleController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的教学计划
                 FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, managerFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 查询继续教育管理员权限范围内的教学计划
+                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teacherFilter);
 
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());

@@ -19,6 +19,7 @@ import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -60,6 +61,9 @@ public class StudentStatusController {
 
     @Resource
     private ManagerFilter managerFilter;
+
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -160,10 +164,10 @@ public class StudentStatusController {
         // 校验参数
         if (Objects.isNull(loginId)) {
             throw dataMissError();
-        }else{
-            try{
-                studentId = (String)loginId;
-            }catch (Exception e){
+        } else {
+            try {
+                studentId = (String) loginId;
+            } catch (Exception e) {
                 throw e;
             }
         }
@@ -182,7 +186,7 @@ public class StudentStatusController {
      */
     @GetMapping("/detail_username")
     public SaResult detailByUserName() {
-        String loginId = (String)StpUtil.getLoginId();
+        String loginId = (String) StpUtil.getLoginId();
         // 校验参数
         if (Objects.isNull(loginId) || loginId.length() == 0) {
             throw dataMissError();
@@ -207,6 +211,7 @@ public class StudentStatusController {
 
     /**
      * 获取入学照片
+     *
      * @param grade 年级
      * @return
      */
@@ -229,6 +234,7 @@ public class StudentStatusController {
 
     /**
      * 获取毕业照片
+     *
      * @param grade 年级
      * @return
      */
@@ -251,6 +257,7 @@ public class StudentStatusController {
 
     /**
      * 获取学位照片
+     *
      * @param payload 学位照片的URL
      * @return
      */
@@ -337,6 +344,20 @@ public class StudentStatusController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    FilterDataVO dataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, teachingPointFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(dataVO.getData());
+                    filterDataVO.setTotal(dataVO.getTotal());
+                    filterDataVO.setCurrent(studentStatusROPageRO.getPageNumber());
+                    filterDataVO.setSize(studentStatusROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) dataVO.getData().size()
+                            / studentStatusROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
                 }
 
                 // 如果获取的数据不为空，则放入Redis
@@ -369,7 +390,7 @@ public class StudentStatusController {
         }
 
         // 生成缓存键
-        String cacheKey = StpUtil.getLoginIdAsString() +  "studentStatus:" + studentStatusROPageRO.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "studentStatus:" + studentStatusROPageRO.toString();
 
         // 从Redis中尝试获取缓存
         PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
@@ -467,12 +488,12 @@ public class StudentStatusController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(studentStatusROPageRO, managerFilter, userId);
-                if(send){
+                if (send) {
                     return SaResult.ok("导出学籍数据成功");
                 }
             }
         }
-    return SaResult.error("导出学籍数据失败！");
+        return SaResult.error("导出学籍数据失败！");
     }
 }
 

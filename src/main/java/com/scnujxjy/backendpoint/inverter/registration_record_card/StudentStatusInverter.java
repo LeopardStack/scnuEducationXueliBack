@@ -4,9 +4,11 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationI
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import org.mapstruct.Mapper;
@@ -31,7 +33,7 @@ public abstract class StudentStatusInverter {
     public abstract StudentStatusAllVO po2VO(StudentStatusVO studentStatusVO, PersonalInfoPO personalInfoPO, GraduationInfoPO graduationInfoPO);
 
     @Mappings({})
-    public abstract StudentStatusRO paymentInformationFilterRO2RO(PaymentInfoFilterRO filterRO);
+    public abstract StudentStatusFilterRO paymentInformationFilterRO2RO(PaymentInfoFilterRO filterRO);
 
     @Mappings({})
     public abstract List<StudentStatusVO> po2VO(List<StudentStatusPO> studentStatusPOS);
@@ -40,8 +42,11 @@ public abstract class StudentStatusInverter {
     public abstract StudentStatusPO ro2PO(StudentStatusRO studentStatusRO);
 
     @Mappings({})
-    public abstract StudentStatusRO courseInformationRO2RO(CourseInformationRO courseInformationRO);
+    public abstract StudentStatusFilterRO courseInformationRO2RO(CourseInformationRO courseInformationRO);
 
     @Mappings({})
-    public abstract StudentStatusRO courseScheduleFilterRO2RO(CourseScheduleFilterRO courseScheduleFilterRO);
+    public abstract StudentStatusFilterRO courseScheduleFilterRO2RO(CourseScheduleFilterRO courseScheduleFilterRO);
+
+    @Mappings({})
+    public abstract StudentStatusFilterRO scoreInformationFilterRO2RO(ScoreInformationFilterRO scoreInformationFilterRO);
 }

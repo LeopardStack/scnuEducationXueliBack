@@ -3,22 +3,17 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.teaching_process.ScoreInformationService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +21,12 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
@@ -64,6 +56,9 @@ public class ScoreInformationController {
     @Resource
     private MessageSender messageSender;
 
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
+
 
 //    @GetMapping("/getGradeInfo")
 //    public SaResult getGradeInfo() {
@@ -82,6 +77,7 @@ public class ScoreInformationController {
 
     /**
      * 学生获取自己的成绩信息
+     *
      * @return
      */
     @GetMapping("/getGradeInfo")
@@ -169,6 +165,22 @@ public class ScoreInformationController {
                     if (Objects.isNull(gradeInfoVOPageVO)) {
                         throw dataNotFoundError();
                     }
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+// 继续教育学院教务员查询学生成绩信息
+                    FilterDataVO gradeInfoVOPageVO = null;
+                    gradeInfoVOPageVO = scoreInformationService.
+                            allPageQueryGradinfoFilter(scoreInformationFilterROPageRO, teachingPointFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(gradeInfoVOPageVO.getData());
+                    filterDataVO.setTotal(gradeInfoVOPageVO.getTotal());
+                    filterDataVO.setCurrent(scoreInformationFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(scoreInformationFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) gradeInfoVOPageVO.getData().size()
+                            / scoreInformationFilterROPageRO.getPageSize()));
+
+                    if (Objects.isNull(gradeInfoVOPageVO)) {
+                        throw dataNotFoundError();
+                    }
                 }
                 // 如果获取的数据不为空，则放入Redis
                 if (filterDataVO != null) {
@@ -178,7 +190,7 @@ public class ScoreInformationController {
             }
         }
 
-            return SaResult.data(filterDataVO);
+        return SaResult.data(filterDataVO);
 
     }
 
@@ -243,7 +255,7 @@ public class ScoreInformationController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(scoreInformationFilterROPageRO, managerFilter, userId);
-                if(send){
+                if (send) {
                     return SaResult.ok("导出学籍数据成功");
                 }
             }
@@ -266,7 +278,7 @@ public class ScoreInformationController {
 
         try {
             ByteArrayOutputStream byteArrayOutputStream = scoreInformationService.exportAwardData(studentId);
-            if(byteArrayOutputStream == null){
+            if (byteArrayOutputStream == null) {
                 return SaResult.error("导出评优成绩单失败！");
             }
             byte[] bytes = byteArrayOutputStream.toByteArray();
@@ -281,6 +293,7 @@ public class ScoreInformationController {
 
     /**
      * 下载评优成绩单
+     *
      * @param params
      * @return
      */
@@ -293,7 +306,7 @@ public class ScoreInformationController {
 
         try {
             ByteArrayOutputStream byteArrayOutputStream = scoreInformationService.exportAwardData(studentId);
-            if(byteArrayOutputStream == null){
+            if (byteArrayOutputStream == null) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
             }
             byte[] bytes = byteArrayOutputStream.toByteArray();
@@ -306,7 +319,6 @@ public class ScoreInformationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
 
 
 }
