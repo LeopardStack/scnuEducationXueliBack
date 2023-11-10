@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.util.filter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -15,6 +16,7 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInf
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
@@ -386,10 +388,7 @@ public class TeachingPointFilter extends AbstractFilter {
         if (Objects.isNull(courseScheduleFilterROPageRO)) {
             return null;
         }
-        CourseScheduleFilterRO courseScheduleFilterRO = courseScheduleFilterROPageRO.getEntity();
-        if (Objects.isNull(courseScheduleFilterRO)) {
-            courseScheduleFilterRO = new CourseScheduleFilterRO();
-        }
+        CourseScheduleFilterRO courseScheduleFilterRO = Optional.ofNullable(courseScheduleFilterROPageRO.getEntity()).orElse(new CourseScheduleFilterRO());
         // 查询指定教学点的班级信息
         StudentStatusRO studentStatusRO = studentStatusInverter.courseScheduleFilterRO2RO(courseScheduleFilterRO);
         List<ClassInformationPO> classInformationPOS = selectTeachingPointClassInformation(studentStatusRO);
@@ -410,12 +409,31 @@ public class TeachingPointFilter extends AbstractFilter {
         List<CourseSchedulePO> classInformationResult = new LinkedList<>();
         afterConsultClassInformationSet.stream()
                 .filter(ele -> StrUtil.isNotBlank(ele.getGrade()) && StrUtil.isNotBlank(ele.getStudyForm()) && StrUtil.isNotBlank(ele.getLevel()) && StrUtil.isNotBlank(ele.getClassName()) && StrUtil.isNotBlank(ele.getMajorName()))
-                .map(ele -> courseScheduleMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery()
-                        .eq(CourseSchedulePO::getGrade, ele.getGrade())
-                        .eq(CourseSchedulePO::getStudyForm, ele.getStudyForm())
-                        .eq(CourseSchedulePO::getLevel, ele.getLevel())
-                        .eq(CourseSchedulePO::getAdminClass, ele.getClassName())
-                        .eq(CourseSchedulePO::getMajorName, ele.getMajorName())))
+                .map(ele -> {
+                    LambdaQueryWrapper<CourseSchedulePO> wrapper = Wrappers.<CourseSchedulePO>lambdaQuery()
+                            .eq(CourseSchedulePO::getGrade, ele.getGrade())
+                            .eq(CourseSchedulePO::getStudyForm, ele.getStudyForm())
+                            .eq(CourseSchedulePO::getLevel, ele.getLevel())
+                            .eq(CourseSchedulePO::getAdminClass, ele.getClassName())
+                            .eq(CourseSchedulePO::getMajorName, ele.getMajorName())
+                            .eq(StrUtil.isNotBlank(courseScheduleFilterRO.getTeachingClassName()), CourseSchedulePO::getTeachingClass, courseScheduleFilterRO.getTeachingClassName())
+                            .eq(StrUtil.isNotBlank(courseScheduleFilterRO.getCourseName()), CourseSchedulePO::getCourseName, courseScheduleFilterRO.getCourseName())
+                            .eq(StrUtil.isNotBlank(courseScheduleFilterRO.getMainTeachingName()), CourseSchedulePO::getMainTeacherName, courseScheduleFilterRO.getMainTeachingName())
+                            .eq(StrUtil.isNotBlank(courseScheduleFilterRO.getTeachingMethod()), CourseSchedulePO::getTeachingMethod, courseScheduleFilterRO.getTeachingMethod());
+                    // 添加授课时间筛选
+                    if (Objects.nonNull(courseScheduleFilterRO.getTeachingStartDate()) && Objects.nonNull(courseScheduleFilterRO.getTeachingEndDate())) {
+                        String startDateStr = DateUtil.format(courseScheduleFilterRO.getTeachingStartDate(), "yyyy-MM-dd HH:mm");
+                        String endDateStr = DateUtil.format(courseScheduleFilterRO.getTeachingEndDate(), "yyyy-MM-dd HH:mm");
+                        String[] startDateArr = startDateStr.split(" ");
+                        String[] endDateArr = endDateStr.split(" ");
+                        if (startDateArr.length == endDateArr.length && endDateArr.length == 2) {
+                            wrapper.between(CourseSchedulePO::getTeachingDate, startDateArr[0], endDateArr[0]);
+                            wrapper.last("AND SUBSTRING_INDEX(teaching_time, '-', 1) > " + "'" + startDateArr[1] + "'"
+                                    + " AND SUBSTRING_INDEX(teaching_time, '-', -1) < " + "'" + endDateArr[1] + "'");
+                        }
+                    }
+                    return courseScheduleMapper.selectList(wrapper);
+                })
                 .filter(CollUtil::isNotEmpty)
                 .forEach(classInformationResult::addAll);
         if (CollUtil.isEmpty(classInformationResult)) {
@@ -423,7 +441,11 @@ public class TeachingPointFilter extends AbstractFilter {
         }
         List<SchedulesVO> schedulesVOS = classInformationResult.stream()
                 .filter(Objects::nonNull)
-                .map(ele -> courseScheduleInverter.po2SchedulesVO(ele))
+                .map(ele -> {
+                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(ele.getOnlinePlatform());
+                    return courseScheduleInverter.po2SchedulesVO(ele, videoStreamRecordPO);
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         if (CollUtil.isEmpty(schedulesVOS)) {
             return null;

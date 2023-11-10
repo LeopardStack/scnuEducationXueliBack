@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.inverter.teaching_process;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleWithLiveInfoVO;
@@ -17,7 +19,8 @@ import org.springframework.beans.BeanUtils;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+        imports = {DateUtil.class})
 public interface CourseScheduleInverter {
 
     @Mappings({})
@@ -73,8 +76,15 @@ public interface CourseScheduleInverter {
     @Mappings({})
     CourseSchedulePO ro2PO(CourseScheduleRO courseScheduleRO);
 
-    @Mappings({})
-    SchedulesVO po2SchedulesVO(CourseSchedulePO courseSchedulePO);
+    @Mappings({
+            @Mapping(target = "id", source = "courseSchedulePO.id"),
+            @Mapping(target = "livingStatus", source = "videoStreamRecordPO.watchStatus"),
+            @Mapping(target = "teachingStartDate",
+                    expression = "java(DateUtil.format(courseSchedulePO.getTeachingDate(), \"yyyy-MM-dd\")+ \" \" + courseSchedulePO.getTeachingTime().split(\"-\")[0])"),
+            @Mapping(target = "teachingEndDate",
+                    expression = "java(DateUtil.format(courseSchedulePO.getTeachingDate(), \"yyyy-MM-dd\")+ \" \" + courseSchedulePO.getTeachingTime().split(\"-\")[1])")
+    })
+    SchedulesVO po2SchedulesVO(CourseSchedulePO courseSchedulePO, VideoStreamRecordPO videoStreamRecordPO);
 }
 
 
