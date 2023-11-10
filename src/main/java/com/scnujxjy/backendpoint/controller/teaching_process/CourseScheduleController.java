@@ -4,13 +4,14 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -21,7 +22,6 @@ import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.StudentFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,10 +32,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -423,6 +421,7 @@ public class CourseScheduleController {
 
     /**
      * 获取排课表课程筛选条件
+     *
      * @param courseScheduleFilterRO 排课表课程筛选条件的其他筛选条件 便于更新筛选框的筛选项
      * @return 排课表筛选条件
      */
@@ -439,7 +438,7 @@ public class CourseScheduleController {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, collegeAdminFilter);
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-                scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO,managerFilter);
+                scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, managerFilter);
             }
         }
 
@@ -501,6 +500,24 @@ public class CourseScheduleController {
                 if (Objects.isNull(filterDataVO)) {
                     throw dataNotFoundError();
                 }
+            } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 查询继续教育管理员权限范围内的教学计划
+                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teacherFilter);
+                if (Objects.isNull(schedulesFilterDataVO)) {
+                    throw dataNotFoundError();
+                }
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
             }
 
         }
@@ -510,6 +527,7 @@ public class CourseScheduleController {
 
     /**
      * 获取排课表明细筛选条件
+     *
      * @return 排课表筛选条件
      */
     @GetMapping("/select_schedule_courses_args")
@@ -554,7 +572,7 @@ public class CourseScheduleController {
         PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            return  SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
+            return SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
         } else {
             try {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
@@ -582,7 +600,7 @@ public class CourseScheduleController {
                             / courseScheduleFilterROPageRO.getPageSize()));
 
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 return SaResult.error("获取排课表信息失败 " + e.toString()).setCode(2000);
             }
 
@@ -631,17 +649,17 @@ public class CourseScheduleController {
         try {
             // 这里调用删除方法，不是更新方法
             CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById(scheduldId);
-            if(courseSchedulePO == null){
+            if (courseSchedulePO == null) {
                 return SaResult.error("删除失败").setCode(2000);
-            }else{
+            } else {
                 // 删除排课要检查是否是有直播间 如果有 不让删除
-                if(courseSchedulePO.getOnlinePlatform() != null){
+                if (courseSchedulePO.getOnlinePlatform() != null) {
                     return SaResult.error("删除失败，该排课记录已存在上课记录").setCode(2000);
-                }else{
+                } else {
                     int i = courseScheduleService.getBaseMapper().deleteById(courseSchedulePO.getId());
-                    if(i > 0){
+                    if (i > 0) {
                         return SaResult.ok();
-                    }else{
+                    } else {
                         log.error("删除排课表记录失败 数据库执行错误 " + scheduldId + " db result " + i);
                         return SaResult.error("删除失败，请联系管理员").setCode(2000);
                     }
@@ -723,6 +741,7 @@ public class CourseScheduleController {
 
     /**
      * 管理员批量上传排课表
+     *
      * @param scheduleList
      * @return
      */
@@ -746,7 +765,7 @@ public class CourseScheduleController {
                 boolean uploadSuccess = minioService.uploadStreamToMinio(inputStream, relativeURL, importBucketName);
                 if (uploadSuccess) {
                     long b = courseScheduleService.generateCourseScheduleListUploadMsg(relativeURL);
-                    if(b < 0){
+                    if (b < 0) {
                         return SaResult.error("上传排课表失败，上传消息无法生成");
                     }
 
@@ -768,6 +787,20 @@ public class CourseScheduleController {
         }
     }
 
+    @PostMapping("/delete-batch-index")
+    public SaResult deleteByBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            throw dataMissError();
+        }
+        Integer count = courseScheduleService.deleteCourseScheduleByBatchIndex(batchIndex);
+        if (count == -1) {
+            return SaResult.code(2000).setMsg("出现错误");
+        }
+        if (count == 0) {
+            return SaResult.code(2000).setMsg("没有数据可以删除");
+        }
+        return SaResult.data(count);
+    }
 
 
 }

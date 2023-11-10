@@ -7,17 +7,16 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
-import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,6 +52,9 @@ public class PaymentInfoController {
 
     @Resource
     private MessageSender messageSender;
+
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
 
     /**
      * 通过id查询详情
@@ -139,6 +141,7 @@ public class PaymentInfoController {
 
     /**
      * 学生获取自己的缴费信息
+     *
      * @return
      */
     @GetMapping("/getPaymentInfo")
@@ -209,6 +212,23 @@ public class PaymentInfoController {
                     FilterDataVO paymentInfoVOPageVO = null;
                     paymentInfoVOPageVO = paymentInfoService.
                             allPageQueryPayInfoFilter(paymentInfoFilterROPageRO, managerFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(paymentInfoVOPageVO.getData());
+                    filterDataVO.setTotal(paymentInfoVOPageVO.getTotal());
+                    filterDataVO.setCurrent(paymentInfoFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(paymentInfoFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
+                            / paymentInfoFilterROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        throw dataNotFoundError();
+                    }
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    FilterDataVO paymentInfoVOPageVO = null;
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryPayInfoFilter(paymentInfoFilterROPageRO, teachingPointFilter);
                     // 创建并返回分页信息
                     filterDataVO = new PageVO<>(paymentInfoVOPageVO.getData());
                     filterDataVO.setTotal(paymentInfoVOPageVO.getTotal());
@@ -297,7 +317,7 @@ public class PaymentInfoController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
-                if(send){
+                if (send) {
                     return SaResult.ok("导出学籍数据成功");
                 }
             }

@@ -9,25 +9,25 @@ import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseInformationService;
 import com.scnujxjy.backendpoint.util.excelListener.CourseInformationListener;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -51,6 +51,9 @@ public class CourseInformationController {
 
     @Resource
     private ManagerFilter managerFilter;
+
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
 
     /**
      * 根据id查询课程信息
@@ -197,10 +200,10 @@ public class CourseInformationController {
         // 获取访问者 ID
         Object loginId = StpUtil.getLoginId();
         CourseInformationSelectArgs courseInformationSelectArgs = null;
-        if(roleList.isEmpty()){
+        if (roleList.isEmpty()) {
             throw dataNotFoundError();
-        }else{
-            if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
                 // 查询二级学院管理员筛选教学计划的参数
                 courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege((String) loginId, collegeAdminFilter);
@@ -208,7 +211,7 @@ public class CourseInformationController {
                 if (Objects.isNull(courseInformationSelectArgs)) {
                     throw dataNotFoundError();
                 }
-            }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员筛选教学计划的参数
                 courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege((String) loginId, managerFilter);
@@ -225,6 +228,7 @@ public class CourseInformationController {
 
     /**
      * 获取二级学院管理员所有学院内专业的所有教学计划信息 不限制日期
+     *
      * @param courseInformationROPageRO
      * @return
      */
@@ -233,12 +237,12 @@ public class CourseInformationController {
 
         List<String> roleList = StpUtil.getRoleList();
         log.info("登录角色 " + roleList);
-        PageVO<FilterDataVO>  filterDataVO = null;
+        PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
-        if(roleList.isEmpty()){
+        if (roleList.isEmpty()) {
             throw dataNotFoundError();
-        }else{
-            if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
                 // 查询二级学院管理员权限范围内的教学计划
                 FilterDataVO courseInformationFilterDataVO = courseInformationService.
@@ -257,11 +261,27 @@ public class CourseInformationController {
                     throw dataNotFoundError();
                 }
 
-            }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员权限范围内的教学计划
-                FilterDataVO courseInformationFilterDataVO =  courseInformationService.
+                FilterDataVO courseInformationFilterDataVO = courseInformationService.
                         allPageQueryCourseInformationFilter(courseInformationROPageRO, managerFilter);
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(courseInformationFilterDataVO.getData());
+                filterDataVO.setTotal(courseInformationFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseInformationROPageRO.getPageNumber());
+                filterDataVO.setSize(courseInformationROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) courseInformationFilterDataVO.getData().size()
+                        / courseInformationROPageRO.getPageSize()));
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+            } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+
+                // 查询继续教育学院管理员权限范围内的教学计划
+                FilterDataVO courseInformationFilterDataVO = courseInformationService.
+                        allPageQueryCourseInformationFilter(courseInformationROPageRO, teachingPointFilter);
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(courseInformationFilterDataVO.getData());
                 filterDataVO.setTotal(courseInformationFilterDataVO.getTotal());
@@ -302,7 +322,7 @@ public class CourseInformationController {
     public SaResult uploadExcel(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new RuntimeException("上传文件不能为空");
-        }else{
+        } else {
             log.info("获取到了文件 " + file.getOriginalFilename());
         }
         try {
@@ -324,6 +344,7 @@ public class CourseInformationController {
 
     /**
      * 下载教学计划
+     *
      * @param courseInformationROPageRO
      * @return
      */
@@ -334,16 +355,16 @@ public class CourseInformationController {
         log.info("登录角色 " + roleList);
         byte[] bytes = null;
         // 获取访问者 ID
-        if(roleList.isEmpty()){
-            return  SaResult.error("角色信息缺失，获取教学计划失败");
-        }else{
-            if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        if (roleList.isEmpty()) {
+            return SaResult.error("角色信息缺失，获取教学计划失败");
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
                 // 查询二级学院管理员权限范围内的教学计划
                 bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, collegeAdminFilter);
 
 
-            }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员权限范围内的教学计划
                 bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, managerFilter);

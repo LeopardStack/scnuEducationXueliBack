@@ -796,7 +796,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         Integer integer = courseExtraInformationMapper.selectCount(new LambdaQueryWrapper<CourseExtraInformationPO>().
                 eq(CourseExtraInformationPO::getCourseScheduleId, courseExtraInformationRO.getCourseScheduleId()).
                 eq(CourseExtraInformationPO::getCourseName, courseExtraInformationRO.getCourseName()));
-        if(integer == 0){
+        if (integer == 0) {
             // 没有课程简介信息 需要新增
             CourseExtraInformationPO courseExtraInformationPO = new CourseExtraInformationPO();
             courseExtraInformationPO.setCourseScheduleId(courseExtraInformationRO.getCourseScheduleId());
@@ -861,7 +861,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
 
-    public long generateCourseScheduleListUploadMsg(String uploadFileUrl){
+    public long generateCourseScheduleListUploadMsg(String uploadFileUrl) {
         String userName = (String) StpUtil.getLoginId();
         try{
             PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
@@ -933,4 +933,41 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
         return filter.getScheduleCourses(courseScheduleFilterROPageRO);
     }
+    /**
+     * 根据批次 Id 删除排课表记录；
+     * 如果直播间存在也删除；
+     * 不删除 VideoStreamRecord 中的记录；
+     *
+     * @param batchIndex
+     * @return -1：出现错误，0：没有记录可以删除
+     */
+    public Integer deleteCourseScheduleByBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            return -1;
+        }
+        List<CourseSchedulePO> courseSchedulePOS = baseMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery().eq(CourseSchedulePO::getBatchIndex, batchIndex));
+        if (CollUtil.isEmpty(courseSchedulePOS)) {
+            return 0;
+        }
+        Set<String> videoStreamRecordIdSet = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getOnlinePlatform)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(videoStreamRecordIdSet)) {
+            return 0;
+        }
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(Wrappers.<VideoStreamRecordPO>lambdaQuery().in(VideoStreamRecordPO::getId, videoStreamRecordIdSet));
+        Set<String> channelIdSet = videoStreamRecordPOS.stream()
+                .map(VideoStreamRecordPO::getChannelId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        channelIdSet.stream()
+                .peek(channelId -> videoStreamUtils.deleteView(channelId));
+        Set<Long> courseScheduleSet = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return baseMapper.deleteBatchIds(courseScheduleSet);
+    }
+
 }
