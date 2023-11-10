@@ -1,17 +1,19 @@
 package com.scnujxjy.backendpoint.util.video_stream;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.URLUtil;
+import cn.hutool.crypto.digest.MD5;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.obs.shade.okhttp3.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelDetail;
@@ -41,7 +43,6 @@ import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
-import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountResponse;
 import org.springframework.stereotype.Component;
@@ -50,10 +51,12 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -270,7 +273,6 @@ public class VideoStreamUtils {
         }
     }
 
-
     /**
      * 根据频道ID生成讲师的单点登录链接
      *
@@ -343,6 +345,50 @@ public class VideoStreamUtils {
         return authURL;
     }
 
+    /**
+     * 生成单点登录链接
+     *
+     * @param channelId  频道 id
+     * @param userId     用户 id
+     * @param username   用户昵称
+     * @param avatarPath 用户头像地址
+     * @return 单点登录链接
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String getAdminSSOLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
+        ChannelInfoResponse channelInfoByChannelId = getChannelInfoByChannelId(channelId);
+        if (Objects.isNull(channelInfoByChannelId)) {
+            return null;
+        }
+        ChannelDetail channelDetail = channelInfoByChannelId.getData();
+        if (Objects.isNull(channelDetail)) {
+            return null;
+        }
+        List<AuthSetting> authSettings = channelDetail.getAuthSettings();
+        List<String> secretKeys = authSettings.stream()
+                .map(AuthSetting::getDirectKey)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(secretKeys)) {
+            return null;
+        }
+        String secretKey = secretKeys.get(0);
+        StringBuilder url = new StringBuilder("https://live.polyv.cn/watch/");
+        String ts = String.valueOf(System.currentTimeMillis());
+        String sign = MD5.create().digestHex(secretKey + userId + secretKey + ts);
+        Map<String, Object> requestMap = new HashMap<>();
+        requestMap.put("userId", userId);
+        requestMap.put("ts", ts);
+        requestMap.put("sign", sign);
+        requestMap.put("nickname", Base64.encode(username));
+        if (StrUtil.isNotBlank(avatarPath)) {
+            requestMap.put("avatar", avatarPath);
+        }
+        String query = URLUtil.buildQuery(requestMap, StandardCharsets.UTF_8);
+        url.append(channelId).append("?").append(query);
+        return url.toString();
+    }
 
     /**
      * 查询指定频道号下的所有角色信息
@@ -369,8 +415,9 @@ public class VideoStreamUtils {
         try {
             String response = PolyvHttpUtil.get(url, requestMap);
             // 解析响应为 ChannelResponse POJO
-            channelResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {});
-        }catch (Exception e){
+            channelResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {
+            });
+        } catch (Exception e) {
             log.error("获取频道 (" + channelId + ") 下的角色信息失败 " + e.toString());
         }
 
@@ -409,6 +456,7 @@ public class VideoStreamUtils {
 
     /**
      * 创建频道
+     *
      * @param liveRequestBody
      * @return
      * @throws IOException
@@ -459,6 +507,7 @@ public class VideoStreamUtils {
 
     /**
      * 增加助教或嘉宾账号
+     *
      * @param createRoleRequestBody
      * @param channelId
      * @return
@@ -505,8 +554,9 @@ public class VideoStreamUtils {
 
     /**
      * 修改直播开始时间和结束时间
+     *
      * @param channelId 频道ID
-     * @param endTime 结束时间
+     * @param endTime   结束时间
      * @param startTime 开始时间
      * @return ApiResponse
      * @throws IOException
@@ -542,15 +592,16 @@ public class VideoStreamUtils {
 
     /**
      * 批量修改频道弹幕开关
-     * @param closeDanmu 是否关闭弹幕功能
+     *
+     * @param closeDanmu           是否关闭弹幕功能
      * @param showDanmuInfoEnabled 是否显示弹幕信息开关
-     * @param channelIds 需要修改弹幕开关的频道号，多个频道号用逗号隔开
+     * @param channelIds           需要修改弹幕开关的频道号，多个频道号用逗号隔开
      * @return ApiResponse
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
     public ChannelResponse batchUpdateDanmu(String closeDanmu, String showDanmuInfoEnabled,
-                                        String channelIds) throws IOException,
+                                            String channelIds) throws IOException,
             NoSuchAlgorithmException {
         // 获取公共参数
         String appId = LiveGlobalConfig.getAppId();
@@ -582,8 +633,9 @@ public class VideoStreamUtils {
 
     /**
      * 修改频道主持人姓名
+     *
      * @param publisherName 主持人姓名
-     * @param channelId 频道号，如果不提供或传-1，则修改该用户的所有频道号的主持人姓名
+     * @param channelId     频道号，如果不提供或传-1，则修改该用户的所有频道号的主持人姓名
      * @return ApiResponse
      * @throws IOException
      * @throws NoSuchAlgorithmException
@@ -619,8 +671,9 @@ public class VideoStreamUtils {
 
     /**
      * 修改频道名称
+     *
      * @param channelName 修改后的频道名称
-     * @param channelId 频道号
+     * @param channelId   频道号
      * @return ChannelResponse
      * @throws IOException
      * @throws NoSuchAlgorithmException
@@ -656,6 +709,7 @@ public class VideoStreamUtils {
     /**
      * 修改频道信息 比如设置连麦人数、直播介绍、是否无延迟直播、弹幕是否打开、开始时间、结束时间、主持人名称
      * 频道密码、频道名称
+     *
      * @param channelId
      * @param basicSetting
      * @param authSettings
@@ -726,8 +780,9 @@ public class VideoStreamUtils {
             String response = PolyvHttpUtil.get(url, requestMap);
             log.info("频道信息返回值 \n" + response);
             // 解析响应为 ChannelResponse POJO
-            channelResponse = JSON.parseObject(response, new TypeReference<ChannelInfoResponse>() {});
-        }catch (Exception e){
+            channelResponse = JSON.parseObject(response, new TypeReference<ChannelInfoResponse>() {
+            });
+        } catch (Exception e) {
             log.error("获取频道 (" + channelId + ") 下的角色信息失败 " + e.toString());
         }
 
@@ -737,6 +792,7 @@ public class VideoStreamUtils {
 
     /**
      * 获取指定频道下的角色信息
+     *
      * @throws Exception
      * @throws NoSuchAlgorithmException
      */
@@ -768,6 +824,7 @@ public class VideoStreamUtils {
 
     /**
      * 更新默认助教的权限信息
+     *
      * @param channelId
      */
     public boolean generateTutor(String channelId, String name, String password) {
@@ -810,7 +867,6 @@ public class VideoStreamUtils {
     }
 
 
-
     /**
      * 查询指定频道号的回放设置
      *
@@ -839,7 +895,8 @@ public class VideoStreamUtils {
             String response = PolyvHttpUtil.get(url, requestMap);  // assuming PolyvHttpUtil can be used here
             log.info("回放设置返回值 \n" + response);
             // 解析响应为 PlaybackSettingResponse POJO
-            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelPlayBackInfoResponse>() {});
+            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelPlayBackInfoResponse>() {
+            });
         } catch (Exception e) {
             log.error("获取频道 (" + channelId + ") 的回放设置失败 " + e.toString());
         }
@@ -866,8 +923,8 @@ public class VideoStreamUtils {
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", LiveGlobalConfig.getAppId());
         requestMap.put("timestamp", timestamp);
-        requestMap.put("channelId", playbackSetting.getChannelId()==null ? "" : playbackSetting.getChannelId());
-        requestMap.put("globalSettingEnabled", playbackSetting.getGlobalSettingEnabled()== null ? "" : playbackSetting.getGlobalSettingEnabled());
+        requestMap.put("channelId", playbackSetting.getChannelId() == null ? "" : playbackSetting.getChannelId());
+        requestMap.put("globalSettingEnabled", playbackSetting.getGlobalSettingEnabled() == null ? "" : playbackSetting.getGlobalSettingEnabled());
         requestMap.put("crontabType", playbackSetting.getCrontType() == null ? "" : playbackSetting.getCrontType());
         requestMap.put("startTime", playbackSetting.getStartTime() == null ? "" : "" + playbackSetting.getStartTime());
         requestMap.put("endTime", playbackSetting.getEndTime() == null ? "" : "" + playbackSetting.getEndTime());
@@ -885,7 +942,8 @@ public class VideoStreamUtils {
             String response = PolyvHttpUtil.postFormBody(url, requestMap);  // assuming PolyvHttpUtil can be used here
             log.info("回放设置返回值 \n" + response);
             // 解析响应为 PlaybackSettingResponse POJO
-            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {});
+            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {
+            });
         } catch (Exception e) {
             log.error("设置频道 (" + playbackSetting.getChannelId() + ") 的回放参数失败 " + e.toString());
         }
@@ -895,7 +953,7 @@ public class VideoStreamUtils {
     }
 
 
-    public List<String> getAllChannels(){
+    public List<String> getAllChannels() {
         List<String> channelIdList = new ArrayList<>();
 
         try {
@@ -914,7 +972,7 @@ public class VideoStreamUtils {
             requestMap.put("timestamp", timestamp);
 
             requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
-            String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil .get(url, requestMap);
+            String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.get(url, requestMap);
             log.info("测试查询频道列表，返回值：{}", response);
 
             // 解析 JSON 响应
@@ -938,5 +996,4 @@ public class VideoStreamUtils {
     }
 
 
-
-    }
+}
