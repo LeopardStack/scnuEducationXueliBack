@@ -39,5 +39,5 @@ public class TutorInformation {
      */
     private String userId;
 
-
+    private String account;
 }

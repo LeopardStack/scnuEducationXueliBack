@@ -493,6 +493,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
                 channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
             }
+            if (StrUtil.isNotBlank(tutorInformation.getAccount())){
+                channelInfoResponse.setAccount(tutorInformation.getAccount());
+            }
+
+
         } catch (Exception e) {
             e.printStackTrace();
             saResult.setCode(ResultCode.FAIL.getCode());
@@ -538,6 +543,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 tutorInformation.setTutorName(tutorName);
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
+                tutorInformation.setAccount(liveCreateAccountResponse.getAccount());
 
                 int insert = tutorInformationMapper.insert(tutorInformation);
                 if (insert > 0) {

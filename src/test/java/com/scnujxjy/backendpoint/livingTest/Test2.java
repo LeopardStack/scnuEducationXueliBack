@@ -100,7 +100,7 @@ public class Test2 {
      */
     @Test
     public void test4(){
-        String channelID = "4400659";
+        String channelID = "4417539";
         String channelID1 = "4400659";
         try {
             ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);

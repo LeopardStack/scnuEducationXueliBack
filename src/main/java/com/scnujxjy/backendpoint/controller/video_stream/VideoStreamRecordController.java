@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
@@ -33,6 +34,7 @@ import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -124,7 +126,7 @@ public class VideoStreamRecordController {
 
         }else{
             SaResult tutorChannelUrl = singleLivingService.getTutorChannelUrl(videoStreamRecordVO.getChannelId(), loginIdAsString);
-            return SaResult.ok("获取助教链接成功").set("url", tutorChannelUrl);
+            return SaResult.data(tutorChannelUrl).setCode(201);
         }
     }
 
@@ -434,22 +436,29 @@ public class VideoStreamRecordController {
     }
 
 
-    @PostMapping("/create-admin-sso-link")
-    public SaResult createAdminSSOLink(@RequestBody String channelId) {
+    /**
+     * 获取学生独立授权访问直播间链接
+     * @param channelId 直播间 ID
+     * @return
+     */
+    @GetMapping("/create-admin-sso-link")
+    public SaResult createAdminSSOLink( String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
-        long userId = StpUtil.getLoginIdAsLong();
-        PlatformUserVO platformUserVO = platformUserService.detailById(userId);
-        if (Objects.isNull(platformUserVO)) {
+        String userId = StpUtil.getLoginIdAsString();
+        PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new
+                LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, userId));
+        if (Objects.isNull(platformUserPO)) {
             return SaResult.code(2000).setData("用户信息为空");
         }
-        String username = platformUserVO.getUsername();
+        String username = platformUserPO.getUsername();
         if (StrUtil.isBlank(username)) {
             username = String.valueOf(userId);
         }
         try {
-            String url = videoStreamUtils.getAdminSSOLink(channelId, String.valueOf(userId), username, platformUserVO.getAvatarImagePath());
+            String url = videoStreamUtils.getAdminSSOLink(channelId, String.valueOf(userId), username, platformUserPO.getAvatarImagePath());
             return SaResult.data(url);
         } catch (IOException | NoSuchAlgorithmException e) {
             return SaResult.code(2000).setData("获取直播间信息失败");

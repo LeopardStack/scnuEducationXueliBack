@@ -358,6 +358,8 @@ public class StudentStatusController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
+                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName()) || roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+
                 }
 
                 // 如果获取的数据不为空，则放入Redis
