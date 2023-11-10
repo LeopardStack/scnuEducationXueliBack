@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
@@ -29,6 +30,7 @@ import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformat
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -71,7 +73,13 @@ public abstract class AbstractFilter {
     protected TeacherInformationMapper teacherInformationMapper;
 
     @Resource
+    protected TeachingAssistantsCourseScheduleMapper teachingAssistantsCourseScheduleMapper;
+
+    @Resource
     protected ScnuXueliTools scnuXueliTools;
+
+    @Resource
+    protected RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 筛选学籍数据的方法
@@ -278,5 +286,14 @@ public abstract class AbstractFilter {
      */
     public FilterDataVO getStudentStatusInfoByTeacher(PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO) {
         return  null;
+    }
+
+    /**
+     * 获取排课表课程管理信息
+     * @param courseScheduleFilterROPageRO
+     * @return
+     */
+    public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        return null;
     }
 }

@@ -85,6 +85,16 @@ public class CourseScheduleFilterRO implements Serializable {
     String mainTeachingName;
 
     /**
+     * 助教姓名
+     */
+    String tutorName;
+
+    /**
+     * 批次
+     */
+    Long batchIndex;
+
+    /**
      * 开始时间
      */
     @JsonFormat(pattern="yyyy-MM-dd HH:mm")

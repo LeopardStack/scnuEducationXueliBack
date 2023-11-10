@@ -264,12 +264,13 @@
             <version>1.70</version>
         </dependency>
 
-<!--        检测用户设备登录   -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.mobile</groupId>-->
-<!--            <artifactId>spring-mobile-device</artifactId>-->
-<!--            <version>1.1.5.RELEASE</version> &lt;!&ndash; Use the appropriate version &ndash;&gt;-->
-<!--        </dependency>-->
+        <!--    日志    -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.12</version>
+        </dependency>
+
 
     </dependencies>
 

@@ -7,11 +7,10 @@ import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.io.IOException;
@@ -49,13 +48,15 @@ public class SingleLivingController {
         return singleLivingService.deleteChannel(channelId);
     }
 
-    @PostMapping("/edit/getChannelView")
-    public SaResult getChannelView(@RequestBody ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
-        if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || StrUtil.isBlank(channelInfoRequest.getCurrentDay()) ||
-                StrUtil.isBlank(channelInfoRequest.getStartTime()) || StrUtil.isBlank(channelInfoRequest.getEndTime())) {
+    //获取频道下或具体场次下的，观众观看数据详情，详情，详情
+    @GetMapping("/edit/getChannelView")
+    public SaResult getChannelView(@RequestBody ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
+        //要么传getCurrentDay，要么传getStartTime和getEndTime。不能三者同时为空
+        if (StrUtil.isBlank(channelViewRequest.getChannelId()) ||
+       (StrUtil.isBlank(channelViewRequest.getCurrentDay()) && StrUtil.isBlank(channelViewRequest.getStartTime()) && StrUtil.isBlank(channelViewRequest.getEndTime()))) {
             throw dataMissError();
         }
-        return singleLivingService.getChannelCardPush(channelInfoRequest);
+        return singleLivingService.getChannelCardPush(channelViewRequest);
     }
 
 
@@ -83,7 +84,7 @@ public class SingleLivingController {
 
     //返回学生登录链接
     @PostMapping("/edit/getStudentChannelUrl")
-    public SaResult getStudentChannelUrl(String channelId) {
+    public SaResult getStudentChannelUrl(String channelId){
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
@@ -96,7 +97,7 @@ public class SingleLivingController {
         if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
             throw dataMissError();
         }
-        return singleLivingService.getTutorChannelUrl(channelId, userId);
+        return singleLivingService.getTutorChannelUrl(channelId,userId);
     }
 
     @PostMapping("/edit/UpdateChannelNameAndImg")
@@ -118,6 +119,28 @@ public class SingleLivingController {
         }
 
         return singleLivingService.addChannelWhiteStudent(request);
+    }
+
+    //获取频道下的场次信息
+    @PostMapping("/edit/getChannelSessionInfo")
+    public SaResult getChannelSessionInfo(@RequestBody ChannelInfoRequest request) {
+        // 校验参数  默认返回1,页20条。
+        if (StrUtil.isBlank(request.getChannelId())) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.getChannelSessionInfo(request);
+    }
+
+    //获取观众的所有频道场次观看详情信息
+    @GetMapping("/edit/getStudentViewlogDetail")
+    public SaResult getStudentViewlogDetail(@RequestBody ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException {
+        //观众观看记录可能很多，最好传入startDate和endDate
+        if (StrUtil.isBlank(channelViewStudentRequest.getViewerId())) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.getStudentViewlogDetail(channelViewStudentRequest);
     }
 
     @PostMapping("/detail-tutor-batch-index")

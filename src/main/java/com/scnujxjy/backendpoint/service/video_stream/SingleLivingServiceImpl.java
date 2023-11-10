@@ -12,6 +12,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.ViewFirstStudentResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
@@ -19,6 +21,7 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
@@ -37,9 +40,7 @@ import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
-import net.polyv.live.v1.entity.channel.playback.LiveMergeChannelVideoAsyncRequest;
-import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordRequest;
-import net.polyv.live.v1.entity.channel.playback.LiveMergeMp4RecordResponse;
+import net.polyv.live.v1.entity.channel.playback.*;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
@@ -56,6 +57,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -174,51 +176,70 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
 
     @Override
-    public SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
+    public SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
+        log.info("获取请求观看数据接口入参为:{}", channelViewRequest);
         SaResult saResult = new SaResult();
 
         String appId = LiveGlobalConfig.getAppId();
         String appSecret = LiveGlobalConfig.getAppSecret();
         String timestamp = String.valueOf(System.currentTimeMillis());
         //业务参数
-        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog", channelInfoRequest.getChannelId());
-        String currentDay = channelInfoRequest.getCurrentDay();
-        String startTime = channelInfoRequest.getStartTime();
-
-        LocalDateTime startDateTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-        long startTimestamp = startDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
-        String endTime = channelInfoRequest.getEndTime();
-        LocalDateTime endDateTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-        long endTimestamp = endDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+        String url = String.format("http://api.polyv.net/live/v2/statistics/%s/viewlog", channelViewRequest.getChannelId());
 
         //http 调用逻辑
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", appId);
         requestMap.put("timestamp", timestamp);
-        requestMap.put("currentDay", currentDay);
-//        requestMap.put("page",page);
-//        requestMap.put("pageSize",pageSize);
-        requestMap.put("startTime", String.valueOf(startTimestamp));
-        requestMap.put("endTime", String.valueOf(endTimestamp));
-        requestMap.put("param3", "live");
+        if (StrUtil.isNotBlank(channelViewRequest.getCurrentDay())) {
+            String currentDay = channelViewRequest.getCurrentDay();
+            requestMap.put("currentDay", currentDay);
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getPage())) {
+            requestMap.put("page", channelViewRequest.getPage());
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getPageSize())) {
+            requestMap.put("pageSize", channelViewRequest.getPageSize());
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getStartTime()) && StrUtil.isNotBlank(channelViewRequest.getEndTime())) {
+            //对时间数据进行处理
+            String startTime = channelViewRequest.getStartTime();
+            LocalDateTime startDateTime = LocalDateTime.parse(startTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            long startTimestamp = startDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+            String endTime = channelViewRequest.getEndTime();
+            LocalDateTime endDateTime = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            long endTimestamp = endDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+
+            requestMap.put("startTime", String.valueOf(startTimestamp));
+            requestMap.put("endTime", String.valueOf(endTimestamp));
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getParam1())) {
+            requestMap.put("param1", channelViewRequest.getParam1());
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getParam2())) {
+            requestMap.put("param2", channelViewRequest.getParam2());
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getParam3())) {
+            requestMap.put("param3", channelViewRequest.getParam3());
+        }
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
 
-//        String response = PolyvHttpUtil.postJsonBody(url, body, null);
-        String s = HttpUtil.get(url, requestMap);
-        ViewLogFirstResponse viewLogFirstResponse = JSON.parseObject(s, ViewLogFirstResponse.class);
-        log.info("测试分页查询频道直播观看详情数据，返回值：{}", viewLogFirstResponse);
+        String response = HttpUtil.get(url, requestMap);
+        ViewLogFirstResponse viewLogFirstResponse = JSON.parseObject(response, ViewLogFirstResponse.class);
+        log.info("分页查询频道直播观看详情数据，返回值：{}", viewLogFirstResponse);
         List<ViewLogResponse> viewLogResponseList = new ArrayList<>();
         if (viewLogFirstResponse != null && viewLogFirstResponse.getCode() == 200) {
             List<ViewLogThirdResponse> contents = viewLogFirstResponse.getData().getContents();
 
             for (ViewLogThirdResponse viewLogThirdResponse : contents) {
                 ViewLogResponse viewLogResponse = new ViewLogResponse();
-                viewLogResponse.setChannelId(channelInfoRequest.getChannelId());
+                viewLogResponse.setChannelId(channelViewRequest.getChannelId());
                 viewLogResponse.setParam1(viewLogThirdResponse.getParam1());
                 viewLogResponse.setParam2(viewLogThirdResponse.getParam2());
                 viewLogResponse.setPlayDuration(viewLogThirdResponse.getPlayDuration());
                 viewLogResponse.setFirstActiveTime(viewLogThirdResponse.getFirstActiveTime());
                 viewLogResponse.setLastActiveTime(viewLogThirdResponse.getLastActiveTime());
+                viewLogResponse.setSessionId(viewLogThirdResponse.getSessionId());
+                viewLogResponse.setParam3(viewLogThirdResponse.getParam3());
                 viewLogResponseList.add(viewLogResponse);
             }
 
@@ -298,7 +319,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         Boolean liveUpdateChannelAuthResponse;
         try {
             LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting().setAuthType(
-                            LiveConstant.AuthType.PHONE.getDesc())
+                    LiveConstant.AuthType.PHONE.getDesc())
                     .setRank(1)
                     .setEnabled("Y")
                     .setAuthTips("请输入你的身份证号码");
@@ -445,7 +466,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
                 queryWrapper1.eq("channel_id", channelId)
                         .and(wrapper -> wrapper.isNull("user_id").or().eq("user_id", ""));
-                tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
+                List<TutorInformation> tutorInformations = tutorInformationMapper.selectList(queryWrapper1);
+                tutorInformation = tutorInformations.get(0);
 
                 if (tutorInformation == null) {//如果找不到该频道已经找不到userId为空的助教了，表示用完了那就返回错误联系管理员
                     saResult.setCode(ResultCode.GET_TUTOR_FAIL.getCode());
@@ -501,7 +523,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //            chatAuditEnabled：聊天审核（仅支持助教）
 
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
-                                    LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
+                            LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
 //                            .setCode(LiveConstant.RolePurview.CHAT_AUDIT.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
             liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
@@ -596,6 +618,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
 
+
+
     /**
      * 修改名字和封面图
      *
@@ -631,57 +655,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    public void testMergeMp4Record(String channelId) {
-        LiveMergeMp4RecordRequest liveMergeMp4RecordRequest = new LiveMergeMp4RecordRequest();
-        LiveMergeMp4RecordResponse liveMergeMp4RecordResponse;
-        try {
-
-            liveMergeMp4RecordRequest.setChannelId(channelId)
-                    .setStartTime(new Date())
-                    .setEndTime(new Date())
-                    .setCallbackUrl(null)
-                    .setFileName("testMergeMp4");
-            liveMergeMp4RecordResponse = new LiveChannelPlaybackServiceImpl().mergeMp4Record(liveMergeMp4RecordRequest);
-//            Assert.assertNotNull(liveMergeMp4RecordResponse);
-            if (liveMergeMp4RecordResponse != null) {
-                //to do something ......
-                log.debug("测试导出合并的录制文件并回调mp4下载地址成功,{}", JSON.toJSONString(liveMergeMp4RecordResponse));
-                String fileUrl = liveMergeMp4RecordResponse.getFileUrl();
-                File file = new File(fileUrl);
-//                minioService.uploadStreamToMinio(inputStream,fileName,diyBucketName);
-            }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            log.error("导出合并的录制文件接口调用异常", e);
-        }
-    }
-
-    public void testMergeChannelVideoAsync() throws Exception, NoSuchAlgorithmException {
-        LiveMergeChannelVideoAsyncRequest liveMergeChannelVideoAsyncRequest = new LiveMergeChannelVideoAsyncRequest();
-        Boolean liveMergeChannelVideoAsyncResponse;
-        try {
-            liveMergeChannelVideoAsyncRequest.setChannelId("4368180")
-                    .setFileIds("gq2or4951o")
-                    .setFileName("测试合并-可删除")
-                    .setCallbackUrl(null)
-                    .setAutoConvert("Y")
-                    .setMergeMp4("Y");
-            liveMergeChannelVideoAsyncResponse = new LiveChannelPlaybackServiceImpl().mergeChannelVideoAsync(
-                    liveMergeChannelVideoAsyncRequest);
-            if (liveMergeChannelVideoAsyncResponse != null && liveMergeChannelVideoAsyncResponse) {
-                log.info("测试异步合并直播录制文件,具体是否成功以回调为准");
-            }
-        } catch (PloyvSdkException e) {
-            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
-            log.error(e.getMessage(), e);
-            // 异常返回做B端异常的业务逻辑，记录log 或者 上报到ETL 或者回滚事务
-            throw e;
-        } catch (Exception e) {
-            log.error("SDK调用异常", e);
-            throw e;
-        }
-    }
 
     //live：直播中 playback：回放中 end：已结束 waiting：等待中 unStart：未开始
     @Override
@@ -710,13 +683,90 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    /**
-     * 根据批次 id 获取助教所有信息；
-     * TutorInformation + TeacherInformation
-     *
-     * @param batchIndex
-     * @return
-     */
+    @Override
+    public SaResult getChannelSessionInfo(ChannelInfoRequest channelInfoRequest) {
+        SaResult saResult = new SaResult();
+        LiveListChannelSessionInfoRequest liveListChannelSessionInfoRequest = new LiveListChannelSessionInfoRequest();
+        LiveListChannelSessionInfoResponse liveListChannelSessionInfoResponse;
+        try {
+            liveListChannelSessionInfoRequest.setChannelId(channelInfoRequest.getChannelId());
+            if (Objects.nonNull(channelInfoRequest.getStartDate())) {
+                liveListChannelSessionInfoRequest.setStartDate(channelInfoRequest.getStartDate());
+            }
+            if (Objects.nonNull(channelInfoRequest.getEndDate())) {
+                liveListChannelSessionInfoRequest.setEndDate(channelInfoRequest.getEndDate());
+            }
+            if (Objects.nonNull(channelInfoRequest.getCurrentPage())) {
+                liveListChannelSessionInfoRequest.setCurrentPage(channelInfoRequest.getCurrentPage());
+            }
+            if (Objects.nonNull(channelInfoRequest.getPageSize())) {
+                liveListChannelSessionInfoRequest.setPageSize(channelInfoRequest.getPageSize());
+            }
+            liveListChannelSessionInfoResponse = new LiveChannelPlaybackServiceImpl().listChannelSessionInfo(
+                    liveListChannelSessionInfoRequest);
+            if (liveListChannelSessionInfoResponse != null) {
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult.setData(liveListChannelSessionInfoResponse);
+                log.info("测试查询频道直播场次信息成功{}", JSON.toJSONString(liveListChannelSessionInfoResponse));
+                return saResult;
+            }
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("调用查询频道号的场次信息接口异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
+    @Override
+    public SaResult getStudentViewlogDetail(ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException {
+        SaResult saResult = new SaResult();
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String url = "http://api.polyv.net/live/v4/user/viewlog/detail";
+
+        //http 调用逻辑
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("viewerId", channelViewStudentRequest.getViewerId());
+        if (StrUtil.isNotBlank(channelViewStudentRequest.getStartDate())) {
+            requestMap.put("startDate", channelViewStudentRequest.getStartDate());
+        }
+        if (StrUtil.isNotBlank(channelViewStudentRequest.getEndDate())) {
+            requestMap.put("endDate", channelViewStudentRequest.getEndDate());
+        }
+        if (StrUtil.isNotBlank(channelViewStudentRequest.getPageNumber())) {
+            requestMap.put("pageNumber", channelViewStudentRequest.getPageNumber());
+        }
+        if (StrUtil.isNotBlank(channelViewStudentRequest.getPageSize())) {
+            requestMap.put("pageSize", channelViewStudentRequest.getPageSize());
+        }
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        String response = HttpUtil.get(url, requestMap);
+        ViewFirstStudentResponse viewLogFirstResponse = JSON.parseObject(response, ViewFirstStudentResponse.class);
+        if (viewLogFirstResponse.getSuccess() && "success".equals(viewLogFirstResponse.getStatus())) {
+            log.info("查询观众的所有直播场次观看信息成功:{}", response);
+            Content[] contents = viewLogFirstResponse.getData().getContents();
+            saResult.setCode(ResultCode.SUCCESS.getCode());
+            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+            saResult.setData(viewLogFirstResponse);
+            return saResult;
+        }
+
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
+    @Override
     public List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex) {
         if (Objects.isNull(batchIndex)) {
             return null;

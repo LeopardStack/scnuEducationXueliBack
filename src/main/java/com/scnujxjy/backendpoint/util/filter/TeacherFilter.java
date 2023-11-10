@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleTime;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -37,7 +38,7 @@ public class TeacherFilter extends AbstractFilter{
 
     private List<TeacherSchedulesVO> getTeacherSchedules(List<TeacherCourseScheduleVO> courseSchedulePOS, PlatformUserPO platformUserPO,
                                      PageRO<CourseScheduleRO> courseScheduleFilter){
-        courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByTeacherUserNameRecentBetter((platformUserPO.getUsername()));
+
         Date teachingStartDate;
         Date teachingEndDate;
 
@@ -173,7 +174,7 @@ public class TeacherFilter extends AbstractFilter{
                     teacherSchedulesVO.setTeachingMethod(teacherCourseScheduleVO.getTeachingMethod());
                     TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                             .eq(TeacherInformationPO::getTeacherUsername, StpUtil.getLoginIdAsString()));
-                    teacherSchedulesVO.setTeachingClass(teacherCourseScheduleVO.getCourseName() + " " + teacherInformationPO.getName());
+                    teacherSchedulesVO.setTeachingClass(teacherCourseScheduleVO.getTeachingClass());
 
                     String videoStreamId = teacherCourseScheduleVO.getOnlinePlatform();
                     if (videoStreamId != null) {
@@ -194,14 +195,13 @@ public class TeacherFilter extends AbstractFilter{
                                     teacherSchedulesVO.getVideoStreamRecordROList().add(videoStreamRecordPO1);
                                 }
                             } else {
-                                // 删除不存在的直播间信息ID
-                                Long id = teacherCourseScheduleVO.getId();
-                                courseScheduleMapper.updateOnlinePlatformToNull(id);
-                                if("已结束".equals(videoStreamId)){
+                                if(videoStreamId.equals("已结束")){
                                     continue;
                                 }else{
-                                    throw new IllegalArgumentException("存在教师的排课表中有直播间信息ID，但是直播间信息不存在" + courseScheduleFilter.getEntity().toString()
-                                            + "\n直播间信息 ID online_platform=" + videoStreamId);
+                                    // 删除不存在的直播间信息ID
+                                    Long id = teacherCourseScheduleVO.getId();
+                                    courseScheduleMapper.updateOnlinePlatformToNull(id);
+                                    throw new IllegalArgumentException("存在教师的排课表中有直播间信息ID，但是直播间信息不存在" + courseScheduleFilter.getEntity().toString());
                                 }
                             }
                         } catch (Exception e) {
@@ -276,9 +276,21 @@ public class TeacherFilter extends AbstractFilter{
             return null;
         }
 
+
         CourseScheduleRO entity = courseScheduleROPageRO.getEntity();
+        TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherUsername, platformUserPO.getUsername()));
+        // 获取它是辅导教师还是主讲教师
+        String teacherType2 = teacherInformationPO.getTeacherType2();
         // 使用 courseScheduleMapper 获取数据
         List<TeacherCourseScheduleVO> courseSchedulePOS = new ArrayList<>();
+        if(teacherType2.equals("主讲教师")){
+            entity.setTeacherUsername(platformUserPO.getUsername());
+            courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByTeacherUserNameRecentBetter((platformUserPO.getUsername()));
+        }else{
+            courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByTutor(platformUserPO.getUsername());
+        }
+
         long total = 0;
         List<TeacherSchedulesVO> teacherSchedules = getTeacherSchedules(courseSchedulePOS, platformUserPO, courseScheduleROPageRO);
         total = tempTotal;

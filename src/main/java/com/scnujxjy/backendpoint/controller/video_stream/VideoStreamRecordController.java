@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.video_stream;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
@@ -21,6 +22,7 @@ import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
+import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
@@ -66,8 +68,12 @@ public class VideoStreamRecordController {
     @Resource
     private TeacherInformationService teacherInformationService;
 
+
     @Resource
     private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private SingleLivingService singleLivingService;
 
     @Resource
     private ScnuXueliTools scnuXueliTools;
@@ -104,11 +110,22 @@ public class VideoStreamRecordController {
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherUsername, loginIdAsString));
+        String teacherType2 = teacherInformationPO.getTeacherType2();
         VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailById(id);
-        if (Objects.isNull(videoStreamRecordVO)) {
-            throw dataNotFoundError();
+        if(teacherType2.equals("主讲教师")){
+
+            if (Objects.isNull(videoStreamRecordVO)) {
+                return SaResult.error("直播间信息获取失败 " + loginIdAsString).setCode(2000);
+            }
+            return SaResult.data(videoStreamRecordVO);
+
+        }else{
+            SaResult tutorChannelUrl = singleLivingService.getTutorChannelUrl(videoStreamRecordVO.getChannelId(), loginIdAsString);
+            return SaResult.ok("获取助教链接成功").set("url", tutorChannelUrl);
         }
-        return SaResult.data(videoStreamRecordVO);
     }
 
     /**
@@ -153,6 +170,7 @@ public class VideoStreamRecordController {
      * @return 添加后的频道信息
      */
     @PostMapping("/create_living_room")
+    @SaCheckPermission("添加直播间")
     public SaResult createLivingRoom(@RequestBody CourseInformationRO courseInformationRO) {
         if (courseInformationRO == null) {
             return SaResult.error("创建直播间失败");
@@ -168,7 +186,7 @@ public class VideoStreamRecordController {
             ApiResponse channel = singleLivingSetting.createChannel(courseSchedulePO.getCourseName(), timeInterval.getStart(), timeInterval.getEnd(),
                     false, "N");
             log.info("保利威创建直播间" + channel);
-            if (channel.getCode().equals(200)) {
+            if(channel.getCode().equals(200)){
                 ChannelResponseData channelResponseData = channel.getData();
                 VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
                 videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
@@ -179,7 +197,7 @@ public class VideoStreamRecordController {
 
                 ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId("" + channelResponseData.getChannelId());
                 log.info("频道信息包括 " + channelInfoByChannelId1);
-                if (channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()) {
+                if(channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()){
                     log.info("创建频道成功");
                     videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelInfoByChannelId1.getData().getWatchStatus()));
                     int insert = videoStreamRecordService.getBaseMapper().insert(videoStreamRecordPO);
@@ -191,19 +209,19 @@ public class VideoStreamRecordController {
                             .eq(CourseSchedulePO::getCourseName, courseSchedulePO.getCourseName())
                     );
                     Long id = videoStreamRecordPO.getId();
-                    if (id == null) {
+                    if(id == null){
                         return SaResult.error("创建直播间失败，插入数据库失败").setCode(2000);
                     }
-                    for (CourseSchedulePO courseSchedulePO1 : courseSchedulePOS) {
+                    for(CourseSchedulePO courseSchedulePO1: courseSchedulePOS){
 
                         courseSchedulePO.setOnlinePlatform(String.valueOf(courseSchedulePO1.getId()));
                         UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                        updateWrapper.set("online_platform", id).eq("id", courseSchedulePO1.getId());
+                        updateWrapper.set("online_platform",id).eq("id", courseSchedulePO1.getId());
 
                         int update = courseScheduleService.getBaseMapper().update(null, updateWrapper);
 
 //                        boolean b = courseScheduleService.updateById(courseSchedulePO1);
-                        if (insert > 0 && update > 0) {
+                        if(insert > 0 && update>0){
                             log.info("新增直播间，直播间信息插入成功 " + courseSchedulePO1);
                         }
                     }
@@ -214,13 +232,13 @@ public class VideoStreamRecordController {
 
 
                     return SaResult.ok("创建频道成功");
-                } else {
+                }else{
                     log.error("创建直播间失败 " + channelInfoByChannelId1);
                     return SaResult.error("创建直播间失败").setCode(2000);
                 }
 
             }
-        } catch (Exception e) {
+        }catch (Exception e){
             log.error("创建直播间失败 " + e.toString());
             return SaResult.error("创建直播间失败").setCode(2000);
         }
@@ -234,7 +252,7 @@ public class VideoStreamRecordController {
      * @return 添加后的频道信息
      */
     @DeleteMapping("/delete_living_room")
-//    @SaCheckPermission("强制删除直播间")
+    @SaCheckPermission("强制删除直播间")
     public SaResult deleteLivingRoom(@RequestParam("id") Long id) {
         log.info("获取到了 排课表 ID" + id);
         CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById((id));
@@ -351,20 +369,20 @@ public class VideoStreamRecordController {
             String channelId = videoStreamRecordPO.getChannelId();
 
             boolean isExist = true;
-            if (channelId == null) {
+            if(channelId == null){
                 return SaResult.error("获取直播失败，频道不存在").setCode(2000);
             }
             ChannelResponseBO channelBasicInfo = null;
             try {
                 channelBasicInfo = videoStreamUtils.getChannelBasicInfo(channelId);
-                if (channelBasicInfo.getChannelId() != null) {
+                if(channelBasicInfo.getChannelId() != null){
                     return SaResult.ok(PolyvEnum.WATCH_URL.getKey() + channelId);
                 }
-            } catch (Exception e) {
+            }catch (Exception e){
                 log.info("获取观众链接 保利威返回值 " + channelBasicInfo);
             }
             return SaResult.error("获取直播失败，请联系管理员").setCode(2000);
-        } catch (Exception e) {
+        }catch (Exception e){
             log.error("获取观众链接失败 " + e.toString());
             return SaResult.error("获取直播失败，请联系管理员").setCode(2000);
         }
@@ -382,18 +400,18 @@ public class VideoStreamRecordController {
         if (channelSetRO == null) {
             return SaResult.error("创建直播间失败").setCode(2000);
         }
-        if ("Y".equals(channelSetRO.getPlayBack())) {
+        if("Y".equals(channelSetRO.getPlayBack())){
             boolean b = singleLivingSetting.setPlayBack(channelSetRO.getChannelId(), true, true);
-            if (b) {
+            if(b){
                 return SaResult.ok("设置回放成功");
-            } else {
+            }else{
                 return SaResult.error("设置回放失败").setCode(2000);
             }
-        } else {
+        }else{
             boolean b = singleLivingSetting.setPlayBack(channelSetRO.getChannelId(), false, true);
-            if (b) {
+            if(b){
                 return SaResult.ok("关闭回放成功");
-            } else {
+            }else{
                 return SaResult.error("关闭回放失败").setCode(2000);
             }
         }

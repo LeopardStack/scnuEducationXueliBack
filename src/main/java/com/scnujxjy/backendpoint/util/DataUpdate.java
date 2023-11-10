@@ -324,7 +324,7 @@ public class DataUpdate {
                     // 彻底终止状态，直播间完全不会再用
                     continue;
                 }
-                if(videoStreamRecordPO.getWatchStatus() != null && channelBasicInfo.getWatchStatus().equals(videoStreamRecordPO.getWatchStatus())){
+                if(videoStreamRecordPO.getWatchStatus() != null && LiveStatusEnum.get(channelBasicInfo.getWatchStatus()).equals(videoStreamRecordPO.getWatchStatus())){
 
                 }else{
                     videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelBasicInfo.getWatchStatus()));
