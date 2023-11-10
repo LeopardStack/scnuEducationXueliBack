@@ -1,9 +1,13 @@
 package com.scnujxjy.backendpoint.util.filter;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.DegreeInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
@@ -35,7 +39,9 @@ import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 定义信息筛选接口，用于实现平台各种角色的信息查询
@@ -304,4 +310,79 @@ public abstract class AbstractFilter {
     public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
         return null;
     }
+
+
+    public void processScheduleCoursesInformationVO(
+            ScheduleCoursesInformationVO scheduleCoursesInformationVO,
+            List<String> errorCourses) {
+
+        // 获取所有的行政班
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(
+                new LambdaQueryWrapper<CourseSchedulePO>()
+                        .eq(CourseSchedulePO::getBatchIndex, scheduleCoursesInformationVO.getBatchIndex())
+        );
+
+        List<String> colleges = new ArrayList<>();
+        List<String> majorNames = new ArrayList<>();
+        for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
+            // 从数据库获取班级信息
+            ClassInformationPO classInformationPO = classInformationMapper.selectOne(
+                    new LambdaQueryWrapper<ClassInformationPO>()
+                            .eq(ClassInformationPO::getGrade, courseSchedulePO.getGrade())
+                            .eq(ClassInformationPO::getMajorName, courseSchedulePO.getMajorName())
+                            .eq(ClassInformationPO::getLevel, courseSchedulePO.getLevel())
+                            .eq(ClassInformationPO::getStudyForm, courseSchedulePO.getStudyForm())
+                            .eq(ClassInformationPO::getClassName, courseSchedulePO.getAdminClass())
+            );
+
+            if (classInformationPO == null) {
+                // 记录错误信息
+                String error = "班级信息获取失败，存在排课表记录获取不到班级信息 " +
+                        courseSchedulePO.getGrade() + " " + courseSchedulePO.getMajorName() + " " +
+                        courseSchedulePO.getStudyForm() + " " + courseSchedulePO.getLevel() + " " +
+                        courseSchedulePO.getMainTeacherName() + " " + courseSchedulePO.getCourseName() + " " +
+                        courseSchedulePO.getTeachingDate() + " " + courseSchedulePO.getTeachingTime();
+                // 这里应该是线程安全的列表操作
+                synchronized (errorCourses) {
+                    errorCourses.add(error);
+                }
+            } else {
+                colleges.add(classInformationPO.getCollege());
+                majorNames.add(classInformationPO.getMajorName());
+            }
+        }
+
+        // 去重学院信息 去重专业名称信息
+        colleges = colleges.stream().distinct().collect(Collectors.toList());
+        majorNames = majorNames.stream().distinct().collect(Collectors.toList());
+        // 获取班级列表
+        List<String> adminClassList = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getAdminClass)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 设置学院和班级信息
+        scheduleCoursesInformationVO.setClassName(adminClassList);
+        scheduleCoursesInformationVO.setColleges(colleges);
+        scheduleCoursesInformationVO.setMajorNames(majorNames);
+
+        // 处理在线平台信息
+        String onlinePlatform = scheduleCoursesInformationVO.getOnlinePlatform();
+        if (onlinePlatform != null) {
+            // ... 处理在线平台信息的代码逻辑
+            // 这里从数据库获取视频流信息
+            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
+                    new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform)
+            );
+
+            if (videoStreamRecordPO != null) {
+                // 设置直播状态和频道ID
+                scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
+            }
+        } else {
+            scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.UN_START0.status);
+        }
+    }
+
 }

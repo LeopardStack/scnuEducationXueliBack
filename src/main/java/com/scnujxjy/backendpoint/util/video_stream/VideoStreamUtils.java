@@ -274,7 +274,7 @@ public class VideoStreamUtils {
     }
 
     /**
-     * 根据频道ID生成讲师的单点登录链接
+     * 根据频道ID生成讲师的 登录链接
      *
      * @param channelId 频道ID
      * @return 单点登录链接

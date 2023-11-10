@@ -29,6 +29,7 @@ import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -36,9 +37,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -608,14 +607,28 @@ public class CollegeAdminFilter extends AbstractFilter {
         CollegeInformationPO collegeName = getCollegeName();
         courseScheduleFilterROPageRO.getEntity().setCollege(collegeName.getCollegeName());
         log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
         // 获取指定条件的排课表表课程信息 但是还需要做二次处理 比如 去掉同一批次的重复信息 把时间和班级 还有直播间信息 单独摘出来
-        List<ScheduleCoursesInformationBO> schedulesVOS = courseScheduleMapper.getScheduleCoursesInformation(
-                courseScheduleFilterROPageRO.getEntity());
+        String redisKey = "getScheduleCoursesInformation:" + courseScheduleFilterROPageRO.getEntity().toString();
+        ValueOperations<String, Object> valueOps1 = redisTemplate.opsForValue();
+        List<ScheduleCoursesInformationBO> schedulesVOS;
+
+        // Check if data is present in Redis cache
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(redisKey))) {
+            schedulesVOS = (List<ScheduleCoursesInformationBO>) valueOps1.get(redisKey);
+        } else {
+            // If not present in cache, retrieve data from the database
+            schedulesVOS = courseScheduleMapper.getScheduleCoursesInformation(courseScheduleFilterROPageRO.getEntity());
+            // Store the data in cache with a timeout of 30 minutes
+            valueOps1.set(redisKey, schedulesVOS, 30, TimeUnit.MINUTES);
+        }
 
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOList = new ArrayList<>();
+
+        List<String> errorCourses = new ArrayList<>();
 
         // 去重 把同一批次的拿到 再去根据时间排序
         for (ScheduleCoursesInformationBO schedulesVO : schedulesVOS) {
@@ -631,6 +644,10 @@ public class CollegeAdminFilter extends AbstractFilter {
                     });
 
             // 接下来根据每个批次里的排课日期和排课时间 拿到具体现在最近的 并且拿到它的直播状态 和 channelI
+
+            scheduleCoursesInformationVO.setMainTeacherName(schedulesVO.getMainTeacherName());
+            scheduleCoursesInformationVO.setTeacherUsername(schedulesVO.getTeacherUsername());
+            scheduleCoursesInformationVO.setCourseName(schedulesVO.getCourseName());
 
             if (scheduleCoursesInformationVO.getTeachingDate() == null) {
                 scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
@@ -648,13 +665,10 @@ public class CollegeAdminFilter extends AbstractFilter {
                 long diffCurrent = currentTeachingDate.getTime() - now.getTime();
 
                 // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
-                if(diffCurrent < 0 && diffNew > 0){
-                    // 如果现在有个时间 比现在的时间晚 而现在记录的时间比现在晚 直接替换
-                    scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
-                    scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
-                    scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                if(diffCurrent > 0 && diffNew < 0){
+                    // 当前记录的排课的上课日期和上课时间 比此时此刻的大 而新的排课的上课日期和上课时间比现在小 那么就啥也不做
                 }
-                else if (diffCurrent < 0) {
+                else if (diffCurrent > 0) {
                     if(Math.abs(diffNew) < Math.abs(diffCurrent)){
                         // 选最近的
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
@@ -662,65 +676,55 @@ public class CollegeAdminFilter extends AbstractFilter {
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
                     }
 
-                }else if(diffCurrent >= 0 && diffNew < 0){
-
-                }else{
-                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
-                        // 选最近的
+                }else {
+                    // 目前拿到的上课时间 比当下的时间 大
+                    if(diffNew > 0){
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+
+                    }else{
+                        if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                            // 选最近的
+                            scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
+                            scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
+                            scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                        }
                     }
                 }
-
-
-
 
             }
 
-            BeanUtils.copyProperties(schedulesVO, scheduleCoursesInformationVO);
-
-
         }
+
 
         // 将拿到的每个批次 进行时间的升序排列 与现在相比比现在大的排在前面 比现在小的排在后面
         // 分为两组后 组内 按照 teachingDate 和 teachingTime 升序排列
 
-        for(ScheduleCoursesInformationVO scheduleCoursesInformationVO: scheduleCoursesInformationVOList){
-            // 获取所有的行政班
-            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                    .eq(CourseSchedulePO::getBatchIndex, scheduleCoursesInformationVO.getBatchIndex()));
+        // 创建一个固定大小的线程池
+        ExecutorService executorService = Executors.newFixedThreadPool(200);
 
-            List<String> adminClassList = courseSchedulePOS.stream()
-                    .map(CourseSchedulePO::getAdminClass)
-                    .distinct()
-                    .collect(Collectors.toList());
+        // 使用CompletableFuture来异步处理每个scheduleCoursesInformationVO
+        List<CompletableFuture<Void>> futures = scheduleCoursesInformationVOList.stream()
+                .map(scheduleCoursesInformationVO -> CompletableFuture.runAsync(() -> {
+                    super.processScheduleCoursesInformationVO(
+                            scheduleCoursesInformationVO,
+                            errorCourses
+                    );
+                }, executorService))
+                .collect(Collectors.toList());
 
+        // 等待所有的future完成
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-            scheduleCoursesInformationVO.setClassName(adminClassList);
+        // 关闭线程池，不再接受新任务，等待所有任务完成
+        executorService.shutdown();
 
-            String onlinePlatform = scheduleCoursesInformationVO.getOnlinePlatform();
-            // 选出最近的时间和直播间信息 后 还要更新 目前直播间状态
-            if(onlinePlatform != null){
+        // 等待所有的future完成
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-                if(onlinePlatform.equals(LiveStatusEnum.END.status)){
-                    scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
-                }else{
-                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
-                            new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
-
-                    if (videoStreamRecordPO != null) {
-                        // 此处你只检查了videoStreamRecordPO是否为null，但没使用它的其他属性。
-                        // 假设你只想检查它是否存在，并据此设置onlinePlatform
-                        // 设置直播状态
-                        scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
-                        scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
-                    }
-                }
-            }else{
-                scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.UN_START0.status);
-            }
-        }
+        // 关闭线程池，不再接受新任务，等待所有任务完成
+        executorService.shutdown();
 
         Long pageNumber = courseScheduleFilterROPageRO.getPageNumber();
         Long pageSize = courseScheduleFilterROPageRO.getPageSize();
@@ -737,11 +741,15 @@ public class CollegeAdminFilter extends AbstractFilter {
 
         FilterDataVO<ScheduleCoursesInformationVO> filterDataVO = new FilterDataVO<>();
 
-        long l = pageData.size();
-        filterDataVO.setTotal(l);
+        long total = scheduleCoursesInformationVOList.size();
+        filterDataVO.setTotal(total);
         filterDataVO.setData(pageData);
+
+        log.info("所有的排课表信息出现错误的记录 \n" + errorCourses);
 
         return filterDataVO;
     }
+
+
 }
 
