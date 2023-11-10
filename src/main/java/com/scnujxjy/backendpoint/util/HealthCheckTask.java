@@ -121,7 +121,7 @@ public class HealthCheckTask {
         return uniqueAdminClasses.size();
     }
 
-    @Scheduled(fixedRate = 60_000) // 每60s触发一次
+//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void getCourses() {
         String pattern = "yyyy-MM-dd HH:mm";
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -730,4 +731,13 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
                                                                   @Param("pageSize") Long pageSize);
 
     long countCourseSchedulesByStudentInfo(@Param("entity") CourseScheduleRO entity);
+
+    /**
+     * 获取排课表课程管理信息
+     * @param entity
+     * @return
+     */
+    List<ScheduleCoursesInformationBO> getScheduleCoursesInformation(@Param("courseScheduleFilterROPageRO")CourseScheduleFilterRO entity);
+
+
 }

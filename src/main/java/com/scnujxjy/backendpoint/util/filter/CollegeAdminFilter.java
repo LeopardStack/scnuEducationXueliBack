@@ -5,12 +5,14 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -23,21 +25,21 @@ import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformat
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
+import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * 为二级学院管理员定义筛选器
@@ -595,6 +597,151 @@ public class CollegeAdminFilter extends AbstractFilter {
         }
 
         return classInformationSelectArgs;
+    }
+
+
+    /**
+     * 获取排课表课程管理信息
+     * @return
+     */
+    public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        CollegeInformationPO collegeName = getCollegeName();
+        courseScheduleFilterROPageRO.getEntity().setCollege(collegeName.getCollegeName());
+        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        // 展示给前端的排课课程管理信息
+        List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
+
+        // 获取指定条件的排课表表课程信息 但是还需要做二次处理 比如 去掉同一批次的重复信息 把时间和班级 还有直播间信息 单独摘出来
+        List<ScheduleCoursesInformationBO> schedulesVOS = courseScheduleMapper.getScheduleCoursesInformation(
+                courseScheduleFilterROPageRO.getEntity());
+
+        List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOList = new ArrayList<>();
+
+        // 去重 把同一批次的拿到 再去根据时间排序
+        for (ScheduleCoursesInformationBO schedulesVO : schedulesVOS) {
+            // 使用流来处理 这个 ScheduleCoursesInformationVO 对象，它如果发现这个 List 不存在，则新建
+            ScheduleCoursesInformationVO scheduleCoursesInformationVO = scheduleCoursesInformationVOList.stream()
+                    .filter(vo -> vo.getBatchIndex().equals(schedulesVO.getBatchIndex()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        ScheduleCoursesInformationVO newVO = new ScheduleCoursesInformationVO(schedulesVO.getBatchIndex());
+                        scheduleCoursesInformationVOList.add(newVO);
+                        newVO.setClassName(new ArrayList<>());
+                        return newVO;
+                    });
+
+            // 接下来根据每个批次里的排课日期和排课时间 拿到具体现在最近的 并且拿到它的直播状态 和 channelI
+
+            if (scheduleCoursesInformationVO.getTeachingDate() == null) {
+                scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
+                scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
+            } else {
+                ScnuTimeInterval timeInterval = scnuXueliTools.getTimeInterval(schedulesVO.getTeachingDate(), schedulesVO.getTeachingTime());
+                Date newStart = timeInterval.getStart();
+                Date now = new Date();
+                Date currentTeachingDate = scnuXueliTools.getTimeInterval(scheduleCoursesInformationVO.getTeachingDate(),
+                        scheduleCoursesInformationVO.getTeachingTime()).getStart();
+
+
+                // 比较时间差
+                long diffNew = newStart.getTime() - now.getTime();
+                long diffCurrent = currentTeachingDate.getTime() - now.getTime();
+
+                // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
+                if(diffCurrent < 0 && diffNew > 0){
+                    // 如果现在有个时间 比现在的时间晚 而现在记录的时间比现在晚 直接替换
+                    scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
+                    scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
+                    scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                }
+                else if (diffCurrent < 0) {
+                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                        // 选最近的
+                        scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
+                        scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
+                        scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                    }
+
+                }else if(diffCurrent >= 0 && diffNew < 0){
+
+                }else{
+                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                        // 选最近的
+                        scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
+                        scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
+                        scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                    }
+                }
+
+
+
+
+            }
+
+            BeanUtils.copyProperties(schedulesVO, scheduleCoursesInformationVO);
+
+
+        }
+
+        // 将拿到的每个批次 进行时间的升序排列 与现在相比比现在大的排在前面 比现在小的排在后面
+        // 分为两组后 组内 按照 teachingDate 和 teachingTime 升序排列
+
+        for(ScheduleCoursesInformationVO scheduleCoursesInformationVO: scheduleCoursesInformationVOList){
+            // 获取所有的行政班
+            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                    .eq(CourseSchedulePO::getBatchIndex, scheduleCoursesInformationVO.getBatchIndex()));
+
+            List<String> adminClassList = courseSchedulePOS.stream()
+                    .map(CourseSchedulePO::getAdminClass)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+
+            scheduleCoursesInformationVO.setClassName(adminClassList);
+
+            String onlinePlatform = scheduleCoursesInformationVO.getOnlinePlatform();
+            // 选出最近的时间和直播间信息 后 还要更新 目前直播间状态
+            if(onlinePlatform != null){
+
+                if(onlinePlatform.equals(LiveStatusEnum.END.status)){
+                    scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
+                }else{
+                    VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
+                            new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
+
+                    if (videoStreamRecordPO != null) {
+                        // 此处你只检查了videoStreamRecordPO是否为null，但没使用它的其他属性。
+                        // 假设你只想检查它是否存在，并据此设置onlinePlatform
+                        // 设置直播状态
+                        scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                        scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
+                    }
+                }
+            }else{
+                scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.UN_START0.status);
+            }
+        }
+
+        Long pageNumber = courseScheduleFilterROPageRO.getPageNumber();
+        Long pageSize = courseScheduleFilterROPageRO.getPageSize();
+
+        // 计算开始索引
+        long startIndex = (pageNumber - 1) * pageSize;
+
+        // 计算结束索引
+        long endIndex = startIndex + pageSize;
+
+        endIndex = endIndex > scheduleCoursesInformationVOList.size() ? scheduleCoursesInformationVOList.size() : endIndex;
+
+        List<ScheduleCoursesInformationVO> pageData = scheduleCoursesInformationVOList.subList((int) startIndex, (int) endIndex);
+
+        FilterDataVO<ScheduleCoursesInformationVO> filterDataVO = new FilterDataVO<>();
+
+        long l = pageData.size();
+        filterDataVO.setTotal(l);
+        filterDataVO.setData(pageData);
+
+        return filterDataVO;
     }
 }
 

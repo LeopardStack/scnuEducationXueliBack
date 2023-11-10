@@ -180,7 +180,7 @@ public class SingleLivingSetting {
                 channelInfoData.setChannelId(channelId);
                 channelInfoData.setGlobalSettingEnabled("N");
                 channelInfoData.setPlaybackEnabled("Y");
-                channelInfoData.setType("single");
+                channelInfoData.setType("list");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
                 channelInfoData.setOrigin("record");
             } else {

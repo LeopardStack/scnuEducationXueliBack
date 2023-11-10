@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.video_stream;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
@@ -146,6 +147,7 @@ public class VideoStreamRecordController {
      * @return 添加后的频道信息
      */
     @PostMapping("/create_living_room")
+    @SaCheckPermission("添加直播间")
     public SaResult createLivingRoom(@RequestBody CourseInformationRO courseInformationRO) {
         if(courseInformationRO == null){
             return SaResult.error("创建直播间失败");
@@ -227,7 +229,7 @@ public class VideoStreamRecordController {
      * @return 添加后的频道信息
      */
     @DeleteMapping("/delete_living_room")
-//    @SaCheckPermission("强制删除直播间")
+    @SaCheckPermission("强制删除直播间")
     public SaResult deleteLivingRoom(@RequestParam("id") Long id) {
         log.info("获取到了 排课表 ID" + id);
         CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById((id));

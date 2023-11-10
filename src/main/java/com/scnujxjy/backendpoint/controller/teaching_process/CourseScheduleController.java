@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.teaching_process;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
@@ -447,7 +448,7 @@ public class CourseScheduleController {
 
 
     /**
-     * 获取不同角色权限范围内的排课表信息
+     * 获取不同角色权限范围内的排课表明细信息
      *
      * @param courseScheduleFilterROPageRO
      * @return
@@ -508,7 +509,7 @@ public class CourseScheduleController {
 
 
     /**
-     * 获取排课表筛选条件
+     * 获取排课表明细筛选条件
      * @return 排课表筛选条件
      */
     @GetMapping("/select_schedule_courses_args")
@@ -533,12 +534,71 @@ public class CourseScheduleController {
 
 
     /**
+     * 获取不同角色权限范围内的排课表课程信息
+     * 即 以教师 、课程、 合班的 Set 作为单位，也就是批次
+     *
+     * @param courseScheduleFilterROPageRO
+     * @return
+     */
+    @PostMapping("/get_schedule_courses")
+    public SaResult getScheduleCourses(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleFilterROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(courseScheduleFilterROPageRO.getEntity())) {
+            courseScheduleFilterROPageRO.setEntity(new CourseScheduleFilterRO());
+        }
+
+        List<String> roleList = StpUtil.getRoleList();
+        PageVO<FilterDataVO> filterDataVO = null;
+        // 获取访问者 ID
+        if (roleList.isEmpty()) {
+            return  SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
+        } else {
+            try {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    // 查询二级学院管理员权限范围内的排课表课程信息
+                    FilterDataVO schedulesFilterDataVO = courseScheduleService.getScheduleCourses(courseScheduleFilterROPageRO, collegeAdminFilter);
+
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                    filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                    filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                            / courseScheduleFilterROPageRO.getPageSize()));
+
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的排课表课程信息
+                    FilterDataVO schedulesFilterDataVO = courseScheduleService.getScheduleCourses(courseScheduleFilterROPageRO, managerFilter);
+
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
+                    filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
+                    filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
+                            / courseScheduleFilterROPageRO.getPageSize()));
+
+                }
+            }catch (Exception e){
+                return SaResult.error("获取排课表信息失败 " + e.toString()).setCode(2000);
+            }
+
+        }
+        return SaResult.data(filterDataVO);
+    }
+
+
+    /**
      * 修改排课表相关信息
      *
      * @param courseScheduleUpdateROPageRO
      * @return
      */
     @PostMapping("/update_schedule_courses")
+    @SaCheckPermission("修改排课表上课时间和上课教师")
     public SaResult updateScheduleCoursesInformation(@RequestBody CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
         // 校验参数
         if (Objects.isNull(courseScheduleUpdateROPageRO)) {
@@ -561,6 +621,7 @@ public class CourseScheduleController {
      * @return
      */
     @DeleteMapping("/delete_schedule_courses")
+    @SaCheckPermission("删除排课表")
     public SaResult deleteScheduleCoursesInformation(@RequestParam("scheduldId") Long scheduldId) {
         // 校验参数
         if (Objects.isNull(scheduldId)) {
@@ -622,6 +683,7 @@ public class CourseScheduleController {
      * @return
      */
     @PostMapping("/update_schedule_courses_extra_info")
+    @SaCheckPermission("修改直播间课程信息")
     public SaResult updateScheduleCoursesExtraInformation(@RequestBody CourseExtraInformationRO courseExtraInformationRO) {
         // 校验参数
         if (Objects.isNull(courseExtraInformationRO)) {
