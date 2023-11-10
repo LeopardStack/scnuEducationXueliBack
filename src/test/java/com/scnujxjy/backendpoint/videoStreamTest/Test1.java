@@ -83,10 +83,11 @@ public class Test1 {
         SingleLivingServiceImpl sing = new SingleLivingServiceImpl();
         ChannelInfoRequest request = new ChannelInfoRequest();
         request.setChannelId("4417168");
-        request.setCurrentDay("2023-11-04");
-        request.setStartTime("2023-11-04 23:00");
-        request.setEndTime("2023-11-04 23:50");
-        sing.getChannelCardPush(request);
+//        sing.viewlogDetailTest("430221198412180829");
+//        request.setCurrentDay("2023-11-04");
+//        request.setStartTime("2023-11-04 23:00");
+//        request.setEndTime("2023-11-04 23:50");
+//        sing.getChannelCardPush(request);
 
 //        String[] a = new String[]{"4360979", "4360976"};
 //        ChannelInfoRequest request = new ChannelInfoRequest();

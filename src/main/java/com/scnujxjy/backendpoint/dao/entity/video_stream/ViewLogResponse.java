@@ -6,13 +6,14 @@ import lombok.Data;
 public class ViewLogResponse {
 
 
-    private String userId;
+//    private String userId;
     private String channelId;
     private Integer playDuration;//播放时长，单位：秒
     private Long firstActiveTime;//首次进入直播时间
     private Long lastActiveTime;
     private String param1;//使用POLYV观看页的观众ID
     private String param2;//使用POLYV观看页的观众昵称
-
+    private String param3;
+    private String sessionId;//直播场次ID
 
 }

@@ -138,7 +138,6 @@ public class HealthCheckTask {
         if (courseSchedulePOS.size() > 0) {
             for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
 
-
                 //1、获得排课表的开始和结束时间
                 String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
                 String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));//获取14:30, 2:00
@@ -185,18 +184,10 @@ public class HealthCheckTask {
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
 
-
-//                            List<CourseSchedulePO> courseSchedulePOList =  courseSchedulePOS.stream().
-//                                    filter(cs ->
-////                                            cs.getTeachingDate().equals(courseSchedulePO.getTeachingDate()) &&
-////                                            cs.getTeachingTime().equals(courseSchedulePO.getTeachingTime()) &&
-//                                            cs.getTeacherUsername().equals(courseSchedulePO.getTeacherUsername()) &&
-//                                            cs.getCourseName().equals(courseSchedulePO.getCourseName())).collect(Collectors.toList());
-
                             Integer maxTutorCount = 10;
-                            if (schedulePOList.size() < 10) {
-                                maxTutorCount = schedulePOList.size();
-                            }
+//                            if (schedulePOList.size() < 10) {
+//                                maxTutorCount = schedulePOList.size();
+//                            }
 
                             //创建监播权的助教并得到该助教链接及密码
                             for (int i = 0; i < maxTutorCount; i++) {
@@ -210,9 +201,8 @@ public class HealthCheckTask {
                             Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
 
                             if (integer .equals( maxTutorCount)) {
-                                log.info(channelId + "创建助教成功");
+                                log.info(channelId + "创建10个助教成功");
                             }
-//                                ChannelInfoResponse channelInfoResponse = (ChannelInfoResponse) tutorInformation.getData();
 
                             //将直播间数据插入直播记录表中
                             VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
@@ -228,7 +218,8 @@ public class HealthCheckTask {
                                 int count = 0;
                                 for (CourseSchedulePO schedulePO : schedulePOList) {
                                     UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                                    updateWrapper.set("online_platform", videoStreamRecordPO.getId()).eq("id", schedulePO.getId());
+                                    updateWrapper.set("online_platform", videoStreamRecordPO.getId())
+                                            .eq("id", schedulePO.getId());
                                     int update = courseScheduleMapper.update(null, updateWrapper);
                                     count = count + update;
                                 }
