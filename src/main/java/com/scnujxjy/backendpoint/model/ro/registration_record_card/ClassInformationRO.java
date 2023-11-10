@@ -134,4 +134,9 @@ public class ClassInformationRO {
      * 是否为师范生，1是，0否
      */
     private Boolean isTeacherStudent;
+
+    /**
+     * course_schedule中的批次 id
+     */
+    private Long batchIndex;
 }

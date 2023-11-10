@@ -95,4 +95,10 @@ public class CourseSchedulePO implements Serializable {
 
     @TableField(value = "teaching_assistant_username")
     private String teachingAssistantUsername;
+
+    /**
+     * 批次 id
+     */
+    @TableField(value = "batch_index")
+    private Long batchIndex;
 }

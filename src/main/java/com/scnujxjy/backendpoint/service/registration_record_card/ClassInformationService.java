@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.registration_record_card;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,25 +9,23 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.ClassInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
-import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * <p>
@@ -41,6 +40,9 @@ import java.util.Objects;
 public class ClassInformationService extends ServiceImpl<ClassInformationMapper, ClassInformationPO> implements IService<ClassInformationPO> {
     @Resource
     private ClassInformationInverter classInformationInverter;
+
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
 
     /**
      * 根据id查询班级信息
@@ -162,8 +164,9 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
 
     /**
      * 根据角色筛选器 获取班级信息
+     *
      * @param classInformationFilterROPageRO 缴费班级信息
-     * @param filter 角色筛选器
+     * @param filter                         角色筛选器
      * @return
      */
     public FilterDataVO allPageQueryPayInfoFilter(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO,
@@ -173,8 +176,9 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
 
     /**
      * 获取缴费数据的筛选参数
+     *
      * @param loginId 登录用户名
-     * @param filter 筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
+     * @param filter  筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
      * @return
      */
     public ClassInformationSelectArgs getClassInformationArgs(String loginId, AbstractFilter filter) {
@@ -183,6 +187,7 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
 
     /**
      * 为不同角色导出班级数据
+     *
      * @param pageRO
      * @param filter
      * @param userId
@@ -197,5 +202,33 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
 
 
         filter.exportClassInformationData(pageRO, userId, platformMessagePO);
+    }
+
+    public List<ClassInformationVO> selectClassInformationByBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            return null;
+        }
+        List<CourseSchedulePO> courseScheduleVOS = courseScheduleMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery().eq(CourseSchedulePO::getBatchIndex, batchIndex));
+        // 查询去重班级信息
+        if (CollUtil.isEmpty(courseScheduleVOS)) {
+            return null;
+        }
+        Set<String> set = new HashSet<>();
+        List<ClassInformationVO> classInformationVOS = new ArrayList<>();
+        courseScheduleVOS
+                .forEach(ele -> {
+                    String key = ele.getGrade() + ele.getStudyForm() + ele.getLevel() + ele.getAdminClass() + ele.getMajorName();
+                    if (!set.contains(key)) {
+                        ClassInformationPO classInformationPO = baseMapper.selectOne(Wrappers.<ClassInformationPO>lambdaQuery()
+                                .eq(ClassInformationPO::getGrade, ele.getGrade())
+                                .eq(ClassInformationPO::getStudyForm, ele.getStudyForm())
+                                .eq(ClassInformationPO::getLevel, ele.getLevel())
+                                .eq(ClassInformationPO::getClassName, ele.getAdminClass())
+                                .eq(ClassInformationPO::getMajorName, ele.getMajorName()));
+                        set.add(key);
+                        classInformationVOS.add(classInformationInverter.po2VO(classInformationPO));
+                    }
+                });
+        return classInformationVOS;
     }
 }

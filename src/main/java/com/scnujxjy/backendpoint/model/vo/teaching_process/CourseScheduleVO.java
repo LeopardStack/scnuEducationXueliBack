@@ -128,4 +128,9 @@ public class CourseScheduleVO {
      * 教师平台用户名
      */
     private String teacherUsername;
+
+    /**
+     * 批次 id
+     */
+    private Long batchIndex;
 }

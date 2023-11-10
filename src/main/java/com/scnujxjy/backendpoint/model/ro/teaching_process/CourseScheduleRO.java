@@ -147,4 +147,9 @@ public class CourseScheduleRO {
      * 辅导教师平台用户名
      */
     private String teachingAssistantUsername;
+
+    /**
+     * 批次 id
+     */
+    private Long batchIndex;
 }

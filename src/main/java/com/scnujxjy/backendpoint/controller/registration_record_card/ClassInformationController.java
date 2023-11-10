@@ -3,16 +3,13 @@ package com.scnujxjy.backendpoint.controller.registration_record_card;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.collection.CollUtil;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.util.MessageSender;
@@ -284,13 +281,27 @@ public class ClassInformationController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(classInformationFilterROPageRO, managerFilter, userId);
-                if(send){
+                if (send) {
                     return SaResult.ok("导出班级数据成功");
                 }
             }
         }
         return SaResult.error("导出班级数据失败！");
     }
+
+    @PostMapping("/detail-class-information-batch-index")
+    public SaResult selectClassInformationBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            throw dataNotFoundError();
+        }
+        List<ClassInformationVO> classInformationVOS = classInformationService.selectClassInformationByBatchIndex(batchIndex);
+
+        if (CollUtil.isEmpty(classInformationVOS)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(classInformationVOS);
+    }
+
 
 }
 
