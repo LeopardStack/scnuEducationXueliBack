@@ -539,6 +539,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 tutorInformation.setTutorName(tutorName);
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
+                tutorInformation.setAccount(liveCreateAccountResponse.getAccount());
 
                 int insert = tutorInformationMapper.insert(tutorInformation);
                 if (insert > 0) {
