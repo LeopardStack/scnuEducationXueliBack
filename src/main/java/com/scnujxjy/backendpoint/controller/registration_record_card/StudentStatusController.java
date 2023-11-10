@@ -358,7 +358,7 @@ public class StudentStatusController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
-                }else if (roleList.contains(TEACHINGPOINT_ADMIN.getRoleName()) || roleList.contains(TEACHINGPOINT_ADMIN.getRoleName())) {
+                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName()) || roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
                 }
 
