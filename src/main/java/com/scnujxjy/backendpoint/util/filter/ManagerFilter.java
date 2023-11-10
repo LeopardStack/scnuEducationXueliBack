@@ -1098,7 +1098,7 @@ public class ManagerFilter  extends AbstractFilter {
         // 使用CompletableFuture来异步处理每个scheduleCoursesInformationVO
         List<CompletableFuture<Void>> futures = scheduleCoursesInformationVOList.stream()
                 .map(scheduleCoursesInformationVO -> CompletableFuture.runAsync(() -> {
-                    processScheduleCoursesInformationVO(
+                    super.processScheduleCoursesInformationVO(
                             scheduleCoursesInformationVO,
                             errorCourses
                     );
@@ -1143,77 +1143,6 @@ public class ManagerFilter  extends AbstractFilter {
 
 
 
-    private void processScheduleCoursesInformationVO(
-            ScheduleCoursesInformationVO scheduleCoursesInformationVO,
-            List<String> errorCourses) {
 
-        // 获取所有的行政班
-        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(
-                new LambdaQueryWrapper<CourseSchedulePO>()
-                        .eq(CourseSchedulePO::getBatchIndex, scheduleCoursesInformationVO.getBatchIndex())
-        );
-
-        List<String> colleges = new ArrayList<>();
-        List<String> majorNames = new ArrayList<>();
-        for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
-            // 从数据库获取班级信息
-            ClassInformationPO classInformationPO = classInformationMapper.selectOne(
-                    new LambdaQueryWrapper<ClassInformationPO>()
-                            .eq(ClassInformationPO::getGrade, courseSchedulePO.getGrade())
-                            .eq(ClassInformationPO::getMajorName, courseSchedulePO.getMajorName())
-                            .eq(ClassInformationPO::getLevel, courseSchedulePO.getLevel())
-                            .eq(ClassInformationPO::getStudyForm, courseSchedulePO.getStudyForm())
-                            .eq(ClassInformationPO::getClassName, courseSchedulePO.getAdminClass())
-            );
-
-            if (classInformationPO == null) {
-                // 记录错误信息
-                String error = "班级信息获取失败，存在排课表记录获取不到班级信息 " +
-                        courseSchedulePO.getGrade() + " " + courseSchedulePO.getMajorName() + " " +
-                        courseSchedulePO.getStudyForm() + " " + courseSchedulePO.getLevel() + " " +
-                        courseSchedulePO.getMainTeacherName() + " " + courseSchedulePO.getCourseName() + " " +
-                        courseSchedulePO.getTeachingDate() + " " + courseSchedulePO.getTeachingTime();
-                // 这里应该是线程安全的列表操作
-                synchronized (errorCourses) {
-                    errorCourses.add(error);
-                }
-            } else {
-                colleges.add(classInformationPO.getCollege());
-                majorNames.add(classInformationPO.getMajorName());
-            }
-        }
-
-        // 去重学院信息 去重专业名称信息
-        colleges = colleges.stream().distinct().collect(Collectors.toList());
-        majorNames = majorNames.stream().distinct().collect(Collectors.toList());
-        // 获取班级列表
-        List<String> adminClassList = courseSchedulePOS.stream()
-                .map(CourseSchedulePO::getAdminClass)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 设置学院和班级信息
-        scheduleCoursesInformationVO.setClassName(adminClassList);
-        scheduleCoursesInformationVO.setColleges(colleges);
-        scheduleCoursesInformationVO.setMajorNames(majorNames);
-
-        // 处理在线平台信息
-        String onlinePlatform = scheduleCoursesInformationVO.getOnlinePlatform();
-        if (onlinePlatform != null) {
-            // ... 处理在线平台信息的代码逻辑
-            // 这里从数据库获取视频流信息
-            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
-                    new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform)
-            );
-
-            if (videoStreamRecordPO != null) {
-                // 设置直播状态和频道ID
-                scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
-                scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
-            }
-        } else {
-            scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.UN_START0.status);
-        }
-    }
 
 }
