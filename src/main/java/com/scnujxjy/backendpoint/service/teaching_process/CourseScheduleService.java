@@ -898,4 +898,41 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return filter.getTeacherCourschedules(courseScheduleROPageRO);
     }
 
+    /**
+     * 根据批次 Id 删除排课表记录；
+     * 如果直播间存在也删除；
+     * 不删除 VideoStreamRecord 中的记录；
+     *
+     * @param batchIndex
+     * @return -1：出现错误，0：没有记录可以删除
+     */
+    public Integer deleteCourseScheduleByBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            return -1;
+        }
+        List<CourseSchedulePO> courseSchedulePOS = baseMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery().eq(CourseSchedulePO::getBatchIndex, batchIndex));
+        if (CollUtil.isEmpty(courseSchedulePOS)) {
+            return 0;
+        }
+        Set<String> videoStreamRecordIdSet = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getOnlinePlatform)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(videoStreamRecordIdSet)) {
+            return 0;
+        }
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(Wrappers.<VideoStreamRecordPO>lambdaQuery().in(VideoStreamRecordPO::getId, videoStreamRecordIdSet));
+        Set<String> channelIdSet = videoStreamRecordPOS.stream()
+                .map(VideoStreamRecordPO::getChannelId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        channelIdSet.stream()
+                .peek(channelId -> videoStreamUtils.deleteView(channelId));
+        Set<Long> courseScheduleSet = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        return baseMapper.deleteBatchIds(courseScheduleSet);
+    }
+
 }
