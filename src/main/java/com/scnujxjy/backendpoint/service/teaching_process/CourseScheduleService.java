@@ -890,4 +890,14 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
         return filter.getTeacherCourschedules(courseScheduleROPageRO);
     }
+
+    /**
+     * 获取排课表课程管理信息
+     * @param courseScheduleFilterROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+        return filter.getScheduleCourses(courseScheduleFilterROPageRO);
+    }
 }

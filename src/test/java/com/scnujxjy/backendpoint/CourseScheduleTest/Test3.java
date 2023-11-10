@@ -3,6 +3,12 @@ package com.scnujxjy.backendpoint.CourseScheduleTest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +55,12 @@ public class Test3 {
 
     @Resource
     private CourseScheduleMapper courseScheduleMapper;
+
+    @Resource
+    private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private ManagerFilter  managerFilter;
 
     @Test
     public void test1(){
@@ -128,6 +140,20 @@ public class Test3 {
         }
 
         log.info("共计获取 " + countD + " 条排课表记录");
+    }
+
+
+    /**
+     * 获取指定 筛选器的返回值
+     */
+    @Test
+    public void test2(){
+        PageRO<CourseScheduleFilterRO> pageVO = new PageRO<>();
+        pageVO.setEntity(new CourseScheduleFilterRO());
+        pageVO.setPageNumber(1L);
+        pageVO.setPageSize(10L);
+        FilterDataVO scheduleCourses = courseScheduleService.getScheduleCourses(pageVO, managerFilter);
+        log.info(scheduleCourses.toString());
     }
 
 }
