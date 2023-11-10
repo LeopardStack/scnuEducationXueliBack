@@ -184,19 +184,16 @@ public class HealthCheckTask {
                             String channelId = apiResponse.getData().getChannelId().toString();
                             log.info("创建频道成功,频道号为：" + channelId);
 
-                            //创建时，将排课表中的所有该门课的直播间都建为统一。
+                            //创建时，将排课表中的所有该门课的直播间都建为同一个online。
                             QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
                             courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
                                     .eq("main_teacher_name", courseSchedulePO.getMainTeacherName())
+                                    .eq("batch_index",courseSchedulePO.getBatchIndex())
                                     .and(i -> i.isNull("online_platform").or().eq("online_platform", ""));
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
 
                             Integer maxTutorCount = 10;
-//                            if (schedulePOList.size() < 10) {
-//                                maxTutorCount = schedulePOList.size();
-//                            }
-
                             //创建监播权的助教并得到该助教链接及密码
                             for (int i = 0; i < maxTutorCount; i++) {
                                 String totorName = StrUtil.isBlank(courseSchedulePO.getTutorName()) ? "老师" + i : courseSchedulePO.getTutorName();
@@ -208,7 +205,7 @@ public class HealthCheckTask {
                             tutorQueryWrapper.eq("channel_id", channelId);
                             Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
 
-                            if (integer .equals( maxTutorCount)) {
+                            if (integer.equals( maxTutorCount)) {
                                 log.info(channelId + "创建10个助教成功");
                             }
 
