@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.entity.core_data;
 import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -12,7 +13,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -109,12 +109,14 @@ public class PaymentInfoPO implements Serializable {
      * 年级
      */
     @ExcelProperty(value = "年级", index = 12)
+    @TableField(exist = false)
     private String grade;
 
     /**
      * 班级标识
      */
     @ExcelIgnore
+    @TableField(exist = false)
     private String classIdentifier;
 
 

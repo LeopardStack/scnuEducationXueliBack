@@ -2,7 +2,7 @@ package com.scnujxjy.backendpoint.service;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewLogFirstResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 public interface SingleLivingService {
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException;
@@ -32,6 +33,10 @@ public interface SingleLivingService {
     SaResult GetChannelDetail(String channelId);
 
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
+
+    SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
+
+    public List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
     SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException;
 

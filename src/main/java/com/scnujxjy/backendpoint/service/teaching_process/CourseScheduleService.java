@@ -251,6 +251,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                         CourseSchedulePO::getTeachingDate, entity.getTeachingStartDate(), entity.getTeachingEndDate())
                 .eq(StrUtil.isNotBlank(entity.getTeachingTime()), CourseSchedulePO::getTeachingTime, entity.getTeachingTime())
                 .eq(StrUtil.isNotBlank(entity.getTeacherUsername()), CourseSchedulePO::getTeacherUsername, entity.getTeacherUsername())
+                .eq(Objects.nonNull(entity.getBatchIndex()), CourseSchedulePO::getBatchIndex, entity.getBatchIndex())
                 .last(StrUtil.isNotBlank(courseScheduleROPageRO.getOrderBy()), courseScheduleROPageRO.lastOrderSql());
 
         // 列表查询 或 分页查询 并返回数据
@@ -563,7 +564,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             courseSchedulePO1.setMainTeacherIdentity(teacherInformationPO.getIdCardNumber());
 
             int update = getBaseMapper().update(courseSchedulePO1, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO1.getId()));
-            if(update <= 0){
+            if (update <= 0) {
                 throw new RuntimeException("Failed to update record: " + courseSchedulePO1.getId());
             }
         }
@@ -744,7 +745,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>().
                         eq(VideoStreamRecordPO::getId, courseSchedulePO.getOnlinePlatform()));
                 // 调用保利威删除 API
-            Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
+                Map<String, Object> stringObjectMap = videoStreamUtils.deleteView(videoStreamRecordPO.getChannelId());
                 log.info("存在直播间 " + videoStreamRecordPO);
             }
 
@@ -756,7 +757,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             int i = getBaseMapper().deleteBatchIds(idsToDelete);
 
             log.info("删除排课表记录 " + i);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("删除失败 " + e.toString());
             throw new RuntimeException("删除失败 ");
         }

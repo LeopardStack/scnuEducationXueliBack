@@ -1,5 +1,8 @@
 package com.scnujxjy.backendpoint.inverter.video_stream;
 
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
@@ -60,4 +63,9 @@ public interface VideoStreamInverter {
 
     @Mappings({})
     ChannelResponseBO liveChannelBasicInfoResponse2ChannelResponseBO(LiveChannelBasicInfoResponse liveChannelBasicInfoResponse);
+
+    @Mappings({
+            @Mapping(target = "userId", source = "tutorInformation.userId")
+    })
+    TutorAllInformation tutorInformationTeacherInformation2TutorAllInformation(TutorInformation tutorInformation, TeacherInformationPO teacherInformationPO);
 }

@@ -1,6 +1,5 @@
 package com.scnujxjy.backendpoint.dao.entity.teaching_process;
 
-import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -98,8 +97,8 @@ public class CourseSchedulePO implements Serializable {
     private String teachingAssistantUsername;
 
     /**
-     * 排课表批次，用来唯一确定一次合班的排课表记录
+     * 批次 id
      */
-    @ExcelIgnore
+    @TableField(value = "batch_index")
     private Long batchIndex;
 }

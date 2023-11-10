@@ -86,4 +86,14 @@ public class StudentStatusVO implements Serializable {
      * 班级标号
      */
     private String classIdentifier;
+
+    /**
+     * 班级名称
+     */
+    private String className;
+
+    /**
+     * 个人名称
+     */
+    private String name;
 }

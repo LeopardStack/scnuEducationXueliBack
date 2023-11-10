@@ -1,23 +1,31 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.ViewFirstStudentResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
+import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
@@ -57,6 +65,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -70,6 +79,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     private StudentStatusMapper studentStatusMapper;
     @Resource
     private CourseScheduleMapper courseScheduleMapper;
+
+    @Resource
+    private TeacherInformationMapper teacherInformationMapper;
+
+    @Resource
+    private VideoStreamInverter videoStreamInverter;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -163,6 +178,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Override
     public SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
         log.info("获取请求观看数据接口入参为:{}", channelViewRequest);
+        SaResult saResult = new SaResult();
+    public SaResult getChannelCardPush(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException {
         SaResult saResult = new SaResult();
 
         String appId = LiveGlobalConfig.getAppId();
@@ -747,6 +764,54 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             saResult.setData(viewLogFirstResponse);
             return saResult;
         }
+    /**
+     * 根据批次 id 获取助教所有信息；
+     * TutorInformation + TeacherInformation
+     *
+     * @param batchIndex
+     * @return
+     */
+    public List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            return null;
+        }
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(Wrappers.<CourseSchedulePO>lambdaQuery().eq(CourseSchedulePO::getBatchIndex, batchIndex));
+        if (CollUtil.isEmpty(courseSchedulePOS)) {
+            return null;
+        }
+        Set<String> videoStreamRecordIdSet = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getOnlinePlatform)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(videoStreamRecordIdSet)) {
+            return null;
+        }
+        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(Wrappers.<VideoStreamRecordPO>lambdaQuery().in(VideoStreamRecordPO::getId, videoStreamRecordIdSet));
+        if (CollUtil.isEmpty(videoStreamRecordPOS)) {
+            return null;
+        }
+        Set<String> channelIdSet = videoStreamRecordPOS.stream()
+                .map(VideoStreamRecordPO::getChannelId)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(channelIdSet)) {
+            return null;
+        }
+        List<TutorInformation> tutorInformationList = tutorInformationMapper.selectList(Wrappers.<TutorInformation>lambdaQuery().in(TutorInformation::getChannelId, channelIdSet));
+        List<TutorAllInformation> tutorAllInformationList = tutorInformationList.stream()
+                .map(ele -> {
+                    String userId = ele.getUserId();
+                    if (StrUtil.isBlank(userId)) {
+                        return null;
+                    }
+                    TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectById(userId);
+                    return videoStreamInverter.tutorInformationTeacherInformation2TutorAllInformation(ele, teacherInformationPO);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        return tutorAllInformationList;
+    }
+}
 
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
