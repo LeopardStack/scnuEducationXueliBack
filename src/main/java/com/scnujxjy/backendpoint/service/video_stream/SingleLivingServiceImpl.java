@@ -452,7 +452,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 QueryWrapper<TutorInformation> queryWrapper1 = new QueryWrapper<>();
                 queryWrapper1.eq("channel_id", channelId)
                         .and(wrapper -> wrapper.isNull("user_id").or().eq("user_id", ""));
-                tutorInformation = tutorInformationMapper.selectOne(queryWrapper1);
+                List<TutorInformation> tutorInformations = tutorInformationMapper.selectList(queryWrapper1);
+                tutorInformation=tutorInformations.get(0);
 
                 if (tutorInformation == null) {//如果找不到该频道已经找不到userId为空的助教了，表示用完了那就返回错误联系管理员
                     saResult.setCode(ResultCode.GET_TUTOR_FAIL.getCode());
@@ -751,5 +752,35 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
+
+    /**
+     * 查询频道历史并发数据
+     * @throws IOException
+     */
+    public void testConcurrence() throws IOException, NoSuchAlgorithmException {
+        //公共参数,填写自己的实际参数
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        //业务参数
+        String url = "http://api.polyv.net/live/v3/channel/statistics/concurrence";
+        String channelId = "4417542";
+        String startDate = "2023-11-05";
+        String endDate = "2023-11-06";
+
+        //http 调用逻辑
+        Map<String,String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp",timestamp);
+//        requestMap.put("userId",userId);
+        requestMap.put("channelId",channelId);
+        requestMap.put("startDate",startDate);
+        requestMap.put("endDate",endDate);
+        requestMap.put("sign",LiveSignUtil.getSign(requestMap, appSecret));
+        String response = HttpUtil.get(url, requestMap);
+        log.info("测试查询频道历史并发数据，返回值：{}",response);
+
+    }
+
 
 }
