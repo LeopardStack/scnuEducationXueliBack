@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
@@ -70,6 +71,9 @@ public abstract class AbstractFilter {
 
     @Resource
     protected TeacherInformationMapper teacherInformationMapper;
+
+    @Resource
+    protected TeachingAssistantsCourseScheduleMapper teachingAssistantsCourseScheduleMapper;
 
     @Resource
     protected ScnuXueliTools scnuXueliTools;

@@ -280,6 +280,13 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
                                                                             @Param("pageSize") Long pageSize);
 
     List<TeacherCourseScheduleVO> getCourseSchedulesByTeacherUserNameRecentBetter(@Param("teacher_username") String teacher_username);
+
+    /**
+     * 获取助教的所有排课表记录
+     * @param username
+     * @return
+     */
+    List<TeacherCourseScheduleVO> getCourseSchedulesByTutor(@Param("username") String username);
     long getCourseSchedulesByTeacherUserNameRecentCount(@Param("teacher_username") String teacher_username);
 
     /**

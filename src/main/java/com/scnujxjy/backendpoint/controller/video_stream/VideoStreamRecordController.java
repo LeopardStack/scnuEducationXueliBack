@@ -21,6 +21,7 @@ import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
+import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
@@ -63,8 +64,12 @@ public class VideoStreamRecordController {
     @Resource
     private TeacherInformationService teacherInformationService;
 
+
     @Resource
     private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private SingleLivingService singleLivingService;
 
     @Resource
     private ScnuXueliTools scnuXueliTools;
@@ -98,11 +103,22 @@ public class VideoStreamRecordController {
         if (Objects.isNull(id)) {
             throw dataMissError();
         }
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherUsername, loginIdAsString));
+        String teacherType2 = teacherInformationPO.getTeacherType2();
         VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailById(id);
-        if (Objects.isNull(videoStreamRecordVO)) {
-            throw dataNotFoundError();
+        if(teacherType2.equals("主讲教师")){
+
+            if (Objects.isNull(videoStreamRecordVO)) {
+                return SaResult.error("直播间信息获取失败 " + loginIdAsString).setCode(2000);
+            }
+            return SaResult.data(videoStreamRecordVO);
+
+        }else{
+            SaResult tutorChannelUrl = singleLivingService.getTutorChannelUrl(videoStreamRecordVO.getChannelId(), loginIdAsString);
+            return SaResult.ok("获取助教链接成功").set("url", tutorChannelUrl);
         }
-        return SaResult.data(videoStreamRecordVO);
     }
 
     /**
