@@ -1,16 +1,11 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
-import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationCommendation;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationDownloadVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -29,6 +24,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 获取学生的成绩信息 按照年级和课程代码排序
+     *
      * @param id_number 学生的身份证号码
      * @return
      */
@@ -42,6 +38,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 获取除了主键之外其他属性都与指定的一个 ScoreInformationPO 实例变量相等的记录条数
+     *
      * @param scoreInformation
      * @return
      */
@@ -69,10 +66,10 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
     int countByAttributesExceptId(ScoreInformationPO scoreInformation);
 
 
-
     /**
      * 获取除了主键、总评成绩、补考1成绩、补考2成绩、结业后补考成绩、备注信息以及状态属性之外，
      * 其他属性都与指定的一个 ScoreInformationPO 实例变量相等的记录条数
+     *
      * @param scoreInformation
      * @return
      */
@@ -97,6 +94,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
     /**
      * 指定一个 ScoreInformationPO 实例变量，把与它除了主键、总评成绩、补考1成绩、补考2成绩、结业后补考成绩、
      * 备注信息以及状态属性之外其他属性都相等的记录全更新
+     *
      * @param scoreInformation
      * @return
      */
@@ -127,6 +125,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 获取数据库中指定年级是否拥有除了主键、总评成绩、补考1成绩、补考2成绩、结业后补考成绩及备注信息与状态以外，其他字段都一样的数据
+     *
      * @return
      */
     @Select({
@@ -142,6 +141,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 获取成绩数据
+     *
      * @param entity
      * @param pageSize
      * @return
@@ -150,7 +150,27 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
                                                          @Param("pageSize") Long pageSize, @Param("l") long l);
 
     /**
+     * 获取成绩数据
+     *
+     * @param entity
+     * @param pageSize
+     * @return
+     */
+    List<ScoreInformationVO> getTeachingPointStudentGradeInfoByFilter(@Param("entity") ScoreInformationFilterRO entity,
+                                                                      @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    /**
+     * 获取成绩数据
+     *
+     * @param entity
+     * @param pageSize
+     * @return
+     */
+    Long getTeachingPointStudentGradeInfoByFilterCount(@Param("entity") ScoreInformationFilterRO entity);
+
+    /**
      * 获取成绩数据计数
+     *
      * @param entity
      * @return
      */
@@ -159,6 +179,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回年级的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -185,6 +206,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回学院的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -211,6 +233,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回层次的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -237,6 +260,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回学习形式的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -263,6 +287,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回班级名称的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -289,6 +314,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回课程名称的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -315,6 +341,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回专业名称的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -341,6 +368,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 返回专业名称的筛选参数列表
+     *
      * @param entity
      * @return
      */
@@ -350,12 +378,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
     /**
      * 获取筛选条件的成绩下载数据
+     *
      * @param entity
      * @return
      */
-    List<ScoreInformationDownloadVO> downloadScoreInformationDataByManager0(@Param("entity")ScoreInformationFilterRO entity);
+    List<ScoreInformationDownloadVO> downloadScoreInformationDataByManager0(@Param("entity") ScoreInformationFilterRO entity);
 
 
-
-    List<ScoreInformationCommendation> scoreInformationAward(@Param("student_id")String studentId);
+    List<ScoreInformationCommendation> scoreInformationAward(@Param("student_id") String studentId);
 }

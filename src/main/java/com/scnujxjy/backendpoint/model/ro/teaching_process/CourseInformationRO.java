@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.Set;
+
 /**
  * <p>
  * 课程信息表
@@ -107,6 +109,10 @@ public class CourseInformationRO {
      */
     private String className;
 
+    /**
+     * 班级名称集合
+     */
+    private Set<String> classNameSet;
 
 
 }

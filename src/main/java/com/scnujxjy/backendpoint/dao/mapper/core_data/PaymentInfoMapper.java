@@ -23,6 +23,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取学生的缴费信息 按照日期排序
+     *
      * @param id_card_number 学生的身份证号码
      * @return
      */
@@ -32,13 +33,27 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 根据筛选条件获取缴费信息
-     * @param entity 筛选条件
+     *
+     * @param entity   筛选条件
      * @param pageSize 筛选条件
-     * @param l 筛选条件
+     * @param l        筛选条件
      * @return
      */
     List<PaymentInfoVO> getStudentPayInfoByFilter(@Param("entity") PaymentInfoFilterRO entity,
                                                   @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    /**
+     * 根据筛选条件获取缴费信息
+     *
+     * @param entity   筛选条件
+     * @param pageSize 筛选条件
+     * @param l        筛选条件
+     * @return
+     */
+    List<PaymentInfoVO> getTeachingPointStudentPayInfoByFilter(@Param("entity") PaymentInfoFilterRO entity,
+                                                               @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    Long getTeachingPointStudentPayInfoByFilterCount(@Param("entity") PaymentInfoFilterRO entity);
 
     /**
      * 去掉这个排序操作 SQL 会快很多
@@ -47,6 +62,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取学费总数
+     *
      * @param entity
      * @return
      */
@@ -54,6 +70,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的年级筛选参数
+     *
      * @param entity
      * @return
      */
@@ -88,6 +105,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的层次筛选参数
+     *
      * @param entity
      * @return
      */
@@ -121,6 +139,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的年级筛选参数
+     *
      * @param entity
      * @return
      */
@@ -154,6 +173,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的年级筛选参数
+     *
      * @param entity
      * @return
      */
@@ -187,6 +207,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的教学点筛选参数
+     *
      * @param entity
      * @return
      */
@@ -221,6 +242,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 获取缴费的学院筛选参数
+     *
      * @param entity
      * @return
      */
@@ -254,6 +276,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 学年选择
+     *
      * @param entity
      * @return
      */
@@ -261,10 +284,11 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
 
     /**
      * 批量下载缴费数据
+     *
      * @param entity
      * @return
      */
-    List<PaymentInfoAllVO> downloadPaymentInfoDataByManager0(@Param("entity")PaymentInfoFilterRO entity);
+    List<PaymentInfoAllVO> downloadPaymentInfoDataByManager0(@Param("entity") PaymentInfoFilterRO entity);
 
     @Update("TRUNCATE TABLE payment_info")
     void truncateTable();

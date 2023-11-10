@@ -1,9 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
@@ -26,20 +24,22 @@ import java.util.List;
 public interface CourseInformationMapper extends BaseMapper<CourseInformationPO> {
     /**
      * 根据 年级 专业 层次 班级名称 学习形式来获取某一个班级的教学计划
-     * @param grade 年级
-     * @param major_name 专业名称
-     * @param level 层次
-     * @param study_form 学习形式
+     *
+     * @param grade       年级
+     * @param major_name  专业名称
+     * @param level       层次
+     * @param study_form  学习形式
      * @param admin_class 班级标识
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
     @Select("SELECT * FROM course_information WHERE grade = #{grade} AND major_name = #{major_name} AND level = #{level}" +
             " AND study_form = #{study_form} AND admin_class = #{admin_class}")
     List<CourseInformationPO> selectCourseInformations1(String grade, String major_name, String level, String study_form,
-                                                       String admin_class);
+                                                        String admin_class);
 
     /**
      * 根据 班级名称 学习形式来获取某一个班级的教学计划
+     *
      * @param admin_class 班级标识
      * @param course_code 课程名称编号
      * @return 教师信息集合，类型为 TeacherInformationPO
@@ -50,6 +50,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 获取学生的教学计划 按照课程代码排序
+     *
      * @param id_number 学生的身份证号码
      * @return
      */
@@ -63,6 +64,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 根据年级和学院的条件进行联合查询
+     *
      * @param grade 年级
      * @return 课程信息集合，类型为 CourseInformationPO
      */
@@ -74,6 +76,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 根据学院信息来查询全体学院所有的教学计划
+     *
      * @return 课程信息集合，类型为 CourseInformationPO
      */
     @Select("SELECT c.* " +
@@ -84,6 +87,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 根据学院信息来查询全体学院所有的教学计划的总数
+     *
      * @return 课程信息集合，类型为 CourseInformationPO
      */
     @Select("SELECT count(*) " +
@@ -94,6 +98,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 根据年级、专业名称、学习形式、层次、行政班别名称的条件进行联合查询
+     *
      * @param grade 年级
      * @return 课程信息集合，类型为 CourseInformationPO
      */
@@ -104,11 +109,12 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "AND c.level = #{level} AND ci.class_name = #{admin_class_name} " +
             "AND c.major_name = #{major_name}")
     List<CourseInformationPO> selectByGradeAndStudyFormAndLevelAndClassAndMajorName(String grade, String study_form,
-                                                                        String level, String admin_class_name,
-                                                                        String major_name);
+                                                                                    String level, String admin_class_name,
+                                                                                    String major_name);
 
     /**
      * 根据年级、专业名称、学习形式、层次、行政班别名称、课程名称的条件进行联合查询
+     *
      * @param grade 年级
      * @return 课程信息集合，类型为 CourseInformationPO
      */
@@ -126,6 +132,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 查询某一个学院的教学计划
+     *
      * @param filter
      * @return
      */
@@ -134,16 +141,29 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
                                                     @Param("offset") Long offset);
 
     /**
+     * 查询某一个学院的教学计划
+     *
+     * @param filter
+     * @return
+     */
+    List<CourseInformationVO> selectTeachingPointByFilterAndPage(@Param("filter") CourseInformationRO filter,
+                                                                 @Param("pageSize") Long pageSize,
+                                                                 @Param("offset") Long offset);
+
+    Long selectTeachingPointByFilterAndPageCount(@Param("filter") CourseInformationRO filter);
+
+    /**
      * 查询教学计划中的某一门课程
+     *
      * @param filter
      * @return
      */
     CourseInformationVO selectSingleCourse(@Param("filter") CourseCoverChangeRO filter);
 
 
-
     /**
      * 查询某一个学院的教学计划总数
+     *
      * @param filter
      * @return
      */
@@ -247,6 +267,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 学历教育部查询教学计划
+     *
      * @param filter
      * @return
      */
@@ -313,6 +334,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 学历教育部管理查询教学计划总数
+     *
      * @param filter
      * @return
      */
@@ -380,60 +402,68 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
     /**
      * 获取指定条件下的年龄（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctGrades(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctGrades(@Param("filter") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的学院（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctCollegeNames(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctCollegeNames(@Param("filter") CourseScheduleFilterRO filter);
 
 
     /**
      * 获取指定条件下的学习形式（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctStudyForms(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctStudyForms(@Param("filter") CourseScheduleFilterRO filter);
 
 
     /**
      * 获取指定条件下的班级名称（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctClassNames(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctClassNames(@Param("filter") CourseScheduleFilterRO filter);
 
 
     /**
      * 获取指定条件下的层次（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctLevels(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctLevels(@Param("filter") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的年龄（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctMajorNames(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctMajorNames(@Param("filter") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的学期（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctSemasters(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctSemasters(@Param("filter") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的课程名称（去除重复项）
+     *
      * @param filter
      * @return
      */
-    List<String> getDistinctCourseNames(@Param("filter" ) CourseScheduleFilterRO filter);
+    List<String> getDistinctCourseNames(@Param("filter") CourseScheduleFilterRO filter);
 }

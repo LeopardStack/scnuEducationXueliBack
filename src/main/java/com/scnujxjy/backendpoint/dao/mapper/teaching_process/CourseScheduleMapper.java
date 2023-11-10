@@ -283,10 +283,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取助教的所有排课表记录
+     *
      * @param username
      * @return
      */
     List<TeacherCourseScheduleVO> getCourseSchedulesByTutor(@Param("username") String username);
+
     long getCourseSchedulesByTeacherUserNameRecentCount(@Param("teacher_username") String teacher_username);
 
     /**
@@ -682,6 +684,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
                                                  CourseScheduleFilterRO courseScheduleFilterROPageRO,
                                                  @Param("pageSize") long pageSize, @Param("pageNumber") long pageNumber);
 
+    List<SchedulesVO> selectTeachingPointSchedulesInformation(@Param("courseScheduleFilterROPageRO")
+                                                              CourseScheduleFilterRO courseScheduleFilterROPageRO,
+                                                              @Param("pageSize") long pageSize, @Param("pageNumber") long pageNumber);
+
+    Long selectTeachingPointSchedulesInformationCount(@Param("courseScheduleFilterROPageRO")
+                                                      CourseScheduleFilterRO courseScheduleFilterROPageRO);
 
     /**
      * 根据学生身份证号码获取所在班级的全部课程
@@ -741,10 +749,11 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表课程管理信息
+     *
      * @param entity
      * @return
      */
-    List<ScheduleCoursesInformationBO> getScheduleCoursesInformation(@Param("courseScheduleFilterROPageRO")CourseScheduleFilterRO entity);
+    List<ScheduleCoursesInformationBO> getScheduleCoursesInformation(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO entity);
 
 
 }

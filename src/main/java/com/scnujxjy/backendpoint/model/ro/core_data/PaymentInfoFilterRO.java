@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Set;
 
 @Builder
 @AllArgsConstructor
@@ -114,5 +115,10 @@ public class PaymentInfoFilterRO {
      * 年级
      */
     private String grade;
+
+    /**
+     * 班级集合
+     */
+    private Set<String> classNameSet;
 
 }
