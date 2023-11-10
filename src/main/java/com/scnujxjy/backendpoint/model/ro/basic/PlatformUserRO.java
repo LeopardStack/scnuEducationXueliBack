@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.Objects;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -46,4 +48,27 @@ public class PlatformUserRO {
      * 微信 openId
      */
     private String wechatOpenId;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PlatformUserRO that = (PlatformUserRO) o;
+        return Objects.equals(userId, that.userId) &&
+                Objects.equals(roleId, that.roleId) &&
+                Objects.equals(avatarImagePath, that.avatarImagePath) &&
+                Objects.equals(password, that.password) &&
+                Objects.equals(username, that.username) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(wechatOpenId, that.wechatOpenId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, roleId, avatarImagePath, password, username, name, wechatOpenId);
+    }
 }
