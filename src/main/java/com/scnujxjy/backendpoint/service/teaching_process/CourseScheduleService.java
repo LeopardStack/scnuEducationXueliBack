@@ -898,14 +898,4 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return filter.getTeacherCourschedules(courseScheduleROPageRO);
     }
 
-    public List<CourseScheduleVO> selectCourseSchedulesByBatchIndex(Long batchIndex) {
-        PageRO<CourseScheduleRO> courseScheduleROPageRO = new PageRO<>();
-        courseScheduleROPageRO.setEntity(CourseScheduleRO.builder().batchIndex(batchIndex).build())
-                .setIsAll(true);
-        PageVO<CourseScheduleVO> courseScheduleVOPageVO = pageQueryCourseSchedule(courseScheduleROPageRO);
-        if (Objects.isNull(courseScheduleVOPageVO) || CollUtil.isEmpty(courseScheduleVOPageVO.getRecords())) {
-            return null;
-        }
-        return courseScheduleVOPageVO.getRecords();
-    }
 }

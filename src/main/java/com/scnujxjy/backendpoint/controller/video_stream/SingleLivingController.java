@@ -2,8 +2,9 @@ package com.scnujxjy.backendpoint.controller.video_stream;
 
 
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewLogFirstResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
@@ -80,7 +83,7 @@ public class SingleLivingController {
 
     //返回学生登录链接
     @PostMapping("/edit/getStudentChannelUrl")
-    public SaResult getStudentChannelUrl(String channelId){
+    public SaResult getStudentChannelUrl(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
@@ -89,11 +92,11 @@ public class SingleLivingController {
 
     //返回助教单点登录链接
     @PostMapping("/edit/getTutorChannelUrl")
-    public  SaResult getTutorChannelUrl(String channelId,String userId){
+    public SaResult getTutorChannelUrl(String channelId, String userId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
-        return singleLivingService.getTutorChannelUrl(channelId,userId);
+        return singleLivingService.getTutorChannelUrl(channelId, userId);
     }
 
     @PostMapping("/edit/UpdateChannelNameAndImg")
@@ -115,6 +118,18 @@ public class SingleLivingController {
         }
 
         return singleLivingService.addChannelWhiteStudent(request);
+    }
+
+    @PostMapping("/detail-tutor-batch-index")
+    public SaResult getTutorBatchIndex(Long batchIndex) {
+        if (Objects.isNull(batchIndex)) {
+            throw dataMissError();
+        }
+        List<TutorAllInformation> tutorAllInformationList = singleLivingService.selectTutorInformationByBatchIndex(batchIndex);
+        if (CollUtil.isEmpty(tutorAllInformationList)) {
+            return SaResult.code(2000).setMsg("查询数据为空");
+        }
+        return SaResult.data(tutorAllInformationList);
     }
 }
 

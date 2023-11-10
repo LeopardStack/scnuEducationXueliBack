@@ -20,12 +20,12 @@ public class TutorInformation {
     private String channelId;
 
     /**
-     * 频道名称
+     * 助教名称
      */
     private String tutorName;
 
     /**
-     * 频道密码
+     * 频道链接
      */
     private String tutorUrl;
 
@@ -35,7 +35,7 @@ public class TutorInformation {
     private String tutorPassword;
 
     /**
-     * 助教密码
+     * 助教 userId
      */
     private String userId;
 
