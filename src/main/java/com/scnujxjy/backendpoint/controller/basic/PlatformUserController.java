@@ -1,6 +1,8 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
+import cn.dev33.satoken.session.SaSession;
+import cn.dev33.satoken.session.TokenSign;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -230,6 +234,47 @@ public class PlatformUserController {
         } else {
             return SaResult.data("Username does not match the current session").setCode(551);
         }
+    }
+
+    /**
+     * 获取平台实时数据
+     * 比如每个班的直播情况 上课数据 系统在线人数等等
+     * @return
+     */
+    @GetMapping("/getPlatformBasicInfo")
+    public SaResult getPlatFormInfo(){
+        // 获取所有已登录的会话id
+        List<String> sessionIdList = StpUtil.searchSessionId("", 0, -1, false);
+
+        List<TokenSign> tokenSignList = new ArrayList<>();
+        HashMap<String, Integer> roleLoginCount = new HashMap<>();
+        for (String sessionId : sessionIdList) {
+
+            // 根据会话id，查询对应的 SaSession 对象，此处一个 SaSession 对象即代表一个登录的账号
+            SaSession session = StpUtil.getSessionBySessionId(sessionId);
+
+            // 查询这个账号都在哪些设备登录了，依据上面的示例，账号A 的 tokenSign 数量是 3，账号B 的 tokenSign 数量是 2
+            tokenSignList = session.getTokenSignList();
+            log.info("获取 会话 tokenValue List " + tokenSignList);
+            for(TokenSign tokenSign: tokenSignList){
+                String loginId = (String) StpUtil.getLoginIdByToken(tokenSign.getValue());
+                List<String> roleList = StpUtil.getRoleList(loginId);
+                if(roleList.isEmpty()){
+                    log.error("该 loginId " + loginId + " 不在系统内");
+                }else{
+                    if(roleLoginCount.containsKey(roleList.get(0))){
+                        Integer i = roleLoginCount.get(roleList.get(0));
+                        roleLoginCount.put(roleList.get(0), i + 1);
+                    }else{
+                        roleLoginCount.put(roleList.get(0), 1);
+                    }
+                    log.info("用户 " + loginId + "  在线 " + " 角色信息为 " + roleList);
+
+                }
+
+            }
+        }
+        return SaResult.ok().setData(tokenSignList).set("roleLoginCount", roleLoginCount);
     }
 
 }

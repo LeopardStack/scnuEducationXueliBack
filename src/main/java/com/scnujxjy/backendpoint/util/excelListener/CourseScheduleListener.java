@@ -391,7 +391,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 //                    }
 //                }
 //            }
-            // 排课表 中的教学班别 为 主讲教师 + 课程
+            // 教学班不需要写了 直接用规范的格式 老师姓名 + 课程
             data.setTeachingClass(data.getMainTeacherName() + "-" + data.getCourseName());
 
             // 进行主讲教师判断

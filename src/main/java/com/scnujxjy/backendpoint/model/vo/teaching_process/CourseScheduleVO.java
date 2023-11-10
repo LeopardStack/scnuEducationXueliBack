@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -128,4 +129,9 @@ public class CourseScheduleVO {
      * 教师平台用户名
      */
     private String teacherUsername;
+
+    /**
+     * 排课表批次，用来唯一确定一次合班的排课表记录
+     */
+    private Long batchIndex;
 }
