@@ -503,7 +503,9 @@ public class CourseScheduleController {
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的教学计划
                 FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teacherFilter);
-
+                if (Objects.isNull(schedulesFilterDataVO)) {
+                    throw dataNotFoundError();
+                }
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
                 filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
@@ -525,6 +527,7 @@ public class CourseScheduleController {
 
     /**
      * 获取排课表明细筛选条件
+     *
      * @return 排课表筛选条件
      */
     @GetMapping("/select_schedule_courses_args")
@@ -569,7 +572,7 @@ public class CourseScheduleController {
         PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            return  SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
+            return SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
         } else {
             try {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
@@ -597,7 +600,7 @@ public class CourseScheduleController {
                             / courseScheduleFilterROPageRO.getPageSize()));
 
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 return SaResult.error("获取排课表信息失败 " + e.toString()).setCode(2000);
             }
 
