@@ -90,6 +90,11 @@ public class CourseScheduleFilterRO implements Serializable {
     String tutorName;
 
     /**
+     * 直播状态
+     */
+    String livingStatus;
+
+    /**
      * 批次
      */
     Long batchIndex;
@@ -105,4 +110,9 @@ public class CourseScheduleFilterRO implements Serializable {
      */
     @JsonFormat(pattern="yyyy-MM-dd HH:mm")
     Date teachingEndDate;
+
+    /**
+     * 行政班别集合
+     */
+    List<String> classNames;
 }

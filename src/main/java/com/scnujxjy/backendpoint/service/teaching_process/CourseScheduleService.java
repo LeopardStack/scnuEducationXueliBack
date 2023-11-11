@@ -898,6 +898,14 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
      * @return
      */
     public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
-        return filter.getScheduleCourses(courseScheduleFilterROPageRO);
+//        return filter.getScheduleCourses(courseScheduleFilterROPageRO);
+        // 传参之前 就修改筛选参数 来匹配 不同的角色
+        return filter.getScheduleCoursesBetter(courseScheduleFilterROPageRO);
     }
+
+    public ScheduleCourseManagetArgs getSelectScheduleCourseManageArgs(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+        return filter.getSelectScheduleCourseManageArgs(courseScheduleFilterROPageRO);
+//        return filter.getSelectScheduleCourseManageArgsBetter(courseScheduleFilterROPageRO);
+    }
+
 }
