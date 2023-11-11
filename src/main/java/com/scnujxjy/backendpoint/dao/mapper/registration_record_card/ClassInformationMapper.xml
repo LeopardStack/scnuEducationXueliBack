@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper">
+    <sql id="commonJoin">
+        FROM class_information ci
+    </sql>
+
+    <sql id="commonFilters">
+        AND ci.grade REGEXP '^[0-9]+$'
+        AND ci.grade IS NOT NULL
+        <if test='entity.id != null'>AND ci.id = #{entity.id} </if>
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>
+        <if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college} </if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level} </if>
+        <if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>
+        <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>
+        <if test='entity.classNames != null and entity.classNames.size() > 0'>
+            AND ci.class_name IN
+            <foreach item="className" collection="entity.classNames" open="(" separator="," close=")">
+                #{className}
+            </foreach>
+        </if>
+
+    </sql>
+
+    <select id="getClassInfoByFilter" resultType="com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO">
+        SELECT ci.*
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY ci.grade DESC
+        LIMIT #{l}, #{pageSize}
+    </select>
+
+    <select id="getCountClassInfoByFilter" resultType="Long">
+        SELECT COUNT(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctGrades" resultType="String">
+        SELECT DISTINCT ci.grade
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctLevels" resultType="String">
+        SELECT DISTINCT ci.level
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctStudyForms" resultType="String">
+        SELECT DISTINCT ci.study_form
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctClassNames" resultType="String">
+        SELECT DISTINCT ci.class_name
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctStudyPeriods" resultType="String">
+        SELECT DISTINCT ci.study_period
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctCollegeNames" resultType="String">
+        SELECT DISTINCT ci.college
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctMajorNames" resultType="String">
+        SELECT DISTINCT ci.major_name
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="getDistinctTeachingPoints" resultType="String">
+        SELECT DISTINCT REGEXP_REPLACE(ci.class_name, '[0-9]', '') AS cleaned_class_name
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+    <select id="downloadClassInformationDataByManager0" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ClassInformationDownloadVO">
+        SELECT ci.*
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+
+</mapper>
