@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -63,6 +64,9 @@ public class HealthCheckTask {
     private ScnuXueliTools scnuXueliTools;
     @Resource
     private TutorInformationMapper tutorInformationMapper;
+
+    @Value("${run.checkLivingStatusScan}")
+    private boolean checkLivingStatusScan;
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {
@@ -121,8 +125,12 @@ public class HealthCheckTask {
         return uniqueAdminClasses.size();
     }
 
-//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
+    @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void getCourses() {
+        if (!checkLivingStatusScan) {
+            // 如果配置为 false，直接返回
+            return;
+        }
         String pattern = "yyyy-MM-dd HH:mm";
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
         // 设置时区为北京（东八区）,获取当前北京日期

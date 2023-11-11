@@ -325,4 +325,17 @@ public class LivingCreate {
             }
         }
     }
+
+    /**
+     * 测试获取指定学生的观看数据
+     */
+    @Test
+    public void test8(){
+        String userLoginId = "142601199406072323";
+        try {
+            videoStreamUtils.getWatcherData(userLoginId);
+        }catch (Exception e){
+            log.error("获取学生观看数据失败 " + e.toString());
+        }
+    }
 }
