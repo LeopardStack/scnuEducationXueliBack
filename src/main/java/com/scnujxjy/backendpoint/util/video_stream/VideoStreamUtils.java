@@ -400,7 +400,7 @@ public class VideoStreamUtils {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public String getAdminSSOLink() throws IOException, NoSuchAlgorithmException {
+    public String OLink() throws IOException, NoSuchAlgorithmException {
         String timestamp = String.valueOf(System.currentTimeMillis());
         String token = UUID.randomUUID().toString().replaceAll("-", "");
         String accountId = StpUtil.getLoginIdAsString().replaceAll("M", "");
@@ -1113,4 +1113,30 @@ public class VideoStreamUtils {
     }
 
 
+    /**
+     * 生成嘉宾（管理员）查看链接
+     *
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String getAdminSSOLink() throws IOException, NoSuchAlgorithmException {
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String token = UUID.randomUUID().toString().replaceAll("-", "");
+        String accountId = StpUtil.getLoginIdAsString().replaceAll("M", "");
+        String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-account-token", accountId);
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("token", token);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.postFormBody(url, requestMap);
+        log.info("生成嘉宾响应信息：{}", response);
+        // 生成嘉宾授权地址
+        String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + accountId;
+        String authURL = "https://console.polyv.net/teacher/auth-login";
+        authURL += "?channelId=" + accountId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+        log.info("嘉宾单点登录设置成功，跳转地址为：{}", authURL);
+        return authURL;
     }
+}
