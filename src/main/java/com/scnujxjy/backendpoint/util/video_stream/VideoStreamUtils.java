@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.util.video_stream;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollUtil;
@@ -346,7 +347,7 @@ public class VideoStreamUtils {
     }
 
     /**
-     * 生成单点登录链接
+     * 生成学生单点登录链接
      *
      * @param channelId  频道 id
      * @param userId     用户 id
@@ -356,7 +357,7 @@ public class VideoStreamUtils {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public String getAdminSSOLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
+    public String getStudentSSOLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
         ChannelInfoResponse channelInfoByChannelId = getChannelInfoByChannelId(channelId);
         if (Objects.isNull(channelInfoByChannelId)) {
             return null;
@@ -388,6 +389,33 @@ public class VideoStreamUtils {
         String query = URLUtil.buildQuery(requestMap, StandardCharsets.UTF_8);
         url.append(channelId).append("?").append(query);
         return url.toString();
+    }
+
+    /**
+     * 生成嘉宾（管理员）查看链接
+     *
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public String getAdminSSOLink() throws IOException, NoSuchAlgorithmException {
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String token = UUID.randomUUID().toString().replaceAll("-", "");
+        String accountId = StpUtil.getLoginIdAsString().replaceAll("T", "");
+        String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-account-token", accountId);
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("token", token);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.postFormBody(url, requestMap);
+        log.info("生成嘉宾响应信息：{}", response);
+        // 生成嘉宾授权地址
+        String redirectUrl = "https://console.polyv.net/web-start/?channelId=" + accountId;
+        String authURL = "https://console.polyv.net/teacher/auth-login";
+        authURL += "?channelId=" + accountId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
+        log.info("嘉宾单点登录设置成功，跳转地址为：{}", authURL);
+        return authURL;
     }
 
     /**
