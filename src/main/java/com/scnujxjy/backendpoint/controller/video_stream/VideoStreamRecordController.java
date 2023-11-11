@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
@@ -123,7 +125,28 @@ public class VideoStreamRecordController {
 
         } else {
             SaResult tutorChannelUrl = singleLivingService.getTutorChannelUrl(videoStreamRecordVO.getChannelId(), loginIdAsString);
-            return SaResult.data(tutorChannelUrl).setCode(201);
+            // 假设 tutorChannelUrl 中有一个方法 getData() 返回 URL 字符串
+            String url = tutorChannelUrl.getData().toString();
+
+            // 使用正则表达式匹配 URL 中的 channelId
+            Pattern pattern = Pattern.compile("channelId=([\\d\\w]+)");
+            Matcher matcher = pattern.matcher(url);
+
+            String tutorUrl = null;
+            if (matcher.find()) {
+                String accountId = matcher.group(1); // 提取 channelId
+                try{
+                    tutorUrl = videoStreamUtils.generateTutorSSOLink(videoStreamRecordVO.getChannelId(), accountId);
+                }catch (Exception e){
+                    log.error("获取助教链接失败 " + e.toString());
+                    return SaResult.error("获取助教链接失败 " + loginIdAsString).setCode(2001);
+                }
+
+                // 使用 channelId
+            } else {
+                // URL 中没有找到 channelId
+            }
+            return SaResult.data(tutorUrl).setCode(201);
         }
     }
 
