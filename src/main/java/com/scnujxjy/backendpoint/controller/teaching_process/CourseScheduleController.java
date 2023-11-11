@@ -519,7 +519,6 @@ public class CourseScheduleController {
                     throw dataNotFoundError();
                 }
             }
-
         }
         return SaResult.data(filterDataVO);
     }
@@ -543,6 +542,8 @@ public class CourseScheduleController {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(collegeAdminFilter);
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
+            } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
             }
         }

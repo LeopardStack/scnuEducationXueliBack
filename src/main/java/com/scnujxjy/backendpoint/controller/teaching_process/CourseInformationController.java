@@ -198,7 +198,7 @@ public class CourseInformationController {
         log.info("登录角色 " + roleList);
 
         // 获取访问者 ID
-        Object loginId = StpUtil.getLoginId();
+        String loginId = StpUtil.getLoginIdAsString();
         CourseInformationSelectArgs courseInformationSelectArgs = null;
         if (roleList.isEmpty()) {
             throw dataNotFoundError();
@@ -206,22 +206,19 @@ public class CourseInformationController {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
                 // 查询二级学院管理员筛选教学计划的参数
-                courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege((String) loginId, collegeAdminFilter);
-                // 参数校验
-                if (Objects.isNull(courseInformationSelectArgs)) {
-                    throw dataNotFoundError();
-                }
+                courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege(loginId, collegeAdminFilter);
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员筛选教学计划的参数
-                courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege((String) loginId, managerFilter);
-                // 参数校验
-                if (Objects.isNull(courseInformationSelectArgs)) {
-                    throw dataNotFoundError();
-                }
+                courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege(loginId, managerFilter);
+            } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege(loginId, teachingPointFilter);
+
             }
         }
-
+        if (Objects.isNull(courseInformationSelectArgs)) {
+            throw dataNotFoundError();
+        }
         // 转换并返回
         return SaResult.data(courseInformationSelectArgs);
     }

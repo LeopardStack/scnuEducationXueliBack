@@ -494,6 +494,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -517,6 +523,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -541,6 +553,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -565,6 +583,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -588,6 +612,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -611,6 +641,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -635,6 +671,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +
@@ -658,6 +700,12 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
             "cs.admin_class = ci.class_name AND " +
             "cs.major_name = ci.major_name " +
             "   WHERE 1=1 " +
+            "<if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "   <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if> " +
             "   <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if> " +
             "   <if test='courseScheduleFilterROPageRO.adminClassName != null'>AND cs.admin_class = #{courseScheduleFilterROPageRO.adminClassName} </if> " +

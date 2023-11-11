@@ -204,11 +204,11 @@ public class ScoreInformationController {
         List<String> roleList = StpUtil.getRoleList();
 
         // 获取访问者 ID
-        Object loginId = StpUtil.getLoginId();
+        String loginId = StpUtil.getLoginIdAsString();
         ScoreInformationSelectArgs studentStatusSelectArgs = null;
 
         // 生成缓存键
-        String cacheKey = "selectGradeInfoArgsAdmin:" + loginId.toString();
+        String cacheKey = "selectGradeInfoArgsAdmin:" + loginId;
 
         // 尝试从Redis中获取数据
         studentStatusSelectArgs = (ScoreInformationSelectArgs) redisTemplate.opsForValue().get(cacheKey);
@@ -218,9 +218,11 @@ public class ScoreInformationController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
-                    studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
+                    studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs(loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-                    studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs((String) loginId, managerFilter);
+                    studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs(loginId, managerFilter);
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs(loginId, teachingPointFilter);
                 }
 
                 // 如果获取的数据不为空，则放入Redis

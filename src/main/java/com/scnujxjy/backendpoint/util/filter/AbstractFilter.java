@@ -20,17 +20,18 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.*;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
@@ -87,9 +88,6 @@ public abstract class AbstractFilter {
     protected TeacherInformationMapper teacherInformationMapper;
 
     @Resource
-    protected TeachingAssistantsCourseScheduleMapper teachingAssistantsCourseScheduleMapper;
-
-    @Resource
     protected ScnuXueliTools scnuXueliTools;
 
     @Resource
@@ -97,6 +95,7 @@ public abstract class AbstractFilter {
 
     /**
      * 筛选学籍数据的方法
+     *
      * @param data 获取的学籍数据
      * @return 学籍数据集合
      */
@@ -107,6 +106,7 @@ public abstract class AbstractFilter {
 
     /**
      * 筛选学位数据的方法
+     *
      * @param degreeFilter 获取的学位数据
      * @return 学位数据集合
      */
@@ -117,6 +117,7 @@ public abstract class AbstractFilter {
 
     /**
      * 筛选排课表数据的方法
+     *
      * @param courseScheduleFilter 获取的排课表数据
      * @return 排课表数据集合
      */
@@ -128,6 +129,7 @@ public abstract class AbstractFilter {
 
     /**
      * 筛选教学计划数据的方法
+     *
      * @param courseInformationFilter 获取的教学计划筛选数据
      * @return 教学计划集合
      */
@@ -138,6 +140,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取二级学院教学计划筛选参数
+     *
      * @return 教学计划筛选参数
      */
     public CourseInformationSelectArgs filterCourseInformationSelectArgs() {
@@ -147,6 +150,7 @@ public abstract class AbstractFilter {
 
     /**
      * 筛选学籍数据的方法
+     *
      * @param studentStatusFilter 获取的学籍筛选数据
      * @return 学籍数据集合
      */
@@ -157,6 +161,7 @@ public abstract class AbstractFilter {
 
     /**
      * 导出学籍数据到指定用户 的消息中
+     *
      * @param pageRO
      */
     public void exportStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, String userId) {
@@ -164,6 +169,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取学籍筛选参数
+     *
      * @return
      */
     public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
@@ -173,6 +179,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取缴费信息
+     *
      * @param paymentInfoFilterROPageRO 缴费筛选参数
      * @return
      */
@@ -182,6 +189,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取成绩信息
+     *
      * @param scoreInformationFilterROPageRO 成绩筛选参数
      * @return
      */
@@ -191,6 +199,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取成绩筛选参数
+     *
      * @return
      */
     public ScoreInformationSelectArgs filterScoreInformationSelectArgs() {
@@ -199,6 +208,7 @@ public abstract class AbstractFilter {
 
     /**
      * 导出成绩数据到指定用户 的消息中
+     *
      * @param pageRO
      */
     public void exportScoreInformationData(PageRO<ScoreInformationFilterRO> pageRO, String userId) {
@@ -207,6 +217,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取缴费信息筛选参数
+     *
      * @return
      */
     public PaymentInformationSelectArgs filterPaymentInformationSelectArgs() {
@@ -215,6 +226,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取班级信息
+     *
      * @param classInformationFilterROPageRO 班级筛选参数
      * @return
      */
@@ -224,6 +236,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取班级信息筛选参数
+     *
      * @return
      */
     public ClassInformationSelectArgs filterClassInformationSelectArgs() {
@@ -232,6 +245,7 @@ public abstract class AbstractFilter {
 
     /**
      * 导出班级数据到指定用户 的消息中
+     *
      * @param pageRO
      */
     public void exportClassInformationData(PageRO<ClassInformationFilterRO> pageRO, String userId, PlatformMessagePO platformMessagePO) {
@@ -240,6 +254,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取排课表的课程信息
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -249,6 +264,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取排课表课程筛选参数
+     *
      * @return
      */
     public ScheduleCourseInformationSelectArgs filterScheduleCourseInformationSelectArgs() {
@@ -257,17 +273,19 @@ public abstract class AbstractFilter {
 
     /**
      * 获取排课表详细信息
+     *
      * @return
      */
     public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
         return null;
     }
 
-    public void exportPaymentInfoData(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO, String userId, PlatformMessagePO platformMessagePO){
+    public void exportPaymentInfoData(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO, String userId, PlatformMessagePO platformMessagePO) {
     }
 
     /**
      * 批量导出教学计划
+     *
      * @param courseInformationROPageRO
      * @return
      */
@@ -277,6 +295,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取排课表课程的筛选条件
+     *
      * @param courseScheduleFilterRO
      * @return
      */
@@ -286,6 +305,7 @@ public abstract class AbstractFilter {
 
     /**
      * 获取教师的排课表信息 只返回不同时间的各个课程
+     *
      * @param courseScheduleROPageRO
      * @return
      */
@@ -295,15 +315,17 @@ public abstract class AbstractFilter {
 
     /**
      * 教师获取学生信息
+     *
      * @param studentStatusROPageRO
      * @return
      */
     public FilterDataVO getStudentStatusInfoByTeacher(PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO) {
-        return  null;
+        return null;
     }
 
     /**
      * 获取排课表课程管理信息
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */

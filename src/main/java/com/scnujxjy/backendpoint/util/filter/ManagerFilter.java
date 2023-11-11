@@ -9,15 +9,11 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
-import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
-import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
@@ -30,12 +26,9 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
-import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
@@ -43,7 +36,6 @@ import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
-import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
@@ -51,10 +43,8 @@ import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import net.polyv.common.v1.validator.constraints.Min;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,9 +53,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -76,7 +64,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 @Data
-public class ManagerFilter  extends AbstractFilter {
+public class ManagerFilter extends AbstractFilter {
     /**
      * 标识
      * 0 表示学历教育部
@@ -85,8 +73,10 @@ public class ManagerFilter  extends AbstractFilter {
      * -1 表示超级管理员
      */
     private int identifier = 0;
+
     /**
      * 筛选教学计划
+     *
      * @param courseInformationFilter 获取的教学计划筛选数据
      * @return
      */
@@ -107,8 +97,8 @@ public class ManagerFilter  extends AbstractFilter {
         // 使用 courseInformationMapper 获取数据
         List<CourseInformationManagerZeroVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPageByManager0(courseInformationFilter.getEntity(),
                 courseInformationFilter.getPageSize(),
-                courseInformationFilter.getPageSize() * (courseInformationFilter.getPageNumber() -1));
-        long total =  courseInformationMapper.getCountByFilterAndPageManager0(courseInformationFilter.getEntity());
+                courseInformationFilter.getPageSize() * (courseInformationFilter.getPageNumber() - 1));
+        long total = courseInformationMapper.getCountByFilterAndPageManager0(courseInformationFilter.getEntity());
         courseInformationFilterDataVO.setData(courseInformationVOS);
         courseInformationFilterDataVO.setTotal(total);
 
@@ -117,6 +107,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 获取二级学院教学计划筛选参数
+     *
      * @return
      */
     @Override
@@ -133,13 +124,13 @@ public class ManagerFilter  extends AbstractFilter {
         }
 
 
-        List<String> grades = courseInformationMapper.selectDistinctGrades(null);
-        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(null);
-        List<String> levels = courseInformationMapper.selectDistinctLevels(null);
-        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(null);
-        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(null);
-        List<String> classNames = courseInformationMapper.selectDistinctClassNames(null);
-        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames();
+        List<String> grades = courseInformationMapper.selectDistinctGrades(null, null);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(null, null);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(null, null);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(null, null);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(null, null);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(null, null);
+        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames(null);
         courseInformationSelectArgs.setGrades(grades);
         courseInformationSelectArgs.setMajorNames(majorNames);
         courseInformationSelectArgs.setLevels(levels);
@@ -152,6 +143,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 批量导出教学计划
+     *
      * @param courseInformationROPageRO
      * @return
      */
@@ -176,6 +168,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 筛选学籍数据
+     *
      * @param studentStatusFilter 获取学籍数据的筛选数据
      * @return
      */
@@ -197,8 +190,8 @@ public class ManagerFilter  extends AbstractFilter {
         // 使用 courseInformationMapper 获取数据
         List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper.selectByFilterAndPageByManager0(studentStatusFilter.getEntity(),
                 studentStatusFilter.getPageSize(),
-                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() -1));
-        long total =  studentStatusMapper.getCountByFilterAndPageManager0(studentStatusFilter.getEntity());
+                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() - 1));
+        long total = studentStatusMapper.getCountByFilterAndPageManager0(studentStatusFilter.getEntity());
         studentStatusVOFilterDataVO.setData(studentStatusVOS);
         studentStatusVOFilterDataVO.setTotal(total);
 
@@ -207,6 +200,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 导出学籍数据到指定继续教育学院用户 的消息中
+     *
      * @param studentStatusFilter
      * @param userId
      */
@@ -279,14 +273,14 @@ public class ManagerFilter  extends AbstractFilter {
         boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
 
         // 如果上传成功了 则修改数据库中的用户下载消息
-        if(b){
+        if (b) {
             DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
             downloadMessagePO.setCreatedAt(generateData);
             downloadMessagePO.setFileName(DownloadFileNameEnum.STUDENT_STATUS_EXPORT_FILE.getFilename());
-            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
             downloadMessagePO.setFileSize((long) fileSize);
             int insert = downloadMessageMapper.insert(downloadMessagePO);
-            log.info("下载学籍数据、下载文件消息插入 "+ insert);
+            log.info("下载学籍数据、下载文件消息插入 " + insert);
 
             // 获取自增ID
             Long generatedId = downloadMessagePO.getId();
@@ -297,20 +291,21 @@ public class ManagerFilter  extends AbstractFilter {
             platformMessagePO.setRelatedMessageId(generatedId);
             platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
-            log.info("用户下载消息插入结果 "+ insert1);
+            log.info("用户下载消息插入结果 " + insert1);
         }
     }
 
     /**
      * 获取学籍数据筛选参数
+     *
      * @return
      */
     @Override
     @LogExecutionTime
     public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
-        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs() ;
+        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs();
         List<String> distinctGrades = studentStatusMapper.getDistinctGrades(new StudentStatusFilterRO());
-        List<String> colleges    = studentStatusMapper.getDistinctColleges(new StudentStatusFilterRO());
+        List<String> colleges = studentStatusMapper.getDistinctColleges(new StudentStatusFilterRO());
         List<String> majorNames = studentStatusMapper.getDistinctMajorNames(new StudentStatusFilterRO());
         List<String> levels = studentStatusMapper.getDistinctLevels(new StudentStatusFilterRO());
         List<String> studyForms = studentStatusMapper.getDistinctStudyForms(new StudentStatusFilterRO());
@@ -332,6 +327,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取缴费信息
+     *
      * @param paymentInfoFilterROPageRO 缴费筛选参数
      * @return
      */
@@ -339,11 +335,11 @@ public class ManagerFilter  extends AbstractFilter {
     public FilterDataVO filterPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
         FilterDataVO<PaymentInfoVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
         log.info("用户缴费筛选参数" + paymentInfoFilterROPageRO);
-        List<PaymentInfoVO> paymentInfoVOList =  paymentInfoMapper.getStudentPayInfoByFilter(
+        List<PaymentInfoVO> paymentInfoVOList = paymentInfoMapper.getStudentPayInfoByFilter(
                 paymentInfoFilterROPageRO.getEntity(),
                 paymentInfoFilterROPageRO.getPageSize(),
                 (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
-                );
+        );
         long countStudentPayInfoByFilter = paymentInfoMapper.getCountStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity());
 //        long countStudentPayInfoByFilter = 100L;
         studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
@@ -355,14 +351,15 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取成绩信息
+     *
      * @param scoreInformationFilterROPageRO 成绩筛选参数
      * @return
      */
     @Override
     public FilterDataVO filterGradeInfo(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO) {
         FilterDataVO<ScoreInformationVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询成绩的参数是 " + scoreInformationFilterROPageRO);
-        List<ScoreInformationVO> paymentInfoVOList =  scoreInformationMapper.getStudentGradeInfoByFilter(
+        log.info(StpUtil.getLoginId() + " 查询成绩的参数是 " + scoreInformationFilterROPageRO);
+        List<ScoreInformationVO> paymentInfoVOList = scoreInformationMapper.getStudentGradeInfoByFilter(
                 scoreInformationFilterROPageRO.getEntity(),
                 scoreInformationFilterROPageRO.getPageSize(),
                 (scoreInformationFilterROPageRO.getPageNumber() - 1) * scoreInformationFilterROPageRO.getPageSize()
@@ -378,6 +375,7 @@ public class ManagerFilter  extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取学籍数据筛选参数
+     *
      * @return
      */
     @Override
@@ -486,14 +484,14 @@ public class ManagerFilter  extends AbstractFilter {
         boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
 
         // 如果上传成功了 则修改数据库中的用户下载消息
-        if(b){
+        if (b) {
             DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
             downloadMessagePO.setCreatedAt(generateData);
             downloadMessagePO.setFileName(DownloadFileNameEnum.STUDENT_SCORE_INFORMATION_EXPORT_FILE.getFilename());
-            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
             downloadMessagePO.setFileSize((long) fileSize);
             int insert = downloadMessageMapper.insert(downloadMessagePO);
-            log.info("下载成绩数据、下载文件消息插入 "+ insert);
+            log.info("下载成绩数据、下载文件消息插入 " + insert);
 
             // 获取自增ID
             Long generatedId = downloadMessagePO.getId();
@@ -504,13 +502,14 @@ public class ManagerFilter  extends AbstractFilter {
             platformMessagePO.setRelatedMessageId(generatedId);
             platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
-            log.info("用户下载消息插入结果 "+ insert1);
+            log.info("用户下载消息插入结果 " + insert1);
         }
     }
 
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取缴费数据筛选参数
+     *
      * @return
      */
     @Override
@@ -550,14 +549,15 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取班级信息
+     *
      * @param classInformationFilterROPageRO 班级筛选参数
      * @return
      */
     @Override
     public FilterDataVO filterClassInfo(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO) {
         FilterDataVO<ClassInformationVO> classInformationVOFilterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询班级的参数是 " + classInformationFilterROPageRO);
-        List<ClassInformationVO> classInformationVOList =  classInformationMapper.getClassInfoByFilter(
+        log.info(StpUtil.getLoginId() + " 查询班级的参数是 " + classInformationFilterROPageRO);
+        List<ClassInformationVO> classInformationVOList = classInformationMapper.getClassInfoByFilter(
                 classInformationFilterROPageRO.getEntity(),
                 classInformationFilterROPageRO.getPageSize(),
                 (classInformationFilterROPageRO.getPageNumber() - 1) * classInformationFilterROPageRO.getPageSize()
@@ -574,6 +574,7 @@ public class ManagerFilter  extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取班级数据筛选参数
+     *
      * @return
      */
     @Override
@@ -686,11 +687,11 @@ public class ManagerFilter  extends AbstractFilter {
         boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
 
         // 如果上传成功了 则修改数据库中的用户下载消息
-        if(b){
+        if (b) {
             DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
             downloadMessagePO.setCreatedAt(generateData);
             downloadMessagePO.setFileName(DownloadFileNameEnum.CLASS_INFORMATION_EXPORT_FILE.getFilename());
-            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
             downloadMessagePO.setFileSize((long) fileSize);
             int insert = downloadMessageMapper.insert(downloadMessagePO);
 
@@ -698,13 +699,14 @@ public class ManagerFilter  extends AbstractFilter {
             platformMessageMapper.update(platformMessagePO, new LambdaQueryWrapper<PlatformMessagePO>().
                     eq(PlatformMessagePO::getId, platformMessagePO.getId()));
 
-            log.info("下载班级信息数据完成 "+ insert);
+            log.info("下载班级信息数据完成 " + insert);
         }
     }
 
 
     /**
      * 获取排课表的课程信息
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -722,7 +724,7 @@ public class ManagerFilter  extends AbstractFilter {
 
         List<CourseInformationScheduleVO> courseInformationScheduleVOS = new ArrayList<>();
         // 首先获取教学计划中与排课表相对应的课程
-        for(CourseInformationVO courseInformationVO: courseInformationVOS){
+        for (CourseInformationVO courseInformationVO : courseInformationVOS) {
             CourseInformationScheduleVO courseInformationScheduleVO = new CourseInformationScheduleVO();
             BeanUtils.copyProperties(courseInformationVO, courseInformationScheduleVO);
             courseInformationScheduleVO.setMainTeachers(new ArrayList<>());
@@ -738,10 +740,10 @@ public class ManagerFilter  extends AbstractFilter {
             courseScheduleFilterRO.setCourseName(courseInformationVO.getCourseName());
             List<ScheduleCourseInformationVO> scheduleCourseInformationVOS = courseScheduleMapper.selectCoursesInformationWithoutPage(courseScheduleFilterRO);
 
-            for(ScheduleCourseInformationVO scheduleCourseInformationVO : scheduleCourseInformationVOS){
+            for (ScheduleCourseInformationVO scheduleCourseInformationVO : scheduleCourseInformationVOS) {
 //                courseInformationScheduleVO.setTeachingMethod(scheduleCourseInformationVO.getTeachingMethod());
                 // 获取主讲教师
-                if(scheduleCourseInformationVO.getTeacherUsername() != null) {
+                if (scheduleCourseInformationVO.getTeacherUsername() != null) {
                     TeacherInformationVO mainTeacher = new TeacherInformationVO();
                     mainTeacher.setTeacherUsername(scheduleCourseInformationVO.getTeacherUsername());
                     mainTeacher.setName(scheduleCourseInformationVO.getMainTeacherName());
@@ -750,7 +752,7 @@ public class ManagerFilter  extends AbstractFilter {
                     courseInformationScheduleVO.getMainTeachers().add(mainTeacher);
                 }
 
-                if(scheduleCourseInformationVO.getTeachingAssistantUsername() != null) {
+                if (scheduleCourseInformationVO.getTeachingAssistantUsername() != null) {
                     TeacherInformationVO tutor = new TeacherInformationVO();
                     tutor.setTeacherUsername(scheduleCourseInformationVO.getTeachingAssistantUsername());
                     tutor.setName(scheduleCourseInformationVO.getTutorName());
@@ -760,13 +762,12 @@ public class ManagerFilter  extends AbstractFilter {
                 }
             }
 
-            if(courseScheduleFilterROPageRO.getEntity().getTeachingMethod() == null){
+            if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() == null) {
                 courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            }
-            else if(courseScheduleFilterROPageRO.getEntity().getTeachingMethod() != null &&
-                    (!"线下".equals(courseScheduleFilterROPageRO.getEntity().getTeachingMethod()))){
+            } else if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() != null &&
+                    (!"线下".equals(courseScheduleFilterROPageRO.getEntity().getTeachingMethod()))) {
                 courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            }else{
+            } else {
 
             }
 
@@ -774,7 +775,7 @@ public class ManagerFilter  extends AbstractFilter {
         }
 
         FilterDataVO<CourseInformationScheduleVO> filterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
         long l = courseInformationMapper.getCountByFilterAndPage(courseInformationRO);
         filterDataVO.setTotal(l);
@@ -786,6 +787,7 @@ public class ManagerFilter  extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取排课表筛选参数
+     *
      * @return
      */
     @Override
@@ -832,6 +834,7 @@ public class ManagerFilter  extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取排课表课程数据筛选参数
+     *
      * @return
      */
     @Override
@@ -875,6 +878,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 获取排课表详细信息
+     *
      * @return
      */
     public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
@@ -886,7 +890,7 @@ public class ManagerFilter  extends AbstractFilter {
         for (SchedulesVO schedulesVO : schedulesVOS) {
             String onlinePlatform = schedulesVO.getOnlinePlatform();
 
-            if(onlinePlatform != null){
+            if (onlinePlatform != null) {
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
                         new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
 
@@ -897,14 +901,14 @@ public class ManagerFilter  extends AbstractFilter {
                     schedulesVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
                     schedulesVO.setChannelId(videoStreamRecordPO.getChannelId());
                 }
-            }else{
+            } else {
                 schedulesVO.setLivingStatus("未开播");
             }
         }
 
 
         FilterDataVO<SchedulesVO> filterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
         long l = courseScheduleMapper.selectCoursesInformationCount(courseScheduleFilterROPageRO.getEntity());
         filterDataVO.setTotal(l);
@@ -916,6 +920,7 @@ public class ManagerFilter  extends AbstractFilter {
 
     /**
      * 导出学籍数据到指定继续教育学院用户 的消息中
+     *
      * @param paymentInfoFilterROPageRO
      * @param userId
      */
@@ -974,31 +979,32 @@ public class ManagerFilter  extends AbstractFilter {
         boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
 
         // 如果上传成功了 则修改数据库中的用户下载消息
-        if(b){
+        if (b) {
             DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
             downloadMessagePO.setCreatedAt(generateData);
             downloadMessagePO.setFileName(DownloadFileNameEnum.STUDENT_FEES_EXPORT_FILE.getFilename());
-            downloadMessagePO.setFileMinioUrl(bucketName + "/" +fileName);
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
             downloadMessagePO.setFileSize((long) fileSize);
             int insert = downloadMessageMapper.insert(downloadMessagePO);
-            log.info("下载缴费数据、下载文件消息插入 "+ insert);
+            log.info("下载缴费数据、下载文件消息插入 " + insert);
 
             // 获取自增ID
             platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
             platformMessageMapper.update(platformMessagePO, new LambdaQueryWrapper<PlatformMessagePO>().
                     eq(PlatformMessagePO::getId, platformMessagePO.getId()));
 
-            log.info("下载缴费信息数据完成 "+ insert);
+            log.info("下载缴费信息数据完成 " + insert);
         }
     }
 
 
     /**
      * 获取排课表课程管理信息
+     *
      * @return
      */
     public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
@@ -1056,26 +1062,25 @@ public class ManagerFilter  extends AbstractFilter {
                 long diffCurrent = currentTeachingDate.getTime() - now.getTime();
 
                 // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
-                if(diffCurrent > 0 && diffNew < 0){
+                if (diffCurrent > 0 && diffNew < 0) {
                     // 当前记录的排课的上课日期和上课时间 比此时此刻的大 而新的排课的上课日期和上课时间比现在小 那么就啥也不做
-                }
-                else if (diffCurrent > 0) {
-                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                } else if (diffCurrent > 0) {
+                    if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                         // 选最近的
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
                     }
 
-                }else {
+                } else {
                     // 目前拿到的上课时间 比当下的时间 大
-                    if(diffNew > 0){
+                    if (diffNew > 0) {
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
 
-                    }else{
-                        if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                    } else {
+                        if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                             // 选最近的
                             scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                             scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
@@ -1140,9 +1145,6 @@ public class ManagerFilter  extends AbstractFilter {
 
         return filterDataVO;
     }
-
-
-
 
 
 }

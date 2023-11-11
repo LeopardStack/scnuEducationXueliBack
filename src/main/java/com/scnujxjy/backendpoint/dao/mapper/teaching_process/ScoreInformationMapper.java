@@ -188,6 +188,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
@@ -242,6 +248,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
@@ -269,6 +281,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
@@ -296,6 +314,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
@@ -323,6 +347,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
@@ -350,6 +380,12 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "FROM score_information pi " +
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
             "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
