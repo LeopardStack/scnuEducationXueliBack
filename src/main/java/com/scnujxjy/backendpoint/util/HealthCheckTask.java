@@ -2,7 +2,6 @@ package com.scnujxjy.backendpoint.util;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -54,8 +53,6 @@ public class HealthCheckTask {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
-//    @Autowired(required = false)
-//    private PlatformUserMapper platformUserMapper;
 
     @Value("${run.checkLivingStatusScan}")
     private boolean checkLivingStatusScan;
@@ -68,8 +65,6 @@ public class HealthCheckTask {
     @Resource
     private TutorInformationMapper tutorInformationMapper;
 
-    @Value("${run.checkLivingStatusScan}")
-    private boolean checkLivingStatusScan;
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {

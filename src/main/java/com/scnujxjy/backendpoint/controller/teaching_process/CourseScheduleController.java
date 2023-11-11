@@ -51,7 +51,7 @@ public class CourseScheduleController {
     private CollegeAdminFilter collegeAdminFilter;
 
     @Resource
-    private TeachingPointAdminFilter teachingPointAdminFilter;
+    private TeachingPointFilter teachingPointFilter;
 
     @Resource
     private TeacherFilter teacherFilter;
@@ -420,30 +420,6 @@ public class CourseScheduleController {
     }
 
 
-
-    /**
-     * 获取排课表明细筛选条件
-     * @return 排课表筛选条件
-     */
-    @GetMapping("/select_schedule_courses_args")
-    public SaResult getSelectScheduleCourseInformationArgs() {
-        List<String> roleList = StpUtil.getRoleList();
-        PageVO<FilterDataVO> filterDataVO = null;
-
-        ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
-        // 获取访问者 ID
-        if (roleList.isEmpty()) {
-            throw dataNotFoundError();
-        } else {
-            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
-                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(collegeAdminFilter);
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
-            }
-        }
-
-        return SaResult.data(scheduleCourseInformationSelectArgs);
-    }
     /**
      * 获取排课表课程管理筛选条件
      *
@@ -461,7 +437,7 @@ public class CourseScheduleController {
             } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 selectArgs = courseScheduleService.getSelectScheduleCourseManageArgs(courseScheduleFilterROPageRO, collegeAdminFilter);
             }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-                selectArgs = courseScheduleService.getSelectScheduleCourseManageArgs(courseScheduleFilterROPageRO, teachingPointAdminFilter);
+                selectArgs = courseScheduleService.getSelectScheduleCourseManageArgs(courseScheduleFilterROPageRO, teachingPointFilter);
             }
         }
         if (Objects.isNull(selectArgs)) {
@@ -554,7 +530,7 @@ public class CourseScheduleController {
                 }
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的教学计划
-                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teacherFilter);
+                FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teachingPointFilter);
                 if (Objects.isNull(schedulesFilterDataVO)) {
                     throw dataNotFoundError();
                 }

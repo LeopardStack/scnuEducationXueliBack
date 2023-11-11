@@ -33,12 +33,6 @@
                 #{className}
             </foreach>
         </if>
-        <if test = 'courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() != 0'>
-        AND ci.class_name IN
-        <foreach collection='courseScheduleFilterROPageRO.classNameSet' item = 'className' open='(' close=')' separator=','>
-           "#{className}
-           "</foreach>
-        </if>
 
     </sql>
 
@@ -262,13 +256,6 @@
         teaching_end_date
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="courseScheduleFilterROPageRO.classNameSet" item="className" open="(" close=")"
-                     separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY
         CASE WHEN DATE(teaching_date) >= CURDATE() THEN 0 ELSE 1 END,
@@ -292,13 +279,6 @@
         teaching_end_date
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="courseScheduleFilterROPageRO.classNameSet != null and courseScheduleFilterROPageRO.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="courseScheduleFilterROPageRO.classNameSet" item="className" open="(" close=")"
-                     separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY
         CASE WHEN DATE(teaching_date) >= CURDATE() THEN 0 ELSE 1 END,

@@ -10,7 +10,6 @@ import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
@@ -30,8 +29,6 @@ import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -40,10 +37,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -687,29 +680,26 @@ public class CollegeAdminFilter extends AbstractFilter {
                 long diffCurrent = currentTeachingDate.getTime() - now.getTime();
 
                 // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
-                if(diffCurrent > 0 && diffNew < 0){
+                if (diffCurrent > 0 && diffNew < 0) {
                     // 当前记录的排课的上课日期和上课时间 比此时此刻的大 而新的排课的上课日期和上课时间比现在小 那么就啥也不做
-                }
-                else if (diffCurrent > 0) {
-                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                } else if (diffCurrent > 0) {
+                    if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                         // 选最近的
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
                     }
 
-                }else {
+                } else {
                     // 目前拿到的上课时间 比当下的时间 大
-                    if(diffNew > 0){
+                    if (diffNew > 0) {
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
-                    }
+                    } else if (diffCurrent >= 0 && diffNew < 0) {
 
-                }else if(diffCurrent >= 0 && diffNew < 0){
-
-                    }else{
-                        if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                    } else {
+                        if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                             // 选最近的
                             scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                             scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
@@ -719,6 +709,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 }
 
             }
+        }
 
 
         // 将拿到的每个批次 进行时间的升序排列 与现在相比比现在大的排在前面 比现在小的排在后面

@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -152,10 +153,10 @@ public class TeachingPointFilter extends AbstractFilter {
      * @param courseScheduleFilterROPageRO 排课表分页条件查询参数
      * @return 分页条件查询指定教学点排课信息结果
      */
-    @Override
     public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
         Set<String> classNameSet = getTeachingPointClassNameSet();
-        courseScheduleFilterROPageRO.getEntity().setClassNameSet(classNameSet);
+        List<String> classNameList = new ArrayList<>(classNameSet);
+        courseScheduleFilterROPageRO.getEntity().setClassNames((classNameList));
         List<SchedulesVO> schedulesVOS = courseScheduleMapper.selectTeachingPointSchedulesInformation(courseScheduleFilterROPageRO.getEntity(),
                 courseScheduleFilterROPageRO.getPageSize(),
                 courseScheduleFilterROPageRO.getPageSize() * (courseScheduleFilterROPageRO.getPageNumber() - 1));
@@ -304,7 +305,9 @@ public class TeachingPointFilter extends AbstractFilter {
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
         CourseScheduleFilterRO filter = new CourseScheduleFilterRO();
         Set<String> classNameSet = getTeachingPointClassNameSet();
-        filter.setClassNameSet(classNameSet);
+        List<String> classNameList = new ArrayList<>(classNameSet);
+
+        filter.setClassNames(classNameList);
         ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
 
         Future<List<String>> distinctGradesFuture = executor.submit(() -> courseScheduleMapper.getDistinctGrades(filter));
