@@ -11,6 +11,7 @@ import cn.hutool.core.util.URLUtil;
 import cn.hutool.crypto.digest.MD5;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +55,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -1024,4 +1026,91 @@ public class VideoStreamUtils {
     }
 
 
-}
+    public static String convertToBeijingTime(Long timestamp) {
+        // 创建一个 SimpleDateFormat 实例，定义日期格式
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        // 设置时区为东八区（北京时间）
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+
+        // 将时间戳转换为 Date 对象
+        Date date = new Date(timestamp);
+
+        // 返回格式化的日期字符串
+        return sdf.format(date);
+    }
+
+    /**
+     * 获取观众观看详情列表
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public void getWatcherData(String userLoginId) throws IOException, NoSuchAlgorithmException {
+        //公共参数,填写自己的实际参数
+
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String userId = LiveGlobalConfig.getUserId();
+        String timestamp = String.valueOf(System.currentTimeMillis());
+
+        //业务参数
+        String url = "http://api.polyv.net/live/v4/user/viewlog/detail";
+        String viewerId = "1690850466494";
+        String startDate = "2023-08-01";
+        String endDate = "2023-08-30";
+        String pageNumber = "1";
+        String pageSize = "10";
+
+        //http 调用逻辑
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("viewerId", userLoginId);
+//        requestMap.put("endDate", endDate);
+//        requestMap.put("pageNumber", pageNumber);
+//        requestMap.put("pageSize", pageSize);
+//        requestMap.put("startDate", startDate);
+
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.get(url, requestMap);
+
+        JSONObject responseObject = JSON.parseObject(response);
+
+        if (responseObject.getInteger("code") == 200) {
+            // 提取 data 对象
+            JSONObject data = responseObject.getJSONObject("data");
+
+            // 从 data 对象中提取字段
+            Integer totalItems = data.getInteger("totalItems");
+
+            // 提取 contents 数组
+            JSONArray contents = data.getJSONArray("contents");
+            for (int i = 0; i < contents.size(); i++) {
+                JSONObject content = contents.getJSONObject(i);
+                String idNumber = content.getString("viewerId");
+                String nick = content.getString("nick");
+                String viewType = content.getString("viewType");
+                String sessionId = content.getString("sessionId");
+                Long startTime = content.getLong("startTime");
+                String playDuration = content.getString("playDuration");
+                String s = convertToBeijingTime(startTime);
+                String area = content.getString("area");
+                String ip = content.getString("ip");
+                String browser = content.getString("browser");
+                String param4 = content.getString("param4");
+                String param5 = content.getString("param5");
+
+            }
+        } else {
+            // 处理非200的情况，例如抛出异常或记录错误
+            // ...
+        }
+
+        log.info("测试获取观众观看详情列表成功：{}", response);
+        //do somethings
+
+    }
+
+
+    }

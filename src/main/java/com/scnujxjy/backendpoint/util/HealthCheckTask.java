@@ -68,6 +68,9 @@ public class HealthCheckTask {
     @Resource
     private TutorInformationMapper tutorInformationMapper;
 
+    @Value("${run.checkLivingStatusScan}")
+    private boolean checkLivingStatusScan;
+
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {
         try {

@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -90,6 +91,11 @@ public class CourseScheduleFilterRO implements Serializable {
     String tutorName;
 
     /**
+     * 直播状态
+     */
+    String livingStatus;
+
+    /**
      * 批次
      */
     Long batchIndex;
@@ -109,4 +115,9 @@ public class CourseScheduleFilterRO implements Serializable {
      * 班级名称集合
      */
     private Set<String> classNameSet;
+
+    /**
+     * 行政班别集合
+     */
+    List<String> classNames;
 }

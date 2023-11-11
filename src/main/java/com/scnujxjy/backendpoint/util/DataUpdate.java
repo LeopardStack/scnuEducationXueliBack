@@ -79,7 +79,7 @@ public class DataUpdate {
     private boolean oldDataSynchronizeStatus;
 
     @Transactional(rollbackFor = Exception.class)
-    boolean updateCourseScheduleInfoByVideo(CourseSchedulePO courseSchedulePO, String videoId){
+    public boolean updateCourseScheduleInfoByVideo(CourseSchedulePO courseSchedulePO, String videoId){
         // 获取所有在同一个教学班、同一门课程、同一个时间点的排课记录，即合班一起上的课
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                 .eq(CourseSchedulePO::getTeachingClass, courseSchedulePO.getTeachingClass())
