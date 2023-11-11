@@ -401,7 +401,7 @@ public class VideoStreamUtils {
     public String getAdminSSOLink() throws IOException, NoSuchAlgorithmException {
         String timestamp = String.valueOf(System.currentTimeMillis());
         String token = UUID.randomUUID().toString().replaceAll("-", "");
-        String accountId = StpUtil.getLoginIdAsString().replaceAll("T", "");
+        String accountId = StpUtil.getLoginIdAsString().replaceAll("M", "");
         String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-account-token", accountId);
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", LiveGlobalConfig.getAppId());
