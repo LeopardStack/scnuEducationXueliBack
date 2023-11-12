@@ -56,6 +56,199 @@ public class Test1 {
     @Resource
     MessageSender messageSender;
 
+    @Test
+    public void test0() {
+        try {
+            ArrayList<String> dataCheckLogs = new ArrayList<>();
+//        log.info(msg1);
+            // 获取当前时间
+            String timeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+            // 获取当前的方法名 (需要考虑性能开销)
+            String methodName = new Throwable().getStackTrace()[0].getMethodName();
+
+            // 获取当前的类名
+            String className = this.getClass().getSimpleName();
+
+            String formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统学籍数据的校验");
+            dataCheckLogs.add(formattedMsg);
+
+            int startYear = 2023;
+            int endYear = 2010;
+            boolean allEqual = true;
+            SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+
+            for (int i = startYear; i >= endYear; i--) {
+                Integer integer = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().eq(
+                        StudentStatusPO::getGrade, "" + i
+                ));
+
+                int value_xl = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM STUDENT_VIEW_WITHPIC WHERE NJ='" + i +
+                        "' and bshi not like 'WP%';");
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年旧系统学历教育生数量 " + value_xl + " 新系统学历教育生数量 " +
+                        integer + ((int) value_xl == integer ? "  一致" : "  不同"));
+                dataCheckLogs.add(formattedMsg);
+                if (value_xl != integer) {
+                    allEqual = false;
+
+                    try {
+                        int delete = studentStatusMapper.delete(new LambdaQueryWrapper<StudentStatusPO>().
+                                eq(StudentStatusPO::getGrade, i + ""));
+                        if (studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
+                                eq(StudentStatusPO::getGrade, i + "")) == 0) {
+                            // 成功清除脏数据，同步旧系统最新的数据
+                            oldDataSynchronize.synchronizeStudentStatusData(i, i, true);
+                        }
+
+                    } catch (Exception e) {
+                        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年同步旧系统学籍数据失败 " + e.toString());
+                        dataCheckLogs.add(formattedMsg);
+                    }
+                }
+
+            }
+
+            if (allEqual) {
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的学籍数据完全相等");
+                dataCheckLogs.add(formattedMsg);
+            }
+
+
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统班级信息对比");
+            dataCheckLogs.add(formattedMsg);
+
+            Integer new_class_count = classInformationMapper.selectCount(null);
+            int old_class_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
+            if (new_class_count != old_class_count) {
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 不同");
+                dataCheckLogs.add(formattedMsg);
+            } else {
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 相同");
+                dataCheckLogs.add(formattedMsg);
+            }
+
+
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
+            dataCheckLogs.add(formattedMsg);
+
+            for (int payYear = 2023; payYear >= 2000; payYear--) {
+                Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+                int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
+                if (new_pay_count != old_pay_count) {
+                    formattedMsg = String.format(payYear + "年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+                    dataCheckLogs.add(formattedMsg);
+                    int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+                    oldDataSynchronize.synchronizePaymentInfoData(true, true, String.valueOf(payYear));
+                } else {
+                    formattedMsg = String.format(payYear + "年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+                    dataCheckLogs.add(formattedMsg);
+                }
+            }
+//        Integer new_pay_count = paymentInfoMapper.selectCount(null);
+//        int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW;");
+
+
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
+            dataCheckLogs.add(formattedMsg);
+
+
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
+            dataCheckLogs.add(formattedMsg);
+
+
+            startYear = 2023;
+            endYear = 2015;
+            allEqual = true;
+            for (int i = startYear; i >= endYear; i--) {
+                Integer new_teachingPlans_count1 = courseInformationMapper.selectCount(new LambdaQueryWrapper<CourseInformationPO>().
+                        eq(CourseInformationPO::getGrade, "" + i));
+                String year_c = i + "";
+                year_c = year_c.substring(year_c.length() - 2);
+                int old_teachingPlans_count1 = (int) scnuxljyDatabase.getValue(
+                        "select count(*) from courseDATA where bshi not LIKE 'WP%' and bshi LIKE '" + year_c + "%';");
+
+                if (new_teachingPlans_count1 != old_teachingPlans_count1) {
+                    allEqual = false;
+                    formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i +
+                            " 年，新系统学历教育教学计划数量 " + new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
+                            old_teachingPlans_count1 + " 两者不同");
+                    dataCheckLogs.add(formattedMsg);
+                }
+            }
+            if (allEqual) {
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的教学计划完全相等");
+                dataCheckLogs.add(formattedMsg);
+            } else {
+                // 存在不同，直接将教学计划完全替换
+                try {
+                    oldDataSynchronize.synchronizeTeachingPlansData(true, true);
+                } catch (Exception e) {
+                    formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "清除教学计划并同步旧系统数据失败 " + e.toString());
+                    dataCheckLogs.add(formattedMsg);
+                }
+            }
+
+
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统成绩数量对比");
+            dataCheckLogs.add(formattedMsg);
+
+            startYear = 2023;
+            endYear = 2015;
+            allEqual = true;
+            for (int i = startYear; i >= endYear; i--) {
+                Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                        eq(ScoreInformationPO::getGrade, "" + i));
+
+                int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
+                        "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年，新系统学历教育成绩数量 " +
+                        new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
+                        old_gradeInformation_count + (new_gradeInformation_count != old_gradeInformation_count
+                        ? " 两者不同" : " 两者相同"));
+                dataCheckLogs.add(formattedMsg);
+
+                if (new_gradeInformation_count != old_gradeInformation_count) {
+                    allEqual = false;
+
+                    try {
+                        int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>().
+                                eq(ScoreInformationPO::getGrade, "" + i));
+                        if (scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                                eq(ScoreInformationPO::getGrade, "" + i)) == 0) {
+                            // 清除成绩
+                            oldDataSynchronize.synchronizeGradeInformationData(i, i, true);
+                        }
+                    } catch (Exception e) {
+                        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年清除成绩并同步旧系统成绩" +
+                                "失败 " + e.toString());
+                        dataCheckLogs.add(formattedMsg);
+                    }
+
+                }
+            }
+            if (allEqual) {
+                formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
+                dataCheckLogs.add(formattedMsg);
+            }
+
+            ArrayList<String> checkLogs = calculateStatistics();
+            dataCheckLogs.addAll(checkLogs);
+
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String currentDateTime = LocalDateTime.now().format(formatter);
+            String relativePath = "data_import_error_excel/statistics/";
+            String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
+            oldDataSynchronize.exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
+
+            log.info("新旧系统校验同步结束");
+            log.info("开始记录校验同步之后的新旧系统的数据差异");
+            calculateStatistics();
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
+    }
+
     /**
      * 测试学籍数据同步
       */

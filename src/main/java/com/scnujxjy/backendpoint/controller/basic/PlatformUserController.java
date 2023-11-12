@@ -90,12 +90,19 @@ public class PlatformUserController {
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
 
+
+                // 在 Redis 中更新角色在线人数
+                redisTemplate.opsForValue().increment("onlineCount:" + roleName);
+                redisTemplate.opsForValue().increment("totalOnlineCount");
                 return SaResult.data("成功登录 " + platformUserRO.getUsername())
                         .set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
                     isLogin.getName(), isLogin.getWechatOpenId());
+            // 在 Redis 中更新角色在线人数
+            redisTemplate.opsForValue().increment("onlineCount:" + roleName);
+            redisTemplate.opsForValue().increment("totalOnlineCount");
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
@@ -104,6 +111,13 @@ public class PlatformUserController {
 
     @GetMapping("/logout")
     public SaResult logOut(){
+        // 获取当前用户角色
+        String roleName = StpUtil.getRoleList().get(0);
+
+        // 在 Redis 中更新角色在线人数
+        redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
+        redisTemplate.opsForValue().decrement("totalOnlineCount");
+
         StpUtil.logout();
         return SaResult.ok();
     }
@@ -142,11 +156,17 @@ public class PlatformUserController {
             if(roleName.contains(tmp)){
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
+                // 在 Redis 中更新角色在线人数
+                redisTemplate.opsForValue().increment("onlineCount:" + roleName);
+                redisTemplate.opsForValue().increment("totalOnlineCount");
                 return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
                     isLogin.getName(), isLogin.getWechatOpenId());
+            // 在 Redis 中更新角色在线人数
+            redisTemplate.opsForValue().increment("onlineCount:" + roleName);
+            redisTemplate.opsForValue().increment("totalOnlineCount");
             return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

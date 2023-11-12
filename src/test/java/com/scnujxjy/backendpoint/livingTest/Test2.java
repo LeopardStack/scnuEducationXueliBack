@@ -1,12 +1,17 @@
 package com.scnujxjy.backendpoint.livingTest;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelPlayBackInfoResponse;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +34,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 @Slf4j
@@ -38,6 +45,12 @@ public class Test2 {
 
     @Resource
     private SingleLivingSetting singleLivingSetting;
+
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
+
+    @Resource
+    private VideoStreamRecordsMapper videoStreamRecordsMapper;
 
     /**
      * 获取指定频道 id 下的所有角色信息
@@ -272,6 +285,49 @@ public class Test2 {
         }catch (Exception e){
             log.error(e.toString());
         }
+    }
+
+
+    /**
+     * 分析 videoStreamRecord 表里 有哪些直播间被删除了
+     */
+    @Test
+    public void test11(){
+
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(null);
+        List<VideoStreamRecordPO> videoStreamRecordPOS = new ArrayList<>();
+        for(CourseSchedulePO courseSchedulePO : courseSchedulePOS){
+            String onlinePlatform = courseSchedulePO.getOnlinePlatform();
+            try{
+                VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+                        .eq(VideoStreamRecordPO::getChannelId, Long.parseLong(onlinePlatform)));
+                videoStreamRecordPOS.add(videoStreamRecordPO);
+            }catch (Exception e){
+                log.error(e.toString());
+            }
+
+        }
+
+
+        List<String> uniqueChannelIds = videoStreamRecordPOS.stream()
+                .map(VideoStreamRecordPO::getChannelId) // 将 VideoStreamRecordPO 映射到它的 channelId
+                .distinct() // 去除重复的 channelId
+                .collect(Collectors.toList()); // 收集到一个新的 List 中
+
+        for(String channelID : uniqueChannelIds){
+            try {
+                ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
+                log.info("频道信息包括 " + channelInfoByChannelId);
+                if(channelInfoByChannelId.getCode().equals(200) && channelInfoByChannelId.getSuccess()){
+
+                }else{
+                    log.info("该频道不存在 " + channelID);
+                }
+            }catch (Exception e){
+                log.error("获取 (" + channelID + ") 的频道信息失败 " + e.toString());
+            }
+        }
+
     }
 
 }
