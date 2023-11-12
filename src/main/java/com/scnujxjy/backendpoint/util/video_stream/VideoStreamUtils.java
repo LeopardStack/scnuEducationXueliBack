@@ -270,7 +270,6 @@ public class VideoStreamUtils {
         request.setChannelId(channelId);
         try {
             LiveChannelBasicInfoResponse response = new LiveChannelOperateServiceImpl().getChannelBasicInfo(request);
-            log.info("频道信息：{}", response);
             return videoStreamInverter.liveChannelBasicInfoResponse2ChannelResponseBO(response);
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("获取频道信息失败：{}", request);
@@ -831,7 +830,6 @@ public class VideoStreamUtils {
         requestMap.put("channelId", channelId);
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
         String response = PolyvHttpUtil.get(url, requestMap);
-        log.info("频道信息返回值 \n" + response);
         // 解析响应为 ChannelResponse POJO
         return JSON.parseObject(response, ChannelInfoResponse.class);
     }
