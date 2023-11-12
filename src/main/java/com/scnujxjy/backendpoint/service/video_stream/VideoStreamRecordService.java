@@ -321,7 +321,9 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             return false;
         }
         for (AuthSetting authSetting : channelWatchCondition) {
-            if (Objects.nonNull(authSetting) && StrUtil.equals("direct", authSetting.getAuthType())) {
+            if (Objects.nonNull(authSetting)
+                    && StrUtil.equals("direct", authSetting.getAuthType())
+                    && StrUtil.equals("Y", authSetting.getEnabled())) {
                 return true;
             }
         }

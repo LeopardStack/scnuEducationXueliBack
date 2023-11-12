@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.*;
 import java.util.stream.Collectors;
 
 @SpringBootTest
@@ -316,7 +315,7 @@ public class Test2 {
 
         for(String channelID : uniqueChannelIds){
             try {
-                ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
+                ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfo(channelID);
                 log.info("频道信息包括 " + channelInfoByChannelId);
                 if(channelInfoByChannelId.getCode().equals(200) && channelInfoByChannelId.getSuccess()){
 
