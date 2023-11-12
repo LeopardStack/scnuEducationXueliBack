@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.AuthSetting;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
@@ -27,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -300,5 +303,30 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         }
         return null;
     }
+
+    /**
+     * 检查时候已经打开独立授权
+     *
+     * @param channelId 频道 id
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public Boolean checkDirectOpen(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
+            return false;
+        }
+        List<AuthSetting> channelWatchCondition = videoStreamUtils.getChannelWatchCondition(channelId);
+        if (CollUtil.isEmpty(channelWatchCondition)) {
+            return false;
+        }
+        for (AuthSetting authSetting : channelWatchCondition) {
+            if (Objects.nonNull(authSetting) && StrUtil.equals("direct", authSetting.getAuthType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }

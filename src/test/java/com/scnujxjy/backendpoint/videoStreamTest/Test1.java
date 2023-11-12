@@ -1,8 +1,12 @@
 package com.scnujxjy.backendpoint.videoStreamTest;
 
+import cn.hutool.core.util.RandomUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelDetail;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.AuthSetting;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
@@ -14,6 +18,7 @@ import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
@@ -274,6 +279,46 @@ public class Test1 {
     void testWatch() throws IOException, NoSuchAlgorithmException {
         String link = videoStreamUtils.getIndependentAuthorizationLink("4422426", "440782200111216519", "测试", null);
         log.info("生成的链接为：{}", link);
+    }
+
+    @Test
+    void testGetChannelInfo() throws IOException, NoSuchAlgorithmException {
+        ChannelInfoResponse channelInfoResponse = videoStreamUtils.getChannelInfo("4422426");
+        log.info("频道信息: {}", channelInfoResponse);
+        ChannelDetail channelDetail = channelInfoResponse.getData();
+        log.info("频道详细信息: {}", channelDetail);
+        List<AuthSetting> authSettings = channelDetail.getAuthSettings();
+        for (AuthSetting authSetting : authSettings) {
+            log.info("频道其他设置: {}", authSetting);
+        }
+    }
+
+    @Test
+    void testChannelWatchInfo() throws IOException, NoSuchAlgorithmException {
+        List<AuthSetting> channelWatchCondition = videoStreamUtils.getChannelWatchCondition("4422426");
+        for (AuthSetting authSetting : channelWatchCondition) {
+            log.info("{}", authSetting);
+        }
+    }
+
+    @Test
+    void testCreateChannelWatchInfo() throws IOException, NoSuchAlgorithmException {
+        LiveChannelSettingRequest request = new LiveChannelSettingRequest();
+        request.setChannelId("4422426");
+        ArrayList<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
+        LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting();
+        authSetting.setRank(2)
+                .setEnabled("Y")
+                .setAuthType("direct")
+                .setDirectKey(RandomUtil.randomString(8));
+        authSettings.add(authSetting);
+        request.setAuthSettings(authSettings);
+        Boolean isSuccess = videoStreamUtils.createWatchCondition(request);
+        log.info("{}", isSuccess);
+        List<AuthSetting> channelWatchCondition = videoStreamUtils.getChannelWatchCondition("4422426");
+        for (AuthSetting setting : channelWatchCondition) {
+            log.info("频道其他设置:{}", setting);
+        }
     }
 
 
