@@ -4,6 +4,8 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
@@ -36,6 +38,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Data
@@ -554,6 +557,45 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             int i = this.userUploadsMapper.updateById(this.userUploadsPO);
             log.info("上传消息已更新 " + i);
         }
+
+        //获取当前最大的批次值
+        long MaxBitch = courseScheduleMapper.selectMaxBitch();
+        int updateCount=0;
+        //获取当前批次为空的所有排课表。其实就是刚导入的排课表
+        QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
+        courseQueryWrapper.and(i -> i.isNull("batch_index").or().eq("batch_index", ""));
+        List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
+
+        // 根据课程名字和老师获取所有的分组groupedLists
+        Map<String, List<CourseSchedulePO>> groupedMap = schedulePOList.stream()
+                .collect(Collectors.groupingBy(schedulePO -> schedulePO.getCourseName() + schedulePO.getTeacherUsername()));
+        List<List<CourseSchedulePO>> groupedLists = new ArrayList<>(groupedMap.values());
+
+        for (List<CourseSchedulePO> courseSchedulePOList  :groupedLists) {
+            //根据时间和日期获取最后的分组list
+            Map<String, List<CourseSchedulePO>>  listMap = courseSchedulePOList.stream()
+                    .collect(Collectors.groupingBy(schedulePO -> schedulePO.getTeachingDate() + schedulePO.getTeachingTime()));
+
+            List<List<CourseSchedulePO>> list = new ArrayList<>(listMap.values());
+
+            for (List<CourseSchedulePO> schedulePOS:list) {
+                MaxBitch++;
+                for (CourseSchedulePO courseSchedulePO:schedulePOS) {
+                    UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                    updateWrapper.set("batch_index", MaxBitch)
+                            .eq("id", courseSchedulePO.getId());
+                    int update = courseScheduleMapper.update(null, updateWrapper);
+                    updateCount=updateCount+update;
+                }
+
+            }
+
+        }
+
+        if (schedulePOList.size()==updateCount){
+            log.info("更新该排课表导入批次id成功");
+        }
+
 
 
     }

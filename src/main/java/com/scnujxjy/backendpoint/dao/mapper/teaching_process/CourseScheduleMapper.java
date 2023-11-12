@@ -626,5 +626,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      */
     List<ScheduleCoursesInformationBO> getScheduleCoursesInformation(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO entity);
 
+    @Select("SELECT MAX(batch_index) FROM course_schedule")
+    long selectMaxBitch();
 
 }
