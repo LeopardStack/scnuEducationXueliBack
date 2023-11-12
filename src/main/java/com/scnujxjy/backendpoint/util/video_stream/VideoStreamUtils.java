@@ -270,7 +270,7 @@ public class VideoStreamUtils {
         request.setChannelId(channelId);
         try {
             LiveChannelBasicInfoResponse response = new LiveChannelOperateServiceImpl().getChannelBasicInfo(request);
-            log.info("频道信息：{}", response);
+//            log.info("频道信息：{}", response);
             return videoStreamInverter.liveChannelBasicInfoResponse2ChannelResponseBO(response);
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("获取频道信息失败：{}", request);
