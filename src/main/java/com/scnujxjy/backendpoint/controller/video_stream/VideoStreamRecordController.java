@@ -391,20 +391,29 @@ public class VideoStreamRecordController {
             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordService.getBaseMapper().selectById(onlinePlatform);
             String channelId = videoStreamRecordPO.getChannelId();
 
-            boolean isExist = true;
-            if (channelId == null) {
-                return SaResult.error("获取直播失败，频道不存在").setCode(2000);
+
+            String userId = StpUtil.getLoginIdAsString();
+            PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new
+                    LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUsername, userId));
+            if (Objects.isNull(platformUserPO)) {
+                return SaResult.code(2000).setData("用户信息为空");
             }
-            ChannelResponseBO channelBasicInfo = null;
-            try {
-                channelBasicInfo = videoStreamUtils.getChannelBasicInfo(channelId);
-                if (channelBasicInfo.getChannelId() != null) {
-                    return SaResult.ok(PolyvEnum.WATCH_URL.getKey() + channelId);
+            // 非学生nickname=身份-name
+            String nickname = platformUserPO.getName();
+            if (CollUtil.isNotEmpty(StpUtil.getRoleList()) && !StpUtil.getRoleList().contains(STUDENT.getRoleName())) {
+                nickname = StpUtil.getRoleList().get(0);
+                if (StrUtil.isNotBlank(platformUserPO.getName())) {
+                    nickname += "-" + platformUserPO.getName();
                 }
-            } catch (Exception e) {
-                log.info("获取观众链接 保利威返回值 " + channelBasicInfo);
             }
-            return SaResult.error("获取直播失败，请联系管理员").setCode(2000);
+            try {
+                String url = videoStreamUtils.getIndependentAuthorizationLink(channelId, String.valueOf(userId), nickname, platformUserPO.getAvatarImagePath());
+                return SaResult.data(url);
+            } catch (IOException | NoSuchAlgorithmException e) {
+                return SaResult.code(2000).setData("获取直播间信息失败");
+            }
+
         } catch (Exception e) {
             log.error("获取观众链接失败 " + e.toString());
             return SaResult.error("获取直播失败，请联系管理员").setCode(2000);
