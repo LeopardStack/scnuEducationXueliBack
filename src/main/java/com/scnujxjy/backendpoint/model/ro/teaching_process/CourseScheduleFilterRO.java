@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.Set;
+import java.util.List;
 
 /**
  * 排课表课程筛选信息
@@ -90,6 +90,11 @@ public class CourseScheduleFilterRO implements Serializable {
     String tutorName;
 
     /**
+     * 直播状态
+     */
+    String livingStatus;
+
+    /**
      * 批次
      */
     Long batchIndex;
@@ -105,8 +110,10 @@ public class CourseScheduleFilterRO implements Serializable {
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     Date teachingEndDate;
+
+
     /**
-     * 班级名称集合
+     * 行政班别集合
      */
-    private Set<String> classNameSet;
+    List<String> classNames;
 }

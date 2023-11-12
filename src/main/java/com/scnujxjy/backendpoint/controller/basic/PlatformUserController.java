@@ -16,6 +16,7 @@ import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
@@ -45,6 +47,9 @@ public class PlatformUserController {
 
     @Resource
     private PlatformRoleService platformRoleService;
+
+    @Resource
+    protected RedisTemplate<String, Object> redisTemplate;
 
 
     /**
@@ -242,40 +247,63 @@ public class PlatformUserController {
      * @return
      */
     @GetMapping("/getPlatformBasicInfo")
-    public SaResult getPlatFormInfo(){
-        // 获取所有已登录的会话id
-        List<String> sessionIdList = StpUtil.searchSessionId("", 0, -1, false);
+    public SaResult getPlatFormInfo() {
+        // 尝试获取锁
+        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent("platformInfoLock", "locked", 10, TimeUnit.MINUTES);
+        if (lockAcquired == null || !lockAcquired) {
+            // 未能获取锁，返回正在计算中的提示
+            return SaResult.error("计算正在进行中，请稍后重试");
+        }
 
-        List<TokenSign> tokenSignList = new ArrayList<>();
-        HashMap<String, Integer> roleLoginCount = new HashMap<>();
-        for (String sessionId : sessionIdList) {
+        try {
+            // 首先尝试从 Redis 获取缓存的结果
+            HashMap<String, Integer> cachedResult = (HashMap<String, Integer>) redisTemplate.opsForValue().get("platformInfoResult");
+            if (cachedResult != null) {
+                // 如果缓存中有结果，直接返回该结果
+                return SaResult.ok().set("roleLoginCount", cachedResult);
+            }
 
-            // 根据会话id，查询对应的 SaSession 对象，此处一个 SaSession 对象即代表一个登录的账号
-            SaSession session = StpUtil.getSessionBySessionId(sessionId);
+            // 进行计算逻辑
+            List<String> sessionIdList = StpUtil.searchSessionId("", 0, -1, false);
+            List<TokenSign> tokenSignList = new ArrayList<>();
+            HashMap<String, Integer> roleLoginCount = new HashMap<>();
+            for (String sessionId : sessionIdList) {
 
-            // 查询这个账号都在哪些设备登录了，依据上面的示例，账号A 的 tokenSign 数量是 3，账号B 的 tokenSign 数量是 2
-            tokenSignList = session.getTokenSignList();
-            log.info("获取 会话 tokenValue List " + tokenSignList);
-            for(TokenSign tokenSign: tokenSignList){
-                String loginId = (String) StpUtil.getLoginIdByToken(tokenSign.getValue());
-                List<String> roleList = StpUtil.getRoleList(loginId);
-                if(roleList.isEmpty()){
-                    log.error("该 loginId " + loginId + " 不在系统内");
-                }else{
-                    if(roleLoginCount.containsKey(roleList.get(0))){
-                        Integer i = roleLoginCount.get(roleList.get(0));
-                        roleLoginCount.put(roleList.get(0), i + 1);
+                // 根据会话id，查询对应的 SaSession 对象，此处一个 SaSession 对象即代表一个登录的账号
+                SaSession session = StpUtil.getSessionBySessionId(sessionId);
+
+                // 查询这个账号都在哪些设备登录了，依据上面的示例，账号A 的 tokenSign 数量是 3，账号B 的 tokenSign 数量是 2
+                tokenSignList = session.getTokenSignList();
+                log.info("获取 会话 tokenValue List " + tokenSignList);
+                for(TokenSign tokenSign: tokenSignList){
+                    String loginId = (String) StpUtil.getLoginIdByToken(tokenSign.getValue());
+                    List<String> roleList = StpUtil.getRoleList(loginId);
+                    if(roleList.isEmpty()){
+                        log.error("该 loginId " + loginId + " 不在系统内");
                     }else{
-                        roleLoginCount.put(roleList.get(0), 1);
+                        if(roleLoginCount.containsKey(roleList.get(0))){
+                            Integer i = roleLoginCount.get(roleList.get(0));
+                            roleLoginCount.put(roleList.get(0), i + 1);
+                        }else{
+                            roleLoginCount.put(roleList.get(0), 1);
+                        }
+                        log.info("用户 " + loginId + "  在线 " + " 角色信息为 " + roleList);
+
                     }
-                    log.info("用户 " + loginId + "  在线 " + " 角色信息为 " + roleList);
 
                 }
-
             }
+
+            // 计算完成后，将结果存储到 Redis
+            redisTemplate.opsForValue().set("platformInfoResult", roleLoginCount, 10, TimeUnit.MINUTES);
+            return SaResult.ok().set("roleLoginCount", roleLoginCount);
+        } finally {
+            // 释放锁
+            redisTemplate.delete("platformInfoLock");
         }
-        return SaResult.ok().setData(tokenSignList).set("roleLoginCount", roleLoginCount);
     }
+
+
 
 }
 

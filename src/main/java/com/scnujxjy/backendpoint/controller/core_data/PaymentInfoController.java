@@ -282,6 +282,8 @@ public class PaymentInfoController {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, managerFilter);
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, teachingPointFilter);
                 }
 
                 // 如果获取的数据不为空，则放入Redis

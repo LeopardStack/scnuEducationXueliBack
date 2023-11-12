@@ -1,183 +1,42 @@
 package com.scnujxjy.backendpoint.util.filter;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
-import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
-import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
-import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
-import com.scnujxjy.backendpoint.inverter.teaching_process.CourseInformationInverter;
-import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
-import com.scnujxjy.backendpoint.inverter.teaching_process.ScoreInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
-import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
-import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
+import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Component
 @Slf4j
 public class TeachingPointFilter extends AbstractFilter {
-    @Resource
-    private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
-
-    @Resource
-    private TeachingPointInformationService teachingPointInformationService;
-
-    @Resource
-    private ClassInformationMapper classInformationMapper;
-
-    @Resource
-    private StudentStatusMapper studentStatusMapper;
-
-    @Resource
-    private ScoreInformationMapper scoreInformationMapper;
-
-    @Resource
-    private ScoreInformationInverter scoreInformationInverter;
-
-    @Resource
-    private StudentStatusInverter studentStatusInverter;
-
-    @Resource
-    private PersonalInfoMapper personalInfoMapper;
-
-    @Resource
-    private GraduationInfoMapper graduationInfoMapper;
-
-    @Resource
-    private PaymentInfoMapper paymentInfoMapper;
-
-    @Resource
-    private PaymentInfoInverter paymentInfoInverter;
-
-    @Resource
-    private CourseInformationInverter courseInformationInverter;
-
-    @Resource
-    private CourseScheduleInverter courseScheduleInverter;
 
 
-    /**
-     * 根据教学点查询班级信息；
-     * 条件查询、分页查询；
-     * 筛选条件：行政班别（班级名称）、年级、学院名称、专业名称、层次、学习形式
-     *
-     * @param studentStatusFilterRO 传递的筛选条件参数
-     * @return 班级信息结果
-     */
-    private List<ClassInformationPO> selectTeachingPointClassInformation(StudentStatusFilterRO studentStatusFilterRO) {
-        if (Objects.isNull(studentStatusFilterRO)) {
-            studentStatusFilterRO = new StudentStatusFilterRO();
-        }
-        // 从Token中获取到UserId，根据UserId定位教学点TeachingPointId；
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
-        if (StrUtil.isBlank(loginId)) {
-            return null;
-        }
-        TeachingPointAdminInformationPO teachingPointAdminInformationPO = teachingPointAdminInformationMapper.selectOne(Wrappers.<TeachingPointAdminInformationPO>lambdaQuery().eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
-        if (Objects.isNull(teachingPointAdminInformationPO) || StrUtil.isBlank(teachingPointAdminInformationPO.getTeachingPointId())) {
-            return null;
-        }
-        TeachingPointInformationVO teachingPointInformationVO = teachingPointInformationService.detailById(teachingPointAdminInformationPO.getTeachingPointId());
-        if (Objects.isNull(teachingPointInformationVO) || StrUtil.isBlank(teachingPointInformationVO.getAlias())) {
-            return null;
-        }
-        // 根据TeachingPointId定位教学点信息Alias，筛选：行政班别、年级、学院名称、专业名称、层次、学习形式、
-        List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(Wrappers.<ClassInformationPO>lambdaQuery()
-                .like(ClassInformationPO::getClassName, teachingPointInformationVO.getAlias())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getClassName()), ClassInformationPO::getClassName, studentStatusFilterRO.getClassName())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getGrade()), ClassInformationPO::getGrade, studentStatusFilterRO.getGrade())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getCollege()), ClassInformationPO::getCollege, studentStatusFilterRO.getCollege())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getMajorName()), ClassInformationPO::getMajorName, studentStatusFilterRO.getMajorName())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getLevel()), ClassInformationPO::getLevel, studentStatusFilterRO.getLevel())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getStudyForm()), ClassInformationPO::getStudyForm, studentStatusFilterRO.getStudyForm()));
-        if (CollUtil.isEmpty(classInformationPOS)) {
-            return null;
-        }
-        return classInformationPOS;
-    }
-
-    /**
-     * 条件筛选指定教学点学生信息；
-     * 从Token中获取到UserId，根据UserId定位教学点TeachingPointId；
-     * 根据TeachingPointId定位教学点信息Alias；
-     * 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
-     * 通过ClassIdentifier筛选出所有的学生信息；
-     *
-     * @param studentStatusFilterRO 条件查询参数，筛选项：学号、考生号、证件号码、学制、学习状态
-     * @return 查询指定教学点、筛选后的学生信息
-     */
-    private List<StudentStatusVO> selectTeachingPointStudent(StudentStatusFilterRO studentStatusFilterRO) {
-        if (Objects.isNull(studentStatusFilterRO)) {
-            studentStatusFilterRO = new StudentStatusFilterRO();
-        }
-        // 查询指定教学点的班级信息
-        List<ClassInformationPO> classInformationPOS = selectTeachingPointClassInformation(studentStatusFilterRO);
-        if (CollUtil.isEmpty(classInformationPOS)) {
-            return null;
-        }
-        // 使用Alias在班级信息ClassName中模糊匹配班级信息ClassIdentifier；
-        Map<String, ClassInformationPO> classIdentifier2ClassInformationMap = classInformationPOS.stream()
-                .collect(Collectors.toMap(ClassInformationPO::getClassIdentifier, Function.identity(), (key1, key2) -> key2));
-        Set<String> classInformationIdentifierSet = classIdentifier2ClassInformationMap.keySet();
-        if (CollUtil.isEmpty(classInformationIdentifierSet)) {
-            return null;
-        }
-        // 通过ClassIdentifier筛选出所有的学生信息，筛选学号
-        LambdaQueryWrapper<StudentStatusPO> wrapper = Wrappers.<StudentStatusPO>lambdaQuery()
-                .in(StudentStatusPO::getClassIdentifier, classInformationIdentifierSet)
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getStudentNumber()), StudentStatusPO::getStudentNumber, studentStatusFilterRO.getStudentNumber())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getAdmissionNumber()), StudentStatusPO::getAdmissionNumber, studentStatusFilterRO.getAdmissionNumber())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getIdNumber()), StudentStatusPO::getIdNumber, studentStatusFilterRO.getIdNumber())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getAcademicStatus()), StudentStatusPO::getAcademicStatus, studentStatusFilterRO.getAcademicStatus())
-                .eq(StrUtil.isNotBlank(studentStatusFilterRO.getStudyDuration()), StudentStatusPO::getStudyDuration, studentStatusFilterRO.getStudyDuration());
-        List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(wrapper);
-        if (CollUtil.isEmpty(studentStatusPOS)) {
-            return null;
-        }
-        List<StudentStatusVO> studentStatusVOS = studentStatusPOS.stream()
-                .map(ele -> {
-                    StudentStatusVO studentStatusVO = studentStatusInverter.po2VO(ele);
-                    // 填充班级名
-                    studentStatusVO.setClassName(classIdentifier2ClassInformationMap.getOrDefault(studentStatusVO.getClassIdentifier(), ClassInformationPO.builder().className("未知班级").build()).getClassName());
-                    return studentStatusVO;
-                }).collect(Collectors.toList());
-        return studentStatusVOS;
-    }
-
-    /**
-     * 分页条件查询指定教学点学生成绩；
-     *
-     * @param scoreInformationFilterROPageRO 分页条件查询参数，筛选项：学号、课程名称
-     * @return 分页条件查询后的学生成绩
-     */
-    public FilterDataVO<ScoreInformationVO> filterGradeInfo(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO) {
+    private Set<String> getTeachingPointClassNameSet() {
         String loginId = StpUtil.getLoginIdAsString().replace("M", "");
         if (StrUtil.isBlank(loginId)) {
             return null;
@@ -193,6 +52,17 @@ public class TeachingPointFilter extends AbstractFilter {
             String alias = teachingPointInformationPO.getAlias();
             classNameSet.add(alias);
         }
+        return classNameSet;
+    }
+
+    /**
+     * 分页条件查询指定教学点学生成绩；
+     *
+     * @param scoreInformationFilterROPageRO 分页条件查询参数，筛选项：学号、课程名称
+     * @return 分页条件查询后的学生成绩
+     */
+    public FilterDataVO<ScoreInformationVO> filterGradeInfo(PageRO<ScoreInformationFilterRO> scoreInformationFilterROPageRO) {
+        Set<String> classNameSet = getTeachingPointClassNameSet();
         scoreInformationFilterROPageRO.getEntity().setClassNameSet(classNameSet);
         Long count = scoreInformationMapper.getTeachingPointStudentGradeInfoByFilterCount(scoreInformationFilterROPageRO.getEntity());
         List<ScoreInformationVO> scoreInformationVOS = scoreInformationMapper.getTeachingPointStudentGradeInfoByFilter(scoreInformationFilterROPageRO.getEntity(),
@@ -254,21 +124,7 @@ public class TeachingPointFilter extends AbstractFilter {
      */
     @Override
     public FilterDataVO<PaymentInfoVO> filterPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
-        if (StrUtil.isBlank(loginId)) {
-            return null;
-        }
-        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
-        Set<String> classNameSet = new HashSet<>();
-        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
-        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
-            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
-            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
-            String alias = teachingPointInformationPO.getAlias();
-            classNameSet.add(alias);
-        }
+        Set<String> classNameSet = getTeachingPointClassNameSet();
         paymentInfoFilterROPageRO.getEntity().setClassNameSet(classNameSet);
         List<PaymentInfoVO> paymentInfoVOS = paymentInfoMapper.getTeachingPointStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity(),
                 paymentInfoFilterROPageRO.getPageSize(),
@@ -287,21 +143,7 @@ public class TeachingPointFilter extends AbstractFilter {
      */
     @Override
     public FilterDataVO<CourseInformationVO> filterCourseInformation(PageRO<CourseInformationRO> courseInformationROPageRO) {
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
-        if (StrUtil.isBlank(loginId)) {
-            return null;
-        }
-        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
-        Set<String> classNameSet = new HashSet<>();
-        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
-        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
-            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
-            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
-            String alias = teachingPointInformationPO.getAlias();
-            classNameSet.add(alias);
-        }
+        Set<String> classNameSet = getTeachingPointClassNameSet();
         courseInformationROPageRO.getEntity().setClassNameSet(classNameSet);
         List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectTeachingPointByFilterAndPage(courseInformationROPageRO.getEntity(),
                 courseInformationROPageRO.getPageSize(),
@@ -316,23 +158,10 @@ public class TeachingPointFilter extends AbstractFilter {
      * @param courseScheduleFilterROPageRO 排课表分页条件查询参数
      * @return 分页条件查询指定教学点排课信息结果
      */
-    public FilterDataVO<SchedulesVO> filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
-        if (StrUtil.isBlank(loginId)) {
-            return null;
-        }
-        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
-        Set<String> classNameSet = new HashSet<>();
-        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
-        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
-            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
-            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
-            String alias = teachingPointInformationPO.getAlias();
-            classNameSet.add(alias);
-        }
-        courseScheduleFilterROPageRO.getEntity().setClassNameSet(classNameSet);
+    public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        Set<String> classNameSet = getTeachingPointClassNameSet();
+        List<String> classNameList = new ArrayList<>(classNameSet);
+        courseScheduleFilterROPageRO.getEntity().setClassNames((classNameList));
         List<SchedulesVO> schedulesVOS = courseScheduleMapper.selectTeachingPointSchedulesInformation(courseScheduleFilterROPageRO.getEntity(),
                 courseScheduleFilterROPageRO.getPageSize(),
                 courseScheduleFilterROPageRO.getPageSize() * (courseScheduleFilterROPageRO.getPageNumber() - 1));
@@ -340,5 +169,260 @@ public class TeachingPointFilter extends AbstractFilter {
         return new FilterDataVO<>(schedulesVOS, count);
     }
 
+    /**
+     * 获取教学点学生选择参数
+     *
+     * @return
+     */
+    @Override
+    public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
+        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs();
+        StudentStatusFilterRO studentStatusFilterRO = new StudentStatusFilterRO();
+        studentStatusFilterRO.setClassNames(getTeachingPointClassNameSet());
+        List<String> distinctGrades = studentStatusMapper.getDistinctGrades(studentStatusFilterRO);
+        List<String> majorNames = studentStatusMapper.getDistinctMajorNames(studentStatusFilterRO);
+        List<String> levels = studentStatusMapper.getDistinctLevels(studentStatusFilterRO);
+        List<String> studyForms = studentStatusMapper.getDistinctStudyForms(studentStatusFilterRO);
+        List<String> classNames = studentStatusMapper.getDistinctClassNames(studentStatusFilterRO);
+        List<String> studyDurations = studentStatusMapper.getDistinctStudyDurations(studentStatusFilterRO);
+        List<String> academicStatuss = studentStatusMapper.getDistinctAcademicStatuss(studentStatusFilterRO);
+
+        studentStatusSelectArgs.setGrades(distinctGrades);
+        studentStatusSelectArgs.setMajorNames(majorNames);
+        studentStatusSelectArgs.setLevels(levels);
+        studentStatusSelectArgs.setClassNames(classNames);
+        studentStatusSelectArgs.setStudyForms(studyForms);
+        studentStatusSelectArgs.setStudyDurations(studyDurations);
+        studentStatusSelectArgs.setAcademicStatus(academicStatuss);
+
+        return studentStatusSelectArgs;
+    }
+
+    /**
+     * 获取学生缴费信息筛选选项
+     *
+     * @return
+     */
+    @Override
+    public PaymentInformationSelectArgs filterPaymentInformationSelectArgs() {
+        PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
+        PaymentInfoFilterRO filter = new PaymentInfoFilterRO();
+        filter.setClassNameSet(getTeachingPointClassNameSet());
+        ExecutorService executor = Executors.newFixedThreadPool(7); // 8 代表你有8个查询
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctTeachingPoints(filter));
+        Future<List<String>> distinctAcademicYearsFuture = executor.submit(() -> paymentInfoMapper.getDistinctAcademicYears(filter));
+
+        try {
+            paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            paymentInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            paymentInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
+            paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            paymentInformationSelectArgs.setAcademicYears(distinctAcademicYearsFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return paymentInformationSelectArgs;
+    }
+
+    /**
+     * 获取学生成绩缴费筛选
+     *
+     * @return
+     */
+    @Override
+    public ScoreInformationSelectArgs filterScoreInformationSelectArgs() {
+        ScoreInformationSelectArgs scoreInformationSelectArgs = new ScoreInformationSelectArgs();
+        ScoreInformationFilterRO filter = new ScoreInformationFilterRO();
+        filter.setClassNameSet(getTeachingPointClassNameSet());
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> scoreInformationMapper.getDistinctGrades(filter));
+        Future<List<String>> majorNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctMajorNames(filter));
+        Future<List<String>> levelsFuture = executor.submit(() -> scoreInformationMapper.getDistinctLevels(filter));
+        Future<List<String>> studyFormsFuture = executor.submit(() -> scoreInformationMapper.getDistinctStudyForms(filter));
+        Future<List<String>> classNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctClassNames(filter));
+        Future<List<String>> courseNamesFuture = executor.submit(() -> scoreInformationMapper.getDistinctCourseNames(filter));
+        Future<List<String>> statusesFuture = executor.submit(() -> scoreInformationMapper.getDistinctStatus(filter));
+
+        try {
+            scoreInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            scoreInformationSelectArgs.setMajorNames(majorNamesFuture.get());
+            scoreInformationSelectArgs.setLevels(levelsFuture.get());
+            scoreInformationSelectArgs.setStudyForms(studyFormsFuture.get());
+            scoreInformationSelectArgs.setClassNames(classNamesFuture.get());
+            scoreInformationSelectArgs.setCourseNames(courseNamesFuture.get());
+            scoreInformationSelectArgs.setStatuses(statusesFuture.get());
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return scoreInformationSelectArgs;
+    }
+
+    /**
+     * 获取教学计划筛选项
+     *
+     * @return
+     */
+    @Override
+    public CourseInformationSelectArgs filterCourseInformationSelectArgs() {
+        CourseInformationSelectArgsManagerZero courseInformationSelectArgs = new CourseInformationSelectArgsManagerZero();
+        Set<String> classNameSet = getTeachingPointClassNameSet();
+        List<String> grades = courseInformationMapper.selectDistinctGrades(null, classNameSet);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(null, classNameSet);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(null, classNameSet);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(null, classNameSet);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(null, classNameSet);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(null, classNameSet);
+        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames(classNameSet);
+
+        courseInformationSelectArgs.setGrades(grades);
+        courseInformationSelectArgs.setMajorNames(majorNames);
+        courseInformationSelectArgs.setLevels(levels);
+        courseInformationSelectArgs.setCourseNames(courseNames);
+        courseInformationSelectArgs.setStudyForms(studyForms);
+        courseInformationSelectArgs.setClassNames(classNames);
+        courseInformationSelectArgs.setCollegeNames(collegeNames);
+        return courseInformationSelectArgs;
+    }
+
+    /**
+     * 获取排课表明细筛选项
+     *
+     * @return
+     */
+    @Override
+    public ScheduleCourseInformationSelectArgs filterScheduleCourseInformationSelectArgs() {
+
+        ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
+        CourseScheduleFilterRO filter = new CourseScheduleFilterRO();
+        Set<String> classNameSet = getTeachingPointClassNameSet();
+        List<String> classNameList = new ArrayList<>(classNameSet);
+
+        filter.setClassNames(classNameList);
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> courseScheduleMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> courseScheduleMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> courseScheduleMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctMajorNames(filter));
+        Future<List<String>> distinctTeachingClassesFuture = executor.submit(() -> courseScheduleMapper.getDistinctTeachingClasses(filter));
+        Future<List<String>> distinctCourseNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctCourseNames(filter));
+
+        try {
+            scheduleCourseInformationSelectArgs.setGrades(distinctGradesFuture.get());
+
+            scheduleCourseInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            scheduleCourseInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            scheduleCourseInformationSelectArgs.setAdminClassNames(distinctClassNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            scheduleCourseInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setTeachingClasses(distinctTeachingClassesFuture.get());
+            scheduleCourseInformationSelectArgs.setCourseNames(distinctCourseNamesFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return scheduleCourseInformationSelectArgs;
+    }
+
+
+
+    /**
+     * 为继续教育学院学历教育部获取班级信息
+     *
+     * @param classInformationFilterROPageRO 班级筛选参数
+     * @return
+     */
+    @Override
+    public FilterDataVO filterClassInfo(PageRO<ClassInformationFilterRO> classInformationFilterROPageRO) {
+        // 设置管理的班级信息
+        Set<String> classNameSet = getTeachingPointClassNameSet();
+        List<String> classNameList = new ArrayList<>(classNameSet);
+        classInformationFilterROPageRO.getEntity().setClassNames(classNameList);
+
+        FilterDataVO<ClassInformationVO> classInformationVOFilterDataVO = new FilterDataVO<>();
+        log.info(StpUtil.getLoginId() + " 查询班级的参数是 " + classInformationFilterROPageRO);
+        List<ClassInformationVO> classInformationVOList = classInformationMapper.getClassInfoByFilter(
+                classInformationFilterROPageRO.getEntity(),
+                classInformationFilterROPageRO.getPageSize(),
+                (classInformationFilterROPageRO.getPageNumber() - 1) * classInformationFilterROPageRO.getPageSize()
+        );
+        long countStudentPayInfoByFilter = classInformationMapper.getCountClassInfoByFilter(classInformationFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        classInformationVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        classInformationVOFilterDataVO.setData(classInformationVOList);
+
+        return classInformationVOFilterDataVO;
+    }
+
+    /**
+     * 采用线程池技术，提高 SQL 查询筛选参数效率
+     * 获取班级数据筛选参数
+     *
+     * @return
+     */
+    @Override
+    @LogExecutionTime
+    public ClassInformationSelectArgs filterClassInformationSelectArgs() {
+        // 设置班级信息
+
+        ClassInformationSelectArgs classInformationSelectArgs = new ClassInformationSelectArgs();
+        Set<String> classNameSet = getTeachingPointClassNameSet();
+        List<String> classNameList = new ArrayList<>(classNameSet);
+        ClassInformationFilterRO filter = new ClassInformationFilterRO();
+        filter.setClassNames(classNameList);
+
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> classInformationMapper.getDistinctGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> classInformationMapper.getDistinctLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> classInformationMapper.getDistinctStudyForms(filter));
+        Future<List<String>> distinctClassNamesFuture = executor.submit(() -> classInformationMapper.getDistinctClassNames(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> classInformationMapper.getDistinctTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> classInformationMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> classInformationMapper.getDistinctMajorNames(filter));
+        Future<List<String>> distinctStudyPeriodsFuture = executor.submit(() -> classInformationMapper.getDistinctStudyPeriods(filter));
+
+        try {
+            classInformationSelectArgs.setGrades(distinctGradesFuture.get());
+
+            classInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            classInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            classInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
+            classInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            classInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            classInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
+            classInformationSelectArgs.setStudyDurations(distinctStudyPeriodsFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return classInformationSelectArgs;
+    }
 
 }

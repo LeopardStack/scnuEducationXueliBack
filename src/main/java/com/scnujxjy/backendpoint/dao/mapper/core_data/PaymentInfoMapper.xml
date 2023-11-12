@@ -97,6 +97,12 @@
 
         <include refid="commonJoin"/>
         WHERE 1=1
+        <if test='entity.classNameSet != null and entity.classNameSet.size() != 0'>
+            AND ci.class_name IN
+            <foreach collection='entity.classNameSet' item='className' open='(' close=')' separator=','>
+                #{className}
+            </foreach>
+        </if>
         <include refid="commonFilters"/>
     </select>
 

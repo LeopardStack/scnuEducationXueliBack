@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformati
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -48,6 +48,8 @@ public class ClassInformationController {
 
     @Resource
     private ManagerFilter managerFilter;
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
 
     @Resource
     private MessageSender messageSender;
@@ -205,6 +207,22 @@ public class ClassInformationController {
                     if (Objects.isNull(filterDataVO)) {
                         return SaResult.error("未找到任何班级信息");
                     }
+                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的班级信息
+                    FilterDataVO filterDataVO1 = null;
+                    filterDataVO1 = classInformationService.allPageQueryPayInfoFilter(classInformationFilterROPageRO, teachingPointFilter);
+                    // 创建并返回分页信息
+                    filterDataVO = new PageVO<>(filterDataVO1.getData());
+                    filterDataVO.setTotal(filterDataVO1.getTotal());
+                    filterDataVO.setCurrent(classInformationFilterROPageRO.getPageNumber());
+                    filterDataVO.setSize(classInformationFilterROPageRO.getPageSize());
+                    filterDataVO.setPages((long) Math.ceil((double) filterDataVO1.getData().size()
+                            / classInformationFilterROPageRO.getPageSize()));
+
+                    // 数据校验
+                    if (Objects.isNull(filterDataVO)) {
+                        return SaResult.error("未找到任何班级信息");
+                    }
                 }
 
                 // 如果获取的数据不为空，则放入Redis
@@ -246,6 +264,8 @@ public class ClassInformationController {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, managerFilter);
+                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, teachingPointFilter);
                 }
 
                 // 如果获取的数据不为空，则放入Redis

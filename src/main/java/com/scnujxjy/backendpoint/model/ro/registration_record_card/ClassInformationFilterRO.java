@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.List;
+
 @Builder
 @AllArgsConstructor
 @Data
@@ -51,4 +53,9 @@ public class ClassInformationFilterRO {
      * 专业名称
      */
     private String majorName;
+
+    /**
+     * 班级名称
+     */
+    private List<String>  classNames;
 }

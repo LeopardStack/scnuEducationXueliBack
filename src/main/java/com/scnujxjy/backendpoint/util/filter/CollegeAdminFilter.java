@@ -9,6 +9,7 @@ import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
@@ -26,17 +27,16 @@ import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
-import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -53,7 +53,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         return data;
     }
 
-    private CollegeInformationPO getCollegeName(){
+    private CollegeInformationPO getCollegeName() {
         String loginId = (String) StpUtil.getLoginId();
         if (StrUtil.isBlank(loginId)) {
             return null;
@@ -98,7 +98,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
         List<TeacherCourseScheduleVO> courseSchedulePOS = courseScheduleMapper.getCourseSchedulesByConditions(collegeInformationPO.getCollegeName(),
                 courseScheduleFilter);
-        long total =  courseScheduleMapper.countCourseSchedulesByConditions(collegeInformationPO.getCollegeName(),
+        long total = courseScheduleMapper.countCourseSchedulesByConditions(collegeInformationPO.getCollegeName(),
                 courseScheduleFilter);
         courseScheduleFilterDataVO.setCourseSchedulePOS(courseSchedulePOS);
         courseScheduleFilterDataVO.setTotal(total);
@@ -108,6 +108,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 筛选学籍数据
+     *
      * @param studentStatusFilter 获取学籍数据的筛选数据
      * @return
      */
@@ -134,8 +135,8 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 使用 courseInformationMapper 获取数据
         List<StudentStatusAllVO> studentStatusVOS = studentStatusMapper.selectByFilterAndPageByManager0(studentStatusFilter.getEntity(),
                 studentStatusFilter.getPageSize(),
-                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() -1));
-        long total =  studentStatusMapper.getCountByFilterAndPageManager0(studentStatusFilter.getEntity());
+                studentStatusFilter.getPageSize() * (studentStatusFilter.getPageNumber() - 1));
+        long total = studentStatusMapper.getCountByFilterAndPageManager0(studentStatusFilter.getEntity());
         studentStatusVOFilterDataVO.setData(studentStatusVOS);
         studentStatusVOFilterDataVO.setTotal(total);
 
@@ -144,12 +145,13 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取学籍数据筛选参数
+     *
      * @return
      */
     @Override
     @LogExecutionTime
     public StudentStatusSelectArgs filterStudentStatusSelectArgs() {
-        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs() ;
+        StudentStatusSelectArgs studentStatusSelectArgs = new StudentStatusSelectArgs();
         List<String> distinctGrades = studentStatusMapper.getDistinctGrades(new StudentStatusFilterRO());
         List<String> majorNames = studentStatusMapper.getDistinctMajorNames(new StudentStatusFilterRO());
         List<String> levels = studentStatusMapper.getDistinctLevels(new StudentStatusFilterRO());
@@ -171,6 +173,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取缴费信息
+     *
      * @param paymentInfoFilterROPageRO 缴费筛选参数
      * @return
      */
@@ -182,7 +185,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
         FilterDataVO<PaymentInfoVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
         log.info("用户缴费筛选参数" + paymentInfoFilterROPageRO);
-        List<PaymentInfoVO> paymentInfoVOList =  paymentInfoMapper.getStudentPayInfoByFilter(
+        List<PaymentInfoVO> paymentInfoVOList = paymentInfoMapper.getStudentPayInfoByFilter(
                 paymentInfoFilterROPageRO.getEntity(),
                 paymentInfoFilterROPageRO.getPageSize(),
                 (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
@@ -199,6 +202,7 @@ public class CollegeAdminFilter extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取缴费数据筛选参数
+     *
      * @return
      */
     @Override
@@ -236,6 +240,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取成绩信息
+     *
      * @param scoreInformationFilterROPageRO 成绩筛选参数
      * @return
      */
@@ -246,8 +251,8 @@ public class CollegeAdminFilter extends AbstractFilter {
         scoreInformationFilterROPageRO.getEntity().setCollege(college.getCollegeName());
 
         FilterDataVO<ScoreInformationVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询成绩的参数是 " + scoreInformationFilterROPageRO);
-        List<ScoreInformationVO> paymentInfoVOList =  scoreInformationMapper.getStudentGradeInfoByFilter(
+        log.info(StpUtil.getLoginId() + " 查询成绩的参数是 " + scoreInformationFilterROPageRO);
+        List<ScoreInformationVO> paymentInfoVOList = scoreInformationMapper.getStudentGradeInfoByFilter(
                 scoreInformationFilterROPageRO.getEntity(),
                 scoreInformationFilterROPageRO.getPageSize(),
                 (scoreInformationFilterROPageRO.getPageNumber() - 1) * scoreInformationFilterROPageRO.getPageSize()
@@ -263,6 +268,7 @@ public class CollegeAdminFilter extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取学籍数据筛选参数
+     *
      * @return
      */
     @Override
@@ -301,6 +307,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 筛选教学计划
+     *
      * @param courseInformationFilter 获取的教学计划筛选数据
      * @return
      */
@@ -315,8 +322,8 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 使用 courseInformationMapper 获取数据
         List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPage(courseInformationFilter.getEntity(),
                 courseInformationFilter.getPageSize(),
-                courseInformationFilter.getPageSize() * (courseInformationFilter.getPageNumber() -1));
-        long total =  courseInformationMapper.getCountByFilterAndPage(courseInformationFilter.getEntity());
+                courseInformationFilter.getPageSize() * (courseInformationFilter.getPageNumber() - 1));
+        long total = courseInformationMapper.getCountByFilterAndPage(courseInformationFilter.getEntity());
         courseInformationFilterDataVO.setData(courseInformationVOS);
         courseInformationFilterDataVO.setTotal(total);
 
@@ -325,6 +332,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取二级学院教学计划筛选参数
+     *
      * @return
      */
     @Override
@@ -348,12 +356,12 @@ public class CollegeAdminFilter extends AbstractFilter {
             return null;
         }
 
-        List<String> grades = courseInformationMapper.selectDistinctGrades(collegeInformationPO.getCollegeName());
-        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(collegeInformationPO.getCollegeName());
-        List<String> levels = courseInformationMapper.selectDistinctLevels(collegeInformationPO.getCollegeName());
-        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(collegeInformationPO.getCollegeName());
-        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(collegeInformationPO.getCollegeName());
-        List<String> classNames = courseInformationMapper.selectDistinctClassNames(collegeInformationPO.getCollegeName());
+        List<String> grades = courseInformationMapper.selectDistinctGrades(collegeInformationPO.getCollegeName(), null);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(collegeInformationPO.getCollegeName(), null);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(collegeInformationPO.getCollegeName(), null);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(collegeInformationPO.getCollegeName(), null);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(collegeInformationPO.getCollegeName(), null);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(collegeInformationPO.getCollegeName(), null);
         courseInformationSelectArgs.setGrades(grades);
         courseInformationSelectArgs.setMajorNames(majorNames);
         courseInformationSelectArgs.setLevels(levels);
@@ -366,6 +374,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 批量导出教学计划
+     *
      * @param courseInformationROPageRO
      * @return
      */
@@ -395,6 +404,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取排课表的课程信息
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -411,7 +421,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 );
 
         // 从排课表中获取的课程 还要进行再次处理 还是直接从教学计划中来获取 再与其进行对比
-        for(ScheduleCourseInformationVO scheduleCourseInformationVO: scheduleCourseInformationVOS){
+        for (ScheduleCourseInformationVO scheduleCourseInformationVO : scheduleCourseInformationVOS) {
             CourseCoverChangeRO courseCoverChangeRO = new CourseCoverChangeRO();
             courseCoverChangeRO.setGrade(scheduleCourseInformationVO.getGrade());
             courseCoverChangeRO.setMajorName(scheduleCourseInformationVO.getMajorName());
@@ -424,7 +434,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         }
 
         FilterDataVO<ScheduleCourseInformationVO> filterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
         long l = courseScheduleMapper.countCoursesInformation(courseScheduleFilterROPageRO.getEntity());
         filterDataVO.setTotal(l);
@@ -436,6 +446,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取排课表详细信息
+     *
      * @return
      */
     public FilterDataVO filterSchedulesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
@@ -451,7 +462,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         for (SchedulesVO schedulesVO : schedulesVOS) {
             String onlinePlatform = schedulesVO.getOnlinePlatform();
 
-            if(onlinePlatform != null){
+            if (onlinePlatform != null) {
                 VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
                         new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform));
 
@@ -462,14 +473,14 @@ public class CollegeAdminFilter extends AbstractFilter {
                     schedulesVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
                     schedulesVO.setChannelId(videoStreamRecordPO.getChannelId());
                 }
-            }else{
+            } else {
                 schedulesVO.setLivingStatus("未开播");
             }
         }
 
 
         FilterDataVO<SchedulesVO> filterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
         long l = courseScheduleMapper.selectCoursesInformationCount(courseScheduleFilterROPageRO.getEntity());
         filterDataVO.setTotal(l);
@@ -481,6 +492,7 @@ public class CollegeAdminFilter extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取排课表课程数据筛选参数
+     *
      * @return
      */
     @Override
@@ -525,6 +537,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 为继续教育学院学历教育部获取班级信息
+     *
      * @param classInformationFilterROPageRO 班级筛选参数
      * @return
      */
@@ -535,8 +548,8 @@ public class CollegeAdminFilter extends AbstractFilter {
         classInformationFilterROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
 
         FilterDataVO<ClassInformationVO> classInformationVOFilterDataVO = new FilterDataVO<>();
-        log.info(StpUtil.getLoginId( ) + " 查询班级的参数是 " + classInformationFilterROPageRO);
-        List<ClassInformationVO> classInformationVOList =  classInformationMapper.getClassInfoByFilter(
+        log.info(StpUtil.getLoginId() + " 查询班级的参数是 " + classInformationFilterROPageRO);
+        List<ClassInformationVO> classInformationVOList = classInformationMapper.getClassInfoByFilter(
                 classInformationFilterROPageRO.getEntity(),
                 classInformationFilterROPageRO.getPageSize(),
                 (classInformationFilterROPageRO.getPageNumber() - 1) * classInformationFilterROPageRO.getPageSize()
@@ -552,6 +565,7 @@ public class CollegeAdminFilter extends AbstractFilter {
     /**
      * 采用线程池技术，提高 SQL 查询筛选参数效率
      * 获取班级数据筛选参数
+     *
      * @return
      */
     @Override
@@ -601,13 +615,14 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取排课表课程管理信息
+     *
      * @return
      */
     public FilterDataVO getScheduleCourses(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
-        CollegeInformationPO collegeName = getCollegeName();
-        courseScheduleFilterROPageRO.getEntity().setCollege(collegeName.getCollegeName());
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        // 二级学院得单独加一个条件
+        courseScheduleFilterROPageRO.getEntity().setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
 
+        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
@@ -665,26 +680,26 @@ public class CollegeAdminFilter extends AbstractFilter {
                 long diffCurrent = currentTeachingDate.getTime() - now.getTime();
 
                 // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
-                if(diffCurrent > 0 && diffNew < 0){
+                if (diffCurrent > 0 && diffNew < 0) {
                     // 当前记录的排课的上课日期和上课时间 比此时此刻的大 而新的排课的上课日期和上课时间比现在小 那么就啥也不做
-                }
-                else if (diffCurrent > 0) {
-                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                } else if (diffCurrent > 0) {
+                    if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                         // 选最近的
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
                     }
 
-                }else {
+                } else {
                     // 目前拿到的上课时间 比当下的时间 大
-                    if(diffNew > 0){
+                    if (diffNew > 0) {
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
+                    } else if (diffCurrent >= 0 && diffNew < 0) {
 
-                    }else{
-                        if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                    } else {
+                        if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                             // 选最近的
                             scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                             scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
@@ -694,7 +709,6 @@ public class CollegeAdminFilter extends AbstractFilter {
                 }
 
             }
-
         }
 
 
@@ -705,26 +719,41 @@ public class CollegeAdminFilter extends AbstractFilter {
         ExecutorService executorService = Executors.newFixedThreadPool(200);
 
         // 使用CompletableFuture来异步处理每个scheduleCoursesInformationVO
-        List<CompletableFuture<Void>> futures = scheduleCoursesInformationVOList.stream()
-                .map(scheduleCoursesInformationVO -> CompletableFuture.runAsync(() -> {
-                    super.processScheduleCoursesInformationVO(
-                            scheduleCoursesInformationVO,
-                            errorCourses
-                    );
+        List<CompletableFuture<Boolean>> futures = scheduleCoursesInformationVOList.stream()
+                .map(scheduleCoursesInformationVO -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return processScheduleCoursesInformationVO(
+                                scheduleCoursesInformationVO,
+                                errorCourses,
+                                courseScheduleFilterROPageRO.getEntity()
+                        );
+                    } catch (Exception e) {
+                        // 记录详细的错误信息
+                        e.printStackTrace(); // 或使用日志记录
+                        return false;
+                    }
                 }, executorService))
                 .collect(Collectors.toList());
 
-        // 等待所有的future完成
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        // 关闭线程池，不再接受新任务，等待所有任务完成
+        // 等待所有的future完成，并获取结果
+        List<Boolean> results = futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+
+        // 根据结果移除不满足条件的对象
+        for (int i = scheduleCoursesInformationVOList.size() - 1; i >= 0; i--) {
+            if (!results.get(i)) {
+                scheduleCoursesInformationVOList.remove(i);
+            }
+        }
+
+        // 关闭线程池
         executorService.shutdown();
 
-        // 等待所有的future完成
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        // 移除所有直播状态不符合条件或被设置为null的 ScheduleCoursesInformationVO
+        scheduleCoursesInformationVOList.removeIf(Objects::isNull);
 
-        // 关闭线程池，不再接受新任务，等待所有任务完成
-        executorService.shutdown();
 
         Long pageNumber = courseScheduleFilterROPageRO.getPageNumber();
         Long pageSize = courseScheduleFilterROPageRO.getPageSize();
@@ -751,5 +780,143 @@ public class CollegeAdminFilter extends AbstractFilter {
     }
 
 
+
+    private boolean processScheduleCoursesInformationVO(
+            ScheduleCoursesInformationVO scheduleCoursesInformationVO,
+            List<String> errorCourses, CourseScheduleFilterRO courseScheduleFilterRO) {
+
+        // 获取所有的行政班
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(
+                new LambdaQueryWrapper<CourseSchedulePO>()
+                        .eq(CourseSchedulePO::getBatchIndex, scheduleCoursesInformationVO.getBatchIndex())
+        );
+
+        List<String> colleges = new ArrayList<>();
+        List<String> majorNames = new ArrayList<>();
+        for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
+            // 从数据库获取班级信息
+            ClassInformationPO classInformationPO = classInformationMapper.selectOne(
+                    new LambdaQueryWrapper<ClassInformationPO>()
+                            .eq(ClassInformationPO::getGrade, courseSchedulePO.getGrade())
+                            .eq(ClassInformationPO::getMajorName, courseSchedulePO.getMajorName())
+                            .eq(ClassInformationPO::getLevel, courseSchedulePO.getLevel())
+                            .eq(ClassInformationPO::getStudyForm, courseSchedulePO.getStudyForm())
+                            .eq(ClassInformationPO::getClassName, courseSchedulePO.getAdminClass())
+            );
+
+            if (classInformationPO == null) {
+                // 记录错误信息
+                String error = "班级信息获取失败，存在排课表记录获取不到班级信息 " +
+                        courseSchedulePO.getGrade() + " " + courseSchedulePO.getMajorName() + " " +
+                        courseSchedulePO.getStudyForm() + " " + courseSchedulePO.getLevel() + " " +
+                        courseSchedulePO.getMainTeacherName() + " " + courseSchedulePO.getCourseName() + " " +
+                        courseSchedulePO.getTeachingDate() + " " + courseSchedulePO.getTeachingTime();
+                // 这里应该是线程安全的列表操作
+                synchronized (errorCourses) {
+                    errorCourses.add(error);
+                }
+            } else {
+                colleges.add(classInformationPO.getCollege());
+                majorNames.add(classInformationPO.getMajorName());
+            }
+        }
+
+        // 去重学院信息 去重专业名称信息
+        colleges = colleges.stream().distinct().collect(Collectors.toList());
+        majorNames = majorNames.stream().distinct().collect(Collectors.toList());
+        // 获取班级列表
+        List<String> adminClassList = courseSchedulePOS.stream()
+                .map(CourseSchedulePO::getAdminClass)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 设置学院和班级信息
+        scheduleCoursesInformationVO.setClassName(adminClassList);
+        scheduleCoursesInformationVO.setColleges(colleges);
+        scheduleCoursesInformationVO.setMajorNames(majorNames);
+
+        // 处理在线平台信息
+        String onlinePlatform = scheduleCoursesInformationVO.getOnlinePlatform();
+        if (onlinePlatform != null) {
+            // ... 处理在线平台信息的代码逻辑
+            // 这里从数据库获取视频流信息
+            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(
+                    new LambdaQueryWrapper<VideoStreamRecordPO>().eq(VideoStreamRecordPO::getId, onlinePlatform)
+            );
+
+            if (videoStreamRecordPO != null) {
+                // 设置直播状态和频道ID
+                scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
+                scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
+            }
+            if(onlinePlatform.equals("已结束")){
+                scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
+            }
+        } else {
+            scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.UN_START0.status);
+        }
+
+        // 如果直播状态不与指定的直播条件一致  直接过滤掉
+        // 检查直播状态
+        if (scheduleCoursesInformationVO.getLivingStatus() != null && courseScheduleFilterRO.getLivingStatus() != null) {
+            try {
+                if (!scheduleCoursesInformationVO.getLivingStatus().equals(courseScheduleFilterRO.getLivingStatus())) {
+                    return false; // 表示不保留这个对象
+                }
+            }catch (Exception e){
+                log.error(e.toString());
+                return false;
+            }
+        }
+
+        return true; // 表示保留这个对象
+    }
+
+
+    /**
+     * 获取继续教育学院管理员的排课表课程管理的筛选参数
+     * @param courseScheduleFilterROPageRO 前端限制参数
+     * @return
+     */
+    public ScheduleCourseManagetArgs getSelectScheduleCourseManageArgs(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+        ScheduleCourseManagetArgs selectArgs = new ScheduleCourseManagetArgs();
+        CourseScheduleFilterRO filter =courseScheduleFilterROPageRO.getEntity();
+
+        // 二级学院得单独加一个条件
+        filter.setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
+
+        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 代表你有5个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> courseScheduleMapper.getDistinctGrades(filter));
+        Future<List<String>> collegesFuture = executor.submit(() -> courseScheduleMapper.getDistinctCollegeNames(filter));
+        Future<List<String>> majorNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctMajorNames(filter));
+        Future<List<String>> classNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctClassNames(filter));
+        Future<List<String>> courseNamesFuture = executor.submit(() -> courseScheduleMapper.getDistinctCourseNames(filter));
+
+        try {
+            selectArgs.setGrades(distinctGradesFuture.get());
+            selectArgs.setCollegeNames(collegesFuture.get());
+            selectArgs.setMajorNames(majorNamesFuture.get());
+            selectArgs.setClassNames(classNamesFuture.get());
+            selectArgs.setCourseNames(courseNamesFuture.get());
+
+            List<String> statusList = new ArrayList<>();
+
+            // 遍历直播状态的所有值
+            for (LiveStatusEnum statusEnum : LiveStatusEnum.values()) {
+                // 将枚举项的 status 字段值添加到列表中
+                statusList.add(statusEnum.status);
+            }
+
+            selectArgs.setLivingStatuses(statusList);
+        } catch (Exception e) {
+
+            log.error("获取排课表课程管理筛选参数失败 " + e.toString());
+        } finally {
+            executor.shutdown();
+        }
+
+        return selectArgs;
+    }
 }
 

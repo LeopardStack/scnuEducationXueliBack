@@ -92,6 +92,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -126,6 +132,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -194,6 +206,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -228,6 +246,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -262,6 +286,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -296,6 +326,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +
@@ -330,6 +366,12 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND ss.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>" +

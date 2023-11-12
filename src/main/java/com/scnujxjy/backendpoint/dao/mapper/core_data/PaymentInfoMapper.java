@@ -80,6 +80,12 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
             "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +
@@ -115,6 +121,12 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
             "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +
@@ -149,6 +161,12 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
             "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +
@@ -183,6 +201,12 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
             "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +
@@ -217,6 +241,12 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
             "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
             "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
+            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
+            "AND ci.class_name IN" +
+            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
+            "#{className}" +
+            "</foreach>" +
+            "</if>" +
             "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
             "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
             "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +

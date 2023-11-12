@@ -358,7 +358,7 @@ public class StudentStatusController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
-                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName()) || roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName()) || roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
                 }
 
@@ -437,11 +437,11 @@ public class StudentStatusController {
         List<String> roleList = StpUtil.getRoleList();
 
         // 获取访问者 ID
-        Object loginId = StpUtil.getLoginId();
+        String loginId = StpUtil.getLoginIdAsString();
         StudentStatusSelectArgs studentStatusSelectArgs = null;
 
         // 生成缓存键
-        String cacheKey = "studentStatusSelectArgsAdmin:" + loginId.toString();
+        String cacheKey = "studentStatusSelectArgsAdmin:" + loginId;
 
         // 尝试从Redis中获取数据
         studentStatusSelectArgs = (StudentStatusSelectArgs) redisTemplate.opsForValue().get(cacheKey);
@@ -451,11 +451,12 @@ public class StudentStatusController {
                 throw dataNotFoundError();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
-                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
+                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
-                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs((String) loginId, managerFilter);
+                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, managerFilter);
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, teachingPointFilter);
                 }
-
                 // 如果获取的数据不为空，则放入Redis
                 if (studentStatusSelectArgs != null) {
                     // 设置10小时超时

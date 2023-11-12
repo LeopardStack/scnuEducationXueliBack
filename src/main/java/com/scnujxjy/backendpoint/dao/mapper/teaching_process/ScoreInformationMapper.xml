@@ -84,6 +84,12 @@
         SELECT DISTINCT pi.final_score
         <include refid="commonJoin"/>
         WHERE 1=1
+        <if test='entity.classNameSet != null and entity.classNameSet.size() != 0'>
+            AND ci.class_name IN
+            <foreach collection='entity.classNameSet' item='className' open='(' close=')' separator=','>
+                #{className}
+            </foreach>
+        </if>
         AND pi.final_score NOT REGEXP '^[0-9]+$'
         AND pi.final_score IS NOT NULL
         AND pi.final_score != ''

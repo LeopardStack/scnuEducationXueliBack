@@ -95,25 +95,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param l 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT ci.* " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "AND ci.grade REGEXP '^[0-9]+$' " +  // 添加这一行来确保grade只包含数字
-            "AND ci.grade IS NOT NULL " +  // 添加这一行来确保grade不为空
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-
-            "ORDER BY ci.grade DESC " +  // 按照年级降序排序
-            "LIMIT #{l}, #{pageSize} " +
-            "</script>")
-
     List<ClassInformationVO> getClassInfoByFilter(@Param("entity") ClassInformationFilterRO entity,
                                                   @Param("pageSize") Long pageSize, @Param("l") long l);
 
@@ -122,20 +103,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT COUNT(*) " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-
-            "</script>")
     long getCountClassInfoByFilter(@Param("entity") ClassInformationFilterRO entity);
 
     /**
@@ -143,19 +110,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.grade " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctGrades(@Param("entity") ClassInformationFilterRO entity);
 
     /**
@@ -163,19 +117,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.level " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctLevels(@Param("entity") ClassInformationFilterRO entity);
 
 
@@ -184,19 +125,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.study_form " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctStudyForms(@Param("entity") ClassInformationFilterRO entity);
 
     /**
@@ -204,19 +132,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.class_name " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctClassNames(@Param("entity") ClassInformationFilterRO entity);
 
     /**
@@ -224,19 +139,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.study_period " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctStudyPeriods(@Param("entity") ClassInformationFilterRO entity);
 
 
@@ -245,19 +147,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.college " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctCollegeNames(@Param("entity") ClassInformationFilterRO entity);
 
     /**
@@ -265,19 +154,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.major_name " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctMajorNames(@Param("entity") ClassInformationFilterRO entity);
 
 
@@ -286,33 +162,7 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
      * @param entity 筛选条件
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT REGEXP_REPLACE(ci.class_name, '[0-9]', '') AS cleaned_class_name " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<String> getDistinctTeachingPoints(@Param("entity") ClassInformationFilterRO entity);
 
-    @Select("<script>" +
-            "SELECT ci.* " +
-            "FROM class_information ci " +
-            "WHERE 1=1 " +
-            "<if test='entity.id != null'>AND ci.id = #{entity.id} </if>" +
-            "<if test='entity.grade != null'>AND ci.grade = #{entity.grade} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.level != null'>AND ci.level = #{entity.level} </if>" +
-            "<if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>" +
-            "<if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>" +
-            "</script>")
     List<ClassInformationDownloadVO> downloadClassInformationDataByManager0(@Param("entity") ClassInformationFilterRO entity);
 }
