@@ -2,7 +2,6 @@ package com.scnujxjy.backendpoint.util;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
@@ -25,7 +24,6 @@ import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -152,7 +150,7 @@ public class DataUpdate {
                         videoStreamRecordPO.setChannelPasswd("" + channelResponseData.getChannelPasswd());
                         int insert = videoStreamRecordsMapper.insert(videoStreamRecordPO);
 
-                        ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId("" + channelResponseData.getChannelId());
+                        ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo("" + channelResponseData.getChannelId());
                         log.info("频道信息包括 " + channelInfoByChannelId1);
                         if(channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()){
                             log.info("创建频道成功");
