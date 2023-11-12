@@ -3,11 +3,11 @@ package com.scnujxjy.backendpoint.videoStreamTest;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
+import com.scnujxjy.backendpoint.model.bo.video_stream.teacher_sso_information.PolyvRoleInformationResponseBO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
@@ -19,6 +19,7 @@ import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
+import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -44,18 +45,24 @@ public class Test1 {
     private StudentStatusMapper studentStatusMapper;
 
     /**
-     * 获取指定频道号的角色信息
+     * 創建頻道
+     * //
      */
-    @Test
-    public void test1() {
-        CourseSchedulePO courseSchedulePO=new CourseSchedulePO();
-        courseSchedulePO.setCourseName("幼儿音乐教育");//230751 class
-        courseSchedulePO.setGrade("2023");
-        courseSchedulePO.setMajorName("学前教育");
-        courseSchedulePO.setStudyForm("函授");
-        courseSchedulePO.setLevel("专升本1");
-        List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(courseSchedulePO);
-        System.out.println(scheduleClassStudent);
+    public static void main(String[] args) {
+        // 定义要操作的文件路径和工作表名
+        String templateFilePath = "bbb.xls";
+
+        List<StudentWhiteListVO> StudentWhiteListVOS = new ArrayList<>();
+        StudentWhiteListVO studentWhiteListVO1 = new StudentWhiteListVO();
+        studentWhiteListVO1.setCode("333");
+        studentWhiteListVO1.setName("gagaga");
+        StudentWhiteListVOS.add(studentWhiteListVO1);
+        EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(StudentWhiteListVOS);
+        File file = new File(templateFilePath);
+        file.delete();
+
+//        excelWriter.fill(map, writeSheet);
+        //关闭文件流
     }
 
     @Test
@@ -112,7 +119,6 @@ public class Test1 {
 //        sing.setWatchCondition("4368180");
 //        sing.testCreateChannelWhiteList(Integer.valueOf("4368180"));
     }
-
 
 
     @Test
@@ -234,23 +240,40 @@ public class Test1 {
     }
 
     /**
-     * 創建頻道
-//     */
-    public static void main(String[] args) {
-        // 定义要操作的文件路径和工作表名
-        String templateFilePath = "bbb.xls";
+     * 获取指定频道号的角色信息
+     */
+    @Test
+    public void test1() {
+        CourseSchedulePO courseSchedulePO = new CourseSchedulePO();
+        courseSchedulePO.setCourseName("幼儿音乐教育");//230751 class
+        courseSchedulePO.setGrade("2023");
+        courseSchedulePO.setMajorName("学前教育");
+        courseSchedulePO.setStudyForm("函授");
+        courseSchedulePO.setLevel("专升本1");
+        List<Map<String, String>> scheduleClassStudent = studentStatusMapper.getScheduleClassStudent(courseSchedulePO);
+        System.out.println(scheduleClassStudent);
+    }
 
-        List<StudentWhiteListVO> StudentWhiteListVOS=new ArrayList<>();
-        StudentWhiteListVO studentWhiteListVO1=new StudentWhiteListVO();
-        studentWhiteListVO1.setCode("333");
-        studentWhiteListVO1.setName("gagaga");
-        StudentWhiteListVOS.add(studentWhiteListVO1);
-        EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(StudentWhiteListVOS);
-        File file=new File(templateFilePath);
-        file.delete();
+    @Test
+    void testSelectChannelAllRoleInformation() throws IOException, NoSuchAlgorithmException {
+        List<PolyvRoleInformationResponseBO> roleInformationBOS = videoStreamUtils.selectChannelAllRoleInformation("4422426");
+        roleInformationBOS.forEach(System.out::println);
+    }
 
-//        excelWriter.fill(map, writeSheet);
-        //关闭文件流
+    @Test
+    void testCreateChannelRole() throws IOException, NoSuchAlgorithmException {
+        PolyvRoleInformationResponseBO roleInformation = videoStreamUtils.createRoleInformation(LiveCreateAccountRequest.builder()
+                .role("Guest")
+                .channelId("4422426")
+                .nickName("测试嘉宾")
+                .build());
+        log.info("新增角色信息：{}", roleInformation);
+    }
+
+    @Test
+    void testWatch() throws IOException, NoSuchAlgorithmException {
+        String link = videoStreamUtils.getIndependentAuthorizationLink("4422426", "440782200111216519", "测试", null);
+        log.info("生成的链接为：{}", link);
     }
 
 

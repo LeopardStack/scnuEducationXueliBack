@@ -32,6 +32,7 @@ import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.SonChannelRequestBO;
+import com.scnujxjy.backendpoint.model.bo.video_stream.teacher_sso_information.PolyvRoleInformationResponseBO;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,7 @@ import net.polyv.live.v1.entity.quick.QuickCreatePPTChannelRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelViewdataServiceImpl;
 import net.polyv.live.v1.service.quick.impl.LiveChannelQuickCreatorServiceImpl;
+import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveUpdateAccountResponse;
 import org.springframework.stereotype.Component;
@@ -349,7 +351,7 @@ public class VideoStreamUtils {
     }
 
     /**
-     * 生成学生单点登录链接
+     * 生成独立授权地址
      *
      * @param channelId  频道 id
      * @param userId     用户 id
@@ -359,7 +361,7 @@ public class VideoStreamUtils {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public String getStudentSSOLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
+    public String getIndependentAuthorizationLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
         ChannelInfoResponse channelInfoByChannelId = getChannelInfoByChannelId(channelId);
         if (Objects.isNull(channelInfoByChannelId)) {
             return null;
@@ -376,12 +378,13 @@ public class VideoStreamUtils {
         if (CollUtil.isEmpty(secretKeys)) {
             return null;
         }
+        log.info("密钥集合:{}", secretKeys);
         String secretKey = secretKeys.get(0);
         StringBuilder url = new StringBuilder("https://live.polyv.cn/watch/");
         String ts = String.valueOf(System.currentTimeMillis());
         String sign = MD5.create().digestHex(secretKey + userId + secretKey + ts);
         Map<String, Object> requestMap = new HashMap<>();
-        requestMap.put("userId", userId);
+        requestMap.put("userid", userId);
         requestMap.put("ts", ts);
         requestMap.put("sign", sign);
         requestMap.put("nickname", Base64.encode(username));
@@ -1042,6 +1045,7 @@ public class VideoStreamUtils {
 
     /**
      * 获取观众观看详情列表
+     *
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
@@ -1120,10 +1124,12 @@ public class VideoStreamUtils {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public String getAdminSSOLink() throws IOException, NoSuchAlgorithmException {
+    public String getAdminSSOLink(String accountId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(accountId)) {
+            return null;
+        }
         String timestamp = String.valueOf(System.currentTimeMillis());
         String token = UUID.randomUUID().toString().replaceAll("-", "");
-        String accountId = StpUtil.getLoginIdAsString().replaceAll("M", "");
         String url = String.format("http://api.polyv.net/live/v2/channels/%s/set-account-token", accountId);
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", LiveGlobalConfig.getAppId());
@@ -1138,5 +1144,65 @@ public class VideoStreamUtils {
         authURL += "?channelId=" + accountId + "&token=" + token + "&redirect=" + URLEncoder.encode(redirectUrl, "utf-8");
         log.info("嘉宾单点登录设置成功，跳转地址为：{}", authURL);
         return authURL;
+    }
+
+    /**
+     * 获取频道号下所有角色信息
+     *
+     * @param channelId 频道 id
+     * @return 角色信息列表
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public List<PolyvRoleInformationResponseBO> selectChannelAllRoleInformation(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
+            return null;
+        }
+        String url = String.format("https://api.polyv.net/live/v2/channelAccount/%s/accounts", channelId);
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.get(url, requestMap);
+        log.info("获取角色信息响应：{}", response);
+        Map<String, Object> responseMap = JSONObject.parseObject(response, Map.class);
+        if ((int) responseMap.get("code") == 200) {
+            List<JSONObject> roleInformationBOS = JSONObject.parseObject(JSONObject.toJSONString(responseMap.get("data")), List.class);
+            if (CollUtil.isEmpty(roleInformationBOS)) {
+                return null;
+            }
+            return roleInformationBOS.stream()
+                    .map(ele -> JSONObject.parseObject(JSONObject.toJSONString(ele), PolyvRoleInformationResponseBO.class))
+                    .collect(Collectors.toList());
+        }
+        return null;
+    }
+
+    /**
+     * 添加频道角色
+     *
+     * @param requestData 频道角色参数
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @see LiveCreateAccountRequest
+     */
+    public PolyvRoleInformationResponseBO createRoleInformation(LiveCreateAccountRequest requestData) throws IOException, NoSuchAlgorithmException {
+        if (Objects.isNull(requestData)
+                || StrUtil.isBlank(requestData.getRole())) {
+            return null;
+        }
+        requestData.setAppId(LiveGlobalConfig.getAppId())
+                .setTimestamp(String.valueOf(System.currentTimeMillis()));
+        String sign = LiveSignUtil.getSign(JSON.parseObject(JSON.toJSONString(requestData), Map.class), LiveGlobalConfig.getAppSecret());
+        requestData.setSign(sign);
+        Map<String, String> requestMap = JSON.parseObject(JSON.toJSONString(requestData), Map.class);
+        String url = "http://api.polyv.net/live/v4/channel/account/create?" + URLUtil.buildQuery(requestMap, StandardCharsets.UTF_8);
+        String responseString = net.polyv.common.v1.base.HttpUtil.postJsonBody(url, null, JSON.toJSONString(requestData), "UTF-8");
+        Map<String, Object> responseMap = JSON.parseObject(responseString, Map.class);
+        if ((int) responseMap.get("code") == 200) {
+            return JSON.parseObject(JSON.toJSONString(responseMap.get("data")), PolyvRoleInformationResponseBO.class);
+        }
+        return null;
     }
 }

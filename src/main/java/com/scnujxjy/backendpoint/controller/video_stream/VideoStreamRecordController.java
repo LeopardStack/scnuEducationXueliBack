@@ -43,6 +43,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.STUDENT;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
@@ -135,9 +136,9 @@ public class VideoStreamRecordController {
             String tutorUrl = null;
             if (matcher.find()) {
                 String accountId = matcher.group(1); // 提取 channelId
-                try{
+                try {
                     tutorUrl = videoStreamUtils.generateTutorSSOLink(videoStreamRecordVO.getChannelId(), accountId);
-                }catch (Exception e){
+                } catch (Exception e) {
                     log.error("获取助教链接失败 " + e.toString());
                     return SaResult.error("获取助教链接失败 " + loginIdAsString).setCode(2001);
                 }
@@ -457,13 +458,13 @@ public class VideoStreamRecordController {
 
 
     /**
-     * 获取学生独立授权访问直播间链接
+     * 获取独立授权地址
      *
      * @param channelId 直播间 ID
      * @return
      */
-    @GetMapping("/create-student-sso-link")
-    public SaResult createStudentSSOLink(String channelId) {
+    @GetMapping("/create-sso-link")
+    public SaResult createIndependentAuthorizationLink(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
@@ -474,25 +475,19 @@ public class VideoStreamRecordController {
         if (Objects.isNull(platformUserPO)) {
             return SaResult.code(2000).setData("用户信息为空");
         }
-        String username = platformUserPO.getUsername();
-        if (StrUtil.isBlank(username)) {
-            username = String.valueOf(userId);
+        // 非学生nickname=身份-name
+        String nickname = platformUserPO.getName();
+        if (CollUtil.isNotEmpty(StpUtil.getRoleList()) && !StpUtil.getRoleList().contains(STUDENT.getRoleName())) {
+            nickname = StpUtil.getRoleList().get(0);
+            if (StrUtil.isNotBlank(platformUserPO.getName())) {
+                nickname += "-" + platformUserPO.getName();
+            }
         }
         try {
-            String url = videoStreamUtils.getStudentSSOLink(channelId, String.valueOf(userId), username, platformUserPO.getAvatarImagePath());
+            String url = videoStreamUtils.getIndependentAuthorizationLink(channelId, String.valueOf(userId), nickname, platformUserPO.getAvatarImagePath());
             return SaResult.data(url);
         } catch (IOException | NoSuchAlgorithmException e) {
             return SaResult.code(2000).setData("获取直播间信息失败");
-        }
-    }
-
-    @GetMapping("/create-admin-sso-link")
-    public SaResult createAdminSSOLink() {
-        try {
-            String adminSSOLink = videoStreamUtils.getAdminSSOLink();
-            return SaResult.data(adminSSOLink);
-        } catch (IOException | NoSuchAlgorithmException e) {
-            return SaResult.code(2000).setMsg("网络请求直播后台失败，请联系管理员");
         }
     }
 

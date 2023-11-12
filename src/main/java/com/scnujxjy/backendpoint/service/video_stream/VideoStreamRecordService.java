@@ -45,11 +45,13 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
     @Resource
     private VideoStreamInverter videoStreamInverter;
 
+
+    @Resource
+    private VideoStreamUtils videoStreamUtils;
+
     public static final String WATCH_URL_FORMAT = "https://live.polyv.cn/watch/%s";
     public static final String TUTOR_URL_FORMAT = "https://live.polyv.net/teacher.html";
     public static final String TEACHER_URL_FORMAT = "https://live.polyv.net/web-start/login?channelId=%s";
-    @Resource
-    private VideoStreamUtils videoStreamUtils;
     @Resource
     private CourseScheduleService courseScheduleService;
 
@@ -82,7 +84,7 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
         try {
             String s = videoStreamUtils.generateTeacherSSOLink(videoStreamRecordVO.getChannelId());
             videoStreamRecordVO.setAutoUrl(s);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error(e.toString());
         }
         return videoStreamRecordVO;
@@ -286,13 +288,14 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
 
     /**
      * 根据频道 ID 创建教师单点登录链接
+     *
      * @param channelId 频道 ID
      * @return
      */
     public String generateAutoURL(String channelId) {
         try {
             return videoStreamUtils.generateTeacherSSOLink(channelId);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error(e.toString());
         }
         return null;
