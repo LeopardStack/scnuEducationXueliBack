@@ -11,7 +11,6 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
-import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -19,10 +18,10 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
-import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -515,6 +514,22 @@ public class VideoStreamRecordController {
             return SaResult.data(url);
         } catch (IOException | NoSuchAlgorithmException e) {
             return SaResult.code(2000).setData("获取直播间信息失败");
+        }
+    }
+
+    @GetMapping("/detail-watch-information")
+    public SaResult getWatchInformation(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            throw dataMissError();
+        }
+        try {
+            VideoStreamAllUrlInformationVO videoStreamAllUrlInformationVO = videoStreamRecordService.selectChannelAllUrl(channelId);
+            if (Objects.isNull(videoStreamAllUrlInformationVO)) {
+                return SaResult.code(2000).setMsg("获取观看信息为空");
+            }
+            return SaResult.data(videoStreamAllUrlInformationVO);
+        } catch (IOException | NoSuchAlgorithmException e) {
+            return SaResult.code(2000).setMsg("获取观看信息失败");
         }
     }
 

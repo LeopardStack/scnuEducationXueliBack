@@ -13,8 +13,10 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.video_stream.teacher_sso_information.PolyvRoleInformationResponseBO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
+import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
@@ -48,6 +50,9 @@ public class Test1 {
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private VideoStreamRecordService videoStreamRecordService;
 
     /**
      * 創建頻道
@@ -319,6 +324,12 @@ public class Test1 {
         for (AuthSetting setting : channelWatchCondition) {
             log.info("频道其他设置:{}", setting);
         }
+    }
+
+    @Test
+    void testAllChannel() throws IOException, NoSuchAlgorithmException {
+        VideoStreamAllUrlInformationVO videoStreamAllUrlInformationVO = videoStreamRecordService.selectChannelAllUrl("4422426");
+        log.info("频道链接信息：{}", videoStreamAllUrlInformationVO);
     }
 
 
