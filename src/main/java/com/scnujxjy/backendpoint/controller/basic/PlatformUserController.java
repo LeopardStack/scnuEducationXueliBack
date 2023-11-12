@@ -112,11 +112,13 @@ public class PlatformUserController {
     @GetMapping("/logout")
     public SaResult logOut(){
         // 获取当前用户角色
-        String roleName = StpUtil.getRoleList().get(0);
+        if(!StpUtil.getRoleList().isEmpty()){
+            String roleName = StpUtil.getRoleList().get(0);
 
-        // 在 Redis 中更新角色在线人数
-        redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
-        redisTemplate.opsForValue().decrement("totalOnlineCount");
+            // 在 Redis 中更新角色在线人数
+            redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
+            redisTemplate.opsForValue().decrement("totalOnlineCount");
+        }
 
         StpUtil.logout();
         return SaResult.ok();
