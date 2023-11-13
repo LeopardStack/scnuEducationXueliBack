@@ -12,24 +12,43 @@
     </sql>
 
     <sql id="commonFilters">
-        <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id} </if>
-        <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade} </if>
+        <if test='courseScheduleFilterROPageRO.id != null'>AND cs.id = #{courseScheduleFilterROPageRO.id}</if>
+        <if test='courseScheduleFilterROPageRO.grade != null'>AND cs.grade = #{courseScheduleFilterROPageRO.grade}</if>
         <if test='courseScheduleFilterROPageRO.adminClassName != null'>
             AND cs.admin_class LIKE CONCAT('%', #{courseScheduleFilterROPageRO.adminClassName}, '%')
         </if>
-        <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class = #{courseScheduleFilterROPageRO.teachingClassName} </if>
-        <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name = #{courseScheduleFilterROPageRO.majorName} </if>
-        <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name = #{courseScheduleFilterROPageRO.mainTeachingName} </if>
-        <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) &gt;= DATE(#{courseScheduleFilterROPageRO.teachingStartDate}) </if>
-        <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) >= DATE(cs.teaching_date)  </if>
-        <if test='courseScheduleFilterROPageRO.college != null'>AND ci.college = #{courseScheduleFilterROPageRO.college} </if>
-        <if test='courseScheduleFilterROPageRO.courseName != null'>AND cs.course_name = #{courseScheduleFilterROPageRO.courseName} </if>
-        <if test='courseScheduleFilterROPageRO.level != null'>AND cs.level = #{courseScheduleFilterROPageRO.level} </if>
-        <if test='courseScheduleFilterROPageRO.studyForm != null'>AND cs.study_form = #{courseScheduleFilterROPageRO.studyForm} </if>
-        <if test='courseScheduleFilterROPageRO.batchIndex != null'>AND cs.batch_index = #{courseScheduleFilterROPageRO.batchIndex} </if>
+        <if test='courseScheduleFilterROPageRO.teachingClassName != null'>AND cs.teaching_class =
+            #{courseScheduleFilterROPageRO.teachingClassName}
+        </if>
+        <if test='courseScheduleFilterROPageRO.majorName != null'>AND cs.major_name =
+            #{courseScheduleFilterROPageRO.majorName}
+        </if>
+        <if test='courseScheduleFilterROPageRO.mainTeachingName != null'>AND cs.main_teacher_name =
+            #{courseScheduleFilterROPageRO.mainTeachingName}
+        </if>
+        <if test='courseScheduleFilterROPageRO.teachingStartDate != null'>AND DATE(cs.teaching_date) &gt;=
+            DATE(#{courseScheduleFilterROPageRO.teachingStartDate})
+        </if>
+        <if test='courseScheduleFilterROPageRO.teachingEndDate != null'>AND
+            DATE(#{courseScheduleFilterROPageRO.teachingEndDate}) >= DATE(cs.teaching_date)
+        </if>
+        <if test='courseScheduleFilterROPageRO.college != null'>AND ci.college =
+            #{courseScheduleFilterROPageRO.college}
+        </if>
+        <if test='courseScheduleFilterROPageRO.courseName != null'>AND cs.course_name =
+            #{courseScheduleFilterROPageRO.courseName}
+        </if>
+        <if test='courseScheduleFilterROPageRO.level != null'>AND cs.level = #{courseScheduleFilterROPageRO.level}</if>
+        <if test='courseScheduleFilterROPageRO.studyForm != null'>AND cs.study_form =
+            #{courseScheduleFilterROPageRO.studyForm}
+        </if>
+        <if test='courseScheduleFilterROPageRO.batchIndex != null'>AND cs.batch_index =
+            #{courseScheduleFilterROPageRO.batchIndex}
+        </if>
         <if test='courseScheduleFilterROPageRO.classNames != null and courseScheduleFilterROPageRO.classNames.size() > 0'>
             AND cs.admin_class IN
-            <foreach item="className" collection="courseScheduleFilterROPageRO.classNames" open="(" separator="," close=")">
+            <foreach item="className" collection="courseScheduleFilterROPageRO.classNames" open="(" separator=","
+                     close=")">
                 #{className}
             </foreach>
         </if>
@@ -308,8 +327,11 @@
                   -- 计算学年
                           (YEAR(CURRENT_DATE) - ss.grade + 1) * 2
                       -- 根据当前月份确定是春季学期还是秋季学期
-                      - CASE WHEN MONTH(CURRENT_DATE) BETWEEN 1 AND 6 THEN 1 ELSE 0 END
-                  );
+                      - CASE WHEN MONTH (
+            CURRENT_DATE) BETWEEN 1
+          AND 6 THEN 1 ELSE 0
+        END
+        );
     </select>
 
     <!--    根据学生的排课表来获取其在学课程  -->
@@ -462,7 +484,7 @@
                      ELSE 0
                      END ASC,
                  cs.teaching_date ASC
-        LIMIT #{pageNumber}, #{pageSize};
+            LIMIT #{pageNumber}, #{pageSize};
     </select>
 
     <select id="getCourseSchedulesByTeacherUserNameRecentCount" resultType="Long">
@@ -659,58 +681,69 @@
     <!--    获取不同的筛选参数 -->
     <select id="getDistinctGrades" resultType="String">
         SELECT DISTINCT cs.grade
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctCollegeNames" resultType="String">
         SELECT DISTINCT college
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctStudyForms" resultType="String">
         SELECT DISTINCT cs.study_form
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
 
     <select id="getDistinctClassNames" resultType="String">
         SELECT DISTINCT cs.admin_class
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctMajorNames" resultType="String">
         SELECT DISTINCT cs.major_name
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctLevels" resultType="String">
         SELECT DISTINCT cs.level
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctTeachingClasses" resultType="String">
         SELECT DISTINCT teaching_class
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
     </select>
 
     <select id="getDistinctCourseNames" resultType="String">
         SELECT DISTINCT course_name
-        <include refid="commonJoin" />
+        <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters" />
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getStudentInformationBatchIndex"
+            resultType="com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO">
+        SELECT *
+        <include refid="commonJoin"/>
+        INNER JOIN student_status ss
+        ON ss.class_identifier = ci.class_identifier
+        INNER JOIN personal_info pi
+        ON pi.id_number = ss.id_number
+        WHERE 1 = 1
+        AND cs.batch_index = #{batch_index}
     </select>
 </mapper>

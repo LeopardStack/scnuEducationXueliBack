@@ -3,9 +3,6 @@ package com.scnujxjy.backendpoint.util.filter;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
-import cn.dev33.satoken.stp.StpUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.DegreeInfoPO;
@@ -24,8 +21,8 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformat
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
@@ -50,10 +47,8 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -270,6 +265,9 @@ public abstract class AbstractFilter {
 
     }
 
+    public void exportStudentInformationBatchIndex(PageRO<CourseScheduleStudentExcelBO> courseScheduleStudentExcelBOPageRO, String userId) {
+    }
+
     /**
      * 获取排课表的课程信息
      *
@@ -353,6 +351,7 @@ public abstract class AbstractFilter {
 
     /**
      * 根据不同角色获取其排课表课程管理的筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -362,11 +361,12 @@ public abstract class AbstractFilter {
 
     /**
      * 获取排课表课程管理信息
+     *
      * @return
      */
     public FilterDataVO getScheduleCoursesBetter(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
 
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
@@ -424,26 +424,25 @@ public abstract class AbstractFilter {
                 long diffCurrent = currentTeachingDate.getTime() - now.getTime();
 
                 // 如果新的开始时间比现在时间晚，并且与现在的时间差比当前记录的时间差小
-                if(diffCurrent > 0 && diffNew < 0){
+                if (diffCurrent > 0 && diffNew < 0) {
                     // 当前记录的排课的上课日期和上课时间 比此时此刻的大 而新的排课的上课日期和上课时间比现在小 那么就啥也不做
-                }
-                else if (diffCurrent > 0) {
-                    if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                } else if (diffCurrent > 0) {
+                    if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                         // 选最近的
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
                     }
 
-                }else {
+                } else {
                     // 目前拿到的上课时间 比当下的时间 大
-                    if(diffNew > 0){
+                    if (diffNew > 0) {
                         scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                         scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
                         scheduleCoursesInformationVO.setOnlinePlatform(schedulesVO.getOnlinePlatform());
 
-                    }else{
-                        if(Math.abs(diffNew) < Math.abs(diffCurrent)){
+                    } else {
+                        if (Math.abs(diffNew) < Math.abs(diffCurrent)) {
                             // 选最近的
                             scheduleCoursesInformationVO.setTeachingDate(schedulesVO.getTeachingDate());
                             scheduleCoursesInformationVO.setTeachingTime(schedulesVO.getTeachingTime());
@@ -525,7 +524,6 @@ public abstract class AbstractFilter {
     }
 
 
-
     private boolean processScheduleCoursesInformationVO(
             ScheduleCoursesInformationVO scheduleCoursesInformationVO,
             List<String> errorCourses, CourseScheduleFilterRO courseScheduleFilterRO) {
@@ -594,7 +592,7 @@ public abstract class AbstractFilter {
                 scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
                 scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
             }
-            if(onlinePlatform.equals("已结束")){
+            if (onlinePlatform.equals("已结束")) {
                 scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
             }
         } else {
@@ -608,7 +606,7 @@ public abstract class AbstractFilter {
                 if (!scheduleCoursesInformationVO.getLivingStatus().equals(courseScheduleFilterRO.getLivingStatus())) {
                     return false; // 表示不保留这个对象
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error(e.toString());
                 return false;
             }
