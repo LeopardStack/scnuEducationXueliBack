@@ -100,6 +100,7 @@ public class Test1 {
         SingleLivingServiceImpl sing = new SingleLivingServiceImpl();
         ChannelInfoRequest request = new ChannelInfoRequest();
         request.setChannelId("4417168");
+        sing.setWatchCondition("4440091");
 //        sing.testConcurrence();
 //        sing.viewlogDetailTest("430221198412180829");
 //        request.setCurrentDay("2023-11-04");
@@ -332,5 +333,9 @@ public class Test1 {
         log.info("频道链接信息：{}", videoStreamAllUrlInformationVO);
     }
 
+    @Test
+    void testSetWatching()  {
+
+    }
 
 }
