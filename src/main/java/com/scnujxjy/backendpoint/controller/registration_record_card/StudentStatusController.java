@@ -299,7 +299,7 @@ public class StudentStatusController {
         }
 
         // 生成缓存键
-        String cacheKey = "studentStatus:" + studentStatusROPageRO.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "studentStatus:" + studentStatusROPageRO.toString();
 
         // 从Redis中尝试获取缓存
         PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
@@ -441,7 +441,7 @@ public class StudentStatusController {
         StudentStatusSelectArgs studentStatusSelectArgs = null;
 
         // 生成缓存键
-        String cacheKey = "studentStatusSelectArgsAdmin:" + loginId;
+        String cacheKey = StpUtil.getLoginIdAsString() + "studentStatusSelectArgsAdmin:" + loginId;
 
         // 尝试从Redis中获取数据
         studentStatusSelectArgs = (StudentStatusSelectArgs) redisTemplate.opsForValue().get(cacheKey);

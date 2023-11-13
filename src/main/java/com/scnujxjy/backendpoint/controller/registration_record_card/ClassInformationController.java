@@ -163,7 +163,7 @@ public class ClassInformationController {
         }
 
         // 生成缓存键
-        String cacheKey = "classInfos:" + classInformationFilterROPageRO.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "classInfos:" + classInformationFilterROPageRO.toString();
 
         // 从Redis中尝试获取缓存
         PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
@@ -251,7 +251,7 @@ public class ClassInformationController {
         ClassInformationSelectArgs classInformationSelectArgs = null;
 
         // 生成缓存键
-        String cacheKey = "classInformationSelectArgsAdmin:" + loginId.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "classInformationSelectArgsAdmin:" + loginId.toString();
 
         // 尝试从Redis中获取数据
         classInformationSelectArgs = (ClassInformationSelectArgs) redisTemplate.opsForValue().get(cacheKey);

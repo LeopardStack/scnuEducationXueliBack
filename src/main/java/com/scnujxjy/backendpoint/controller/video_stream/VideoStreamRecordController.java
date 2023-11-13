@@ -518,7 +518,7 @@ public class VideoStreamRecordController {
     }
 
     @GetMapping("/detail-watch-information")
-    public SaResult getWatchInformation(String channelId) {
+    public SaResult getWatchInformation(@RequestParam("channelId")String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }

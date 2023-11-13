@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.util;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -18,6 +19,7 @@ import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,9 @@ public class DataUpdate {
 
     @Resource
     private VideoStreamUtils videoStreamUtils;
+
+    @Resource
+    protected RedisTemplate<String, Object> redisTemplate;
 
     @Resource
     private ScoreInformationMapper scoreInformationMapper;
@@ -134,6 +139,22 @@ public class DataUpdate {
                     videoStreamRecordPO.setWatchStatus(LiveStatusEnum.get(channelBasicInfo.getWatchStatus()));
                     int i = videoStreamRecordsMapper.updateById(videoStreamRecordPO);
                     log.info("更新直播间状态 " + i + " " + channelBasicInfo);
+                }
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 1800000) // 每30分钟执行一次
+    public void checkAndUpdateOnlineUsers() {
+        List<String> onlineUsers = StpUtil.searchSessionId("", 0, -1, false);
+        for (String sessionId : onlineUsers) {
+            if (!StpUtil.isLogin(sessionId)) {
+                // 如果用户不再登录状态（可能因为令牌过期）
+                // 获取用户的角色信息并更新在线人数
+                if(!StpUtil.getRoleList().isEmpty()) {
+                    String roleName = StpUtil.getRoleList().get(0); // 根据sessionId获取角色名称
+                    redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
+                    redisTemplate.opsForValue().decrement("totalOnlineCount");
                 }
             }
         }

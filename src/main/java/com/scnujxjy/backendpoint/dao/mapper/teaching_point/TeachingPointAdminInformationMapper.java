@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_point;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import org.apache.ibatis.annotations.Update;
 
 /**
  * <p>
@@ -12,5 +13,4 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInf
  * @since 2023-08-02
  */
 public interface TeachingPointAdminInformationMapper extends BaseMapper<TeachingPointAdminInformationPO> {
-
 }

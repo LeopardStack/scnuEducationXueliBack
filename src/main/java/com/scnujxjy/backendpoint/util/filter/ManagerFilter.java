@@ -225,14 +225,18 @@ public class ManagerFilter extends AbstractFilter {
             Calendar calendar = Calendar.getInstance();
 
             // 更新毕业日期
-            calendar.setTime(student.getGraduationDate());
-            calendar.set(Calendar.DAY_OF_MONTH, 10);
-            student.setGraduationDate(calendar.getTime());
+            if(student.getGraduationDate() != null) {
+                calendar.setTime(student.getGraduationDate());
+                calendar.set(Calendar.DAY_OF_MONTH, 10);
+                student.setGraduationDate(calendar.getTime());
+            }
 
             // 更新入学日期
-            calendar.setTime(student.getEnrollmentDate());
-            calendar.set(Calendar.DAY_OF_MONTH, 10);
-            student.setEnrollmentDate(calendar.getTime());
+            if(student.getEnrollmentDate() != null) {
+                calendar.setTime(student.getEnrollmentDate());
+                calendar.set(Calendar.DAY_OF_MONTH, 10);
+                student.setEnrollmentDate(calendar.getTime());
+            }
         });
 
         log.info("导出了 " + studentStatusVOS.size() + " 条学籍数据");
