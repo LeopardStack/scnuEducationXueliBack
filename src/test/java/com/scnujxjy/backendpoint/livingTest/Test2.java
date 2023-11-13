@@ -21,7 +21,6 @@ import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -31,7 +30,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @SpringBootTest
@@ -115,8 +117,8 @@ public class Test2 {
         String channelID = "4417539";
         String channelID1 = "4400659";
         try {
-            ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
-            ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId(channelID1);
+            ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfo(channelID);
+            ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo(channelID1);
             log.info("频道信息包括 " + channelInfoByChannelId);
             log.info("频道信息包括1 " + channelInfoByChannelId1);
             if(channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()){
@@ -149,7 +151,7 @@ public class Test2 {
         String channelID = "4400659";
         try {
             String s = videoStreamUtils.generateTeacherSSOLink(channelID);
-            ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
+            ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfo(channelID);
             log.info("频道信息" + channelInfoByChannelId);
             log.info("单点登录链接" + s);
         }catch (Exception e){
@@ -313,7 +315,7 @@ public class Test2 {
 
         for(String channelID : uniqueChannelIds){
             try {
-                ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfoByChannelId(channelID);
+                ChannelInfoResponse channelInfoByChannelId = videoStreamUtils.getChannelInfo(channelID);
                 log.info("频道信息包括 " + channelInfoByChannelId);
                 if(channelInfoByChannelId.getCode().equals(200) && channelInfoByChannelId.getSuccess()){
 

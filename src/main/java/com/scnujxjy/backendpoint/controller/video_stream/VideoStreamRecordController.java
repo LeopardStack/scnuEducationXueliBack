@@ -5,11 +5,12 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
-import com.scnujxjy.backendpoint.constant.enums.PolyvEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -17,10 +18,10 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
-import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -32,6 +33,7 @@ import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import org.springframework.web.bind.annotation.*;
 
@@ -218,7 +220,7 @@ public class VideoStreamRecordController {
                 videoStreamRecordPO.setStartTime(timeInterval.getStart());
                 videoStreamRecordPO.setEndTime(timeInterval.getEnd());
 
-                ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfoByChannelId("" + channelResponseData.getChannelId());
+                ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo("" + channelResponseData.getChannelId());
                 log.info("频道信息包括 " + channelInfoByChannelId1);
                 if (channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()) {
                     log.info("创建频道成功");
@@ -495,10 +497,41 @@ public class VideoStreamRecordController {
             }
         }
         try {
+            Boolean directOpen = videoStreamRecordService.checkDirectOpen(channelId);
+            if (!directOpen) {
+                LiveChannelSettingRequest request = new LiveChannelSettingRequest();
+                LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting();
+                authSetting.setRank(2)
+                        .setEnabled("Y")
+                        .setAuthType("direct")
+                        .setDirectKey(RandomUtil.randomString(8));
+                request.setChannelId(channelId);
+                request.setAuthSettings(ListUtil.of(authSetting));
+                Boolean isCreate = videoStreamUtils.createWatchCondition(request);
+                if (!isCreate) {
+                    return SaResult.code(2000).setMsg("打开独立授权失败，请联系管理员");
+                }
+            }
             String url = videoStreamUtils.getIndependentAuthorizationLink(channelId, String.valueOf(userId), nickname, platformUserPO.getAvatarImagePath());
             return SaResult.data(url);
         } catch (IOException | NoSuchAlgorithmException e) {
             return SaResult.code(2000).setData("获取直播间信息失败");
+        }
+    }
+
+    @GetMapping("/detail-watch-information")
+    public SaResult getWatchInformation(String channelId) {
+        if (StrUtil.isBlank(channelId)) {
+            throw dataMissError();
+        }
+        try {
+            VideoStreamAllUrlInformationVO videoStreamAllUrlInformationVO = videoStreamRecordService.selectChannelAllUrl(channelId);
+            if (Objects.isNull(videoStreamAllUrlInformationVO)) {
+                return SaResult.code(2000).setMsg("获取观看信息为空");
+            }
+            return SaResult.data(videoStreamAllUrlInformationVO);
+        } catch (IOException | NoSuchAlgorithmException e) {
+            return SaResult.code(2000).setMsg("获取观看信息失败");
         }
     }
 

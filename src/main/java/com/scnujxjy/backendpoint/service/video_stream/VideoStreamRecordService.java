@@ -11,7 +11,10 @@ import cn.hutool.http.HttpStatus;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.AuthSetting;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelRequestBO;
@@ -19,6 +22,7 @@ import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
@@ -27,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,6 +60,9 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
     public static final String TEACHER_URL_FORMAT = "https://live.polyv.net/web-start/login?channelId=%s";
     @Resource
     private CourseScheduleService courseScheduleService;
+
+    @Resource
+    private TutorInformationMapper tutorInformationMapper;
 
     /**
      * 根据id查询直播间信息
@@ -299,6 +308,58 @@ public class VideoStreamRecordService extends ServiceImpl<VideoStreamRecordsMapp
             log.error(e.toString());
         }
         return null;
+    }
+
+    /**
+     * 检查时候已经打开独立授权
+     *
+     * @param channelId 频道 id
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public Boolean checkDirectOpen(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
+            return false;
+        }
+        List<AuthSetting> channelWatchCondition = videoStreamUtils.getChannelWatchCondition(channelId);
+        if (CollUtil.isEmpty(channelWatchCondition)) {
+            return false;
+        }
+        for (AuthSetting authSetting : channelWatchCondition) {
+            if (Objects.nonNull(authSetting)
+                    && StrUtil.equals("direct", authSetting.getAuthType())
+                    && StrUtil.equals("Y", authSetting.getEnabled())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取频道所有的观看链接
+     *
+     * @param channelId
+     * @return
+     */
+    public VideoStreamAllUrlInformationVO selectChannelAllUrl(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
+            return null;
+        }
+        com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse channelInfo = videoStreamUtils.getChannelInfo(channelId);
+        if (Objects.isNull(channelInfo) || channelInfo.getCode() != 200) {
+            return null;
+        }
+        List<TutorInformation> tutorInformationList = tutorInformationMapper.selectList(Wrappers.<TutorInformation>lambdaQuery()
+                .eq(TutorInformation::getChannelId, channelId));
+        return VideoStreamAllUrlInformationVO.builder()
+                .teacherWebUrl(String.format("https://live.polyv.net/web-start/classroom?channelId=%s", channelId))
+                .teacherClientUrl(String.format("https://console.polyv.net/live/start-client.html?channelId=%s", channelId))
+                .channelId(channelId)
+                .teacherPassword(channelInfo.getData().getChannelPasswd())
+                .tutorInformationList(tutorInformationList)
+                .audienceUrl(String.format("https://live.polyv.cn/watch/%s", channelId))
+                .build();
     }
 
 }

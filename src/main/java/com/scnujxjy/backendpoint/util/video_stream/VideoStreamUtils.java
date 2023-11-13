@@ -270,7 +270,6 @@ public class VideoStreamUtils {
         request.setChannelId(channelId);
         try {
             LiveChannelBasicInfoResponse response = new LiveChannelOperateServiceImpl().getChannelBasicInfo(request);
-            log.info("频道信息：{}", response);
             return videoStreamInverter.liveChannelBasicInfoResponse2ChannelResponseBO(response);
         } catch (IOException | NoSuchAlgorithmException e) {
             log.error("获取频道信息失败：{}", request);
@@ -362,7 +361,7 @@ public class VideoStreamUtils {
      * @throws NoSuchAlgorithmException
      */
     public String getIndependentAuthorizationLink(String channelId, String userId, String username, String avatarPath) throws IOException, NoSuchAlgorithmException {
-        ChannelInfoResponse channelInfoByChannelId = getChannelInfoByChannelId(channelId);
+        ChannelInfoResponse channelInfoByChannelId = getChannelInfo(channelId);
         if (Objects.isNull(channelInfoByChannelId)) {
             return null;
         }
@@ -455,6 +454,29 @@ public class VideoStreamUtils {
         }
 
         return channelResponse;
+    }
+
+    /**
+     * 查询频道观看条件
+     *
+     * @param channelId
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public List<AuthSetting> getChannelWatchCondition(String channelId) throws IOException, NoSuchAlgorithmException {
+        if (StrUtil.isBlank(channelId)) {
+            return null;
+        }
+        ChannelInfoResponse channelInfo = getChannelInfo(channelId);
+        if (Objects.isNull(channelInfo)) {
+            return null;
+        }
+        ChannelDetail channelDetail = channelInfo.getData();
+        if (Objects.isNull(channelDetail)) {
+            return null;
+        }
+        return channelDetail.getAuthSettings();
     }
 
     /**
@@ -795,7 +817,7 @@ public class VideoStreamUtils {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public ChannelInfoResponse getChannelInfoByChannelId(String channelId) throws IOException, NoSuchAlgorithmException {
+    public ChannelInfoResponse getChannelInfo(String channelId) throws IOException, NoSuchAlgorithmException {
         String url = "http://api.polyv.net/live/v4/channel/basic/get";
 
         // 获取北京时间的时间戳
@@ -807,19 +829,36 @@ public class VideoStreamUtils {
         requestMap.put("timestamp", timestamp);
         requestMap.put("channelId", channelId);
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        String response = PolyvHttpUtil.get(url, requestMap);
+        // 解析响应为 ChannelResponse POJO
+        return JSON.parseObject(response, ChannelInfoResponse.class);
+    }
 
-        ChannelInfoResponse channelResponse = null;
-        try {
-            String response = PolyvHttpUtil.get(url, requestMap);
-            log.info("频道信息返回值 \n" + response);
-            // 解析响应为 ChannelResponse POJO
-            channelResponse = JSON.parseObject(response, new TypeReference<ChannelInfoResponse>() {
-            });
-        } catch (Exception e) {
-            log.error("获取频道 (" + channelId + ") 下的角色信息失败 " + e.toString());
+    /**
+     * 修改频道观看条件
+     *
+     * @param liveChannelSettingRequest 修改的频道观看参数
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public Boolean createWatchCondition(LiveChannelSettingRequest liveChannelSettingRequest) throws IOException, NoSuchAlgorithmException {
+        if (Objects.isNull(liveChannelSettingRequest)) {
+            return false;
         }
-
-        return channelResponse;
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", LiveGlobalConfig.getAppId());
+        requestMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        requestMap.put("channelId", liveChannelSettingRequest.getChannelId());
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
+        String url = "http://api.polyv.net/live/v3/channel/auth/update?" + URLUtil.buildQuery(requestMap, StandardCharsets.UTF_8);
+        String body = JSONObject.toJSONString(liveChannelSettingRequest);
+        String response = com.scnujxjy.backendpoint.util.polyv.HttpUtil.postJsonBody(url, body, null);
+        if (StrUtil.isBlank(response)) {
+            return false;
+        }
+        JSONObject responseJSON = JSONObject.parseObject(response);
+        return responseJSON.getInteger("code") == 200;
     }
 
 
@@ -1205,4 +1244,6 @@ public class VideoStreamUtils {
         }
         return null;
     }
+
+
 }
