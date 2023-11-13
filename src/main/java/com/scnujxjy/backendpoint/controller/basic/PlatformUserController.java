@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.basic.OnlineCount;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
@@ -21,10 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -91,18 +89,16 @@ public class PlatformUserController {
                         isLogin.getName(), isLogin.getWechatOpenId());
 
 
-                // 在 Redis 中更新角色在线人数
-                redisTemplate.opsForValue().increment("onlineCount:" + roleName);
-                redisTemplate.opsForValue().increment("totalOnlineCount");
+                // 更新角色在线人数和总在线人数
+                updateOnlineCounts(StpUtil.getRoleList().get(0), true);
                 return SaResult.data("成功登录 " + platformUserRO.getUsername())
                         .set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
                     isLogin.getName(), isLogin.getWechatOpenId());
-            // 在 Redis 中更新角色在线人数
-            redisTemplate.opsForValue().increment("onlineCount:" + roleName);
-            redisTemplate.opsForValue().increment("totalOnlineCount");
+            // 更新角色在线人数和总在线人数
+            updateOnlineCounts(StpUtil.getRoleList().get(0), true);
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
@@ -112,11 +108,12 @@ public class PlatformUserController {
     @GetMapping("/logout")
     public SaResult logOut(){
         // 获取当前用户角色
-        String roleName = StpUtil.getRoleList().get(0);
+        if(!StpUtil.getRoleList().isEmpty()){
+            String roleName = StpUtil.getRoleList().get(0);
 
-        // 在 Redis 中更新角色在线人数
-        redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
-        redisTemplate.opsForValue().decrement("totalOnlineCount");
+            // 更新角色在线人数和总在线人数
+            updateOnlineCounts(StpUtil.getRoleList().get(0), false);
+        }
 
         StpUtil.logout();
         return SaResult.ok();
@@ -156,17 +153,15 @@ public class PlatformUserController {
             if(roleName.contains(tmp)){
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
-                // 在 Redis 中更新角色在线人数
-                redisTemplate.opsForValue().increment("onlineCount:" + roleName);
-                redisTemplate.opsForValue().increment("totalOnlineCount");
+                // 更新角色在线人数和总在线人数
+                updateOnlineCounts(StpUtil.getRoleList().get(0), true);
                 return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
                     isLogin.getName(), isLogin.getWechatOpenId());
-            // 在 Redis 中更新角色在线人数
-            redisTemplate.opsForValue().increment("onlineCount:" + roleName);
-            redisTemplate.opsForValue().increment("totalOnlineCount");
+            // 更新角色在线人数和总在线人数
+            updateOnlineCounts(StpUtil.getRoleList().get(0), true);
             return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
         }else{
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
@@ -268,62 +263,42 @@ public class PlatformUserController {
      */
     @GetMapping("/getPlatformBasicInfo")
     public SaResult getPlatFormInfo() {
-        // 尝试获取锁
-        Boolean lockAcquired = redisTemplate.opsForValue().setIfAbsent("platformInfoLock", "locked", 10, TimeUnit.MINUTES);
-        if (lockAcquired == null || !lockAcquired) {
-            // 未能获取锁，返回正在计算中的提示
-            return SaResult.error("计算正在进行中，请稍后重试");
-        }
-
         try {
-            // 首先尝试从 Redis 获取缓存的结果
-            HashMap<String, Integer> cachedResult = (HashMap<String, Integer>) redisTemplate.opsForValue().get("platformInfoResult");
-            if (cachedResult != null) {
-                // 如果缓存中有结果，直接返回该结果
-                return SaResult.ok().set("roleLoginCount", cachedResult);
+            // 从 Redis 中获取在线人数统计对象
+            OnlineCount onlineCount = (OnlineCount) redisTemplate.opsForValue().get("onlineCount");
+            if (onlineCount == null) {
+                onlineCount = new OnlineCount(); // 如果 Redis 中没有数据，则创建一个新的 OnlineCount 对象
             }
 
-            // 进行计算逻辑
-            List<String> sessionIdList = StpUtil.searchSessionId("", 0, -1, false);
-            List<TokenSign> tokenSignList = new ArrayList<>();
-            HashMap<String, Integer> roleLoginCount = new HashMap<>();
-            for (String sessionId : sessionIdList) {
+            // 从 OnlineCount 对象中获取角色的在线人数和总在线人数
+            Map<String, Integer> roleLoginCount = onlineCount.getRoleCounts();
+            int totalOnlineCount = onlineCount.getTotalOnlineCount();
 
-                // 根据会话id，查询对应的 SaSession 对象，此处一个 SaSession 对象即代表一个登录的账号
-                SaSession session = StpUtil.getSessionBySessionId(sessionId);
+            // 将结果放入返回对象
+            HashMap<String, Object> result = new HashMap<>();
+            result.put("roleLoginCount", roleLoginCount);
+            result.put("totalOnlineCount", totalOnlineCount);
 
-                // 查询这个账号都在哪些设备登录了，依据上面的示例，账号A 的 tokenSign 数量是 3，账号B 的 tokenSign 数量是 2
-                tokenSignList = session.getTokenSignList();
-                log.info("获取 会话 tokenValue List " + tokenSignList);
-                for(TokenSign tokenSign: tokenSignList){
-                    String loginId = (String) StpUtil.getLoginIdByToken(tokenSign.getValue());
-                    List<String> roleList = StpUtil.getRoleList(loginId);
-                    if(roleList.isEmpty()){
-                        log.error("该 loginId " + loginId + " 不在系统内");
-                    }else{
-                        if(roleLoginCount.containsKey(roleList.get(0))){
-                            Integer i = roleLoginCount.get(roleList.get(0));
-                            roleLoginCount.put(roleList.get(0), i + 1);
-                        }else{
-                            roleLoginCount.put(roleList.get(0), 1);
-                        }
-                        log.info("用户 " + loginId + "  在线 " + " 角色信息为 " + roleList);
-
-                    }
-
-                }
-            }
-
-            // 计算完成后，将结果存储到 Redis
-            redisTemplate.opsForValue().set("platformInfoResult", roleLoginCount, 10, TimeUnit.MINUTES);
-            return SaResult.ok().set("roleLoginCount", roleLoginCount);
-        } finally {
-            // 释放锁
-            redisTemplate.delete("platformInfoLock");
+            return SaResult.ok().setData(result);
+        } catch (Exception e) {
+            log.error("Error getting platform basic info: ", e);
+            return SaResult.error("无法获取平台基本信息");
         }
     }
 
 
+    private void updateOnlineCounts(String roleName, boolean increment) {
+        // 获取当前的在线人数统计
+        OnlineCount onlineCount = (OnlineCount) redisTemplate.opsForValue().get("onlineCount");
+        if (onlineCount == null) {
+            onlineCount = new OnlineCount();
+        }
 
+        // 更新统计
+        onlineCount.updateCount(roleName, increment);
+
+        // 将更新后的统计信息存回 Redis
+        redisTemplate.opsForValue().set("onlineCount", onlineCount, 100, TimeUnit.HOURS);
+    }
 }
 
