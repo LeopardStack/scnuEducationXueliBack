@@ -38,6 +38,9 @@ public class CourseScheduleStudentExcelBO {
     @ExcelProperty("学院")
     private String college;
 
+    @ExcelProperty("行政班別")
+    private String className;
+
     /**
      * 批次id
      */

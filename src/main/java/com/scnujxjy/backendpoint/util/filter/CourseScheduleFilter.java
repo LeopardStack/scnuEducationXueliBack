@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum.DATA_DOWNLOAD_SCORE_INFORMATION;
+import static com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum.DATA_DOWNLOAD_STUDENT_STATUS;
 
 @Component
 @Slf4j
@@ -58,8 +58,8 @@ public class CourseScheduleFilter extends AbstractFilter {
         // 获取文件大小
         int size = outputStream.size();
         // 获取桶名和子目录
-        String bucketName = DATA_DOWNLOAD_SCORE_INFORMATION.getBucketName();
-        String subDirectory = DATA_DOWNLOAD_SCORE_INFORMATION.getSubDirectory();
+        String bucketName = DATA_DOWNLOAD_STUDENT_STATUS.getBucketName();
+        String subDirectory = DATA_DOWNLOAD_STUDENT_STATUS.getSubDirectory();
         // 使用当前时间作为文件名前缀
         DateTime currentDate = DateUtil.date();
         String date = DateUtil.format(currentDate, "yyyyMMdd_HHmmss_SSS");
