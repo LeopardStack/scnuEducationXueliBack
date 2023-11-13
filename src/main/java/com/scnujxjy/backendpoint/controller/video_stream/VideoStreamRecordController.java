@@ -18,6 +18,8 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
@@ -28,6 +30,8 @@ import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
+import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.filter.CourseScheduleFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
@@ -84,6 +88,13 @@ public class VideoStreamRecordController {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private MessageSender messageSender;
+
+    @Resource
+    private CourseScheduleFilter courseScheduleFilter;
+
 
     /**
      * 批量添加直播间
@@ -520,7 +531,7 @@ public class VideoStreamRecordController {
     }
 
     @GetMapping("/detail-watch-information")
-    public SaResult getWatchInformation(String channelId) {
+    public SaResult getWatchInformation(@RequestParam("channelId")String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
@@ -533,6 +544,21 @@ public class VideoStreamRecordController {
         } catch (IOException | NoSuchAlgorithmException e) {
             return SaResult.code(2000).setMsg("获取观看信息失败");
         }
+    }
+
+    @PostMapping("/export-student-batch-index")
+    public SaResult exportStudentInformationBatchIndex(@RequestBody PageRO<CourseScheduleStudentExcelBO> courseScheduleStudentExcelBOPageRO) {
+        if (Objects.isNull(courseScheduleStudentExcelBOPageRO)
+                || Objects.isNull(courseScheduleStudentExcelBOPageRO.getEntity())
+                || Objects.isNull(courseScheduleStudentExcelBOPageRO.getEntity().getBatchIndex())) {
+            throw dataMissError();
+        }
+        String userId = StpUtil.getLoginIdAsString();
+        boolean isSend = messageSender.sendExportMsg(courseScheduleStudentExcelBOPageRO, courseScheduleFilter, userId);
+        if (!isSend) {
+            return SaResult.error("导出数据失败");
+        }
+        return SaResult.ok("导出数据成功");
     }
 
 }

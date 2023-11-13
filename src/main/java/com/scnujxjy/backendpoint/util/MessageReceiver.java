@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -31,6 +32,7 @@ import com.scnujxjy.backendpoint.util.excelListener.CourseScheduleListener;
 import com.scnujxjy.backendpoint.util.excelListener.CustomDateConverter;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.CourseScheduleFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
@@ -158,15 +160,7 @@ public class MessageReceiver {
                 String userId = message.getString("userId");
                 log.info("拿到班级数据筛选条件 ");
 
-                PlatformMessagePO platformMessagePO = new PlatformMessagePO();
-                Date generateData = new Date();
-                platformMessagePO.setCreatedAt(generateData);
-                platformMessagePO.setUserId(userId);
-                platformMessagePO.setRelatedMessageId(null);
-                platformMessagePO.setIsRead(false);
-                platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
+                PlatformMessagePO platformMessagePO = generateMessage(userId);
                 // 处理pageRO
                 classInformationService.generateBatchClassInformationData(pageRO, filter, userId, platformMessagePO);
 
@@ -179,19 +173,19 @@ public class MessageReceiver {
                 });
                 String userId = message.getString("userId");
                 log.info("拿到缴费数据筛选条件 ");
-
-                PlatformMessagePO platformMessagePO = new PlatformMessagePO();
-                Date generateData = new Date();
-                platformMessagePO.setCreatedAt(generateData);
-                platformMessagePO.setUserId(userId);
-                platformMessagePO.setRelatedMessageId(null);
-                platformMessagePO.setIsRead(false);
-                platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
+                PlatformMessagePO platformMessagePO = generateMessage(userId);
                 // 处理pageRO
                 paymentInfoService.generateBatchPaymentData(pageRO, filter, userId, platformMessagePO);
 
+            } else if ("com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO".equals(type)) {
+                PageRO<CourseScheduleStudentExcelBO> pageRO = JSON.parseObject(message.getString("data"),
+                        new TypeReference<PageRO<CourseScheduleStudentExcelBO>>() {
+                        });
+                AbstractFilter courseScheduleFilter = JSON.parseObject(message.getString("filter"), new TypeReference<CourseScheduleFilter>() {
+                });
+                String userId = message.getString("userId");
+                log.info("接收到根据批次id: {} 导出学生信息消息，正在下载内容");
+                courseScheduleFilter.exportStudentInformationBatchIndex(pageRO, userId);
             }
             // 添加其他类型的处理逻辑
 
@@ -206,6 +200,19 @@ public class MessageReceiver {
                 log.error("确认消息时出现异常: ", ioException);
             }
         }
+    }
+
+    private PlatformMessagePO generateMessage(String userId) {
+        PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+        Date generateData = new Date();
+        platformMessagePO.setCreatedAt(generateData);
+        platformMessagePO.setUserId(userId);
+        platformMessagePO.setRelatedMessageId(null);
+        platformMessagePO.setIsRead(false);
+        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+        int insert1 = platformMessageMapper.insert(platformMessagePO);
+        log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
+        return platformMessagePO;
     }
 
 

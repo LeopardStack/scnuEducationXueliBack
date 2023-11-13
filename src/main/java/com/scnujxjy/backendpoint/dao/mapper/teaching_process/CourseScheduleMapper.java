@@ -486,6 +486,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里面的年级筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -493,6 +494,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里面的学院筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -501,6 +503,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里面的学习形式筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -508,6 +511,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里的班级名称的筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -515,6 +519,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里的专业名称筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -522,6 +527,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表里面的层次筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -530,6 +536,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表的教学班别筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -537,6 +544,7 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     /**
      * 获取排课表中的课程筛选参数
+     *
      * @param courseScheduleFilterROPageRO
      * @return
      */
@@ -625,6 +633,14 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
      * @return
      */
     List<ScheduleCoursesInformationBO> getScheduleCoursesInformation(@Param("courseScheduleFilterROPageRO") CourseScheduleFilterRO entity);
+
+    /**
+     * 根据批次id获取学生信息
+     *
+     * @param batchIndex 批次id
+     * @return
+     */
+    List<CourseScheduleStudentExcelBO> getStudentInformationBatchIndex(@Param("batch_index") Long batchIndex);
 
     @Select("SELECT MAX(batch_index) FROM course_schedule")
     long selectMaxBitch();
