@@ -94,7 +94,8 @@ public class Test3 {
 
             // At this point, no duplicates were found, so you can safely create a set of class names
             Set<String> classSet = classCountMap.keySet();
-
+            // 当下的年份 当下的学期
+            // API 获取现在的年份 + 现在学期 （1-6 上 7-12 下）
             BatchInfo key = new BatchInfo(schedule.getMainTeacherName(), schedule.getCourseName(), classSet);
             if(batches.containsKey(key)){
                 batches.get(key).add(schedule);
@@ -110,6 +111,9 @@ public class Test3 {
         // 写入批次 ID
         long batchId = 1;
         int countD = 0;
+
+        // 线程池的 消费者和生产者  100 个
+
         for(BatchInfo key: batches.keySet()){
             List<CourseSchedulePO> courseSchedulePOS2 = batches.get(key);
             LocalDate currentDate = LocalDate.now();
@@ -117,6 +121,7 @@ public class Test3 {
             // Get the current year as a string
             String yearNow = String.valueOf(currentDate.getYear());
             int count = 1;
+            // 当下的年份 和学期 2024 上学期  teachingDate 的 grade 和 month
             String teachingClassName = yearNow + "-" + key.teacherName + "-" + key.courseName + "-" + count + "班";
             while(true){
                 List<CourseSchedulePO> courseSchedulePOS3 = courseScheduleMapper.selectList(

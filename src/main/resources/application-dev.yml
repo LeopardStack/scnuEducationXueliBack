@@ -13,6 +13,10 @@ spring:
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
+  data:
+    mongodb:
+      uri: mongodb://scnuAdmin:scnu2023@139.159.132.31:27017/scnuXueli
+
   redis:
     host: 113.108.140.172
     port: 6379
