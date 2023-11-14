@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -65,6 +66,9 @@ public class HealthCheckTask {
     @Resource
     private TutorInformationMapper tutorInformationMapper;
 
+    @Resource
+    private MongoTemplate mongoTemplate;
+
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
     public void checkConnections() {
@@ -92,6 +96,16 @@ public class HealthCheckTask {
             // 如果有异常则打印连接失败的日志
             log.error("MySQL连接失败" + e.toString());
         }
+
+        try {
+            // 尝试执行一个简单的 MongoDB 操作
+            mongoTemplate.executeCommand("{ ping: 1 }");
+            // 如果没有异常则打印连接成功的日志
+            log.info("MongoDB连接成功");
+        } catch (Exception e) {
+            // 如果有异常则打印连接失败的日志
+            log.error("MongoDB连接失败 " + e.toString());
+        }
     }
 
 
@@ -102,8 +116,8 @@ public class HealthCheckTask {
     public void clearRedisDataOnStartup() {
         try {
             // 清除Redis中的所有数据
-            stringRedisTemplate.getConnectionFactory().getConnection().flushDb();
-            log.info("Redis数据已清除");
+//            stringRedisTemplate.getConnectionFactory().getConnection().flushDb();
+//            log.info("Redis数据已清除");
         } catch (Exception e) {
             log.error("清除Redis数据时出错: " + e.toString());
         }
