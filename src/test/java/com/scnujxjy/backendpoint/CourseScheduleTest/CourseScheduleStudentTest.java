@@ -1,5 +1,7 @@
 package com.scnujxjy.backendpoint.CourseScheduleTest;
 
+import cn.hutool.core.io.FileUtil;
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
@@ -9,12 +11,13 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInform
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.util.*;
 
 @SpringBootTest
@@ -33,7 +36,7 @@ public class CourseScheduleStudentTest {
     StudentStatusMapper studentStatusMapper;
 
     @Test
-    public void test1(){
+    public void test1() {
         CourseInformationPO courseInformationPO = new CourseInformationPO();
         courseInformationPO.setGrade("2023");
         courseInformationPO.setMajorName("计算机科学与技术");
@@ -81,11 +84,11 @@ public class CourseScheduleStudentTest {
      * 指定学生获取其排课一级页面 也就是多少门要直播的课程
      */
     @Test
-    public void test2(){
+    public void test2() {
         String sfzh = "44512219951212376X";
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(new LambdaQueryWrapper<StudentStatusPO>().
                 eq(StudentStatusPO::getIdNumber, sfzh));
-        for(StudentStatusPO studentStatusPO: studentStatusPOS){
+        for (StudentStatusPO studentStatusPO : studentStatusPOS) {
             String classIdentifier = studentStatusPO.getClassIdentifier();
             try {
                 ClassInformationPO classInformationPO = classInformationMapper.selectOne(new LambdaQueryWrapper<ClassInformationPO>().
@@ -99,12 +102,12 @@ public class CourseScheduleStudentTest {
                         eq(CourseSchedulePO::getAdminClass, className).
                         eq(CourseSchedulePO::getMajorName, majorName));
                 Set<String> courseNames = new HashSet<>();
-                for(CourseSchedulePO courseSchedulePO: courseSchedulePOS){
+                for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
                     courseNames.add(courseSchedulePO.getCourseName());
                 }
                 log.info("\n" + sfzh + " 的直播课程包括 " + grade + " 年 " + courseNames);
-            }catch (Exception e){
-                log.error(sfzh +  " 获取班级信息失败 " + e.toString());
+            } catch (Exception e) {
+                log.error(sfzh + " 获取班级信息失败 " + e.toString());
             }
         }
     }
@@ -149,6 +152,16 @@ public class CourseScheduleStudentTest {
         }
 
         log.info("\n" + sfzh + " 的排课表包括 " + courseSchedules);
+    }
+
+    @Test
+    public void testStudentInformationBatchIndex() {
+        Set<CourseScheduleStudentExcelBO> studentInformationMapList = new HashSet<>(courseScheduleMapper.getStudentInformationBatchIndex(53L));
+        File file = FileUtil.file("./test.xlsx");
+        EasyExcel.write(file, CourseScheduleStudentExcelBO.class)
+                .sheet("模板")
+                .doWrite(() -> studentInformationMapList);
+        System.out.println(file.getAbsolutePath());
     }
 
 }

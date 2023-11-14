@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
@@ -323,8 +324,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .setRank(1)
                     .setEnabled("Y")
                     .setAuthTips("请输入你的身份证号码");
+
+            LiveChannelSettingRequest.AuthSetting authSetting2 = new LiveChannelSettingRequest.AuthSetting().setAuthType(
+                    LiveConstant.AuthType.DIRECT.getDesc())
+                    .setRank(2)
+                    .setEnabled("Y")
+                    .setDirectKey(RandomUtil.randomString(8));
+
             List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
             authSettings.add(authSetting);
+            authSettings.add(authSetting2);
 
             liveUpdateChannelAuthRequest.setChannelId(channelId)
                     .setAuthSettings(authSettings);

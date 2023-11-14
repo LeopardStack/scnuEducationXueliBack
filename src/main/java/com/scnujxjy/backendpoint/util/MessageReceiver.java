@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -31,25 +32,20 @@ import com.scnujxjy.backendpoint.util.excelListener.CourseScheduleListener;
 import com.scnujxjy.backendpoint.util.excelListener.CustomDateConverter;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.CourseScheduleFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
 
 @Component
@@ -134,62 +130,62 @@ public class MessageReceiver {
 
             if ("com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO".equals(type)) {
                 PageRO<StudentStatusFilterRO> pageRO = JSON.parseObject(message.getString("data"),
-                        new TypeReference<PageRO<StudentStatusFilterRO>>() {});
-                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {});
+                        new TypeReference<PageRO<StudentStatusFilterRO>>() {
+                        });
+                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                });
                 String userId = message.getString("userId");
                 log.info("拿到学籍数据筛选条件 " + pageRO.getEntity().toString());
                 // 处理pageRO
                 studentStatusService.generateBatchStudentStatusData(pageRO, filter, userId);
-            }else if("com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO".equals(type)){
+            } else if ("com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO".equals(type)) {
                 // 下载成绩数据，获取成绩筛选参数
                 PageRO<ScoreInformationFilterRO> pageRO = JSON.parseObject(message.getString("data"),
-                        new TypeReference<PageRO<ScoreInformationFilterRO>>() {});
-                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {});
+                        new TypeReference<PageRO<ScoreInformationFilterRO>>() {
+                        });
+                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                });
                 String userId = message.getString("userId");
                 log.info("拿到成绩数据筛选条件 " + pageRO.getEntity().toString());
                 // 处理pageRO
                 studentStatusService.generateBatchScoreInformationData(pageRO, filter, userId);
 
-            }else if("com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO".equals(type)){
+            } else if ("com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO".equals(type)) {
                 // 下载成绩数据，获取成绩筛选参数
                 PageRO<ClassInformationFilterRO> pageRO = JSON.parseObject(message.getString("data"),
-                        new TypeReference<PageRO<ClassInformationFilterRO>>() {});
-                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {});
+                        new TypeReference<PageRO<ClassInformationFilterRO>>() {
+                        });
+                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                });
                 String userId = message.getString("userId");
                 log.info("拿到班级数据筛选条件 ");
 
-                PlatformMessagePO platformMessagePO = new PlatformMessagePO();
-                Date generateData = new Date();
-                platformMessagePO.setCreatedAt(generateData);
-                platformMessagePO.setUserId(userId);
-                platformMessagePO.setRelatedMessageId(null);
-                platformMessagePO.setIsRead(false);
-                platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                log.info("接收到用户下载消息，正在处理下载内容... "+ insert1);
+                PlatformMessagePO platformMessagePO = generateMessage(userId);
                 // 处理pageRO
                 classInformationService.generateBatchClassInformationData(pageRO, filter, userId, platformMessagePO);
 
-            }else if("com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO".equals(type)){
+            } else if ("com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO".equals(type)) {
                 // 下载成绩数据，获取成绩筛选参数
                 PageRO<PaymentInfoFilterRO> pageRO = JSON.parseObject(message.getString("data"),
-                        new TypeReference<PageRO<PaymentInfoFilterRO>>() {});
-                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {});
+                        new TypeReference<PageRO<PaymentInfoFilterRO>>() {
+                        });
+                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                });
                 String userId = message.getString("userId");
                 log.info("拿到缴费数据筛选条件 ");
-
-                PlatformMessagePO platformMessagePO = new PlatformMessagePO();
-                Date generateData = new Date();
-                platformMessagePO.setCreatedAt(generateData);
-                platformMessagePO.setUserId(userId);
-                platformMessagePO.setRelatedMessageId(null);
-                platformMessagePO.setIsRead(false);
-                platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                log.info("接收到用户下载消息，正在处理下载内容... "+ insert1);
+                PlatformMessagePO platformMessagePO = generateMessage(userId);
                 // 处理pageRO
                 paymentInfoService.generateBatchPaymentData(pageRO, filter, userId, platformMessagePO);
 
+            } else if ("com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO".equals(type)) {
+                PageRO<CourseScheduleStudentExcelBO> pageRO = JSON.parseObject(message.getString("data"),
+                        new TypeReference<PageRO<CourseScheduleStudentExcelBO>>() {
+                        });
+                AbstractFilter courseScheduleFilter = JSON.parseObject(message.getString("filter"), new TypeReference<CourseScheduleFilter>() {
+                });
+                String userId = message.getString("userId");
+                log.info("接收到根据批次id: {} 导出学生信息消息，正在下载内容");
+                courseScheduleFilter.exportStudentInformationBatchIndex(pageRO, userId);
             }
             // 添加其他类型的处理逻辑
 
@@ -204,6 +200,19 @@ public class MessageReceiver {
                 log.error("确认消息时出现异常: ", ioException);
             }
         }
+    }
+
+    private PlatformMessagePO generateMessage(String userId) {
+        PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+        Date generateData = new Date();
+        platformMessagePO.setCreatedAt(generateData);
+        platformMessagePO.setUserId(userId);
+        platformMessagePO.setRelatedMessageId(null);
+        platformMessagePO.setIsRead(false);
+        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+        int insert1 = platformMessageMapper.insert(platformMessagePO);
+        log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
+        return platformMessagePO;
     }
 
 
@@ -240,13 +249,12 @@ public class MessageReceiver {
                     String minioURL = importBucketName + "/" + userUploadsPO.getFileUrl();
                     log.info("上传的文件地址为 " + minioURL);
                     InputStream fileInputStreamFromMinio = minioService.getFileInputStreamFromMinio(minioURL);
-                    if(fileInputStreamFromMinio != null){
+                    if (fileInputStreamFromMinio != null) {
                         log.info("成功获取上传文件的文件流，开始进行处理 ");
                     }
                     processExcelFile(fileInputStreamFromMinio, null, userUploadsPO);
 
                     // 解析完导入 excel 后 开始改变上传消息状态
-
 
 
                 } else if (CollegeAdminFilter.class.equals(superReceivedClass)) {
@@ -263,7 +271,7 @@ public class MessageReceiver {
                     String minioURL = importBucketName + "/" + userUploadsPO.getFileUrl();
                     log.info("上传的文件地址为 " + minioURL);
                     InputStream fileInputStreamFromMinio = minioService.getFileInputStreamFromMinio(minioURL);
-                    if(fileInputStreamFromMinio != null){
+                    if (fileInputStreamFromMinio != null) {
                         log.info("成功获取上传文件的文件流，开始进行处理 ");
                     }
                     processExcelFile(fileInputStreamFromMinio, userBelongCollege.getCollegeName(), userUploadsPO);
@@ -292,6 +300,7 @@ public class MessageReceiver {
 
     /**
      * 从 Minio 获取 excel 文件的输入流 然后通过 easyExcel 来解析
+     *
      * @param fileInputStreamFromMinio
      * @param collegeName
      */
@@ -304,7 +313,7 @@ public class MessageReceiver {
                 studentStatusService.getBaseMapper(), courseInformationMapper, userUploadsService.getBaseMapper(), minioService,
                 collegeName, userUploadsPO
         );
-        if(collegeName == null){
+        if (collegeName == null) {
             // 管理员导入
             courseScheduleListener.manger = true;
         }
