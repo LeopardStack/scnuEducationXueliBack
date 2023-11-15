@@ -8,7 +8,9 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelDe
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.updateChannelInfo.AuthSetting;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.video_stream.teacher_sso_information.PolyvRoleInformationResponseBO;
@@ -17,14 +19,13 @@ import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformat
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
+import net.polyv.live.v1.constant.LiveConstant;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
-import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListRequest;
-import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListResponse;
-import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
-import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
+import net.polyv.live.v1.entity.web.auth.*;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ public class Test1 {
 
     @Resource
     private VideoStreamRecordService videoStreamRecordService;
+
+    @Resource
+    private VideoStreamRecordsMapper videoStreamRecordsMapper;
 
     /**
      * 創建頻道
@@ -334,8 +338,44 @@ public class Test1 {
     }
 
     @Test
-    void testSetWatching()  {
+    void testSetWatching(){
+       List<String> channelIds = videoStreamRecordsMapper.selectDistinctChannelIds();
 
+        List<String> success=new ArrayList<>();
+        List<String> fail=new ArrayList<>();
+        for (String channelId: channelIds) {
+            LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
+            Boolean liveUpdateChannelAuthResponse;
+            LiveChannelSettingRequest.AuthSetting authSetting2 = new LiveChannelSettingRequest.AuthSetting().setAuthType(
+                    LiveConstant.AuthType.DIRECT.getDesc())
+                    .setRank(2)
+                    .setEnabled("Y")
+                    .setDirectKey(RandomUtil.randomString(8));
+
+            List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
+            authSettings.add(authSetting2);
+            liveUpdateChannelAuthRequest.setChannelId(channelId)
+                    .setAuthSettings(authSettings);
+
+            try {
+                liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(
+                        liveUpdateChannelAuthRequest);
+                //如果返回结果不为空并且为true，说明修改成功
+                if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
+                    log.info(channelId + "更新次要条件成功");
+                    success.add(channelId);
+                }
+            }catch (Exception e ){
+                e.printStackTrace();
+                fail.add(channelId);
+            }
+
+        }
+
+        System.out.println("成功更新的频道号位"+success);
+        System.out.println("更新失败的频道号为"+fail);
+
+    
     }
 
 }

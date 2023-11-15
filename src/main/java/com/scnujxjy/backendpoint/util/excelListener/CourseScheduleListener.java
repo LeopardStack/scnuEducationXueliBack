@@ -284,14 +284,14 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     } else {
                         CourseInformationPO courseInformationPO = courseInformationPOs.get(0);
                         // 找到该课程了 开始比对人数、学时、考核类型
-                        Integer studentCount = data.getStudentCount();
-                        Integer i = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
-                                .eq(StudentStatusPO::getClassIdentifier, matchedClassInfo.getClassIdentifier())
-                        );
-                        if (!studentCount.equals(i)) {
-                            outputData.setErrorMessage("按照年级、专业名称、层次、学习形式和行政班别以及课程名称查找班级人数 人数与系统统计不相等 系统统计该班级人数为 \n" +
-                                    i);
-                        }
+//                        Integer studentCount = data.getStudentCount();
+//                        Integer i = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
+//                                .eq(StudentStatusPO::getClassIdentifier, matchedClassInfo.getClassIdentifier())
+//                        );
+//                        if (!studentCount.equals(i)) {
+//                            outputData.setErrorMessage("按照年级、专业名称、层次、学习形式和行政班别以及课程名称查找班级人数 人数与系统统计不相等 系统统计该班级人数为 \n" +
+//                                    i);
+//                        }
                         // 更新教学计划中的授课方式
                         courseInformationPO.setTeachingMethod(data.getTeachingMethod());
                         int i1 = courseInformationMapper.updateById(courseInformationPO);
@@ -497,7 +497,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
     public void dohandleBitch() {
 
         //获取当前最大的批次值
-        long MaxBitch = courseScheduleMapper.selectMaxBitch();
+        Long MaxBitch = courseScheduleMapper.selectMaxBitch();
         int updateCount = 0;
         //获取当前批次为空的所有排课表。其实就是刚导入的排课表
         QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();

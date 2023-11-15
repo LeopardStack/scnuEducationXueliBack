@@ -30,6 +30,15 @@ spring:
     queue5: data_synchronize_test_timeout_test
     queue6: data_upload_dev
 
+  data:
+    mongodb:
+      username: scnuAdmin
+      password: scnu2023
+      authentication-database: scnuXueli
+      database: scnuXueli
+      host: 139.159.132.31
+      port: 27017
+      auto-index-creation: true
 
   servlet:
     multipart:
