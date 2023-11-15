@@ -544,6 +544,7 @@ public class OldDataSynchronize {
      * @return
      */
     public ArrayList<String> calculateStatistics(){
+        log.info("开始校验新旧两个系统的核心数据差异");
         ArrayList<String> dataCheckLogs = new ArrayList<>();
 
 //        log.info(msg1);
@@ -667,7 +668,12 @@ public class OldDataSynchronize {
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
             dataCheckLogs.add(formattedMsg);
         }
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String currentDateTime = LocalDateTime.now().format(formatter);
+        String relativePath = "data_import_error_excel/statistics/";
+        String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
+        exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
+        log.info("校验新旧两个系统的核心数据差异完毕，已写入 Minio 日志");
         return dataCheckLogs;
     }
 

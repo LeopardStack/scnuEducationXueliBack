@@ -57,6 +57,12 @@ public class Test1 {
     MessageSender messageSender;
 
     @Test
+    public void test0_1(){
+        // 测试两个系统之间的差异
+        oldDataSynchronize.calculateStatistics();
+    }
+
+    @Test
     public void test0() {
         try {
             ArrayList<String> dataCheckLogs = new ArrayList<>();
