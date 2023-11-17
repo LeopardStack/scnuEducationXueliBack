@@ -64,20 +64,20 @@ public class OfficeAutomationService {
      * @param approvalAllInformationPageRO 分页查询参数
      * @return
      */
-    public PageVO<ApprovalTypeAllInformation> pageQuery(PageRO<ApprovalTypeAllInformation> approvalAllInformationPageRO) {
-        if (Objects.isNull(approvalAllInformationPageRO)) {
+    public PageVO<ApprovalTypeAllInformation> pageQuery(PageRO<ApprovalTypePO> approvalTypePOPageRO) {
+        if (Objects.isNull(approvalTypePOPageRO)) {
             return null;
         }
-        ApprovalTypeAllInformation approvalTypeAllInformation = approvalAllInformationPageRO.getEntity();
-        if (Objects.isNull(approvalTypeAllInformation)) {
-            approvalTypeAllInformation = new ApprovalTypeAllInformation();
+        ApprovalTypePO approvalTypePO = approvalTypePOPageRO.getEntity();
+        if (Objects.isNull(approvalTypePO)) {
+            approvalTypePO = new ApprovalTypePO();
         }
         LambdaQueryWrapper<ApprovalTypePO> wrapper = Wrappers.<ApprovalTypePO>lambdaQuery()
-                .eq(Objects.nonNull(approvalTypeAllInformation.getId()), ApprovalTypePO::getId, approvalTypeAllInformation.getId())
-                .like(StrUtil.isNotBlank(approvalTypeAllInformation.getName()), ApprovalTypePO::getName, approvalTypeAllInformation.getName())
-                .like(StrUtil.isNotBlank(approvalTypeAllInformation.getDescription()), ApprovalTypePO::getDescription, approvalTypeAllInformation.getDescription());
+                .eq(Objects.nonNull(approvalTypePO.getId()), ApprovalTypePO::getId, approvalTypePO.getId())
+                .like(StrUtil.isNotBlank(approvalTypePO.getName()), ApprovalTypePO::getName, approvalTypePO.getName())
+                .like(StrUtil.isNotBlank(approvalTypePO.getDescription()), ApprovalTypePO::getDescription, approvalTypePO.getDescription());
         List<ApprovalTypeAllInformation> result = new ArrayList<>();
-        if (approvalAllInformationPageRO.getIsAll().equals(true)) {
+        if (approvalTypePOPageRO.getIsAll().equals(true)) {
             List<ApprovalTypePO> approvalTypePOS = approvalTypeMapper.selectList(wrapper);
             if (CollUtil.isEmpty(approvalTypePOS)) {
                 return null;
@@ -93,9 +93,9 @@ public class OfficeAutomationService {
                             .build());
                 }
             });
-            return new PageVO<>(approvalAllInformationPageRO.getPage(), result);
+            return new PageVO<>(approvalTypePOPageRO.getPage(), result);
         } else {
-            Page<ApprovalTypePO> approvalTypePOPage = approvalTypeMapper.selectPage(approvalAllInformationPageRO.getPage(), wrapper);
+            Page<ApprovalTypePO> approvalTypePOPage = approvalTypeMapper.selectPage(approvalTypePOPageRO.getPage(), wrapper);
             if (Objects.nonNull(approvalTypePOPage) && CollUtil.isNotEmpty(approvalTypePOPage.getRecords())) {
                 List<ApprovalTypePO> approvalTypePOS = approvalTypePOPage.getRecords();
                 approvalTypePOS.forEach(ele -> {
