@@ -13,9 +13,13 @@ import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamAssistantsPO;
+import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
@@ -27,6 +31,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMap
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
@@ -36,6 +41,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
+import com.scnujxjy.backendpoint.model.vo.exam.ExamInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
@@ -712,31 +718,29 @@ public class ManagerFilter extends AbstractFilter {
 
 
     /**
-     * 获取排课表的课程信息
+     * 获取学历教育部管理员的考试信息
      *
      * @param courseScheduleFilterROPageRO
      * @return
      */
     @Override
-    public FilterDataVO filterScheduleCoursesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+    public FilterDataVO filterCoursesInformationExams(PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
 
 
-        // 获取教学计划
-        CourseInformationRO courseInformationRO = new CourseInformationRO();
-        BeanUtils.copyProperties(courseScheduleFilterROPageRO.getEntity(), courseInformationRO);
 
-        List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPage(courseInformationRO,
+        List<CourseInformationVO> courseInformationVOS = courseInformationMapper.selectByFilterAndPageForExam(courseScheduleFilterROPageRO.getEntity(),
                 courseScheduleFilterROPageRO.getPageSize(),
                 (courseScheduleFilterROPageRO.getPageNumber() - 1) * courseScheduleFilterROPageRO.getPageSize());
 
-        List<CourseInformationScheduleVO> courseInformationScheduleVOS = new ArrayList<>();
+        List<ExamInfoVO> courseInformationScheduleVOS = new ArrayList<>();
         // 首先获取教学计划中与排课表相对应的课程
         for (CourseInformationVO courseInformationVO : courseInformationVOS) {
-            CourseInformationScheduleVO courseInformationScheduleVO = new CourseInformationScheduleVO();
-            BeanUtils.copyProperties(courseInformationVO, courseInformationScheduleVO);
-            courseInformationScheduleVO.setMainTeachers(new ArrayList<>());
-            courseInformationScheduleVO.setTutors(new ArrayList<>());
+            ExamInfoVO examInfoVO = new ExamInfoVO();
+            BeanUtils.copyProperties(courseInformationVO, examInfoVO);
+            examInfoVO.setMainTeachers(new ArrayList<>());
+            examInfoVO.setTutors(new ArrayList<>());
 
+            // 比较 教学计划中的 admin_class 即班级标识 然后获取其考试信息及助教信息
             // 比较年级、专业、学习形式、层次、班级名称、课程名称
             CourseScheduleFilterRO courseScheduleFilterRO = new CourseScheduleFilterRO();
             courseScheduleFilterRO.setGrade(courseInformationVO.getGrade());
@@ -747,44 +751,42 @@ public class ManagerFilter extends AbstractFilter {
             courseScheduleFilterRO.setCourseName(courseInformationVO.getCourseName());
             List<ScheduleCourseInformationVO> scheduleCourseInformationVOS = courseScheduleMapper.selectCoursesInformationWithoutPage(courseScheduleFilterRO);
 
-            for (ScheduleCourseInformationVO scheduleCourseInformationVO : scheduleCourseInformationVOS) {
-//                courseInformationScheduleVO.setTeachingMethod(scheduleCourseInformationVO.getTeachingMethod());
-                // 获取主讲教师
-                if (scheduleCourseInformationVO.getTeacherUsername() != null) {
-                    TeacherInformationVO mainTeacher = new TeacherInformationVO();
-                    mainTeacher.setTeacherUsername(scheduleCourseInformationVO.getTeacherUsername());
-                    mainTeacher.setName(scheduleCourseInformationVO.getMainTeacherName());
-                    mainTeacher.setIdCardNumber(scheduleCourseInformationVO.getMainTeacherIdentity());
-                    mainTeacher.setWorkNumber(scheduleCourseInformationVO.getMainTeacherId());
-                    courseInformationScheduleVO.getMainTeachers().add(mainTeacher);
-                }
+            // 通过考试信息表和阅卷助教表来获取主讲和助教老师
+            CourseExamInfoPO courseExamInfoPO = courseExamInfoMapper.selectOne(new LambdaQueryWrapper<CourseExamInfoPO>()
+                    .eq(CourseExamInfoPO::getClassIdentifier, courseInformationVO.getAdminClass())
+                    .eq(CourseExamInfoPO::getCourse, courseInformationVO.getCourseName())
+            );
+            if(courseExamInfoPO == null){
+                throw new IllegalArgumentException("获取不到指定教学计划的考试信息 " + courseInformationVO);
+            }
+            examInfoVO.setExamMethod(courseExamInfoPO.getExamMethod());
+            examInfoVO.setExamStatus(courseExamInfoPO.getExamStatus());
+            examInfoVO.setMainTeacherName(courseExamInfoPO.getMainTeacher());
+            examInfoVO.setMainTeacherUsername(courseExamInfoPO.getTeacherUsername());
 
-                if (scheduleCourseInformationVO.getTeachingAssistantUsername() != null) {
-                    TeacherInformationVO tutor = new TeacherInformationVO();
-                    tutor.setTeacherUsername(scheduleCourseInformationVO.getTeachingAssistantUsername());
-                    tutor.setName(scheduleCourseInformationVO.getTutorName());
-                    tutor.setIdCardNumber(scheduleCourseInformationVO.getTutorIdentity());
-                    tutor.setWorkNumber(scheduleCourseInformationVO.getTutorId());
-                    courseInformationScheduleVO.getTutors().add(tutor);
-                }
+            List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                    .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+            for(CourseExamAssistantsPO courseExamAssistantsPO: courseExamAssistantsPOS){
+                String teacherUsername = courseExamAssistantsPO.getTeacherUsername();
+                TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
+                examInfoVO.getTutors().add(teacherInformationPO);
             }
 
-            if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() == null) {
-                courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            } else if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() != null &&
-                    (!"线下".equals(courseScheduleFilterROPageRO.getEntity().getTeachingMethod()))) {
-                courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            } else {
-
+            if(scheduleCourseInformationVOS.isEmpty()){
+                examInfoVO.setTeachingMethod("线下");
+            }else{
+                examInfoVO.setTeachingMethod(scheduleCourseInformationVOS.get(0).getTeachingMethod());
             }
 
+            courseInformationScheduleVOS.add(examInfoVO);
 
         }
 
-        FilterDataVO<CourseInformationScheduleVO> filterDataVO = new FilterDataVO<>();
+        FilterDataVO<ExamInfoVO> filterDataVO = new FilterDataVO<>();
         log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
 
-        long l = courseInformationMapper.getCountByFilterAndPage(courseInformationRO);
+        long l = courseInformationMapper.getCountByFilterAndPageForExam(courseScheduleFilterROPageRO.getEntity());
         filterDataVO.setTotal(l);
         filterDataVO.setData(courseInformationScheduleVOS);
 
@@ -845,11 +847,10 @@ public class ManagerFilter extends AbstractFilter {
      * @return
      */
     @Override
-    @LogExecutionTime
     public ScheduleCourseInformationSelectArgs getCoursesArgs(CourseScheduleFilterRO filter) {
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
 
-        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+        ExecutorService executor = Executors.newFixedThreadPool(10); // 8 代表你有8个查询
 
         Future<List<String>> distinctGradesFuture = executor.submit(() -> courseInformationMapper.getDistinctGrades(filter));
         Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctCollegeNames(filter));
@@ -859,6 +860,9 @@ public class ManagerFilter extends AbstractFilter {
         Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctMajorNames(filter));
         Future<List<String>> distinctSemastersFuture = executor.submit(() -> courseInformationMapper.getDistinctSemasters(filter));
         Future<List<String>> distinctCourseNamesFuture = executor.submit(() -> courseInformationMapper.getDistinctCourseNames(filter));
+        Future<List<String>> distinctExamStatusesFuture = executor.submit(() -> courseInformationMapper.getDistinctExamStatuses(filter));
+        Future<List<String>> distinctExamMethodsFuture = executor.submit(() -> courseInformationMapper.getDistinctExamMethods(filter));
+        Future<List<String>> distinctCourseTypesFuture = executor.submit(() -> courseInformationMapper.getDistinctCourseTypes(filter));
 
         try {
             scheduleCourseInformationSelectArgs.setGrades(distinctGradesFuture.get());
@@ -871,6 +875,9 @@ public class ManagerFilter extends AbstractFilter {
             scheduleCourseInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
             scheduleCourseInformationSelectArgs.setSemesters(distinctSemastersFuture.get());
             scheduleCourseInformationSelectArgs.setCourseNames(distinctCourseNamesFuture.get());
+            scheduleCourseInformationSelectArgs.setExamStatuses(distinctExamStatusesFuture.get());
+            scheduleCourseInformationSelectArgs.setExamMethods(distinctExamMethodsFuture.get());
+            scheduleCourseInformationSelectArgs.setCourseTypes(distinctCourseTypesFuture.get());
 
         } catch (Exception e) {
             // Handle exceptions like InterruptedException or ExecutionException

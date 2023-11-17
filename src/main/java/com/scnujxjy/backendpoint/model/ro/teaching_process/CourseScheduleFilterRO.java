@@ -75,6 +75,16 @@ public class CourseScheduleFilterRO implements Serializable {
     String teachingMethod;
 
     /**
+     * 授课学期
+     */
+    String teachingSemester;
+
+    /**
+     * 班级名称
+     */
+    String className;
+
+    /**
      * 课程名称
      */
     String courseName;
@@ -116,4 +126,18 @@ public class CourseScheduleFilterRO implements Serializable {
      * 行政班别集合
      */
     List<String> classNames;
+
+    /**
+     * 课程名称集合
+     */
+    List<String> courseNames;
+
+    /**
+     * 考试状态
+     */
+    private String examStatus;
+    /**
+     * 考试方式
+     */
+    private String examMethod;
 }

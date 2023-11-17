@@ -414,7 +414,7 @@ public class OldDataSynchronize {
             paymentInformationDataImport.setUpdateAny(updateAny);
             ArrayList<HashMap<String, String>> studentFees = getStudentFees(year);
 
-            paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + studentFees.size());
+            paymentInformationDataImport.insertLogsList.add(year + "年旧系统缴费总数 " + studentFees.size());
 
             Integer integer = paymentInfoMapper.selectCount(null);
             SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
@@ -446,15 +446,15 @@ public class OldDataSynchronize {
             String relativePath = "data_import_error_excel/paymentInformationData/";
             String errorFileName = relativePath + currentDateTime + "_" + "导入缴费数据结果总览.txt";
             String errorFileName1 = relativePath + currentDateTime + "_" + "导入缴费数据结果总览日志.txt";
-            paymentInformationDataImport.insertLogsList.add("插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
-            paymentInformationDataImport.insertLogsList.add("插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
+            paymentInformationDataImport.insertLogsList.add(year + "年插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
+            paymentInformationDataImport.insertLogsList.add(year + "年插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
 
             exportMapToTxtAndUploadToMinio(paymentInformationDataImport.updateCountMap, errorFileName1,
                     "datasynchronize");
             exportListToTxtAndUploadToMinio(paymentInformationDataImport.insertLogsList,
                     errorFileName, "datasynchronize");
         }catch (Exception e){
-            log.error("校验同步缴费数据失败 ", e.toString());
+            log.error(year + "年校验同步缴费数据失败 ", e.toString());
         }
     }
 

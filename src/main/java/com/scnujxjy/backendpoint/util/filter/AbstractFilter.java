@@ -14,6 +14,8 @@ import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMappe
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
@@ -26,6 +28,7 @@ import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudent
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
@@ -84,6 +87,12 @@ public abstract class AbstractFilter {
 
     @Resource
     protected CourseInformationMapper courseInformationMapper;
+
+    @Resource
+    protected CourseExamInfoMapper courseExamInfoMapper;
+
+    @Resource
+    protected CourseExamAssistantsMapper courseExamAssistantsMapper;
 
     @Resource
     protected PaymentInfoMapper paymentInfoMapper;
@@ -274,7 +283,7 @@ public abstract class AbstractFilter {
      * @param courseScheduleFilterROPageRO
      * @return
      */
-    public FilterDataVO filterScheduleCoursesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+    public FilterDataVO filterScheduleCoursesInformation(PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
         return null;
     }
 
@@ -613,5 +622,9 @@ public abstract class AbstractFilter {
         }
 
         return true; // 表示保留这个对象
+    }
+
+    public FilterDataVO filterCoursesInformationExams(PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
+        return null;
     }
 }

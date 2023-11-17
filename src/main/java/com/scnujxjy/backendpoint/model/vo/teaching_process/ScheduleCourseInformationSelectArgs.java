@@ -56,4 +56,10 @@ public class ScheduleCourseInformationSelectArgs implements Serializable {
      * 学习形式
      */
     private List<String> studyForms;
+
+    private List<String> examMethods;
+
+    private List<String> examStatuses;
+
+    private List<String> courseTypes;
 }

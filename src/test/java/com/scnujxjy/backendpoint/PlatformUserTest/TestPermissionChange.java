@@ -110,4 +110,19 @@ public class TestPermissionChange {
 
 
     }
+
+    /**
+     * 赋予超级管理员权限
+     */
+    @Test
+    public void test4(){
+
+        for(long i = 1L ; i <= 23L; i++){
+            RolePermissionPO rolePermissionPO = new RolePermissionPO(); // Create a new RolePermissionPO object
+            rolePermissionPO.setRoleId(8L); // Set the roleId to 7L
+            rolePermissionPO.setPermissionId(i); // Set the permissionId to 3L
+
+            rolePermissionService.getBaseMapper().insert(rolePermissionPO); // Insert the RolePermissionPO object into the database using a service or mapper
+        }
+    }
 }

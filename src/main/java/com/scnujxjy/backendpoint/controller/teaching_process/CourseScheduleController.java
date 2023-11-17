@@ -8,6 +8,7 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformat
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -231,13 +232,13 @@ public class CourseScheduleController {
      * @return
      */
     @PostMapping("/get-student-courses")
-    public SaResult getStudentCourses(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+    public SaResult getStudentCourses(@RequestBody PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
         // 校验参数
         if (Objects.isNull(courseScheduleFilterROPageRO)) {
             return SaResult.error("未提供筛选参数，查询课程信息失败");
         }
         if (Objects.isNull(courseScheduleFilterROPageRO.getEntity())) {
-            courseScheduleFilterROPageRO.setEntity(new CourseScheduleFilterRO());
+            courseScheduleFilterROPageRO.setEntity(new ExamFilterRO());
         }
         // 查询数据
         FilterDataVO filterDataVO = courseScheduleService.allPageQueryScheduleCoursesInformationFilter(courseScheduleFilterROPageRO, studentFilter);
@@ -360,19 +361,19 @@ public class CourseScheduleController {
 
 
     /**
-     * 获取不同角色权限范围内的排课表课程信息
+     * 获取不同角色权限范围内的考试信息
      *
      * @param courseScheduleFilterROPageRO
      * @return
      */
     @PostMapping("/select_schedule_courses")
-    public SaResult getScheduleCoursesInformation(@RequestBody PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+    public SaResult getScheduleCoursesInformation(@RequestBody PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
         // 校验参数
         if (Objects.isNull(courseScheduleFilterROPageRO)) {
             throw dataMissError();
         }
         if (Objects.isNull(courseScheduleFilterROPageRO.getEntity())) {
-            courseScheduleFilterROPageRO.setEntity(new CourseScheduleFilterRO());
+            courseScheduleFilterROPageRO.setEntity(new ExamFilterRO());
         }
 
         List<String> roleList = StpUtil.getRoleList();
@@ -382,8 +383,8 @@ public class CourseScheduleController {
             throw dataNotFoundError();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
-                // 查询二级学院管理员权限范围内的教学计划
-                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.allPageQueryScheduleCoursesInformationFilter(courseScheduleFilterROPageRO, collegeAdminFilter);
+                // 查询二级学院管理员权限范围内的考试信息
+                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.filterCoursesInformationExams(courseScheduleFilterROPageRO, collegeAdminFilter);
 
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(scheduleCoursesFilterDataVO.getData());
@@ -398,8 +399,8 @@ public class CourseScheduleController {
                     throw dataNotFoundError();
                 }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-                // 查询继续教育管理员权限范围内的教学计划
-                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.allPageQueryScheduleCoursesInformationFilter(courseScheduleFilterROPageRO, managerFilter);
+                // 查询继续教育管理员权限范围内的考试信息
+                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.filterCoursesInformationExams(courseScheduleFilterROPageRO, managerFilter);
 
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(scheduleCoursesFilterDataVO.getData());
@@ -784,6 +785,7 @@ public class CourseScheduleController {
      * @return
      */
     @PostMapping("schedule_list_upload")
+    @SaCheckPermission("排课表导入")
     public SaResult handleFileUpload(@RequestParam("scheduleList") MultipartFile scheduleList) {
         try {
 

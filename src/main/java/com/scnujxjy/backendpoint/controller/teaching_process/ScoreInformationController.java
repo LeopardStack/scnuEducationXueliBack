@@ -122,7 +122,7 @@ public class ScoreInformationController {
         }
 
         // 生成缓存键
-        String cacheKey = "gradeInfos:" + scoreInformationFilterROPageRO.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "gradeInfos:" + scoreInformationFilterROPageRO.toString();
 
         // 从Redis中尝试获取缓存
         PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);

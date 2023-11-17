@@ -178,7 +178,7 @@ public class PaymentInfoController {
         }
 
         // 生成缓存键
-        String cacheKey = "paymentInfos:" + paymentInfoFilterROPageRO.toString();
+        String cacheKey = StpUtil.getLoginIdAsString() + "paymentInfos:" + paymentInfoFilterROPageRO.toString();
 
         // 从Redis中尝试获取缓存
         PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);

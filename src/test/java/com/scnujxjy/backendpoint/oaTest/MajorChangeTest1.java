@@ -26,21 +26,21 @@ public class MajorChangeTest1 {
 
     @Test
     public void test2(){
-        String id = "655324d779e77a3b558c5f69";
+        String id = "6555b08ab1d3e01affffcb11";
         StudentTransferApplication application1 = service.getApplicationById(id);
         log.info("获取指定 ID 实例 \n" + application1);
     }
 
     @Test
     public void test3(){
-        String id = "655324d779e77a3b558c5f69";
+        String id = "6555b08ab1d3e01affffcb11";
         StudentTransferApplication application = service.updateMajor(id, "计算机科学与技术");
         log.info("更新指定 ID 实例 \n" + application);
     }
 
     @Test
     public void test4(){
-        String id = "655324d779e77a3b558c5f69";
+        String id = "6555b08ab1d3e01affffcb11";
         StudentTransferApplication application = service.updateMajor(id, "新闻学");
         log.info("更新指定 ID 实例 \n" + application);
     }

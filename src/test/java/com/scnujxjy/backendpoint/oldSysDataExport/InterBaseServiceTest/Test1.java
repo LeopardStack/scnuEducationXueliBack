@@ -315,8 +315,10 @@ public class Test1 {
     @Test
     public void test5_1(){
         try {
-            paymentInfoMapper.truncateTable();
-            for(int year=2023; year >= 2000; year--){
+//            paymentInfoMapper.truncateTable();
+            for(int year=2023; year >= 2023; year--){
+                int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + year));
+                log.info("删除 " + year + " 年的缴费数据，开始同步");
                 oldDataSynchronize.synchronizePaymentInfoData(true, true, String.valueOf(year));
             }
 
