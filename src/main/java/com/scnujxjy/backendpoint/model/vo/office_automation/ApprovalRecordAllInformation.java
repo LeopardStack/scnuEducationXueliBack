@@ -17,7 +17,11 @@ import java.util.List;
 @Builder
 @Accessors(chain = true)
 public class ApprovalRecordAllInformation {
-    List<ApprovalStepWithRecordInformation> approvalStepWithRecordList;
+    /**
+     * 步骤记录表
+     */
+    List<ApprovalStepWithRecordInformation> approvalStepRecordList;
+
     /**
      * 主键id
      */
