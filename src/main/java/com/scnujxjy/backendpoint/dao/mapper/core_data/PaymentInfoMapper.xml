@@ -65,6 +65,12 @@
         <if test='entity.grade != null'>
             AND ss.grade = #{entity.grade}
         </if>
+        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
+            AND ci.class_name LIKE
+            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
+                #{className}
+            </foreach>
+        </if>
     </sql>
 
     <select id="getCountStudentPayInfoByFilter" resultType="Long">
@@ -97,12 +103,6 @@
 
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test='entity.classNameSet != null and entity.classNameSet.size() != 0'>
-            AND ci.class_name IN
-            <foreach collection='entity.classNameSet' item='className' open='(' close=')' separator=','>
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
     </select>
 
@@ -111,12 +111,6 @@
         SELECT pi.*, ci.class_name, ss.college, ss.grade, ss.study_form, ss.level
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         LIMIT #{l}, #{pageSize}
     </select>
@@ -126,12 +120,6 @@
         SELECT COUNT(*)
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
     </select>
 </mapper>

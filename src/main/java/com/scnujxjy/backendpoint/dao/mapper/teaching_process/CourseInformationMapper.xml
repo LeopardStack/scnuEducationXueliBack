@@ -74,7 +74,7 @@
         <if test='filter.courseCode != null'>AND c.course_code = #{filter.courseCode}</if>
         <if test='filter.className != null'>AND ci.class_name = #{filter.className}</if>
         <if test='filter.classNameSet != null and !filter.classNameSet.isEmpty()'>
-            AND ci.class_name IN
+            AND ci.class_name LIKE
             <foreach item="className" collection="filter.classNameSet" open="(" separator="," close=")">
                 #{className}
             </foreach>
@@ -116,12 +116,6 @@
         SELECT c.*, ci.class_name, ci.college
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="filter.classNameSet != null and filter.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="filter.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
         <if test='pageSize != null and offset != null'>
@@ -227,12 +221,6 @@
         SELECT count(*)
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="filter.classNameSet != null and filter.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="filter.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
     </select>
