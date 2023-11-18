@@ -1,11 +1,16 @@
 package com.scnujxjy.backendpoint.util;
 
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.constant.enums.LiveStatusEnum;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformRoleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
@@ -36,6 +41,12 @@ public class DataUpdate {
 
     @Resource
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private PlatformRoleMapper platformRoleMapper;
 
     @Resource
     private ClassInformationMapper classInformationMapper;
@@ -100,7 +111,7 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-    @Scheduled(cron = "0 00 22 * * ?", zone="Asia/Shanghai")
+    @Scheduled(cron = "0 19 23 * * ?", zone="Asia/Shanghai")
     public void executeAt1AM1520() {
         if (!oldDataSynchronizeStatus) {
             // 如果配置为 false，直接返回
@@ -151,8 +162,15 @@ public class DataUpdate {
             if (!StpUtil.isLogin(sessionId)) {
                 // 如果用户不再登录状态（可能因为令牌过期）
                 // 获取用户的角色信息并更新在线人数
-                if(!StpUtil.getRoleList().isEmpty()) {
-                    String roleName = StpUtil.getRoleList().get(0); // 根据sessionId获取角色名称
+                SaSession sessionBySessionId = StpUtil.getSessionBySessionId(sessionId);
+                String token = sessionBySessionId.getToken();
+                Object loginIdByToken = StpUtil.getLoginIdByToken(token);
+                PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                        .eq(PlatformUserPO::getUsername, (String) loginIdByToken));
+
+                if(platformUserPO != null) {
+                    String roleName = platformRoleMapper.selectOne(new LambdaQueryWrapper<PlatformRolePO>()
+                            .eq(PlatformRolePO::getRoleId, platformUserPO.getRoleId())).getRoleName(); // 根据sessionId获取角色名称
                     redisTemplate.opsForValue().decrement("onlineCount:" + roleName);
                     redisTemplate.opsForValue().decrement("totalOnlineCount");
                 }

@@ -264,6 +264,12 @@
             <version>1.70</version>
         </dependency>
 
+        <!-- Spring Boot Starter for MongoDB -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+
         <!--    日志    -->
         <dependency>
             <groupId>log4j</groupId>
@@ -276,6 +282,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
+
+
 
 
 

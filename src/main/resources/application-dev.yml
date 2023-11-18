@@ -15,7 +15,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://scnuAdmin:scnu2023@139.159.132.31:27017/scnuXueli
+      uri: mongodb://scnuXueli:ScnuXueliDB2023@113.108.140.172:27017,113.108.140.174:27017,113.108.140.173:27017/scnuXueliDB?replicaSet=rs0
 
   redis:
     host: 113.108.140.172
@@ -46,7 +46,7 @@ spring:
     username: root
     password: xhl2023@
     hikari:
-      maximum-pool-size: 1000 # 设置最大连接数为1000
+      maximum-pool-size: 2000 # 设置最大连接数为1000
       idleTimeout: 300000  # set to 5 minutes for example
 
 #配置日志
@@ -55,8 +55,8 @@ mybatis-plus:
   type-aliases-package: com.scnujxjy.backendpoint.dao.entity
   configuration:
     map-underscore-to-camel-case: true
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
 
 
 # 设置日志输出

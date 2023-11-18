@@ -189,7 +189,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -249,7 +249,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -282,7 +282,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -315,7 +315,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -348,7 +348,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -381,7 +381,7 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
             "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +

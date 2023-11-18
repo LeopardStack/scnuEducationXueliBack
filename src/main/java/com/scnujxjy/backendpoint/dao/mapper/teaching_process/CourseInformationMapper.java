@@ -2,6 +2,8 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
+import com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
@@ -142,6 +144,16 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
                                                     @Param("offset") Long offset);
 
     /**
+     * 查询某一个学院的考试信息所涉及的教学计划
+     *
+     * @param filter
+     * @return
+     */
+    List<CourseInformationVO> selectByFilterAndPageForExam(@Param("entity") ExamFilterRO filter,
+                                                    @Param("pageSize") Long pageSize,
+                                                    @Param("offset") Long offset);
+
+    /**
      * 查询某一个学院的教学计划
      *
      * @param filter
@@ -169,6 +181,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @return
      */
     long getCountByFilterAndPage(@Param("filter") CourseInformationRO filter);
+    long getCountByFilterAndPageForExam(@Param("entity") ExamFilterRO filter);
 
 
     @Select({
@@ -178,7 +191,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -200,7 +213,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -220,7 +233,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -253,7 +266,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -273,7 +286,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -293,7 +306,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -314,7 +327,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
             "JOIN class_information ci ON c.admin_class = ci.class_identifier",
             "WHERE 1=1",
             "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name IN",
+            "AND ci.class_name LIKE",
             "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
             "#{className}",
             "</foreach>",
@@ -465,7 +478,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctGrades(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctGrades(@Param("entity") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的学院（去除重复项）
@@ -473,7 +486,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctCollegeNames(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctCollegeNames(@Param("entity") CourseScheduleFilterRO filter);
 
 
     /**
@@ -482,7 +495,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctStudyForms(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctStudyForms(@Param("entity") CourseScheduleFilterRO filter);
 
 
     /**
@@ -491,7 +504,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctClassNames(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctClassNames(@Param("entity") CourseScheduleFilterRO filter);
 
 
     /**
@@ -500,7 +513,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctLevels(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctLevels(@Param("entity") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的年龄（去除重复项）
@@ -508,7 +521,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctMajorNames(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctMajorNames(@Param("entity") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的学期（去除重复项）
@@ -516,7 +529,7 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctSemasters(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctSemasters(@Param("entity") CourseScheduleFilterRO filter);
 
     /**
      * 获取指定条件下的课程名称（去除重复项）
@@ -524,5 +537,32 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
      * @param filter
      * @return
      */
-    List<String> getDistinctCourseNames(@Param("filter") CourseScheduleFilterRO filter);
+    List<String> getDistinctCourseNames(@Param("entity") CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的考试方式
+     *
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctExamMethods(@Param("entity") CourseScheduleFilterRO filter);
+
+    /**
+     * 获取指定条件下的课程类型 比如 选修、必修
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctCourseTypes(@Param("entity") CourseScheduleFilterRO filter);
+
+
+    /**
+     * 获取指定条件下的考试状态
+     *
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctExamStatuses(@Param("entity") CourseScheduleFilterRO filter);
+
+
+    List<ExamDataBO> selectAllExamData(@Param("entity") ExamFilterRO entity);
 }

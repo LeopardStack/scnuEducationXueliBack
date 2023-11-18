@@ -7,6 +7,13 @@
         JOIN class_information ci ON c.admin_class = ci.class_identifier
     </sql>
 
+    <sql id="examCommonJoin">
+        FROM course_information c
+        JOIN class_information ci ON c.admin_class = ci.class_identifier
+        JOIN course_exam_info cei ON cei.class_identifier = ci.class_identifier
+        AND cei.course = c.course_name
+    </sql>
+
     <sql id="commonFiltersForCourses">
         <if test='filter.grade != null'>AND ci.grade = #{filter.grade}</if>
         <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
@@ -19,6 +26,31 @@
         <if test='filter.teachingMethod != null'>AND c.teaching_method = #{filter.teachingMethod}</if>
     </sql>
 
+    <sql id="commonFiltersForExam">
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
+        <if test='entity.majorName != null'>AND c.major_name = #{entity.majorName}</if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
+        <if test='entity.teachingSemester != null'>AND c.teaching_semester = #{entity.teachingSemester}</if>
+        <if test='entity.classNames != null and !entity.classNames.isEmpty()'>
+            AND ci.class_name IN
+            <foreach item="name" collection="entity.classNames" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+
+        <if test='entity.courseNames != null and !entity.courseNames.isEmpty()'>
+            AND c.course_name IN
+            <foreach item="name" collection="entity.courseNames" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+
+        <if test='entity.examStatus != null'>AND cei.exam_status = #{entity.examStatus}</if>
+        <if test='entity.examMethod != null'>AND cei.exam_method = #{entity.examMethod}</if>
+    </sql>
+
     <sql id="commonFilters">
         <if test='filter.grade != null'>AND c.grade = #{filter.grade}</if>
         <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
@@ -27,6 +59,12 @@
         <if test='filter.studyForm != null'>AND c.study_form = #{filter.studyForm}</if>
         <if test='filter.adminClass != null'>AND c.admin_class = #{filter.adminClass}</if>
         <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
+        <if test='filter.courseNameSet != null and !filter.courseNameSet.isEmpty()'>
+            AND ci.course_name IN
+            <foreach item="courseName" collection="filter.courseNameSet" open="(" separator="," close=")">
+                #{className}
+            </foreach>
+        </if>
         <if test='filter.studyHours != null'>AND c.study_hours = #{filter.studyHours}</if>
         <if test='filter.assessmentType != null'>AND c.assessment_type = #{filter.assessmentType}</if>
         <if test='filter.teachingMethod != null'>AND c.teaching_method = #{filter.teachingMethod}</if>
@@ -35,6 +73,13 @@
         <if test='filter.semester != null'>AND c.teaching_semester = #{filter.semester}</if>
         <if test='filter.courseCode != null'>AND c.course_code = #{filter.courseCode}</if>
         <if test='filter.className != null'>AND ci.class_name = #{filter.className}</if>
+        <if test='filter.classNameSet != null and !filter.classNameSet.isEmpty()'>
+            AND ci.class_name LIKE
+            <foreach item="className" collection="filter.classNameSet" open="(" separator="," close=")">
+                #{className}
+            </foreach>
+        </if>
+
     </sql>
 
     <select id="selectByFilterAndPage" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
@@ -48,17 +93,29 @@
         </if>
     </select>
 
+    <select id="selectByFilterAndPageForExam" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
+        SELECT c.*, ci.class_name, ci.college
+        <include refid="examCommonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForExam" />
+        ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
+        <if test='pageSize != null and offset != null'>
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="getCountByFilterAndPageForExam" resultType="java.lang.Long">
+        SELECT count(*)
+        <include refid="examCommonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForExam" />
+    </select>
+
     <select id="selectTeachingPointByFilterAndPage"
             resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
         SELECT c.*, ci.class_name, ci.college
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="filter.classNameSet != null and filter.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="filter.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
         <if test='pageSize != null and offset != null'>
@@ -83,76 +140,103 @@
     </select>
 
     <select id="getDistinctGrades" resultType="String">
-        select distinct grade from course_information ci
+        select distinct ci.grade
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="getDistinctCollegeNames" resultType="String">
-        select distinct ci2.college from course_information ci
-        LEFT JOIN class_information ci2
-        ON ci.admin_class=ci2.class_identifier
+        select distinct ci.college
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="getDistinctStudyForms" resultType="String">
-        select distinct ci2.study_form from course_information ci
-        LEFT JOIN class_information ci2
-        ON ci.admin_class=ci2.class_identifier
+        select distinct ci.study_form
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="getDistinctClassNames" resultType="String">
-        select distinct ci2.class_name from course_information ci
-        LEFT JOIN class_information ci2
-        ON ci.admin_class=ci2.class_identifier
+        select distinct ci.class_name
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="getDistinctLevels" resultType="String">
-        select distinct ci2.level from course_information ci
-        LEFT JOIN class_information ci2
-        ON ci.admin_class=ci2.class_identifier
+        select distinct ci.level
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="getDistinctMajorNames" resultType="String">
-        select distinct ci.major_name from course_information ci
+        select distinct ci.major_name
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
 
     <select id="getDistinctSemasters" resultType="String">
-        select distinct ci.teaching_semester from course_information ci
+        select distinct c.teaching_semester
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
     </select>
 
 
     <select id="getDistinctCourseNames" resultType="String">
-        select distinct ci.course_name from course_information ci
-        LEFT JOIN class_information ci2
-        ON ci.admin_class=ci2.class_identifier
+        select distinct c.course_name
+        <include refid="examCommonJoin" />
         WHERE 1=1
-        <include refid="commonFiltersForCourses" />
+        <include refid="commonFiltersForExam" />
+    </select>
+
+    <select id="getDistinctExamMethods" resultType="java.lang.String">
+        select distinct cei.exam_method
+        <include refid="examCommonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForExam" />
+    </select>
+    <select id="getDistinctExamStatuses" resultType="java.lang.String">
+        select distinct cei.exam_status
+        <include refid="examCommonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForExam" />
+    </select>
+
+    <select id="getDistinctCourseTypes" resultType="java.lang.String">
+        select distinct c.course_type
+        <include refid="examCommonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForExam" />
     </select>
 
     <select id="selectTeachingPointByFilterAndPageCount" resultType="java.lang.Long">
         SELECT count(*)
         <include refid="commonJoin"/>
         WHERE 1=1
-        <if test="filter.classNameSet != null and filter.classNameSet.size() > 0">
-            AND ci.class_name IN
-            <foreach collection="filter.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters"/>
         ORDER BY c.grade DESC, c.major_name, c.level, c.study_form, c.course_code
     </select>
+
+    <select id="selectAllExamData" resultType="com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO">
+        select c.id, c.grade, c.major_name, c.level, c.study_form, ci.class_identifier,
+               c.course_name, c.study_hours, c.assessment_type, c.teaching_method,
+               c.course_type, c.credit, c.teaching_semester, c.course_code, c.course_cover,
+               ci.class_name, cei.main_teacher, cei.teacher_username, cei.exam_method,
+               cei.exam_status, cei.id AS examId
+        <include refid="examCommonJoin"></include>
+        WHERE 1=1
+        <include refid="commonFiltersForExam"></include>
+        ORDER BY c.grade DESC, ci.college, ci.major_name, ci.level, ci.study_form, c.course_code
+    </select>
+
+
+
 </mapper>

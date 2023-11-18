@@ -37,6 +37,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMappe
 import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverter;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -44,6 +45,7 @@ import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateR
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -509,7 +511,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
      * @param filter
      * @return
      */
-    public FilterDataVO allPageQueryScheduleCoursesInformationFilter(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+    public FilterDataVO allPageQueryScheduleCoursesInformationFilter(PageRO<ExamFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
         return filter.filterScheduleCoursesInformation(courseScheduleFilterROPageRO);
     }
 
@@ -1000,4 +1002,13 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     }
 
+    /**
+     * 获取不同角色考试信息
+     * @param courseScheduleFilterROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO filterCoursesInformationExams(PageRO<ExamFilterRO> courseScheduleFilterROPageRO, AbstractFilter filter) {
+        return filter.filterCoursesInformationExams(courseScheduleFilterROPageRO);
+    }
 }

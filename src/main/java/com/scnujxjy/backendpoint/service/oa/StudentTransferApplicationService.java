@@ -1,72 +1,50 @@
 package com.scnujxjy.backendpoint.service.oa;
 
 import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplication;
-import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplicationRepository;
+import com.scnujxjy.backendpoint.dao.repository.StudentTransferApplicationRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import javax.annotation.Resource;
 
+/**
+ * 转专业服务
+ */
 @Service
 public class StudentTransferApplicationService {
+    @Resource
+    private StudentTransferApplicationRepository repository;
 
-    private final StudentTransferApplicationRepository repository;
 
-    public StudentTransferApplicationService(StudentTransferApplicationRepository repository) {
-        this.repository = repository;
+    // 添加一个新的转专业申请
+    public StudentTransferApplication addNewTransferApplication(StudentTransferApplication application) {
+        return repository.save(application);
     }
 
-    /**
-     * 创建一个空文档
-     * @return
-     */
-    public StudentTransferApplication createNewApplication() {
-        // 创建一个空的表单实例
-        StudentTransferApplication newApplication = new StudentTransferApplication();
-        // 初始化或设置一些默认值（如果需要的话）
-        // ...
-        return repository.save(newApplication);
-    }
-
-    /**
-     * 创建一个指定的文档
-     * @return
-     */
-    public StudentTransferApplication createUserApplication(StudentTransferApplication newApplication) {
-        return repository.save(newApplication);
-    }
-
-    /**
-     * 指定 id 更新相应的文档
-     * @param id
-     * @param updatedApplication
-     * @return
-     */
-    public StudentTransferApplication updateApplication(String id, StudentTransferApplication updatedApplication) {
-        // 查找现有的表单实例
-        Optional<StudentTransferApplication> existingApplication = repository.findById(id);
-        if (existingApplication.isPresent()) {
-            StudentTransferApplication application = existingApplication.get();
-            // 检查每个字段，如果新实例中有值，则更新
-            if (updatedApplication.getIntendedMajor() != null) {
-                application.setIntendedMajor(updatedApplication.getIntendedMajor());
-            }
-            if (updatedApplication.getTransferOutApprover() != null) {
-                application.setTransferOutApprover(updatedApplication.getTransferOutApprover());
-            }
+    // 根据学生ID更新专业
+    public StudentTransferApplication updateMajor(String studentId, String newMajor) {
+        StudentTransferApplication application = repository.findById(studentId).orElse(null);
+        if (application != null) {
+            application.setIntendedMajor(newMajor);
             return repository.save(application);
-        } else {
-            // 处理找不到实例的情况，例如抛出异常或返回null
-            // ...
-            return null;
         }
+        // 或者抛出一个异常
+        return null;
     }
 
-    /**
-     * 获取指定 id 的文档实例
-     * @param id
-     * @return
-     */
-    public Optional<StudentTransferApplication> getApplicationById(String id) {
-        return repository.findById(id);
+    // 根据学生ID更新姓名
+    public StudentTransferApplication updateStudentName(String studentId, String newName) {
+        StudentTransferApplication application = repository.findById(studentId).orElse(null);
+        if (application != null) {
+            application.setName(newName);
+            return repository.save(application);
+        }
+        // 或者抛出一个异常
+        return null;
+    }
+
+    // 根据ID获取转专业申请
+    public StudentTransferApplication getApplicationById(String id) {
+        return repository.findById(id).orElse(null);
+        // 你也可以选择在找不到文档时抛出一个异常
     }
 }

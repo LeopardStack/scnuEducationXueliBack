@@ -26,6 +26,7 @@ import java.util.Map;
 public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     /**
      * 根据 学生的身份证号码查找其学籍信息
+     *
      * @param idNumber 身份证号码
      * @return 学籍信息集合，类型为 TeacherInformationPO
      */
@@ -34,8 +35,9 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     /**
      * 根据 学生的身份证号码和年级查找其学籍信息
+     *
      * @param idNumber 身份证号码
-     * @param grade 年级
+     * @param grade    年级
      * @return 学籍信息集合，类型为 TeacherInformationPO
      */
     @Select("SELECT * FROM student_status WHERE id_number = #{idNumber} and grade = #{grade}")
@@ -44,7 +46,8 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     /**
      * 根据 学生身份证号码获取其全部的学生学籍信息
-     * @param grade 年级
+     *
+     * @param grade   年级
      * @param college 学院
      * @return 学籍信息集合，类型为 TeacherInformationPO
      */
@@ -53,6 +56,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     /**
      * 根据 年级获取其全部的教学计划
+     *
      * @param grade 年级
      * @return 学籍信息集合，类型为 TeacherInformationPO
      */
@@ -64,6 +68,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     /**
      * 根据筛选条件获取学籍数据总数
+     *
      * @param entity
      * @return
      */
@@ -72,6 +77,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     /**
      * 根据筛选条件下载所有学籍数据，不考虑分页
+     *
      * @param entity
      * @return
      */
@@ -82,6 +88,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件年级
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -93,7 +100,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -122,6 +129,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件层次
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -133,7 +141,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -162,6 +170,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件学院
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -196,6 +205,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件专业名称
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -207,7 +217,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -236,6 +246,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件学习形式
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -247,7 +258,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -276,6 +287,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件行政班别
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -287,7 +299,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -316,6 +328,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件学制
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -327,7 +340,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -356,6 +369,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
      * 根据筛选条件获取筛选条件学籍状态
      * 如果是二级学院教务员登录，则加一个学院的字段限制
      * 如果是教学点教务员登录，则加一个教学点，即它所管辖的班别，来进行限制
+     *
      * @param entity
      * @return
      */
@@ -367,7 +381,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade " +
             "WHERE 1=1 " +
             "<if test = 'entity.classNames != null and entity.classNames.size() != 0'>" +
-            "AND ci.class_name IN" +
+            "AND ci.class_name LIKE" +
             "<foreach collection='entity.classNames' item = 'className' open='(' close=')' separator=','>" +
             "#{className}" +
             "</foreach>" +
@@ -391,7 +405,6 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "ORDER BY ss.academic_status" +
             "</script>")
     List<String> getDistinctAcademicStatuss(@Param("entity") StudentStatusFilterRO entity);
-
 
 
     @Select("<script>" +
@@ -422,7 +435,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<Map<String, StatisticTableForGraduation>> getCountOfGraduation(@Param("startYear") int startYear, @Param("endYear") int endYear);
 
 
-  //    @Select("<script>" +
+    //    @Select("<script>" +
 //            " SELECT  pi.name,pi.id_number FROM course_schedule cs" +
 //            " LEFT JOIN class_information coi" +
 //            " ON cs.grade = coi.grade and cs.major_name=coi.major_name and cs.study_form=coi.study_form" +
@@ -448,17 +461,18 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "<if test='entity.grade != null'>AND cs.grade = #{entity.grade} </if>" +
             "<if test='entity.majorName != null'>AND cs.major_name = #{entity.majorName} </if>" +
             "<if test='entity.studyForm != null'>AND cs.study_form = #{entity.studyForm} </if>" +
-            "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>"+
+            "<if test='entity.level != null'>AND cs.level = #{entity.level} </if>" +
             "</script>")
-    List<Map<String,String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
+    List<Map<String, String>> getScheduleClassStudent(@Param("entity") CourseSchedulePO courseSchedulePO);
 
-    List<StudentStatusAllVO> getStudentStatusInfoByTeacher(@Param("entity")StudentStatusTeacherFilterRO entity,
-                                                           @Param("pageNumber")Long pageNumber, @Param("pageSize")long pageSize);
+    List<StudentStatusAllVO> getStudentStatusInfoByTeacher(@Param("entity") StudentStatusTeacherFilterRO entity,
+                                                           @Param("pageNumber") Long pageNumber, @Param("pageSize") long pageSize);
 
     long getStudentStatusInfoByTeacherCount(@Param("entity") StudentStatusTeacherFilterRO entity);
 
     /**
      * 获取教学点的所有学生信息
+     *
      * @param entity
      * @param pageSize
      * @param l

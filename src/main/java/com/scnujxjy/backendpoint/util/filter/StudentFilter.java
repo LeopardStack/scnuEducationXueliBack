@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
@@ -127,7 +128,7 @@ public class StudentFilter extends AbstractFilter {
      * @return
      */
     @Override
-    public FilterDataVO filterScheduleCoursesInformation(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
+    public FilterDataVO filterScheduleCoursesInformation(PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
 
         String idNumber = StpUtil.getLoginIdAsString();
         // 获取学生的班级信息
@@ -196,16 +197,6 @@ public class StudentFilter extends AbstractFilter {
                     courseInformationScheduleVO.getTutors().add(tutor);
                 }
             }
-
-            if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() == null) {
-                courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            } else if (courseScheduleFilterROPageRO.getEntity().getTeachingMethod() != null &&
-                    (!"线下".equals(courseScheduleFilterROPageRO.getEntity().getTeachingMethod()))) {
-                courseInformationScheduleVOS.add(courseInformationScheduleVO);
-            } else {
-
-            }
-
 
         }
 

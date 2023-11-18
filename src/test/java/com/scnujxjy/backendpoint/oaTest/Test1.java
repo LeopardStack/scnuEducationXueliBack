@@ -19,36 +19,10 @@ public class Test1 {
 
     @Test
     public void test1(){
-        StudentTransferApplication newApplication = service.createNewApplication();
+        StudentTransferApplication newApplication = service.addNewTransferApplication(new StudentTransferApplication());
         log.info("ID 为 " + newApplication.getId());
         String id = newApplication.getId();
 
 
-    }
-
-    @Test
-    public void test2(){
-        String id = "65526dc37d96af194131b608";
-        StudentTransferApplication studentTransferApplication = new StudentTransferApplication();
-        studentTransferApplication.setTransferOutApprover("不允许高分转低分");
-        StudentTransferApplication studentTransferApplication1 = service.updateApplication(id, studentTransferApplication);
-        log.info("修改后的实例 \n" + studentTransferApplication1);
-    }
-
-    @Test
-    public void test2_1(){
-        String id = "65526dc37d96af194131b608";
-        StudentTransferApplication studentTransferApplication = new StudentTransferApplication();
-        studentTransferApplication.setIntendedMajor("新闻学");
-        StudentTransferApplication studentTransferApplication1 = service.updateApplication(id, studentTransferApplication);
-        log.info("修改后的实例 \n" + studentTransferApplication1);
-    }
-
-    @Test
-    public void test3(){
-        String id = "65526dc37d96af194131b608";
-        Optional<StudentTransferApplication> applicationById = service.getApplicationById(id);
-        StudentTransferApplication studentTransferApplication = applicationById.get();
-        log.info(studentTransferApplication.toString());
     }
 }

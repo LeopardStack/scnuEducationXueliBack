@@ -114,5 +114,19 @@ public class CourseInformationRO {
      */
     private Set<String> classNameSet;
 
+    /**
+     * 班级名称集合
+     */
+    private Set<String> classNames;
+
+    /**
+     * 课程名称集合
+     */
+    private Set<String> courseNameSet;
+
+    /**
+     * 课程名称集合
+     */
+    private Set<String> courseNames;
 
 }

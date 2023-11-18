@@ -47,4 +47,7 @@ public class StudentTransferApplication {
     // 费用结算情况
     private String feeSettlementStatus;
 
+    // Getter和Setter方法
+    // ...
 }
+

@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -284,14 +285,14 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     } else {
                         CourseInformationPO courseInformationPO = courseInformationPOs.get(0);
                         // 找到该课程了 开始比对人数、学时、考核类型
-                        Integer studentCount = data.getStudentCount();
-                        Integer i = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
-                                .eq(StudentStatusPO::getClassIdentifier, matchedClassInfo.getClassIdentifier())
-                        );
-                        if (!studentCount.equals(i)) {
-                            outputData.setErrorMessage("按照年级、专业名称、层次、学习形式和行政班别以及课程名称查找班级人数 人数与系统统计不相等 系统统计该班级人数为 \n" +
-                                    i);
-                        }
+//                        Integer studentCount = data.getStudentCount();
+//                        Integer i = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
+//                                .eq(StudentStatusPO::getClassIdentifier, matchedClassInfo.getClassIdentifier())
+//                        );
+//                        if (!studentCount.equals(i)) {
+//                            outputData.setErrorMessage("按照年级、专业名称、层次、学习形式和行政班别以及课程名称查找班级人数 人数与系统统计不相等 系统统计该班级人数为 \n" +
+//                                    i);
+//                        }
                         // 更新教学计划中的授课方式
                         courseInformationPO.setTeachingMethod(data.getTeachingMethod());
                         int i1 = courseInformationMapper.updateById(courseInformationPO);
@@ -391,8 +392,8 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 //                    }
 //                }
 //            }
-            // 教学班不需要写了 直接用规范的格式 老师姓名 + 课程
-            data.setTeachingClass(data.getMainTeacherName() + "-" + data.getCourseName());
+            // 教学班后续更新
+//            data.setTeachingClass(data.getMainTeacherName() + "-" + data.getCourseName());
 
             // 进行主讲教师判断
             String mainTeacherName = data.getMainTeacherName();
@@ -438,13 +439,13 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
                     data.setTeachingAssistantUsername(teacherInformationPO.getTeacherUsername());
                 } else {
                     // 存在同名同姓老师
-                    String workNumber = data.getMainTeacherId();    // 获取 Excel 中的主讲教师工号/学号
-                    String idNumber = data.getMainTeacherIdentity();    // 获取 Excel 中的主讲教师的身份证号码
+                    String workNumber = data.getTutorId();    // 获取 Excel 中的主讲教师工号/学号
+                    String idNumber = data.getTutorIdentity();    // 获取 Excel 中的主讲教师的身份证号码
                     if (workNumber == null) {
                         throw new RuntimeException("系统师资库中存在多名同名同姓的助教，请提供工号/学号");
                     }
                     List<TeacherInformationPO> tutorTeachers1 = teacherInformationMapper.selectByWorkNumber(workNumber.trim());
-                    if (tutorTeachers.size() == 1) {
+                    if (tutorTeachers1.size() == 1) {
                         TeacherInformationPO teacherInformationPO = tutorTeachers.get(0);
                         data.setTeachingAssistantUsername(teacherInformationPO.getTeacherUsername());
                     } else {
@@ -497,7 +498,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
     public void dohandleBitch() {
 
         //获取当前最大的批次值
-        long MaxBitch = courseScheduleMapper.selectMaxBitch();
+        Long MaxBitch = courseScheduleMapper.selectMaxBitch();
         int updateCount = 0;
         //获取当前批次为空的所有排课表。其实就是刚导入的排课表
         QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
@@ -529,8 +530,20 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             //获取到所有合班的className
             // At this point, no duplicates were found, so you can safely create a set of class names
             Set<String> classSet = classCountMap.keySet();
+            // 获取当前日期
+            LocalDate currentDate = LocalDate.now();
 
-            BatchInfo key = new BatchInfo(schedule.getMainTeacherName(), schedule.getCourseName(), classSet);
+            // 获取当前年份
+            int year = currentDate.getYear();
+
+            // 获取当前月份
+            int month = currentDate.getMonthValue();
+
+            // 判断学期
+            String semester = (month >= 2 && month <= 8) ? "夏季" : "冬季";
+
+
+            BatchInfo key = new BatchInfo("" + year, semester, schedule.getMainTeacherName(), schedule.getCourseName(), classSet);
             if (batches.containsKey(key)) {
                 batches.get(key).add(schedule);
             } else {
@@ -549,14 +562,39 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
             }
 
             Long bitch = null;
+            String teachingClass = null;
+
             for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
                 if (Objects.nonNull(courseSchedulePO.getBatchIndex())) {
                     bitch = courseSchedulePO.getBatchIndex();
+                    teachingClass = courseSchedulePO.getTeachingClass();
                     break;
                 }
             }
             if (Objects.isNull(bitch)) {
                 bitch = ++MaxBitch;
+            }
+
+            if(teachingClass == null){
+                // 如果没有找到教学班
+                CourseSchedulePO courseSchedulePO = courseSchedulePOS.get(0);
+                // 获取当前日期
+                LocalDate currentDate = LocalDate.now();
+
+                // 获取当前年份
+                int year = currentDate.getYear();
+                System.out.println("当前年份: " + year);
+                int teachingClassCount = 1;
+                teachingClass =  year + "-" + courseSchedulePO.getMainTeacherName() + "-" + courseSchedulePO.getCourseName() + "-"
+                        + teachingClassCount + "班";
+                List<CourseSchedulePO> courseSchedulePO1s = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getTeachingClass, teachingClass));
+
+                while(!courseSchedulePO1s.isEmpty()){
+                    teachingClassCount += 1;
+                    teachingClass =  year + "-" + courseSchedulePO.getMainTeacherName() + "-" + courseSchedulePO.getCourseName() + "-"
+                            + teachingClassCount + "班";
+                    courseSchedulePO1s = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getTeachingClass, teachingClass));
+                }
             }
 
             List<CourseSchedulePO> updateList = courseSchedulePOS.stream()
@@ -565,6 +603,7 @@ public class CourseScheduleListener extends AnalysisEventListener<CourseSchedule
 
             for (CourseSchedulePO courseSchedulePO : updateList) {
                 courseSchedulePO.setBatchIndex(bitch);
+                courseSchedulePO.setTeachingClass(teachingClass);
                 int i = courseScheduleMapper.updateById(courseSchedulePO);
                 updateCount = updateCount + i;
             }

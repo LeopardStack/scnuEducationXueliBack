@@ -23,7 +23,7 @@ public class Test1 {
 
     @Test
     public void test1() {
-        String directoryPath = "src/main/resources/data";
+        String directoryPath = "src/main/resources/data/教师信息导入";
         File directory = new File(directoryPath);
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".xlsx"));
 

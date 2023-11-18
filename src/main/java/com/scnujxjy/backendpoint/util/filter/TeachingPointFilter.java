@@ -1,11 +1,14 @@
 package com.scnujxjy.backendpoint.util.filter;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
+import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -23,10 +26,7 @@ import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,22 +35,36 @@ import java.util.concurrent.Future;
 @Slf4j
 public class TeachingPointFilter extends AbstractFilter {
 
-
+    /**
+     * 根据loginId获取教学点班级信息
+     *
+     * @return
+     */
     private Set<String> getTeachingPointClassNameSet() {
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
+        // 通过username查询userId，再查询对应教学点
+        String loginId = StpUtil.getLoginIdAsString();
         if (StrUtil.isBlank(loginId)) {
-            return null;
+            throw new BusinessException("获取用户id失败");
         }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            throw new BusinessException("获取用户信息失败");
+        }
+        Long userId = platformUserPO.getUserId();
         // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
         Set<String> classNameSet = new HashSet<>();
-        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(Wrappers.<TeachingPointAdminInformationPO>lambdaQuery()
+                .eq(TeachingPointAdminInformationPO::getUserId, userId));
         for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
             String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
-            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(Wrappers.<TeachingPointInformationPO>lambdaQuery()
                     .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
             String alias = teachingPointInformationPO.getAlias();
             classNameSet.add(alias);
+        }
+        if (CollUtil.isEmpty(classNameSet)) {
+            throw new BusinessException("查询班级集合为空，查询失败");
         }
         return classNameSet;
     }
@@ -81,16 +95,21 @@ public class TeachingPointFilter extends AbstractFilter {
     @Override
     public FilterDataVO<StudentStatusAllVO> filterStudentStatus(PageRO<StudentStatusFilterRO> studentStatusFilter) {
         FilterDataVO<StudentStatusAllVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
-
-
-        String loginId = StpUtil.getLoginIdAsString().replace("M", "");
+        // 通过username查询userId，再查询对应教学点
+        String loginId = StpUtil.getLoginIdAsString();
         if (StrUtil.isBlank(loginId)) {
-            return null;
+            throw new BusinessException("获取用户id失败");
         }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            throw new BusinessException("获取用户信息失败");
+        }
+        Long userId = platformUserPO.getUserId();
         // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
         Set<String> classNames = new HashSet<>();
         List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginId));
+                .eq(TeachingPointAdminInformationPO::getUserId, userId));
         for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
             String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
             TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
@@ -345,7 +364,6 @@ public class TeachingPointFilter extends AbstractFilter {
 
         return scheduleCourseInformationSelectArgs;
     }
-
 
 
     /**
