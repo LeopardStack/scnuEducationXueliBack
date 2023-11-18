@@ -18,12 +18,14 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.TeacherSelectVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -180,5 +182,41 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
         );
 
         return distinctTeacherNames;
+    }
+
+    /**
+     * 获取主讲老师信息
+     */
+    public List<TeacherSelectVO> getMainTeacherInformation(){
+        List<TeacherSelectVO> teacherSelectVOList = new ArrayList<>();
+        List<TeacherInformationPO> teacherInformationPOS = getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherType2, "主讲教师"));
+        for(TeacherInformationPO teacherInformationPO: teacherInformationPOS){
+            String name = teacherInformationPO.getName();
+            String teacherUsername = teacherInformationPO.getTeacherUsername();
+            String label = name + " " + teacherUsername;
+            TeacherSelectVO teacherSelectVO = new TeacherSelectVO(label, teacherInformationPO.getUserId());
+            teacherSelectVOList.add(teacherSelectVO);
+        }
+
+        return teacherSelectVOList;
+    }
+
+    /**
+     * 获取辅导老师信息
+     */
+    public List<TeacherSelectVO> geTutorInformation(){
+        List<TeacherSelectVO> teacherSelectVOList = new ArrayList<>();
+        List<TeacherInformationPO> teacherInformationPOS = getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherType2, "辅导教师"));
+        for(TeacherInformationPO teacherInformationPO: teacherInformationPOS){
+            String name = teacherInformationPO.getName();
+            String teacherUsername = teacherInformationPO.getTeacherUsername();
+            String label = name + " " + teacherUsername;
+            TeacherSelectVO teacherSelectVO = new TeacherSelectVO(label, teacherInformationPO.getUserId());
+            teacherSelectVOList.add(teacherSelectVO);
+        }
+
+        return teacherSelectVOList;
     }
 }

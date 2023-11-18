@@ -148,7 +148,13 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
-        PlatformUserPO platformUserPO = baseMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, platformUserRO.getUsername()).eq(PlatformUserPO::getPassword, platformUserRO.getPassword()));
+        
+//        if(platformUserRO.getUsername().contains("m")){
+//            return null;
+//        }
+
+        PlatformUserPO platformUserPO = baseMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername,
+                platformUserRO.getUsername()).eq(PlatformUserPO::getPassword, platformUserRO.getPassword()));
         // 如果无法查询到，则说明密码错误
         if (Objects.isNull(platformUserPO)) {
             return null;

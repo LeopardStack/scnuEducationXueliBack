@@ -89,4 +89,10 @@ public class CourseInformationVO {
     @ExcelIgnore
     private String courseCover;
 
+    /**
+     * 考试信息表ID
+     */
+    @ExcelIgnore
+    private Long examId;
+
 }

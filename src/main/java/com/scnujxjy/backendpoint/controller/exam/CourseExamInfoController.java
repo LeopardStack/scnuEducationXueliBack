@@ -5,10 +5,12 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundErro
  */
 @RestController
 @RequestMapping("/course-exam-info")
+@Slf4j
 public class CourseExamInfoController {
 
     @Resource
@@ -73,6 +76,50 @@ public class CourseExamInfoController {
 
         boolean b = courseExamInfoService.batchUnSetExamType(examFilterROPageRO.getEntity());
         return SaResult.ok("批量设置机考结果为  " + b);
+    }
+
+    /**
+     * 单个设置命题教师和阅卷助教
+     * @param singleSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/single_set_exam_teachers")
+    public SaResult singleSetExamTeachers(@RequestBody SingleSetTeachersInfoRO singleSetTeachersInfoRO) {
+
+        try {
+            boolean b = courseExamInfoService.singleSetTeachers(singleSetTeachersInfoRO);
+            if(b){
+                return SaResult.ok("成功更新老师信息结果为  " + b);
+            }else{
+                return SaResult.error("更新教师信息失败 " + b).setCode(2001);
+            }
+
+        }catch (Exception e){
+            log.error("单个更新教师信息失败 " + singleSetTeachersInfoRO + "\n" + e.toString());
+            return SaResult.error("更新教师信息失败").setCode(2001);
+        }
+    }
+
+    /**
+     * 单个清除命题教师和阅卷助教
+     * @param singleSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/single_delete_exam_teachers")
+    public SaResult singleDeleteExamTeachers(@RequestBody SingleSetTeachersInfoRO singleSetTeachersInfoRO) {
+
+        try {
+            int b = courseExamInfoService.singleDeleteTeachers(singleSetTeachersInfoRO);
+            if(b > 0){
+                return SaResult.ok("成功删除老师 " + b);
+            }else{
+                return SaResult.ok("老师信息已删除 " + b);
+            }
+
+        }catch (Exception e){
+            log.error("单个删除教师信息失败 " + singleSetTeachersInfoRO + "\n" + e.toString());
+            return SaResult.error("删除教师信息失败").setCode(2001);
+        }
     }
 }
 

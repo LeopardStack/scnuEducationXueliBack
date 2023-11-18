@@ -2,22 +2,27 @@ package com.scnujxjy.backendpoint.service.exam;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamAssistantsPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
@@ -37,6 +42,12 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
 
     @Resource
     private CourseExamInfoMapper courseExamInfoMapper;
+
+    @Resource
+    private CourseExamAssistantsMapper courseExamAssistantsMapper;
+
+    @Resource
+    private TeacherInformationMapper teacherInformationMapper;
 
     @Resource
     private CourseInformationMapper courseInformationMapper;
@@ -139,5 +150,87 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
         }
         log.info("批量获取到了所有的教学计划所对应的考试信息表 " + examDataBOS.size() + " 条 成功了 " + count + " 条");
         return true;
+    }
+
+    /**
+     * 单个设置主讲教师和助教信息
+     * @param entity
+     * @return
+     */
+    public boolean singleSetTeachers(SingleSetTeachersInfoRO entity) {
+        Long examId = Long.valueOf(entity.getId());
+        CourseExamInfoPO courseExamInfoPO = courseExamInfoMapper.selectOne(new LambdaQueryWrapper<CourseExamInfoPO>()
+                .eq(CourseExamInfoPO::getId, examId));
+        String mainTeacher1 = entity.getMainTeacher();
+        if(mainTeacher1 == null || mainTeacher1.trim().isEmpty()){
+        }else{
+            int mainTeacher = Integer.parseInt(mainTeacher1);
+            TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getUserId, mainTeacher));
+            courseExamInfoPO.setMainTeacher(teacherInformationPO.getName()) ;
+            courseExamInfoPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+            int i = courseExamInfoMapper.updateById(courseExamInfoPO);
+            if(i > 0){
+                log.info("更新考试信息主讲教师成功 !");
+            }else{
+                log.error("更新考试信息主讲教师以失败 !" + courseExamInfoPO + "\n更新结果 " + i);
+                return false;
+            }
+
+        }
+
+        if(entity.getAssistants() != null && entity.getAssistants().size() > 0){
+            int delete = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                    .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+            log.info("删除指定教学计划所对应的考试计划的所有助教信息 " + delete);
+        }
+        int count = 0;
+        for(String tutorId: entity.getAssistants()){
+            int userId = Integer.parseInt(tutorId);
+            TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getUserId, userId));
+            CourseExamAssistantsPO courseExamAssistantsPO = new CourseExamAssistantsPO();
+            courseExamAssistantsPO.setCourseId(courseExamInfoPO.getId());
+            courseExamAssistantsPO.setAssistantName(teacherInformationPO.getName());
+            courseExamAssistantsPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+            int insert = courseExamAssistantsMapper.insert(courseExamAssistantsPO);
+            if(insert > 0){
+                count += 1;
+            }
+        }
+        if(count > 0){
+            log.info(courseExamInfoPO + "插入更新 " + count + " 个助教");
+        }
+        return true;
+    }
+
+    /**
+     * 单个清除某一个考试的命题人和阅卷助教信息
+     * @param entity
+     * @return
+     */
+    public int singleDeleteTeachers(SingleSetTeachersInfoRO entity) {
+        Long examId = Long.valueOf(entity.getId());
+        CourseExamInfoPO courseExamInfoPO = courseExamInfoMapper.selectOne(new LambdaQueryWrapper<CourseExamInfoPO>()
+                .eq(CourseExamInfoPO::getId, examId));
+        UpdateWrapper<CourseExamInfoPO> updateWrapper = new UpdateWrapper<>();
+        updateWrapper.set("main_teacher", null)
+                .eq("id", courseExamInfoPO.getId());
+        updateWrapper.set("teacher_username", null)
+                .eq("id", courseExamInfoPO.getId());
+        int i = courseExamInfoMapper.update(null, updateWrapper);
+        int delete1 = 0;
+        if(i > 0){
+            delete1 += 1;
+        }
+
+        int delete2 = 0;
+        int delete_ = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+        if(delete_ > 0){
+            delete2 += delete_;
+        }
+
+        return delete1 + delete2;
     }
 }

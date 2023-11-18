@@ -19,6 +19,7 @@ import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.*;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +70,9 @@ public class CourseScheduleController {
 
     @Resource
     private MessageSender messageSender;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Value("${minio.importBucketName}")
     private String importBucketName;
@@ -456,6 +460,7 @@ public class CourseScheduleController {
      */
     @PostMapping("/select_courses_args")
     public SaResult getSelectScheduleCourseInformationArgs(@RequestBody CourseScheduleFilterRO courseScheduleFilterRO) {
+        scnuXueliTools.convertEmptyStringsToNull(courseScheduleFilterRO);
         List<String> roleList = StpUtil.getRoleList();
         PageVO<FilterDataVO> filterDataVO = null;
 
