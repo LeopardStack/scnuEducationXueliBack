@@ -19,7 +19,7 @@ import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
-import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecordInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecordList;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import org.springframework.stereotype.Service;
 
@@ -156,29 +156,26 @@ public class OfficeAutomationService {
         List<ApprovalRecordAllInformation> result = approvalRecordPOPage.getRecords()
                 .stream()
                 .map(record -> {
-                    List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
-                            .eq(ApprovalStepRecordPO::getApprovalId, record.getId()));
-                    if (CollUtil.isNotEmpty(approvalStepRecordPOS)) {
-                        List<ApprovalStepWithRecordInformation> approvalStepWithRecordInformations = approvalStepRecordPOS.stream()
-                                .filter(ele -> Objects.nonNull(ele.getStepId()))
-                                .map(ele -> {
-                                    ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(ele.getStepId());
-                                    return approvalInverter.stepWithRecord2Information(ele, approvalStepPO);
-                                })
-                                .filter(Objects::nonNull)
-                                .sorted(Comparator.comparing(ApprovalStepWithRecordInformation::getStepOrder))
-                                .collect(Collectors.toList());
-                        return approvalInverter.approvalRecordStep2Information(record, approvalStepWithRecordInformations);
+                    // 查询排序好的步骤
+                    List<ApprovalStepPO> approvalStepPOS = selectStepByType(record.getApprovalTypeId());
+                    List<ApprovalStepWithRecordList> approvalStepWithRecordLists = new ArrayList<>();
+                    if (CollUtil.isNotEmpty(approvalStepPOS)) {
+                        approvalStepPOS.forEach(step -> {
+                            List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
+                                    .eq(ApprovalStepRecordPO::getStepId, step.getId())
+                                    .eq(ApprovalStepRecordPO::getApprovalId, record.getId()));
+                            approvalStepWithRecordLists.add(approvalInverter.step2ApprovalStepWithRecordList(step, approvalStepRecordPOS));
+                        });
                     }
-                    return null;
+                    return approvalInverter.approvalRecordStep2Information(record, approvalStepWithRecordLists);
                 })
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return new PageVO<>(approvalRecordPOPage, result);
     }
 
     /**
      * 根据typeId查询步骤
+     * <p>结果已经根据stepOrder排序</p>
      *
      * @param typeId 类型id
      * @return
@@ -188,7 +185,8 @@ public class OfficeAutomationService {
             return null;
         }
         return approvalStepMapper.selectList(Wrappers.<ApprovalStepPO>lambdaQuery()
-                .eq(ApprovalStepPO::getApprovalTypeId, typeId));
+                .eq(ApprovalStepPO::getApprovalTypeId, typeId)
+                .orderBy(true, true, ApprovalStepPO::getStepOrder));
     }
 
 }

@@ -13,7 +13,7 @@ import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.exception.BusinessException;
-import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecordInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordWithStepInformation;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +38,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
     public CommonOfficeAutomationHandler(Long typeId) {
     }
 
-    public List<ApprovalStepWithRecordInformation> selectApprovalRecordWithStep(Long typeId) {
+    public List<ApprovalRecordWithStepInformation> selectApprovalRecordWithStep(Long typeId) {
         if (Objects.isNull(typeId)) {
             throw new BusinessException("审批类型id缺失");
         }
@@ -49,7 +49,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         }
         return approvalStepRecordPOS.stream()
                 .map(ele -> approvalInverter.stepWithRecord2Information(ele, approvalStepMapper.selectById(ele.getStepId())))
-                .sorted(Comparator.comparing(ApprovalStepWithRecordInformation::getStepOrder))
+                .sorted(Comparator.comparing(ApprovalRecordWithStepInformation::getStepOrder))
                 .collect(Collectors.toList());
     }
 
@@ -175,16 +175,16 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         // 审批成功：跳过中间已经成功的步骤，寻找下一个未开始或者失败的步骤
         if (approvalStepRecordPO.getStatus().equals(SUCCESS.getStatus())) {
             // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
-            List<ApprovalStepWithRecordInformation> approvalStepWithRecordInformation = selectApprovalRecordWithStep(typeId);
-            Map<Integer, List<ApprovalStepWithRecordInformation>> stepOrder2InformationMap = approvalStepWithRecordInformation.stream()
-                    .collect(Collectors.groupingBy(ApprovalStepWithRecordInformation::getStepOrder));
+            List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithStep(typeId);
+            Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
+                    .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
             Integer orderId = null;
             for (Integer order : stepOrder2InformationMap.keySet()) {
-                List<ApprovalStepWithRecordInformation> approvalStepWithRecordInformations = stepOrder2InformationMap.get(order);
-                if (CollUtil.isEmpty(approvalStepWithRecordInformations)) {
+                List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(order);
+                if (CollUtil.isEmpty(approvalRecordWithStepInformations)) {
                     continue;
                 }
-                Set<String> statusSet = approvalStepWithRecordInformations.stream().map(ApprovalStepWithRecordInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
+                Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
                 if (statusSet.contains(SUCCESS.getStatus())) {
                     continue;
                 }
@@ -193,8 +193,8 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
             }
             // 如果有的话要找出当前这个 order 对应的步骤，从这里开始申请
             if (Objects.nonNull(orderId)) {
-                List<ApprovalStepWithRecordInformation> approvalStepWithRecordInformations = stepOrder2InformationMap.get(orderId);
-                Long stepId = approvalStepWithRecordInformations.get(0).getStepId();
+                List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(orderId);
+                Long stepId = approvalRecordWithStepInformations.get(0).getStepId();
                 int created = createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
                 if (created == 0) {
                     throw new BusinessException("新增步骤记录失败");

@@ -13,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class ApprovalStepWithRecordInformation {
+public class ApprovalRecordWithStepInformation {
     /**
      * 步骤记录id
      */
