@@ -10,16 +10,16 @@
     </sql>
 
     <sql id="commonFilters">
-        <if test='entity.id != null'>AND ss.id = #{entity.id} </if>
-        <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber} </if>
-        <if test='entity.grade != null'>AND ss.grade = #{entity.grade} </if>
-        <if test='entity.college != null'>AND ss.college = #{entity.college} </if>
-        <if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint} </if>
-        <if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName} </if>
-        <if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>
-        <if test='entity.level != null'>AND ss.level = #{entity.level} </if>
-        <if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration} </if>
-        <if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber} </if>
+        <if test='entity.id != null'>AND ss.id = #{entity.id}</if>
+        <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber}</if>
+        <if test='entity.grade != null'>AND ss.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ss.college = #{entity.college}</if>
+        <if test='entity.teachingPoint != null'>AND ss.teaching_point = #{entity.teachingPoint}</if>
+        <if test='entity.majorName != null'>AND ss.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm}</if>
+        <if test='entity.level != null'>AND ss.level = #{entity.level}</if>
+        <if test='entity.studyDuration != null'>AND ss.study_duration = #{entity.studyDuration}</if>
+        <if test='entity.admissionNumber != null'>AND ss.admission_number = #{entity.admissionNumber}</if>
         <!-- 只有在academicStatus不为null时才加入查询条件 -->
         <if test='entity.academicStatus != null'>
             <choose>
@@ -35,16 +35,21 @@
             </choose>
         </if>
 
-        <if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate} </if>
-        <if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber} </if>
-        <if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier} </if>
-        <if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>
+        <if test='entity.enrollmentDate != null'>AND ss.enrollment_date = #{entity.enrollmentDate}</if>
+        <if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber}</if>
+        <if test='entity.classIdentifier != null'>AND ss.class_identifier = #{entity.classIdentifier}</if>
+        <if test='entity.className != null'>AND ci.class_name = #{entity.className}</if>
         <if test='entity.graduationDate != null'>
             AND YEAR(gi.graduation_date) = YEAR(#{entity.graduationDate})
             AND MONTH(gi.graduation_date) = MONTH(#{entity.graduationDate})
         </if>
-
-        <if test='entity.name != null'>AND pi.name = #{entity.name} </if>
+        <if test='entity.classNames != null and entity.classNames.size() > 0'>
+            AND ci.class_name LIKE
+            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
+                #{className}
+            </foreach>
+        </if>
+        <if test='entity.name != null'>AND pi.name = #{entity.name}</if>
     </sql>
 
     <select id="selectByFilterAndPageByManager0" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO">
@@ -114,12 +119,6 @@
         pi.political_status, pi.ethnicity, pi.phone_number, pi.address, pi.entrance_photo
         <include refid="commonJoin" />
         WHERE 1=1
-        <if test='entity.classNames != null and entity.classNames.size() > 0'>
-            AND ci.class_name IN
-            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters" />
         --         ORDER BY ss.grade DESC, ss.college, ss.major_name, ss.level, ci.class_name
         LIMIT #{l}, #{pageSize}
@@ -129,12 +128,6 @@
         SELECT count(*)
         <include refid="commonJoin" />
         WHERE 1=1
-        <if test='entity.classNames != null and entity.classNames.size() > 0'>
-            AND ci.class_name IN
-            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
-                #{className}
-            </foreach>
-        </if>
         <include refid="commonFilters" />
     </select>
 

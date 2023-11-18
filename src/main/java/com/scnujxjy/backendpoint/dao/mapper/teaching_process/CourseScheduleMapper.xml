@@ -46,7 +46,7 @@
             #{courseScheduleFilterROPageRO.batchIndex}
         </if>
         <if test='courseScheduleFilterROPageRO.classNames != null and courseScheduleFilterROPageRO.classNames.size() > 0'>
-            AND cs.admin_class IN
+            AND cs.admin_class LIKE
             <foreach item="className" collection="courseScheduleFilterROPageRO.classNames" open="(" separator=","
                      close=")">
                 #{className}

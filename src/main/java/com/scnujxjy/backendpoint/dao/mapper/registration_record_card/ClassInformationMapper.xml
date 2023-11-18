@@ -17,7 +17,7 @@
         <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>
         <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>
         <if test='entity.classNames != null and entity.classNames.size() > 0'>
-            AND ci.class_name IN
+            AND ci.class_name LIKE
             <foreach item="className" collection="entity.classNames" open="(" separator="," close=")">
                 #{className}
             </foreach>
