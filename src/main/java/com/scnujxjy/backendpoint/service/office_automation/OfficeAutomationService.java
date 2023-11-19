@@ -21,6 +21,7 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecordList;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -28,9 +29,11 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.match;
 
 @Service
+@Slf4j
 public class OfficeAutomationService {
 
     private final Map<OfficeAutomationHandlerType, OfficeAutomationHandler> officeAutomationHandlers;
@@ -67,12 +70,12 @@ public class OfficeAutomationService {
      */
     private OfficeAutomationHandler getHandler(OfficeAutomationHandlerType handlerType) {
         return Optional.ofNullable(officeAutomationHandlers.get(handlerType))
-                .orElseThrow(() -> new IllegalArgumentException("不支持的OA类型"));
+                .orElse(officeAutomationHandlers.get(COMMON));
     }
 
     public void trigger() {
-        OfficeAutomationHandler automationHandler = getHandler(match("student-transfer-major"));
-        System.out.println(automationHandler);
+        OfficeAutomationHandler automationHandler = getHandler(match(""));
+        log.info("{}", automationHandler);
     }
 
     /**

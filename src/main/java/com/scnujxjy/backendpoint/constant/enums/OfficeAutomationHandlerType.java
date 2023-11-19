@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 public enum OfficeAutomationHandlerType {
 
 
-    STUDENT_TRANSFER_MAJOR("student-transfer-major", "学生转专业");
+    STUDENT_TRANSFER_MAJOR("student-transfer-major", "学生转专业"),
+    COMMON("common", "默认审批流程");
     String type;
 
     String name;
