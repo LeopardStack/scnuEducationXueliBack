@@ -10,7 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
+import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.TRANSFER;
 
 @SpringBootTest
 @Slf4j
@@ -36,11 +36,18 @@ public class TestOfficeAutomation {
 
     @Test
     void testProcess() {
-        Boolean processed = handler.process(ApprovalStepRecordPO.builder()
+/*        Boolean processed = handler.process(ApprovalStepRecordPO.builder()
                 .comment("审批成功")
                 .status(SUCCESS.getStatus())
+                .stepId(3L)
+                .id(25L)
+                .build());*/
+        Boolean processed = handler.process(ApprovalStepRecordPO.builder()
+                .comment("第六步跳转去第三步")
+                .status(TRANSFER.getStatus())
                 .stepId(6L)
-                .id(6L)
+                .id(26L)
+                .nextStepId(3L)
                 .build());
         log.info("测试结果：{}", processed);
     }

@@ -90,46 +90,37 @@ public abstract class OfficeAutomationHandler {
             // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
             List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithStep(typeId);
             Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
+                    .filter(ele -> stepRecordPO.getApprovalId().equals(ele.getApprovalId()))
                     .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
             Integer orderId = null;
             for (Integer order : stepOrder2InformationMap.keySet()) {
+                // 在当前步骤之前的不用遍历
+                if (approvalStepPO.getStepOrder() >= order) {
+                    continue;
+                }
                 List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(order);
                 if (CollUtil.isEmpty(approvalRecordWithStepInformations)) {
                     continue;
                 }
                 Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
-                if (statusSet.contains(SUCCESS.getStatus())) {
-                    continue;
+                if (!statusSet.contains(SUCCESS.getStatus())) {
+                    orderId = order;
+                    break;
                 }
-                orderId = order;
-                break;
             }
             // 如果有的话要找出当前这个 order 对应的步骤，从这里开始申请
             if (Objects.nonNull(orderId)) {
                 List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(orderId);
                 Long stepId = approvalRecordWithStepInformations.get(0).getStepId();
-                int created = createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
-                if (created == 0) {
-                    throw new BusinessException("新增步骤记录失败");
-                }
-                count = updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
-                if (count == 0) {
-                    throw new BusinessException("更新事件记录失败");
-                }
+                createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
+                updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
                 return true;
             } else {
                 // 没有跳过的记录，那就判断是不是最后一个步骤，如果是这说明已经结束了
                 List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
                 if (approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
                     // 已经结束
-                    Integer updated = updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, SUCCESS);
-                    if (updated == 0) {
-                        throw new BusinessException("更新审核状态失败");
-                    }
-                    count = updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, SUCCESS);
-                    if (count == 0) {
-                        throw new BusinessException("更新事件记录失败");
-                    }
+                    updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, SUCCESS);
                     return true;
                 } else {
                     // 未结束：获取下一个步骤
@@ -140,14 +131,8 @@ public abstract class OfficeAutomationHandler {
                             break;
                         }
                     }
-                    int created = createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
-                    if (created == 0) {
-                        throw new BusinessException("新增步骤记录失败");
-                    }
-                    count = updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
-                    if (count == 0) {
-                        throw new BusinessException("更新事件记录失败");
-                    }
+                    createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
+                    updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
                     return true;
                 }
             }
@@ -155,17 +140,15 @@ public abstract class OfficeAutomationHandler {
         // 审核失败
         else if (approvalStepRecordPO.getStatus().equals(FAILED.getStatus())) {
             // 更新当前审批记录状态
-            Integer updated = updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, FAILED);
-            if (updated == 0) {
-                throw new BusinessException("更新审核状态失败");
-            }
+            updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, FAILED);
             return true;
         }
         // 审核流转
         else if (approvalStepRecordPO.getStatus().equals(TRANSFER.getStatus())) {
             // 插入新的流程步骤
-            count = createApprovalStepRecord(approvalStepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId());
-            return count != 0;
+            createApprovalStepRecord(stepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId());
+            updateApprovalRecord(stepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId(), WAITING);
+            return true;
         }
         return false;
     }
@@ -251,11 +234,15 @@ public abstract class OfficeAutomationHandler {
         if (Objects.isNull(recordId)) {
             throw new BusinessException("更新记录失败，主键缺失");
         }
-        return approvalRecordMapper.update(null, Wrappers.<ApprovalRecordPO>lambdaUpdate()
+        int count = approvalRecordMapper.update(null, Wrappers.<ApprovalRecordPO>lambdaUpdate()
                 .eq(ApprovalRecordPO::getId, recordId)
                 .set(Objects.nonNull(updateAt), ApprovalRecordPO::getUpdateAt, updateAt)
                 .set(Objects.nonNull(status), ApprovalRecordPO::getStatus, status.getStatus())
                 .set(Objects.nonNull(currentStepId), ApprovalRecordPO::getCurrentStepId, currentStepId));
+        if (count == 0) {
+            throw new BusinessException("更新记录失败");
+        }
+        return count;
     }
 
     /**
