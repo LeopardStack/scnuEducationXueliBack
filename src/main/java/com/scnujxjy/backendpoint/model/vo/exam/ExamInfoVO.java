@@ -25,6 +25,8 @@ public class ExamInfoVO implements Serializable {
 
     private Long id;
 
+    private Long examId;
+
     private String grade;
 
     private String college;

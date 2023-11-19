@@ -9,6 +9,7 @@ import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.index.qual.SameLen;
@@ -102,5 +103,36 @@ public class ScnuXueliTools {
             }
         }
         return true;
+    }
+
+
+    /**
+     * 将指定对象的所有字符串属性 只要其值为空字符串 将其置为 null
+     * @param obj
+     */
+    public void convertEmptyStringsToNull(CourseScheduleFilterRO obj) {
+        if (obj == null) {
+            return;
+        }
+
+        Field[] fields = obj.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                // 确保可以访问私有字段
+                field.setAccessible(true);
+
+                // 检查字段是否为字符串类型
+                if (field.getType().equals(String.class)) {
+                    String value = (String) field.get(obj);
+
+                    // 如果字符串为空，则将其设置为 null
+                    if (value != null && value.isEmpty()) {
+                        field.set(obj, null);
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

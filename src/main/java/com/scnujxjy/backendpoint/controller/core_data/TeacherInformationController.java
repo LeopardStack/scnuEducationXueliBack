@@ -104,5 +104,24 @@ public class TeacherInformationController {
 
         return SaResult.data(teacherInformationService.getTeacherInformation());
     }
+
+    /**
+     * 获取主讲教师
+     * @return
+     */
+    @GetMapping("/get_main_teacher_information")
+    public SaResult getMainTeacherInformation(){
+        return SaResult.ok().setData(teacherInformationService.getMainTeacherInformation());
+    }
+
+    /**
+     * 获取辅导教师
+     * @return
+     */
+    @GetMapping("/get_tutor_information")
+    public SaResult getTutorInformation(){
+        return SaResult.ok().setData(teacherInformationService.geTutorInformation());
+    }
+
 }
 
