@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper">
+
+    <sql id="commonJoin">
+        FROM course_exam_info cei
+        JOIN class_information ci ON cei.class_identifier = ci.class_identifier
+        JOIN course_information cri ON cri.admin_class = cei.class_identifier
+        AND cri.course_name = cei.course
+    </sql>
+
+    <sql id="commonFiltersForExam">
+        AND ci.id is not NULL
+        AND cri.id is not NULL
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
+        <if test='entity.majorName != null'>AND c.major_name = #{entity.majorName}</if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
+        <if test='entity.teachingSemester != null'>AND cri.teaching_semester = #{entity.teachingSemester}</if>
+        <if test='entity.classNames != null and !entity.classNames.isEmpty()'>
+            AND ci.class_name IN
+            <foreach item="name" collection="entity.classNames" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+
+        <if test='entity.courseNames != null and !entity.courseNames.isEmpty()'>
+            AND cri.course_name IN
+            <foreach item="name" collection="entity.courseNames" open="(" separator="," close=")">
+                #{name}
+            </foreach>
+        </if>
+
+        <if test='entity.examStatus != null'>AND cei.exam_status = #{entity.examStatus}</if>
+        <if test='entity.examMethod != null'>AND cei.exam_method = #{entity.examMethod}</if>
+    </sql>
+
+    <select id="batchSelectData" resultType="com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO">
+        select cei.*
+        <include refid="commonJoin"></include>
+        WHERE 1=1
+        <include refid="commonFiltersForExam"></include>
+    </select>
+
+    <select id="downloadExamTeachersInfoByManager0"
+            resultType="com.scnujxjy.backendpoint.model.vo.exam.ExamTeachersInfoVO">
+        select cei.*
+        <include refid="commonJoin"></include>
+        WHERE 1=1
+        <include refid="commonFiltersForExam"></include>
+    </select>
+
+</mapper>

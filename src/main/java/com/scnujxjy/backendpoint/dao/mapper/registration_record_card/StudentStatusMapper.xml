@@ -44,10 +44,11 @@
             AND MONTH(gi.graduation_date) = MONTH(#{entity.graduationDate})
         </if>
         <if test='entity.classNames != null and entity.classNames.size() > 0'>
-            AND ci.class_name LIKE
-            <foreach collection="entity.classNames" item="className" open="(" close=")" separator=",">
-                #{className}
+            AND (
+            <foreach collection="entity.classNames" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
         <if test='entity.name != null'>AND pi.name = #{entity.name}</if>
     </sql>

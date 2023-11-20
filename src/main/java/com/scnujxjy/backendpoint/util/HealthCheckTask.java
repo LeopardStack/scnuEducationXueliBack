@@ -116,8 +116,8 @@ public class HealthCheckTask {
     public void clearRedisDataOnStartup() {
         try {
             // 清除Redis中的所有数据
-            stringRedisTemplate.getConnectionFactory().getConnection().flushDb();
-            log.info("Redis数据已清除");
+//            stringRedisTemplate.getConnectionFactory().getConnection().flushDb();
+//            log.info("Redis数据已清除");
         } catch (Exception e) {
             log.error("清除Redis数据时出错: " + e.toString());
         }

@@ -139,7 +139,7 @@ public class OldDataSynchronize {
      * @param fileName
      * @param diyBucketName
      */
-    public <T> void exportErrorListToExcelAndUploadToMinio(List<T> errorList, Class<T> type, String fileName, String diyBucketName) {
+    public <T> boolean exportErrorListToExcelAndUploadToMinio(List<T> errorList, Class<T> type, String fileName, String diyBucketName) {
         // Step 1: Write data to ByteArrayOutputStream
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         EasyExcel.write(outputStream, type).sheet("Sheet1").doWrite(errorList); // 注意，这里直接使用 T.class 是不允许的。我们需要其他方式来传递类的类型。
@@ -150,12 +150,6 @@ public class OldDataSynchronize {
         // Step 3: Upload to Minio
         boolean success = minioService.uploadStreamToMinio(inputStream, fileName, diyBucketName);
 
-        if (success) {
-            log.info("Successfully uploaded to Minio.");
-        } else {
-            log.error("Failed to upload to Minio.");
-        }
-
         // Close the streams
         try {
             inputStream.close();
@@ -163,6 +157,16 @@ public class OldDataSynchronize {
         } catch (IOException e) {
             log.error("Error closing streams: " + e.getMessage());
         }
+
+        if (success) {
+            log.info("Successfully uploaded to Minio.");
+            return true;
+        } else {
+            log.error("Failed to upload to Minio.");
+            return false;
+        }
+
+
     }
 
 

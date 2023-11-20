@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.util;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.alibaba.fastjson.JSON;
@@ -8,9 +9,11 @@ import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.rabbitmq.client.Channel;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
@@ -18,12 +21,14 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMappe
 import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelImportVO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
+import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.UserUploadsService;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
@@ -47,6 +52,7 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -79,7 +85,13 @@ public class MessageReceiver {
     private OldDataSynchronize oldDataSynchronize;
 
     @Resource
+    private CourseExamInfoService courseExamInfoService;
+
+    @Resource
     private PlatformMessageMapper platformMessageMapper;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
 
     @Resource
     private CourseInformationMapper courseInformationMapper;
@@ -186,6 +198,30 @@ public class MessageReceiver {
                 String userId = message.getString("userId");
                 log.info("接收到根据批次id: {} 导出学生信息消息，正在下载内容");
                 courseScheduleFilter.exportStudentInformationBatchIndex(pageRO, userId);
+            }
+            else if ("com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO".equals(type)) {
+                PageRO<BatchSetTeachersInfoRO> pageRO = JSON.parseObject(message.getString("data"),
+                        new TypeReference<PageRO<BatchSetTeachersInfoRO>>() {
+                        });
+                String loginId = message.getString("userId");
+                List<String> roleList = StpUtil.getRoleList(loginId);
+                if(roleList.contains(RoleEnum.XUELIJIAOYUBU_ADMIN.getRoleName())){
+                    // 学历教育部管理员
+                    AbstractFilter managerFilter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                    });
+
+                    log.info("接收到批量导出考试信息消息，开始准备数据 ");
+                    managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                }else if(roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())){
+                    // 学历教育部管理员
+                    AbstractFilter managerFilter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                    });
+                    CollegeInformationPO userBelongCollegeByLoginId = scnuXueliTools.getUserBelongCollegeByLoginId(loginId);
+                    pageRO.getEntity().setCollege(userBelongCollegeByLoginId.getCollegeName());
+                    log.info("接收到批量导出考试信息消息，开始准备数据 ");
+                    managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                }
+
             }
             // 添加其他类型的处理逻辑
 
@@ -331,6 +367,55 @@ public class MessageReceiver {
         readerBuilder.sheet().headRowNumber(headRowNumber).doRead();
     }
 
+
+    @RabbitListener(
+            queuesToDeclare = {
+                    @Queue("${spring.rabbitmq.queue5}")
+            }
+    )
+    @RabbitHandler
+    public void processSystemMsg(String messageContent, Channel channel, Message msg) {
+        log.info("收到系统消息，正在处理 ...");
+        try {
+            JSONObject message = JSON.parseObject(messageContent);
+            String systemMsgType = message.getString("systemMsgType");
+            String type = message.getString("type");
+
+            if ("com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO".equals(type)) {
+                BatchSetTeachersInfoRO batchSetTeachersInfoRO = JSON.parseObject(message.getString("data"),
+                        new TypeReference<BatchSetTeachersInfoRO>() {
+                        });
+
+                String loginId = message.getString("userId");
+                log.info("拿到需要批量设置命题人和阅卷人的筛选参数 " + batchSetTeachersInfoRO);
+                // 处理pageRO
+                // 单独处理二级学院
+                List<String> roleList = StpUtil.getRoleList(loginId);
+                if(roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())){
+                    CollegeInformationPO userBelongCollegeByLoginId = scnuXueliTools.getUserBelongCollegeByLoginId(loginId);
+                    batchSetTeachersInfoRO.setCollege(userBelongCollegeByLoginId.getCollegeName());
+                }
+
+                boolean b = courseExamInfoService.batchSetTeachers(batchSetTeachersInfoRO);
+            }
+
+            // 手动确认消息
+            channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
+        }catch (Exception e) {
+            log.error("处理系统消息时出现异常: ", e);
+            try {
+                /**
+                 * 根据需要，拒绝消息并选择是否重新入队
+                 * deliveryTag: 这是一个由服务器分配的标记，用于标识通道上接收的消息。
+                 * multiple: 这个布尔值指定是否一次拒绝多条消息。如果设置为 true，服务器会拒绝所有消息，直到给定的 deliveryTag。
+                 * requeue: 这个布尔值指定消息是否应该被重新放入队列。如果为 true，消息将被重新入队。
+                 */
+                channel.basicNack(msg.getMessageProperties().getDeliveryTag(), false, false);
+            } catch (IOException ioException) {
+                log.error("确认系统消息时出现异常: ", ioException);
+            }
+        }
+    }
 
 }
 

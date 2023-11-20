@@ -32,7 +32,7 @@ spring:
     queue2: test1_dev
     queue3: data_export_dev
     queue4: data_export2_dev
-    queue5: data_synchronize_test_timeout_dev
+    queue5: data_system_msg_dev
     queue6: data_upload_dev
 
   servlet:

@@ -28,6 +28,7 @@ import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudent
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.DegreeInfoRO;
@@ -626,5 +627,14 @@ public abstract class AbstractFilter {
 
     public FilterDataVO filterCoursesInformationExams(PageRO<ExamFilterRO> courseScheduleFilterROPageRO) {
         return null;
+    }
+
+    /**
+     * 考试信息批量导出
+     * @param entity
+     * @param loginId
+     */
+    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String loginId) {
+
     }
 }

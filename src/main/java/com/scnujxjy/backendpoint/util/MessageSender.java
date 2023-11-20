@@ -29,6 +29,9 @@ public class MessageSender {
     @Value("${spring.rabbitmq.queue4}")
     private String queue4;
 
+    @Value("${spring.rabbitmq.queue5}")
+    private String queue5;
+
     @Value("${spring.rabbitmq.queue6}")
     private String queue6;
 
@@ -90,7 +93,32 @@ public class MessageSender {
             log.info("成功发送导出文件处理消息 ");
             return true;
         } catch (AmqpException e) {
-            log.error("Error sending message: " + e.getMessage());
+            log.error("发送导出文件处理消息失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 往消息队列中发送导出消息 后台异步处理导出任务
+     * @param systemMsgType
+     * @param filter
+     * @param userId
+     * @return
+     */
+    public <T> boolean sendSystemMsg(T filter, String userId, String systemMsgType){
+        try {
+            // 创建一个包含数据和类型信息的JSON对象
+            JSONObject message = new JSONObject();
+            message.put("type", filter.getClass().getName());
+            message.put("systemMsgType", JSON.toJSONString(systemMsgType));
+            message.put("data", JSON.toJSONString(filter));
+            message.put("userId", userId);
+
+            this.rabbitTemplate.convertAndSend(queue5, message.toJSONString());
+            log.info("成功发送系统消息处理 ");
+            return true;
+        } catch (AmqpException e) {
+            log.error("发送系统消息处理失败: " + e.getMessage());
             return false;
         }
     }
