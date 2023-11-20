@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.office_automation;
 
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalTypePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -28,7 +29,7 @@ public class OfficeAutomationController {
 
     @PostMapping("/trigger")
     public SaResult trigger() {
-        officeAutomationService.trigger();
+        officeAutomationService.trigger(OfficeAutomationHandlerType.COMMON);
         return SaResult.ok();
     }
 

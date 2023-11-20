@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.match;
 
 @Service
 @Slf4j
@@ -73,8 +72,9 @@ public class OfficeAutomationService {
                 .orElse(officeAutomationHandlers.get(COMMON));
     }
 
-    public void trigger() {
-        OfficeAutomationHandler automationHandler = getHandler(match(""));
+    public void trigger(OfficeAutomationHandlerType type) {
+        OfficeAutomationHandler automationHandler = getHandler(type);
+        automationHandler.process(null);
         log.info("{}", automationHandler);
     }
 

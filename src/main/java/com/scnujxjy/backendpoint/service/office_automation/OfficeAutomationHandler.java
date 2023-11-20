@@ -47,31 +47,28 @@ public abstract class OfficeAutomationHandler {
     protected ApprovalInverter approvalInverter;
 
     /**
+     * 获取支持类型
+     *
+     * @return 支持类型
+     */
+    public abstract OfficeAutomationHandlerType supportType();
+
+    /**
      * 审核当前步骤
      *
-     * @param approvalStepRecordPO
-     * @return
+     * @param approvalStepRecordPO 审核参数
+     * @return true-成功
      */
     @Transactional
     public Boolean process(ApprovalStepRecordPO approvalStepRecordPO) {
-        if (Objects.isNull(approvalStepRecordPO)
-                || StrUtil.isBlank(approvalStepRecordPO.getComment())
-                || StrUtil.isBlank(approvalStepRecordPO.getStatus())
-                || Objects.isNull(approvalStepRecordPO.getStepId())
-                || Objects.isNull(approvalStepRecordPO.getId())) {
-            throw new BusinessException("当前步骤参数缺失，请检查审批意见、审批状态、审核步骤等信息");
-        }
-        // 针对不同状态设置下一步记录
-        if (StrUtil.equals(TRANSFER.getStatus(), approvalStepRecordPO.getStatus())
-                && Objects.isNull(approvalStepRecordPO.getNextStepId())) {
-            throw new BusinessException("流转状态下必须给出下一个步骤");
+        // 检查参数
+        if (!check(approvalStepRecordPO)) {
+            throw new BusinessException("参数非法");
         }
         // 基本参数
-        ApprovalStepRecordPO stepRecordPO = approvalStepRecordMapper.selectById(approvalStepRecordPO.getId());
-        ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepRecordPO.getStepId());
-        Long typeId = stepRecordPO.getApprovalTypeId();
         String userId = StpUtil.getLoginIdAsString();
 //        String userId = "xuelijiaoyuTest1";
+
         DateTime date = DateUtil.date();
         // 更新当前步骤记录状态
         LambdaUpdateWrapper<ApprovalStepRecordPO> wrapper = Wrappers.<ApprovalStepRecordPO>lambdaUpdate()
@@ -85,72 +82,151 @@ public abstract class OfficeAutomationHandler {
         if (count == 0) {
             throw new BusinessException("更新当前步骤失败");
         }
-        // 审批成功：跳过中间已经成功的步骤，寻找下一个未开始或者失败的步骤
-        if (approvalStepRecordPO.getStatus().equals(SUCCESS.getStatus())) {
-            // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
-            List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithStep(typeId);
-            Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
-                    .filter(ele -> stepRecordPO.getApprovalId().equals(ele.getApprovalId()))
-                    .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
-            Integer orderId = null;
-            for (Integer order : stepOrder2InformationMap.keySet()) {
-                // 在当前步骤之前的不用遍历
-                if (approvalStepPO.getStepOrder() >= order) {
-                    continue;
-                }
-                List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(order);
-                if (CollUtil.isEmpty(approvalRecordWithStepInformations)) {
-                    continue;
-                }
-                Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
-                if (!statusSet.contains(SUCCESS.getStatus())) {
-                    orderId = order;
-                    break;
-                }
+        switch (Objects.requireNonNull(match(approvalStepRecordPO.getStatus()))) {
+            case SUCCESS:
+                success(approvalStepRecordPO.getApprovalId(), approvalStepRecordPO.getStepId(), date);
+                break;
+            case FAILED:
+                failed(approvalStepRecordPO.getApprovalId(), date);
+                break;
+            case TRANSFER:
+                transfer(approvalStepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId());
+                break;
+            default:
+                return false;
+        }
+        afterProcess(approvalStepRecordPO);
+        return false;
+    }
+
+    /**
+     * 检查参数以及操作合法性
+     *
+     * @param approvalStepRecordPO 参数
+     * @return
+     */
+    @Transactional
+    public Boolean check(ApprovalStepRecordPO approvalStepRecordPO) {
+        if (Objects.isNull(approvalStepRecordPO)
+                || StrUtil.isBlank(approvalStepRecordPO.getComment())
+                || StrUtil.isBlank(approvalStepRecordPO.getStatus())
+                || Objects.isNull(approvalStepRecordPO.getStepId())
+                || Objects.isNull(approvalStepRecordPO.getId())) {
+            throw new BusinessException("当前步骤参数缺失，请检查审批意见、审批状态、审核步骤等信息");
+        }
+        // 针对不同状态设置下一步记录
+        if (StrUtil.equals(TRANSFER.getStatus(), approvalStepRecordPO.getStatus())
+                && Objects.isNull(approvalStepRecordPO.getNextStepId())) {
+            throw new BusinessException("流转状态下必须给出下一个步骤");
+        }
+        return true;
+    }
+
+
+    /**
+     * 步骤成功处理函数
+     * <p>会跳过中间已经成功的步骤</p>
+     * <p>如果出现错误会直接抛出</p>
+     *
+     * @param approvalId 事件记录 id
+     * @param stepId     步骤 id
+     * @param date       更新时间
+     * @return true-成功
+     */
+    @Transactional
+    public Boolean success(Long approvalId, Long stepId, Date date) {
+        ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepId);
+        Long typeId = approvalStepPO.getApprovalTypeId();
+        // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
+        List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithStep(typeId);
+        Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
+                .filter(ele -> approvalId.equals(ele.getApprovalId()))
+                .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
+        Integer orderId = null;
+        for (Integer order : stepOrder2InformationMap.keySet()) {
+            // 在当前步骤之前的不用遍历
+            if (approvalStepPO.getStepOrder() >= order) {
+                continue;
             }
-            // 如果有的话要找出当前这个 order 对应的步骤，从这里开始申请
-            if (Objects.nonNull(orderId)) {
-                List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(orderId);
-                Long stepId = approvalRecordWithStepInformations.get(0).getStepId();
-                createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
-                updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
+            List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(order);
+            if (CollUtil.isEmpty(approvalRecordWithStepInformations)) {
+                continue;
+            }
+            Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
+            if (!statusSet.contains(SUCCESS.getStatus())) {
+                orderId = order;
+                break;
+            }
+        }
+        // 如果有的话要找出当前这个 order 对应的步骤，从这里开始申请
+        if (Objects.nonNull(orderId)) {
+            List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(orderId);
+            Long nextStepId = approvalRecordWithStepInformations.get(0).getStepId();
+            createApprovalStepRecord(approvalId, date, nextStepId);
+            updateApprovalRecord(approvalId, date, nextStepId, WAITING);
+            return true;
+        } else {
+            // 没有跳过的记录，那就判断是不是最后一个步骤，如果是这说明已经结束了
+            List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
+            if (approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
+                // 已经结束
+                updateApprovalRecord(approvalId, date, null, SUCCESS);
                 return true;
             } else {
-                // 没有跳过的记录，那就判断是不是最后一个步骤，如果是这说明已经结束了
-                List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
-                if (approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
-                    // 已经结束
-                    updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, SUCCESS);
-                    return true;
-                } else {
-                    // 未结束：获取下一个步骤
-                    Long stepId = null;
-                    for (ApprovalStepPO stepPO : approvalStepPOS) {
-                        if (stepPO.getStepOrder() > approvalStepPO.getStepOrder()) {
-                            stepId = stepPO.getId();
-                            break;
-                        }
+                // 未结束：获取下一个步骤
+                Long nextStepId = null;
+                for (ApprovalStepPO stepPO : approvalStepPOS) {
+                    if (stepPO.getStepOrder() > approvalStepPO.getStepOrder()) {
+                        nextStepId = stepPO.getId();
+                        break;
                     }
-                    createApprovalStepRecord(stepRecordPO.getApprovalId(), date, stepId);
-                    updateApprovalRecord(stepRecordPO.getApprovalId(), date, stepId, WAITING);
-                    return true;
                 }
+                createApprovalStepRecord(approvalId, date, nextStepId);
+                updateApprovalRecord(approvalId, date, nextStepId, WAITING);
+                return true;
             }
         }
-        // 审核失败
-        else if (approvalStepRecordPO.getStatus().equals(FAILED.getStatus())) {
-            // 更新当前审批记录状态
-            updateApprovalRecord(stepRecordPO.getApprovalId(), date, null, FAILED);
-            return true;
+    }
+
+    /**
+     * 步骤失败处理函数
+     * <p>失败需要重新申请</p>
+     * <p>函数错误会抛出</p>
+     *
+     * @param approvalId 事件记录 id
+     * @param date       更新时间
+     * @return
+     */
+    @Transactional
+    public Boolean failed(Long approvalId, Date date) {
+        Integer updated = updateApprovalRecord(approvalId, date, null, FAILED);
+        if (updated == 0) {
+            throw new BusinessException("修改OA信息失败");
         }
-        // 审核流转
-        else if (approvalStepRecordPO.getStatus().equals(TRANSFER.getStatus())) {
-            // 插入新的流程步骤
-            createApprovalStepRecord(stepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId());
-            updateApprovalRecord(stepRecordPO.getApprovalId(), date, approvalStepRecordPO.getNextStepId(), WAITING);
-            return true;
+        return true;
+    }
+
+    /**
+     * 步骤流转处理函数
+     * <p>步骤流转到前面的步骤</p>
+     * <p>失败会抛出错误</p>
+     *
+     * @param approvalId 事件记录 id
+     * @param date       更新时间
+     * @param nextStepId 下一步的步骤 id
+     * @return true-成功
+     */
+    @Transactional
+    public Boolean transfer(Long approvalId, Date date, Long nextStepId) {
+        Integer created = createApprovalStepRecord(approvalId, date, nextStepId);
+        if (created == 0) {
+            throw new BusinessException("新增步骤记录失败");
         }
-        return false;
+        Integer updated = updateApprovalRecord(approvalId, date, nextStepId, TRANSFER);
+        if (updated == 0) {
+            throw new BusinessException("修改OA信息失败");
+        }
+        return true;
     }
 
     /**
@@ -201,19 +277,18 @@ public abstract class OfficeAutomationHandler {
     }
 
     /**
-     * 获取支持类型
+     * 处理后的过程
      *
-     * @return
+     * @param approvalStepRecordPO
      */
-    public OfficeAutomationHandlerType supportType() {
-        return null;
-    }
+    @Transactional
+    public abstract void afterProcess(ApprovalStepRecordPO approvalStepRecordPO);
 
     /**
      * 根据类型id 获取步骤记录及其补充信息
      *
-     * @param typeId
-     * @return
+     * @param typeId 类型 id
+     * @return 步骤记录极其补充信息
      */
     protected List<ApprovalRecordWithStepInformation> selectApprovalRecordWithStep(Long typeId) {
         if (Objects.isNull(typeId)) {
@@ -230,6 +305,15 @@ public abstract class OfficeAutomationHandler {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 更新事件记录
+     *
+     * @param recordId      事件记录 id
+     * @param updateAt      更新时间
+     * @param currentStepId 当前步骤
+     * @param status        状态
+     * @ 更新条数
+     */
     protected Integer updateApprovalRecord(Long recordId, Date updateAt, Long currentStepId, OfficeAutomationStepStatus status) {
         if (Objects.isNull(recordId)) {
             throw new BusinessException("更新记录失败，主键缺失");
@@ -249,8 +333,8 @@ public abstract class OfficeAutomationHandler {
      * 根据类型查询审批流程
      * <p>根据步骤先后排序</p>
      *
-     * @param typeId
-     * @return
+     * @param typeId 类型 id
+     * @return 所属类型的步骤列表
      */
     protected List<ApprovalStepPO> selectApprovalStep(Long typeId) {
         if (Objects.isNull(typeId)) {
@@ -269,9 +353,9 @@ public abstract class OfficeAutomationHandler {
     /**
      * 根据信息插入步骤记录
      *
-     * @param approvalId
-     * @param date
-     * @param stepId
+     * @param approvalId 事件记录 Id
+     * @param date       添加时间
+     * @param stepId     步骤 id
      */
     protected int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
         if (Objects.isNull(approvalId)

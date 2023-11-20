@@ -21,17 +21,17 @@ public enum OfficeAutomationStepStatus {
     }
 
     /**
-     * 根据状态名称匹配状态
+     * 匹配状态
      *
      * @param name 状态名称
      * @return
      */
-    public static OfficeAutomationStepStatus match(String name) {
-        if (StrUtil.isBlank(name)) {
+    public static OfficeAutomationStepStatus match(String status) {
+        if (StrUtil.isBlank(status)) {
             return null;
         }
         for (OfficeAutomationStepStatus value : OfficeAutomationStepStatus.values()) {
-            if (name.equals(value.getName())) {
+            if (status.equals(value.getStatus())) {
                 return value;
             }
         }
