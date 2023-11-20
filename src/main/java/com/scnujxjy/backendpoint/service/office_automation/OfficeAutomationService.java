@@ -23,6 +23,7 @@ import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithReco
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -67,15 +68,14 @@ public class OfficeAutomationService {
      * @return
      * @see OfficeAutomationHandlerType
      */
-    private OfficeAutomationHandler getHandler(OfficeAutomationHandlerType handlerType) {
+    private OfficeAutomationHandler getHandler(Long typeId) {
+        OfficeAutomationHandlerType handlerType = OfficeAutomationHandlerType.match(typeId);
         return Optional.ofNullable(officeAutomationHandlers.get(handlerType))
                 .orElse(officeAutomationHandlers.get(COMMON));
     }
 
     public void trigger(OfficeAutomationHandlerType type) {
-        OfficeAutomationHandler automationHandler = getHandler(type);
-        automationHandler.process(null);
-        log.info("{}", automationHandler);
+        OfficeAutomationHandler automationHandler = getHandler(1L);
     }
 
     /**
@@ -192,4 +192,70 @@ public class OfficeAutomationService {
                 .orderBy(true, true, ApprovalStepPO::getStepOrder));
     }
 
+    /**
+     * 根据审批记录id查询审批记录信息及其步骤信息
+     *
+     * @param approvalId 审批记录Id
+     * @return 审批记录、步骤信息
+     */
+    public ApprovalRecordAllInformation approvalRecordDetail(Long approvalId) {
+        if (Objects.isNull(approvalId)) {
+            return null;
+        }
+        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalId);
+        if (Objects.isNull(approvalRecordPO)
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())) {
+            throw new BusinessException("获取审批记录失败");
+        }
+        List<ApprovalStepPO> approvalStepPOS = selectStepByType(approvalRecordPO.getApprovalTypeId());
+        if (CollUtil.isEmpty(approvalStepPOS)) {
+            throw new BusinessException("获取审批步骤为空");
+        }
+        List<ApprovalStepWithRecordList> approvalStepWithRecordLists = approvalStepPOS.stream()
+                .map(step -> {
+                    List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
+                            .eq(ApprovalStepRecordPO::getStepId, step.getId())
+                            .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordPO.getId()));
+                    return approvalInverter.step2ApprovalStepWithRecordList(step, approvalStepRecordPOS);
+                }).collect(Collectors.toList());
+        if (CollUtil.isEmpty(approvalStepWithRecordLists)) {
+            throw new BusinessException("获取步骤全部信息为空");
+        }
+        return approvalInverter.approvalRecordStep2Information(approvalRecordPO, approvalStepWithRecordLists);
+    }
+
+    /**
+     * 审批流程
+     *
+     * @param approvalStepRecordPO 审批流程参数，其中：审批id、步骤id、审批意见、状态、审批类型必填
+     * @return
+     */
+    @Transactional
+    public Boolean processApproval(ApprovalStepRecordPO approvalStepRecordPO) {
+        if (Objects.isNull(approvalStepRecordPO)
+                || Objects.isNull(approvalStepRecordPO.getApprovalTypeId())) {
+            throw new BusinessException("缺少参数，无法审批");
+        }
+        OfficeAutomationHandler automationHandler = getHandler(approvalStepRecordPO.getApprovalTypeId());
+        if (Objects.isNull(automationHandler)) {
+            throw new BusinessException("后台出错，请详细管理员");
+        }
+        return automationHandler.process(approvalStepRecordPO);
+    }
+
+    /**
+     * 根据审批记录id删除审批记录
+     *
+     * @param approvalId 审批记录
+     * @return
+     */
+    @Transactional
+    public void deleteApprovalRecord(Long approvalId) {
+        if (Objects.isNull(approvalId)) {
+            throw new BusinessException("审批记录id缺失，无法删除");
+        }
+        approvalRecordMapper.deleteById(approvalId);
+        approvalStepRecordMapper.delete(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
+                .eq(ApprovalStepRecordPO::getApprovalId, approvalId));
+    }
 }

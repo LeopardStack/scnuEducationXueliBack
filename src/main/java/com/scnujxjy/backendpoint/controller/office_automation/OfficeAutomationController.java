@@ -3,21 +3,20 @@ package com.scnujxjy.backendpoint.controller.office_automation;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalTypePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
+import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 import static com.scnujxjy.backendpoint.model.vo.PageVO.isPageVONull;
 
 @RestController
@@ -52,6 +51,12 @@ public class OfficeAutomationController {
         return SaResult.data(approvalTypeAllInformationPageVO);
     }
 
+    /**
+     * 分页查询OA记录信息、步骤信息
+     *
+     * @param approvalRecordPOPageRO 分页查询参数
+     * @return
+     */
     @PostMapping("/page-approval-record")
     public SaResult pageApprovalRecordAllInformation(@RequestBody PageRO<ApprovalRecordPO> approvalRecordPOPageRO) {
         if (Objects.isNull(approvalRecordPOPageRO)) {
@@ -62,5 +67,44 @@ public class OfficeAutomationController {
             return SaResult.error("查询数据为空");
         }
         return SaResult.data(approvalRecordAllInformationPageVO);
+    }
+
+    /**
+     * 根据审核记录id查询审核记录、步骤信息
+     *
+     * @param approvalId 审核记录id
+     * @return
+     */
+    @GetMapping("/detail-approval-record")
+    public SaResult approvalRecordAllInformationDetail(Long approvalId) {
+        if (Objects.isNull(approvalId)) {
+            throw dataMissError();
+        }
+        ApprovalRecordAllInformation approvalRecordAllInformation = officeAutomationService.approvalRecordDetail(approvalId);
+        if (Objects.isNull(officeAutomationService)) {
+            throw dataNotFoundError();
+        }
+        return SaResult.data(approvalRecordAllInformation);
+    }
+
+    @PostMapping("/process-approval-step-record")
+    public SaResult processApprovalStepRecord(@RequestBody ApprovalStepRecordPO approvalStepRecordPO) {
+        if (Objects.isNull(approvalStepRecordPO)) {
+            throw dataMissError();
+        }
+        Boolean processed = officeAutomationService.processApproval(approvalStepRecordPO);
+        if (!processed) {
+            return SaResult.code(2000).setMsg("审批失败");
+        }
+        return SaResult.data(processed);
+    }
+
+    @GetMapping("/delete-approval-record")
+    public SaResult deleteApprovalRecord(Long approvalId) {
+        if (Objects.isNull(approvalId)) {
+            throw dataMissError();
+        }
+        officeAutomationService.deleteApprovalRecord(approvalId);
+        return SaResult.ok();
     }
 }

@@ -24,5 +24,4 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
     public OfficeAutomationHandlerType supportType() {
         return COMMON;
     }
-
 }
