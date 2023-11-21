@@ -77,19 +77,19 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
      * @param userName 用户登录账号
      * @return 用户信息
      */
-    public PlatformUserVO detailByuserName(String userName) {
+    public PlatformUserVO detailByUsername(String username) {
         // 参数校验
-        if (Objects.isNull(userName)) {
+        if (StrUtil.isBlank(username)) {
             log.error("参数缺失");
             return null;
         }
         // 查询数据
-        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(userName);
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(username);
         if (platformUserPOS.size() > 1) {
-            log.error("该账号存在多名用户 " + userName);
+            log.error("该账号存在多名用户 " + username);
             return null;
-        } else if (platformUserPOS.size() == 0) {
-            log.error("该账号不存在 " + userName);
+        } else if (platformUserPOS.isEmpty()) {
+            log.error("该账号不存在 " + username);
             return null;
         }
         PlatformUserPO platformUserPO = platformUserPOS.get(0);
@@ -148,7 +148,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
-        
+
 //        if(platformUserRO.getUsername().contains("m")){
 //            return null;
 //        }

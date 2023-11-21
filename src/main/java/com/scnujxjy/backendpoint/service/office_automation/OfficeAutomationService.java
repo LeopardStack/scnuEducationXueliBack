@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.office_automation;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -18,9 +19,11 @@ import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecordList;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +55,9 @@ public class OfficeAutomationService {
 
     @Resource
     private ApprovalInverter approvalInverter;
+
+    @Resource
+    private PlatformUserService platformUserService;
 
     public OfficeAutomationService(List<OfficeAutomationHandler> officeAutomationList) {
         officeAutomationHandlers = officeAutomationList.stream()
@@ -148,10 +154,16 @@ public class OfficeAutomationService {
         if (Objects.isNull(approvalRecordPO)) {
             approvalRecordPO = new ApprovalRecordPO();
         }
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(StpUtil.getLoginIdAsString());
+        if (Objects.isNull(platformUserVO)
+                || Objects.isNull(platformUserVO.getUserId())) {
+            throw new BusinessException("无法查询用户信息");
+        }
         LambdaQueryWrapper<ApprovalRecordPO> wrapper = Wrappers.<ApprovalRecordPO>lambdaQuery()
                 .eq(Objects.nonNull(approvalRecordPO.getApprovalTypeId()), ApprovalRecordPO::getApprovalTypeId, approvalRecordPO.getApprovalTypeId())
                 .eq(StrUtil.isNotBlank(approvalRecordPO.getInitiatorUserId()), ApprovalRecordPO::getInitiatorUserId, approvalRecordPO.getInitiatorUserId())
-                .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus());
+                .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus())
+                .like(ApprovalRecordPO::getUserWatchSet, platformUserVO.getUserId());
         Page<ApprovalRecordPO> approvalRecordPOPage = approvalRecordMapper.selectPage(approvalRecordPOPageRO.getPage(), wrapper);
         if (Objects.isNull(approvalRecordPOPage) || CollUtil.isEmpty(approvalRecordPOPage.getRecords())) {
             throw new BusinessException("OA 记录数据查询为空");
@@ -204,8 +216,17 @@ public class OfficeAutomationService {
         }
         ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalId);
         if (Objects.isNull(approvalRecordPO)
-                || Objects.isNull(approvalRecordPO.getApprovalTypeId())) {
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())
+                || CollUtil.isEmpty(approvalRecordPO.getUserWatchSet())) {
             throw new BusinessException("获取审批记录失败");
+        }
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(StpUtil.getLoginIdAsString());
+        if (Objects.isNull(platformUserVO)
+                || Objects.isNull(platformUserVO.getUserId())) {
+            throw new BusinessException("无法查询到账户信息");
+        }
+        if (!CollUtil.contains(approvalRecordPO.getUserWatchSet(), platformUserVO.getUserId())) {
+            throw new BusinessException("该账户无权限查询");
         }
         List<ApprovalStepPO> approvalStepPOS = selectStepByType(approvalRecordPO.getApprovalTypeId());
         if (CollUtil.isEmpty(approvalStepPOS)) {

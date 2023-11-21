@@ -39,7 +39,7 @@ public class StpInterfaceConfig implements StpInterface {
      */
     @Override
     public List<String> getPermissionList(Object loginUserName, String loginType) {
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginUserName);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
         // 参数校验
         if (Objects.isNull(platformUserVO)) {
             log.error("参数缺失");
@@ -78,7 +78,7 @@ public class StpInterfaceConfig implements StpInterface {
     @Override
     public List<String> getRoleList(Object loginUserName, String loginType) {
         // 参数校验
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginUserName);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
 
 
 

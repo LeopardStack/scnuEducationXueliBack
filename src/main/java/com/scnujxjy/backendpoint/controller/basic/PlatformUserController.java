@@ -1,13 +1,10 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
-import cn.dev33.satoken.session.SaSession;
-import cn.dev33.satoken.session.TokenSign;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
-import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
@@ -22,7 +19,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -199,7 +199,7 @@ public class PlatformUserController {
     public SaResult detail() {
         Object loginId = StpUtil.getLoginId();
         // 查询数据
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginId);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginId);
         // 校验返回数据
         if (Objects.isNull(platformUserVO)) {
             throw dataNotFoundError();
