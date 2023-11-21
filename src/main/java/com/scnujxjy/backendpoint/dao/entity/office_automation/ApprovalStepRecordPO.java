@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -64,4 +65,8 @@ public class ApprovalStepRecordPO {
      * 审批类型id
      */
     private Long approvalTypeId;
+    /**
+     * 用户审批集合
+     */
+    private List<Long> userApprovalSet;
 }

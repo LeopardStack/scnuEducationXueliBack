@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.dao.entity.office_automation;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,13 +12,14 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("approval_record")
+@TableName(value = "approval_record", autoResultMap = true)
 public class ApprovalRecordPO {
     /**
      * 主键id
@@ -47,4 +50,10 @@ public class ApprovalRecordPO {
      * 审批状态：waiting-正在审批，success-成功，failed-失败
      */
     private String status;
+
+    /**
+     * 用户查看集合
+     */
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> userWatchSet;
 }
