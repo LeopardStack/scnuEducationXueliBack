@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.dao.entity.office_automation;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("approval_step_record")
+@TableName(value = "approval_step_record", autoResultMap = true)
 public class ApprovalStepRecordPO {
     /**
      * 主键id
@@ -68,5 +70,6 @@ public class ApprovalStepRecordPO {
     /**
      * 用户审批集合
      */
+    @TableField(typeHandler = LongTypeHandler.class)
     private List<Long> userApprovalSet;
 }

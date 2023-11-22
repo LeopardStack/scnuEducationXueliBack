@@ -52,4 +52,9 @@ public class ApprovalRecordAllInformation {
      * 审批状态：waiting-正在审批，success-成功，failed-失败
      */
     private String status;
+
+    /**
+     * 用户查看集合
+     */
+    private List<Long> userWatchSet;
 }

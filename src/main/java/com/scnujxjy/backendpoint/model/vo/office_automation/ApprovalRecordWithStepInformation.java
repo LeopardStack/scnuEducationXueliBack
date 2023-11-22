@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -69,4 +70,9 @@ public class ApprovalRecordWithStepInformation {
      * 步骤描述
      */
     private String description;
+
+    /**
+     * 用户审批集合
+     */
+    private List<Long> userApprovalSet;
 }
