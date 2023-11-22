@@ -36,7 +36,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 300;
+    public static final int CONSUMER_COUNT = 800;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
