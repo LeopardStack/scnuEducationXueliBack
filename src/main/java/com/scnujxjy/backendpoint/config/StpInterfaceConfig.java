@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.config;
 
 import cn.dev33.satoken.stp.StpInterface;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
@@ -60,6 +61,9 @@ public class StpInterfaceConfig implements StpInterface {
             log.error("获取用户权限列表为空，用户角色权限：{}", userRolePermissionBO);
             return ListUtil.of();
         }
+
+//        StpUtil.getRoleList();
+//        StpUtil.getPermissionList();
         // 返回数据
         return permissionVOS.stream()
                 .filter(Objects::nonNull)
