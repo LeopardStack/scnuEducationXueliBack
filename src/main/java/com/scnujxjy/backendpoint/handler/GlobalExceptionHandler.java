@@ -29,7 +29,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler
     public SaResult handlerException(Exception e) {
-        log.error("出现异常：", e);
+        if(e.toString().contains("token 无效")){
+
+        }else{
+            log.error("出现异常：", e);
+        }
         return SaResult.error(e.getMessage());
     }
 }

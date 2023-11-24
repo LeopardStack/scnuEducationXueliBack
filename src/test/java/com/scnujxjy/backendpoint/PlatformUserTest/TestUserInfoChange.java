@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
@@ -302,6 +304,34 @@ public class TestUserInfoChange {
         int gradeEnd = 2023;
         for(int i = gradeStart; i >= gradeEnd; i--){
             generateStudentAccount("" + i);
+        }
+    }
+
+
+    /**
+     * 更新二级学院管理员名字
+     */
+    @Test
+    public void updateCollegeAdminNames(){
+        List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper().selectList(null);
+        for(CollegeAdminInformationPO collegeAdminInformationPO: collegeAdminInformationPOS){
+            String name = collegeAdminInformationPO.getName();
+            String userId = collegeAdminInformationPO.getUserId();
+            PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, Long.parseLong(userId)));
+            if(platformUserPO == null){
+                throw new IllegalArgumentException("不存在账号 " + collegeAdminInformationPO);
+            }else{
+                // 更新名字
+                UpdateWrapper<PlatformUserPO> updateWrapper = new UpdateWrapper<>();
+                updateWrapper.set("name", name)
+                        .eq("user_id", platformUserPO.getUserId());
+
+                int i = platformUserService.getBaseMapper().update(null, updateWrapper);
+                if(i > 0){
+                    log.info("更新姓名成功 " + i + " " + collegeAdminInformationPO);
+                }
+            }
         }
     }
 

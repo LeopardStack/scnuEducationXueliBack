@@ -4,7 +4,9 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
@@ -224,15 +226,20 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
                     (teacher.getIdCardNumber() == null || teacher.getIdCardNumber().isEmpty()) :
                     Objects.equals(data.getIdCardNumber(), teacher.getIdCardNumber());
 
-            boolean samePhone = (data.getPhone() == null || data.getPhone().isEmpty()) ?
-                    (teacher.getPhone() == null || teacher.getPhone().isEmpty()) :
-                    Objects.equals(data.getPhone(), teacher.getPhone());
+//            boolean samePhone = (data.getPhone() == null || data.getPhone().isEmpty()) ?
+//                    (teacher.getPhone() == null || teacher.getPhone().isEmpty()) :
+//                    Objects.equals(data.getPhone(), teacher.getPhone());
 
             boolean sameWorkNumber = (data.getWorkNumber() == null || data.getWorkNumber().isEmpty()) ?
                     (teacher.getWorkNumber() == null || teacher.getWorkNumber().isEmpty()) :
                     Objects.equals(data.getWorkNumber(), teacher.getWorkNumber());
 
-            if (sameIdCard && samePhone && sameWorkNumber) {
+            if (sameIdCard  && sameWorkNumber) {
+                // 删除 T + null 的助教
+                if(teacher.getTeacherUsername().equals("Tnull")){
+                    int i = teacherInformationMapper.deleteById(teacher);
+                    continue;
+                }
                 return teacher;
             }
         }
@@ -246,35 +253,71 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
         try {
             TeacherInformationPO matchingTeacher = findMatchingTeacher(data);
             if (matchingTeacher != null) {
-                log.error("导入失败，数据库中存在与此相同或相似的老师: " + data.toString());
-                errorRecords.add(TeacherInformationErrorRecord.builder()
-                        .userId(data.getUserId())
-                        .name(data.getName())
-                        .gender(data.getGender())
-                        .birthDate(data.getBirthDate())
-                        .politicalStatus(data.getPoliticalStatus())
-                        .education(data.getEducation())
-                        .degree(data.getDegree())
-                        .professionalTitle(data.getProfessionalTitle())
-                        .titleLevel(data.getTitleLevel())
-                        .graduationSchool(data.getGraduationSchool())
-                        .currentPosition(data.getCurrentPosition())
-                        .collegeId(data.getCollegeId())
-                        .teachingPoint(data.getTeachingPoint())
-                        .administrativePosition(data.getAdministrativePosition())
-                        .workNumber(data.getWorkNumber())
-                        .idCardNumber(data.getIdCardNumber())
-                        .phone(data.getPhone())
-                        .email(data.getEmail())
-                        .startTerm(data.getStartTerm())
-                        .teacherType1(data.getTeacherType1())
-                        .teacherType2(data.getTeacherType2())
-                        .errorDescription("导入失败，数据库中存在与此相同或相似的老师: " + matchingTeacher.toString())
-                        .build());
+                if(matchingTeacher.getPhone() == null || !matchingTeacher.getPhone().equals(data.getPhone())){
+                    // 如果手机号码不对 直接更新手机号码
+                    UpdateWrapper<TeacherInformationPO> updateWrapper = new UpdateWrapper<>();
+                    updateWrapper.set("phone", data.getPhone())
+                            .eq("user_id", matchingTeacher.getUserId());
+
+                    int i = teacherInformationMapper.update(null, updateWrapper);
+//                    log.info("更新教师手机号码成功");
+                    errorRecords.add(TeacherInformationErrorRecord.builder()
+                            .userId(data.getUserId())
+                            .name(data.getName())
+                            .gender(data.getGender())
+                            .birthDate(data.getBirthDate())
+                            .politicalStatus(data.getPoliticalStatus())
+                            .education(data.getEducation())
+                            .degree(data.getDegree())
+                            .professionalTitle(data.getProfessionalTitle())
+                            .titleLevel(data.getTitleLevel())
+                            .graduationSchool(data.getGraduationSchool())
+                            .currentPosition(data.getCurrentPosition())
+                            .collegeId(data.getCollegeId())
+                            .teachingPoint(data.getTeachingPoint())
+                            .administrativePosition(data.getAdministrativePosition())
+                            .workNumber(data.getWorkNumber())
+                            .idCardNumber(data.getIdCardNumber())
+                            .phone(data.getPhone())
+                            .email(data.getEmail())
+                            .startTerm(data.getStartTerm())
+                            .teacherType1(data.getTeacherType1())
+                            .teacherType2(data.getTeacherType2())
+                            .errorDescription("更新教师手机号码成功")
+                            .build());
+                }else{
+                    log.error("导入失败，数据库中存在与此相同或相似的老师: " + data.toString());
+                    errorRecords.add(TeacherInformationErrorRecord.builder()
+                            .userId(data.getUserId())
+                            .name(data.getName())
+                            .gender(data.getGender())
+                            .birthDate(data.getBirthDate())
+                            .politicalStatus(data.getPoliticalStatus())
+                            .education(data.getEducation())
+                            .degree(data.getDegree())
+                            .professionalTitle(data.getProfessionalTitle())
+                            .titleLevel(data.getTitleLevel())
+                            .graduationSchool(data.getGraduationSchool())
+                            .currentPosition(data.getCurrentPosition())
+                            .collegeId(data.getCollegeId())
+                            .teachingPoint(data.getTeachingPoint())
+                            .administrativePosition(data.getAdministrativePosition())
+                            .workNumber(data.getWorkNumber())
+                            .idCardNumber(data.getIdCardNumber())
+                            .phone(data.getPhone())
+                            .email(data.getEmail())
+                            .startTerm(data.getStartTerm())
+                            .teacherType1(data.getTeacherType1())
+                            .teacherType2(data.getTeacherType2())
+                            .errorDescription("导入失败，数据库中存在与此相同或相似的老师: " + matchingTeacher.toString())
+                            .build());
+                }
+
             } else {
                 TeacherInformationPO teacherInformationPO = from(data, teacherInformationMapper);
 
                 // 插入数据库
+
                 teacherInformationMapper.insert(teacherInformationPO);
 
                 dataCount++;
