@@ -1,20 +1,17 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
-import cn.dev33.satoken.session.SaSession;
-import cn.dev33.satoken.session.TokenSign;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.OnlineCount;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
-import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,7 +19,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -44,9 +44,6 @@ public class PlatformUserController {
     private PlatformUserService platformUserService;
 
     @Resource
-    private PlatformRoleService platformRoleService;
-
-    @Resource
     protected RedisTemplate<String, Object> redisTemplate;
 
 
@@ -61,7 +58,6 @@ public class PlatformUserController {
     public SaResult userLogin(@RequestBody PlatformUserRO platformUserRO, HttpServletRequest request) {
 
 
-
         // 参数校验，登录名、密码不可或缺
         if (Objects.isNull(platformUserRO) || StrUtil.isBlank(platformUserRO.getUsername()) || StrUtil.isBlank(platformUserRO.getPassword())) {
             return SaResult.error("账户、密码不允许为空，登录失败");
@@ -69,22 +65,22 @@ public class PlatformUserController {
         // 登录
         PlatformUserPO isLogin = platformUserService.userLogin(platformUserRO);
         // 返回
-        if(isLogin != null) {
+        if (isLogin != null) {
             // Satoken 注册登录
             StpUtil.login(platformUserRO.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            if(StpUtil.getRoleList().size() != 1){
-                if(StpUtil.getRoleList().size() == 0){
+            if (StpUtil.getRoleList().size() != 1) {
+                if (StpUtil.getRoleList().size() == 0) {
                     return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
-                }else if(StpUtil.getRoleList().size() > 1){
+                } else if (StpUtil.getRoleList().size() > 1) {
                     return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
                 }
             }
 
             String roleName = StpUtil.getRoleList().get(0);
             String tmp = "管理员";
-            if(roleName.contains(tmp)){
+            if (roleName.contains(tmp)) {
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
 
@@ -100,15 +96,34 @@ public class PlatformUserController {
             // 更新角色在线人数和总在线人数
             updateOnlineCounts(StpUtil.getRoleList().get(0), true);
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
-        }else{
+        } else {
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
         }
     }
 
+    /**
+     * 根据userId批量更新用户信息
+     * <p>目前只支持更新补充权限id集合</p>
+     *
+     * @param platformUserROS
+     * @return
+     */
+    @PostMapping("/batch-update-user")
+    public SaResult batchUpdateUser(@RequestBody List<PlatformUserRO> platformUserROS) {
+        if (CollUtil.isEmpty(platformUserROS)) {
+            throw dataMissError();
+        }
+        List<PlatformUserVO> platformUserVOS = platformUserService.updateUser(platformUserROS);
+        if (CollUtil.isEmpty(platformUserVOS)) {
+            return SaResult.error("更新失败");
+        }
+        return SaResult.data(platformUserVOS);
+    }
+
     @GetMapping("/logout")
-    public SaResult logOut(){
+    public SaResult logOut() {
         // 获取当前用户角色
-        if(!StpUtil.getRoleList().isEmpty()){
+        if (!StpUtil.getRoleList().isEmpty()) {
             String roleName = StpUtil.getRoleList().get(0);
 
             // 更新角色在线人数和总在线人数
@@ -136,21 +151,21 @@ public class PlatformUserController {
         // 登录
         PlatformUserPO isLogin = platformUserService.userLogin(platformUserRO);
         // 返回
-        if(isLogin != null) {
+        if (isLogin != null) {
             // Satoken 注册登录
             StpUtil.login(isLogin.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            if(StpUtil.getRoleList().size() != 1){
-                if(StpUtil.getRoleList().size() == 0){
+            if (StpUtil.getRoleList().size() != 1) {
+                if (StpUtil.getRoleList().size() == 0) {
                     return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
-                }else if(StpUtil.getRoleList().size() > 1){
+                } else if (StpUtil.getRoleList().size() > 1) {
                     return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
                 }
             }
             String roleName = StpUtil.getRoleList().get(0);
             String tmp = "管理员";
-            if(roleName.contains(tmp)){
+            if (roleName.contains(tmp)) {
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
                         isLogin.getName(), isLogin.getWechatOpenId());
                 // 更新角色在线人数和总在线人数
@@ -163,7 +178,7 @@ public class PlatformUserController {
             // 更新角色在线人数和总在线人数
             updateOnlineCounts(StpUtil.getRoleList().get(0), true);
             return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
-        }else{
+        } else {
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
         }
     }
@@ -199,7 +214,7 @@ public class PlatformUserController {
     public SaResult detail() {
         Object loginId = StpUtil.getLoginId();
         // 查询数据
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginId);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginId);
         // 校验返回数据
         if (Objects.isNull(platformUserVO)) {
             throw dataNotFoundError();
@@ -259,6 +274,7 @@ public class PlatformUserController {
     /**
      * 获取平台实时数据
      * 比如每个班的直播情况 上课数据 系统在线人数等等
+     *
      * @return
      */
     @GetMapping("/getPlatformBasicInfo")

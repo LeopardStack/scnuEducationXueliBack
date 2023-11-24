@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper">
+    <resultMap id="PlatformUserPO" type="com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO">
+        <id column="user_id" property="userId"/>
+        <result column="role_id" property="roleId"/>
+        <result column="avatar_image_path" property="avatarImagePath"/>
+        <result column="password" property="password"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="wechat_open_id" property="wechatOpenId"/>
+        <result column="supplementary_permission_id_set" property="supplementaryPermissionIdSet"
+                jdbcType="VARCHAR"
+                typeHandler="com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler"/>
+    </resultMap>
+    <update id="updateUser">
+        UPDATE platform_user
+        SET supplementary_permission_id_set = #{platformUserPO.supplementaryPermissionIdSet,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
+        WHERE user_id = #{platformUserPO.userId}
+    </update>
+
+
+</mapper>

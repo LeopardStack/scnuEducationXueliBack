@@ -34,13 +34,13 @@ public class StpInterfaceConfig implements StpInterface {
     /**
      * 根据用户id获取用户权限列表
      *
-     * @param loginUserName   账号
-     * @param loginType 账号类型
+     * @param loginUserName 账号
+     * @param loginType     账号类型
      * @return 用户权限列表
      */
     @Override
     public List<String> getPermissionList(Object loginUserName, String loginType) {
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginUserName);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
         // 参数校验
         if (Objects.isNull(platformUserVO)) {
             log.error("参数缺失");
@@ -75,15 +75,14 @@ public class StpInterfaceConfig implements StpInterface {
     /**
      * 根据用户id获取用户角色信息
      *
-     * @param loginUserName   账号
-     * @param loginType 账号类型
+     * @param loginUserName 账号
+     * @param loginType     账号类型
      * @return 用户角色列表
      */
     @Override
     public List<String> getRoleList(Object loginUserName, String loginType) {
         // 参数校验
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName((String) loginUserName);
-
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
 
 
         // 角色信息校验

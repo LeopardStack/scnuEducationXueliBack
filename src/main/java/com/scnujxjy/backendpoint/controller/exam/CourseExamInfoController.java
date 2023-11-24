@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.exam;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
@@ -40,6 +41,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundErro
 @RestController
 @RequestMapping("/course-exam-info")
 @Slf4j
+
 public class CourseExamInfoController {
 
     @Resource
@@ -64,6 +66,7 @@ public class CourseExamInfoController {
      * @return
      */
     @GetMapping("/singleSetExamType/{id}")
+    @SaCheckPermission("修改考试信息")
     public SaResult getImportPhoto(@PathVariable Long id) {
         boolean b = courseExamInfoService.singleSetExamType(id);
         if(b){
@@ -79,6 +82,7 @@ public class CourseExamInfoController {
      * @return
      */
     @PostMapping("/batch_set_exam_type")
+    @SaCheckPermission("修改考试信息")
     public SaResult batchSetExamType(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
         // 将前端 this.form 字段里为 空字符串的属性 设置为 null
         scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
@@ -92,6 +96,7 @@ public class CourseExamInfoController {
      * @return
      */
     @PostMapping("/batch_unset_exam_type")
+    @SaCheckPermission("修改考试信息")
     public SaResult batchUnSetExamType(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
 
         boolean b = courseExamInfoService.batchUnSetExamType(batchSetTeachersInfoRO);
@@ -104,6 +109,7 @@ public class CourseExamInfoController {
      * @return
      */
     @PostMapping("/single_set_exam_teachers")
+    @SaCheckPermission("修改考试信息")
     public SaResult singleSetExamTeachers(@RequestBody SingleSetTeachersInfoRO singleSetTeachersInfoRO) {
 
         try {
@@ -126,6 +132,7 @@ public class CourseExamInfoController {
      * @return
      */
     @PostMapping("/single_delete_exam_teachers")
+    @SaCheckPermission("修改考试信息")
     public SaResult singleDeleteExamTeachers(@RequestBody SingleSetTeachersInfoRO singleSetTeachersInfoRO) {
 
         try {
@@ -148,6 +155,7 @@ public class CourseExamInfoController {
      * @return
      */
     @PostMapping("/batch_set_exam_teachers")
+    @SaCheckPermission("修改考试信息")
     public SaResult batchSetExamTeachers(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
 
         try {

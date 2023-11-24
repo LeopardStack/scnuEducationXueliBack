@@ -2,7 +2,6 @@ package com.scnujxjy.backendpoint.service.TeachingProcess;
 
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
@@ -46,7 +45,7 @@ public class CourseScheduleServiceTest1 {
     @Test
     public void test1(){
         String account = "M001";
-        PlatformUserVO platformUserVO = platformUserService.detailByuserName(account);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(account);
         CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationService.getById(platformUserVO.getUserId());
         CollegeInformationPO collegeInformationServiceById = collegeInformationService.getById(collegeAdminInformationPO.getCollegeId());
         String collegeName = collegeInformationServiceById.getCollegeName();
