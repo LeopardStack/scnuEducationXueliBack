@@ -8,6 +8,7 @@ import com.scnujxjy.backendpoint.dao.entity.basic.RolePermissionPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.service.basic.PermissionService;
 import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
@@ -23,6 +24,10 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SUPER_ADMIN;
 
 @SpringBootTest
 @Slf4j
@@ -133,10 +138,16 @@ public class TestPermissionChange {
      */
     @Test
     public void testUpdateUser() {
+        List<PermissionVO> permissionVOS = platformRoleService.permissionVOSByRoleId(Long.valueOf(SUPER_ADMIN.getRoleId()));
+        List<Long> permissionIdList = permissionVOS.stream()
+                .filter(Objects::nonNull)
+                .map(PermissionVO::getPermissionId)
+                .collect(Collectors.toList());
+        log.info("超级管理员权限id列表：{}", permissionIdList);
         List<PlatformUserVO> platformUserVOS = platformUserService.updateUser(ListUtil.of(
                 PlatformUserRO.builder()
                         .userId(7L)
-                        .supplementaryPermissionIdSet(ListUtil.of(1L, 3L, 5L))
+                        .supplementaryPermissionIdSet(permissionIdList)
                         .build()
                 // 此处继续添加用户
         ));
