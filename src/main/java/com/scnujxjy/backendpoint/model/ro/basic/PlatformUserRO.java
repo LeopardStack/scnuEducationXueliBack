@@ -1,11 +1,13 @@
 package com.scnujxjy.backendpoint.model.ro.basic;
 
+import cn.hutool.core.collection.CollUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -49,6 +51,11 @@ public class PlatformUserRO {
      */
     private String wechatOpenId;
 
+    /**
+     * 补充权限集合
+     */
+    private List<Long> supplementaryPermissionIdSet;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,11 +71,12 @@ public class PlatformUserRO {
                 Objects.equals(password, that.password) &&
                 Objects.equals(username, that.username) &&
                 Objects.equals(name, that.name) &&
-                Objects.equals(wechatOpenId, that.wechatOpenId);
+                Objects.equals(wechatOpenId, that.wechatOpenId) &&
+                CollUtil.isEqualList(supplementaryPermissionIdSet, that.supplementaryPermissionIdSet);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, roleId, avatarImagePath, password, username, name, wechatOpenId);
+        return Objects.hash(userId, roleId, avatarImagePath, password, username, name, wechatOpenId, supplementaryPermissionIdSet);
     }
 }

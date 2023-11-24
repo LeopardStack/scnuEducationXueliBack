@@ -3,13 +3,14 @@ package com.scnujxjy.backendpoint.dao.mapper.basic;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
 /**
  * <p>
- *  Mapper 接口
+ * Mapper 接口
  * </p>
  *
  * @author leopard
@@ -19,6 +20,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 根据 用户名查找用户
+     *
      * @param username 用户名
      * @return 平台用户信息集合，类型为 PlatformUserPO
      */
@@ -27,6 +29,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 根据学院和年级查询用户
+     *
      * @return 满足条件的平台用户信息集合，类型为 PlatformUserPO
      */
     @Select("SELECT * FROM platform_user WHERE username IN (SELECT id_number FROM student_status WHERE college = #{college} " +
@@ -35,6 +38,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 根据学院和年级删除用户
+     *
      * @return 删除的用户数量
      */
     @Delete("DELETE FROM platform_user WHERE username IN (SELECT id_number FROM student_status WHERE college = #{college} " +
@@ -43,6 +47,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 检查用户名是否在数据库中存在
+     *
      * @param username 用户名
      * @return 如果存在返回 true，否则返回 false
      */
@@ -51,6 +56,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 根据用户名返回 user_id
+     *
      * @param username 用户名
      * @return user_id
      */
@@ -59,6 +65,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
      * 根据学生的身份证号码删除其账户信息
+     *
      * @param idNumber 身份证号码
      * @return 删除的记录数
      */
@@ -67,4 +74,13 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     @Select("SELECT 1")
     Long healthCheck();
+
+    /**
+     * 根据userId更新数据
+     * <p>目前只更新补充权限id名单</p>
+     *
+     * @param platformUserPO
+     * @return
+     */
+    Integer updateUser(@Param("platformUserPO") PlatformUserPO platformUserPO);
 }
