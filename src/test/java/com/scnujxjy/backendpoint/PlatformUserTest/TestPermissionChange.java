@@ -1,12 +1,15 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
+import cn.hutool.core.collection.ListUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.api.R;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.RolePermissionPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.service.basic.PermissionService;
 import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -21,6 +24,10 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SUPER_ADMIN;
 
 @SpringBootTest
 @Slf4j
@@ -47,7 +54,7 @@ public class TestPermissionChange {
      * 查询各个学院的教务员的账号
      */
     @Test
-    public void Test1(){
+    public void Test1() {
         CollegeInformationPO collegeInformationPO = collegeInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
                 .eq(CollegeInformationPO::getCollegeName, "哲学与社会发展学院")
         );
@@ -81,7 +88,7 @@ public class TestPermissionChange {
      * 查询各个学院的教务员的账号
      */
     @Test
-    public void Test2(){
+    public void Test2() {
         String college = "计算机学院";
         CollegeInformationPO collegeInformationPO = collegeInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
                 .eq(CollegeInformationPO::getCollegeName, college)
@@ -97,10 +104,10 @@ public class TestPermissionChange {
      * 赋予教学点教务员查询权限
      */
     @Test
-    public void test3(){
+    public void test3() {
         ArrayList<Long> list = new ArrayList<>(Arrays.asList(3L, 6L, 8L, 9L, 11L, 12L, 14L, 15L)); // Create an ArrayList of Long values
 
-        for(Long permissionId : list){
+        for (Long permissionId : list) {
             RolePermissionPO rolePermissionPO = new RolePermissionPO(); // Create a new RolePermissionPO object
             rolePermissionPO.setRoleId(7L); // Set the roleId to 7L
             rolePermissionPO.setPermissionId(permissionId); // Set the permissionId to 3L
@@ -115,14 +122,35 @@ public class TestPermissionChange {
      * 赋予超级管理员权限
      */
     @Test
-    public void test4(){
+    public void test4() {
 
-        for(long i = 1L ; i <= 23L; i++){
+        for (long i = 1L; i <= 23L; i++) {
             RolePermissionPO rolePermissionPO = new RolePermissionPO(); // Create a new RolePermissionPO object
             rolePermissionPO.setRoleId(8L); // Set the roleId to 7L
             rolePermissionPO.setPermissionId(i); // Set the permissionId to 3L
 
             rolePermissionService.getBaseMapper().insert(rolePermissionPO); // Insert the RolePermissionPO object into the database using a service or mapper
         }
+    }
+
+    /**
+     * 更新用户
+     */
+    @Test
+    public void testUpdateUser() {
+        List<PermissionVO> permissionVOS = platformRoleService.permissionVOSByRoleId(Long.valueOf(SUPER_ADMIN.getRoleId()));
+        List<Long> permissionIdList = permissionVOS.stream()
+                .filter(Objects::nonNull)
+                .map(PermissionVO::getPermissionId)
+                .collect(Collectors.toList());
+        log.info("超级管理员权限id列表：{}", permissionIdList);
+        List<PlatformUserVO> platformUserVOS = platformUserService.updateUser(ListUtil.of(
+                PlatformUserRO.builder()
+                        .userId(7L)
+                        .supplementaryPermissionIdSet(permissionIdList)
+                        .build()
+                // 此处继续添加用户
+        ));
+        log.info("更新后的用户数据为：{}", platformUserVOS);
     }
 }

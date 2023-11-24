@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.basic.PlatformUserInverter;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
@@ -19,6 +20,7 @@ import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
@@ -53,6 +55,39 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     @Value("${wechat.request-url}")
     private String requestUrl;
 
+    @Resource
+    private PermissionService permissionService;
+
+    /**
+     * 根据userId批量更新用户信息
+     * <p>目前只支持更新补充权限id集合</p>
+     *
+     * @param platformUserROS
+     * @return
+     */
+    @Transactional
+    public List<PlatformUserVO> updateUser(List<PlatformUserRO> platformUserROS) {
+        if (CollUtil.isEmpty(platformUserROS)) {
+            throw new BusinessException("传入数组为空");
+        }
+        List<PlatformUserVO> platformUserVOS = platformUserROS.stream()
+                .filter(ele -> Objects.nonNull(ele.getUserId()))
+                .map(ele -> {
+                    int count = baseMapper.updateUser(PlatformUserPO.builder()
+                            .userId(ele.getUserId())
+                            .supplementaryPermissionIdSet(ele.getSupplementaryPermissionIdSet())
+                            .build());
+                    if (count <= 0) {
+                        log.error("更新失败，更新参数为：{}，目前已回滚", ele);
+                        throw new BusinessException("更新失败");
+                    }
+                    return detailById(ele.getUserId());
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        return platformUserVOS;
+    }
+
     /**
      * 根据userId获取用户信息
      *
@@ -77,7 +112,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
      * @param userName 用户登录账号
      * @return 用户信息
      */
-    public PlatformUserVO detailByuserName(String userName) {
+    public PlatformUserVO detailByUsername(String userName) {
         // 参数校验
         if (Objects.isNull(userName)) {
             log.error("参数缺失");
@@ -106,7 +141,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     public PlatformUserPO userLogin(PlatformUserRO platformUserRO) {
 
         String openId = null;
-        if (platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0) {
+        if (platformUserRO.getWechatOpenId() != null && StrUtil.isNotBlank(platformUserRO.getWechatOpenId())) {
             // 微信登录用户
             String code = platformUserRO.getWechatOpenId();
             try {
@@ -148,7 +183,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
-        
+
 //        if(platformUserRO.getUsername().contains("m")){
 //            return null;
 //        }
@@ -192,6 +227,13 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         // 获取权限详情列表
         Long roleId = platformUserVO.getRoleId();
         List<PermissionVO> permissionVOS = platformRoleService.permissionVOSByRoleId(roleId);
+        // 添加额外的权限
+        if (Objects.nonNull(permissionVOS) && CollUtil.isNotEmpty(platformUserVO.getSupplementaryPermissionIdSet())) {
+            List<PermissionVO> permissions = permissionService.detailById(platformUserVO.getSupplementaryPermissionIdSet());
+            if (CollUtil.isNotEmpty(permissions)) {
+                permissionVOS.addAll(permissions);
+            }
+        }
 
         // 参数校验
         if (CollUtil.isEmpty(permissionVOS)) {
