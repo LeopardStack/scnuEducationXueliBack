@@ -71,7 +71,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
             throw new BusinessException("传入数组为空");
         }
         List<PlatformUserVO> platformUserVOS = platformUserROS.stream()
-                .filter(ele -> Objects.nonNull(ele.getUserId()) && CollUtil.isNotEmpty(ele.getSupplementaryPermissionIdSet()))
+                .filter(ele -> Objects.nonNull(ele.getUserId()))
                 .map(ele -> {
                     int count = baseMapper.updateUser(PlatformUserPO.builder()
                             .userId(ele.getUserId())
