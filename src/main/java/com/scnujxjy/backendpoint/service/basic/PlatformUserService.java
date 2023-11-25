@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.basic.PlatformUserInverter;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
@@ -19,6 +20,7 @@ import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
@@ -53,6 +55,38 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     @Value("${wechat.request-url}")
     private String requestUrl;
 
+    @Resource
+    private PermissionService permissionService;
+
+    /**
+     * 根据userId批量更新用户信息
+     * <p>目前只支持更新补充角色id集合</p>
+     *
+     * @param platformUserROS
+     * @return
+     */
+    @Transactional
+    public List<PlatformUserVO> updateUser(List<PlatformUserRO> platformUserROS) {
+        if (CollUtil.isEmpty(platformUserROS)) {
+            throw new BusinessException("传入数组为空");
+        }
+        return platformUserROS.stream()
+                .filter(ele -> Objects.nonNull(ele.getUserId()))
+                .map(ele -> {
+                    int count = baseMapper.updateUser(PlatformUserPO.builder()
+                            .userId(ele.getUserId())
+                            .supplementaryRoleIdSet(ele.getSupplementaryRoleIdSet())
+                            .build());
+                    if (count <= 0) {
+                        log.error("更新失败，更新参数为：{}，目前已回滚", ele);
+                        throw new BusinessException("更新失败");
+                    }
+                    return detailById(ele.getUserId());
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 根据userId获取用户信息
      *
@@ -74,22 +108,23 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     /**
      * 根据用户名获取用户信息
      *
-     * @param userName 用户登录账号
+     * @param username 用户登录账号
      * @return 用户信息
      */
-    public PlatformUserVO detailByuserName(String userName) {
+    public PlatformUserVO detailByUsername(String username) {
         // 参数校验
-        if (Objects.isNull(userName)) {
+        if (Objects.isNull(username)) {
             log.error("参数缺失");
             return null;
         }
         // 查询数据
-        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(userName);
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectList(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, username));
         if (platformUserPOS.size() > 1) {
-            log.error("该账号存在多名用户 " + userName);
+            log.error("该账号存在多名用户 " + username);
             return null;
-        } else if (platformUserPOS.size() == 0) {
-            log.error("该账号不存在 " + userName);
+        } else if (platformUserPOS.isEmpty()) {
+            log.error("该账号不存在 " + username);
             return null;
         }
         PlatformUserPO platformUserPO = platformUserPOS.get(0);
@@ -106,7 +141,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     public PlatformUserPO userLogin(PlatformUserRO platformUserRO) {
 
         String openId = null;
-        if (platformUserRO.getWechatOpenId() != null && platformUserRO.getWechatOpenId().trim().length() != 0) {
+        if (platformUserRO.getWechatOpenId() != null && StrUtil.isNotBlank(platformUserRO.getWechatOpenId())) {
             // 微信登录用户
             String code = platformUserRO.getWechatOpenId();
             try {
@@ -148,7 +183,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         SM3 sm3 = new SM3();
         // 密码加密
         platformUserRO.setPassword(sm3.digestHex(platformUserRO.getPassword()));
-        
+
 //        if(platformUserRO.getUsername().contains("m")){
 //            return null;
 //        }
@@ -197,6 +232,12 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         if (CollUtil.isEmpty(permissionVOS)) {
             log.error("获取权限详情列表为空，roleId：{}", roleId);
             return null;
+        }
+        // 获取其他角色对应的资源列表
+        List<Long> supplementaryRoleIdSet = platformUserVO.getSupplementaryRoleIdSet();
+        if (CollUtil.isNotEmpty(supplementaryRoleIdSet)) {
+            supplementaryRoleIdSet
+                    .forEach(ele -> permissionVOS.addAll(platformRoleService.permissionVOSByRoleId(ele)));
         }
 
         // 获取资源列表

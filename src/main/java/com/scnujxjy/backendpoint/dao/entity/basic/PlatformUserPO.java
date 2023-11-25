@@ -1,12 +1,15 @@
 package com.scnujxjy.backendpoint.dao.entity.basic;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
 import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * <p>
@@ -22,7 +25,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("platform_user")
+@TableName(value = "platform_user", autoResultMap = true)
 public class PlatformUserPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -62,6 +65,16 @@ public class PlatformUserPO implements Serializable {
      * 微信 openId
      */
     private String wechatOpenId;
+
+    /**
+     * 补充角色id集合
+     * <p>create、insert的typeHandler生效</p>
+     * <p>注意update时typeHandler会失效，参考：</p>
+     *
+     * @see com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper#updateUser(PlatformUserPO)
+     */
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> supplementaryRoleIdSet;
 
 
 }

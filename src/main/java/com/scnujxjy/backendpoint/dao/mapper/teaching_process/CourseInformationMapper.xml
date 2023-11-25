@@ -94,7 +94,7 @@
     </select>
 
     <select id="selectByFilterAndPageForExam" resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
-        SELECT c.*, ci.class_name, ci.college, cei.id AS examId
+        SELECT c.*, ci.class_name, ci.college, cei.id AS examId, cei.exam_type
         <include refid="examCommonJoin" />
         WHERE 1=1
         <include refid="commonFiltersForExam" />

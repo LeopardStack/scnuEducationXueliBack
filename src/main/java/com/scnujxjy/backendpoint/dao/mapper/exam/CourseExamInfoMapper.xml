@@ -14,7 +14,7 @@
         AND cri.id is not NULL
         <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
         <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
-        <if test='entity.majorName != null'>AND c.major_name = #{entity.majorName}</if>
+        <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
         <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
         <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
         <if test='entity.teachingSemester != null'>AND cri.teaching_semester = #{entity.teachingSemester}</if>

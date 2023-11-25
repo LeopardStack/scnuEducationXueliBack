@@ -66,4 +66,9 @@ public class ExamFilterRO {
      * 考试方式
      */
     private String examMethod;
+
+    /**
+     * 考试形式：开卷、闭卷
+     */
+    private String examType;
 }

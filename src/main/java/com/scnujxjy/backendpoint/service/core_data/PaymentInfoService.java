@@ -22,10 +22,22 @@ import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -41,6 +53,43 @@ import java.util.Objects;
 public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentInfoPO> implements IService<PaymentInfoPO> {
     @Resource
     private PaymentInfoInverter paymentInfoInverter;
+
+    private RestTemplate restTemplate;
+    @Bean
+    public RestTemplate restTemplate() {
+        restTemplate = new RestTemplate();
+
+        // 添加 StringHttpMessageConverter 以处理 text/html 响应
+        restTemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+
+        return restTemplate;
+    }
+
+
+    public ResponseEntity<String> makePayment(){
+        String url = "http://gx1.szhtkj.com.cn/micro/payAccept.aspx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("orderDate", "20231123001510");
+        params.add("orderNo", "2311220004");
+        params.add("amount", "0.01");
+        params.add("xmpch", "004-2014050001");
+        params.add("return_url", "http://www.test.com/returnPage.htm");
+        params.add("notify_url", "http://www.test.com/notifyPage.htm");
+        params.add("sign", "8fa93f9eb38bfe6232d3872b0e34b39d");
+
+        HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(params, headers);
+//        String response = restTemplate.postForObject(url, requestEntity, String.class);
+
+        // 发送 post 请求
+        ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
+
+        return response;
+    }
 
     /**
      * 通过id查询详情

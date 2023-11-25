@@ -18,6 +18,8 @@ import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -74,6 +76,17 @@ public class PaymentInfoController {
             throw dataNotFoundError();
         }
         return SaResult.data(paymentInfoVO);
+    }
+
+    @GetMapping("/make_payment")
+    public ResponseEntity<String> makePayment(){
+        try{
+            ResponseEntity<String> response = paymentInfoService.makePayment();
+            return response;
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Payment failed: " +
+                     e.getMessage());
+        }
     }
 
     /**

@@ -71,7 +71,7 @@ public class ExamTeachersInfoVO implements Serializable {
      * 开/闭卷
      */
     @ExcelProperty(index = 9, value = "开/闭卷")
-    private String open;
+    private String examType;
 
     /**
      * 主讲教师（命题）

@@ -40,6 +40,7 @@ public class GradeInfoDataImport {
     private MinioService minioService;
     private int success_insert = 0;
     private int failed_insert = 0;
+    private final static String constValue1 = "NULL";
 
     public GradeInfoDataImport(){
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
@@ -133,6 +134,9 @@ public class GradeInfoDataImport {
             scoreInformationPO.setCourseType(courseType);
             scoreInformationPO.setAssessmentType(studentData.get("FSHI"));
             String zp = studentData.get("ZP");
+            if(constValue1.equals(zp)){
+                zp = null;
+            }
             scoreInformationPO.setFinalScore(zp != null ? zp.trim() : zp);
 
             /**
@@ -152,6 +156,9 @@ public class GradeInfoDataImport {
 //                scoreInformationPO.setMakeupExam1Score(convertStringToDouble(studentData.get("BK")));
 
             String bk = studentData.get("BK");
+            if(constValue1.equals(bk)){
+                bk = null;
+            }
             scoreInformationPO.setMakeupExam1Score(bk != null ? bk.trim() : bk);
 
 //            if (isDigit(bk) == 1) {
@@ -168,6 +175,9 @@ public class GradeInfoDataImport {
 //                scoreInformationPO.setMakeupExam2Score(convertStringToDouble(studentData.get("BK2")));
 
             String bk2 = studentData.get("BK2");
+            if(constValue1.equals(bk2)){
+                bk2 = null;
+            }
             scoreInformationPO.setMakeupExam2Score(bk2 != null ? bk2.trim() : bk2);
 
 //            if (isDigit(bk2) == 1) {
@@ -183,6 +193,9 @@ public class GradeInfoDataImport {
 
 //                scoreInformationPO.setPostGraduationScore(convertStringToDouble(studentData.get("JBK")));
             String jbk = studentData.get("JBK");
+            if(constValue1.equals(jbk)){
+                jbk = null;
+            }
             scoreInformationPO.setPostGraduationScore(jbk != null ? jbk.trim() : jbk);
 
 //            if (isDigit(jbk) == 1) {

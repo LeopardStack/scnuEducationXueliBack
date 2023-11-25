@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.scnujxjy.backendpoint.handler.type_handler.LongListTypeHandler;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -88,7 +88,7 @@ public class VideoStreamRecordPO implements Serializable {
     /**
      * 自频道id集合
      */
-    @TableField(typeHandler = LongListTypeHandler.class)
+    @TableField(typeHandler = LongTypeHandler.class)
     private List<Long> sonId;
 
     /**

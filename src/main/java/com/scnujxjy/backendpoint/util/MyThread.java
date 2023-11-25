@@ -1,11 +1,15 @@
 package com.scnujxjy.backendpoint.util;
 
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@Slf4j
+@Data
 public class MyThread extends Thread{
     private static final Logger logger = LoggerFactory.getLogger(MyThread.class);
     public SCNUXLJYDatabase scnuxljyDatabase;
@@ -22,7 +26,7 @@ public class MyThread extends Thread{
     public void run() {
         try {
             long startTime1 = System.nanoTime();
-            System.out.println(query + " " + Thread.currentThread().getName());
+            log.info(query + " " + Thread.currentThread().getName());
             if(functionSelect == 0) {
                 dataDIY = scnuxljyDatabase.getDataDIY(query);
             }
@@ -34,7 +38,7 @@ public class MyThread extends Thread{
                 dataDIY = scnuxljyDatabase.getNonPicData(query);
 
             }
-            System.out.println(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
+            log.info(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
 
             // 获取结束时间
             long endTime1 = System.nanoTime();
@@ -43,7 +47,7 @@ public class MyThread extends Thread{
 
             // 转换为秒并打印
             double durationInSeconds1 = duration1 / 1_000_000_000.0;
-            System.out.println(Thread.currentThread().getName() + " 数据处理时间：" + durationInSeconds1 + " 秒");
+            log.info(Thread.currentThread().getName() + " 数据处理时间：" + durationInSeconds1 + " 秒");
         }catch (Exception e){
             logger.error(e.toString());
         }finally {

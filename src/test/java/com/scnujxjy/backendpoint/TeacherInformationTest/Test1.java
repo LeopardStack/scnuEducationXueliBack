@@ -1,16 +1,24 @@
 package com.scnujxjy.backendpoint.TeacherInformationTest;
 
 import com.alibaba.excel.EasyExcel;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,6 +28,12 @@ public class Test1 {
 
     @Autowired(required = false)
     private TeacherInformationMapper teacherInformationMapper;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private PlatformUserService platformUserService;
 
     @Test
     public void test1() {
@@ -50,5 +64,33 @@ public class Test1 {
         });
 
         log.info("总共读入 " + allCount.get() + " 记录");
+    }
+
+    /**
+     * 遍历师资库 为没有账号的老师生成平台登录账号
+     */
+    @Test
+    public void test2(){
+        List<TeacherInformationPO> teacherInformationPOS = teacherInformationMapper.selectList(null);
+
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+
+        for(TeacherInformationPO teacherInformationPO: teacherInformationPOS){
+            String teacherUsername = teacherInformationPO.getTeacherUsername();
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
+                    eq(PlatformUserPO::getUsername, teacherUsername));
+            if(platformUserPO == null){
+                // 创建账号
+                PlatformUserRO platformUserRO = new PlatformUserRO();
+                platformUserRO.setName(teacherInformationPO.getName());
+                platformUserRO.setUsername(teacherUsername);
+                platformUserRO.setRoleId(2L);
+                platformUserRO.setPassword(teacherUsername.substring(teacherUsername.length() - 6));
+                platformUserROList.add(platformUserRO);
+            }
+        }
+
+        platformUserService.batchCreateUser(platformUserROList);
+        log.info("共计生成教师账号 " + platformUserROList.size() + " 个");
     }
 }

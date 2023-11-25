@@ -1392,7 +1392,7 @@ public class ManagerFilter extends AbstractFilter {
             examTeachersInfoVO.setStudyForm(classInformationPO.getStudyForm());
             examTeachersInfoVO.setLevel(classInformationPO.getLevel());
             examTeachersInfoVO.setCourseName(courseInformationPO.getCourseName());
-            examTeachersInfoVO.setOpen("闭卷");
+            examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
 
             List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper1.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                     .eq(CourseSchedulePO::getGrade, courseInformationPO.getGrade())

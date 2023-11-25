@@ -79,6 +79,11 @@ public class BatchSetTeachersInfoRO {
     private String examMethod;
 
     /**
+     * 考试形式：开卷、闭卷
+     */
+    private String examType;
+
+    /**
      * 是否清除所有的命题人和阅卷人信息
      * 前提是主讲为空并且助教也为空
      */

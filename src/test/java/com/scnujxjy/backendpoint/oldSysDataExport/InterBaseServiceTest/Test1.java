@@ -256,6 +256,144 @@ public class Test1 {
     }
 
     /**
+     * 控制台直接输出新旧系统各个数据的对比
+     */
+    @Test
+    public void test0_2() {
+        try {
+            // 获取当前时间
+//            String timeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+            // 获取当前的方法名 (需要考虑性能开销)
+            String methodName = new Throwable().getStackTrace()[0].getMethodName();
+
+            // 获取当前的类名
+            String className = this.getClass().getSimpleName();
+
+            String formattedMsg = "新旧系统学籍数据的校验";
+            log.info(formattedMsg);
+
+            int startYear = 2023;
+            int endYear = 2010;
+            boolean allEqual = true;
+            SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+
+            for (int i = startYear; i >= endYear; i--) {
+                Integer integer = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().eq(
+                        StudentStatusPO::getGrade, "" + i
+                ));
+
+                int value_xl = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM STUDENT_VIEW_WITHPIC WHERE NJ='" + i +
+                        "' and bshi not like 'WP%';");
+                formattedMsg = String.format(i + " 年旧系统学历教育生数量 " + value_xl + " 新系统学历教育生数量 " +
+                        integer + ((int) value_xl == integer ? "  一致" : "  不同"));
+                log.info(formattedMsg);
+                if(integer != value_xl){
+                    allEqual = false;
+                }
+
+            }
+
+            if (allEqual) {
+                formattedMsg = String.format("新旧系统 " + startYear + " 年到 " + endYear + " 年的学籍数据完全相等");
+                log.info(formattedMsg);
+            }
+
+
+            formattedMsg = "新旧系统班级信息对比";
+            log.info(formattedMsg);
+
+            Integer new_class_count = classInformationMapper.selectCount(null);
+            int old_class_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
+            if (new_class_count != old_class_count) {
+                formattedMsg = String.format("新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 不同");
+                log.info(formattedMsg);
+            } else {
+                formattedMsg = String.format("新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 相同");
+                log.info(formattedMsg);
+            }
+
+
+            formattedMsg = "新旧系统缴费数据对比";
+            log.info(formattedMsg);
+
+            for (int payYear = 2023; payYear >= 2000; payYear--) {
+                Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
+                int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
+                if (new_pay_count != old_pay_count) {
+                    formattedMsg = String.format(payYear + "年 新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
+                    log.info(formattedMsg);
+                } else {
+                    formattedMsg = String.format(payYear + "年 新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
+                    log.info(formattedMsg);
+                }
+            }
+
+            formattedMsg = "新旧系统教学计划对比";
+            log.info(formattedMsg);
+
+
+            startYear = 2023;
+            endYear = 2015;
+            allEqual = true;
+            for (int i = startYear; i >= endYear; i--) {
+                Integer new_teachingPlans_count1 = courseInformationMapper.selectCount(new LambdaQueryWrapper<CourseInformationPO>().
+                        eq(CourseInformationPO::getGrade, "" + i));
+                String year_c = i + "";
+                year_c = year_c.substring(year_c.length() - 2);
+                int old_teachingPlans_count1 = (int) scnuxljyDatabase.getValue(
+                        "select count(*) from courseDATA where bshi not LIKE 'WP%' and bshi LIKE '" + year_c + "%';");
+
+                if (new_teachingPlans_count1 != old_teachingPlans_count1) {
+                    allEqual = false;
+                    formattedMsg = String.format(i +
+                            " 年，新系统学历教育教学计划数量 " + new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
+                            old_teachingPlans_count1 + " 两者不同");
+                    log.info(formattedMsg);
+                }
+            }
+            if (allEqual) {
+                formattedMsg = String.format("新旧系统 " + startYear + " 年到 " + endYear + " 年的教学计划完全相等");
+                log.info(formattedMsg);
+            }
+
+
+            formattedMsg = "新旧系统成绩数量对比";
+            log.info(formattedMsg);
+
+            startYear = 2023;
+            endYear = 2015;
+            allEqual = true;
+            for (int i = startYear; i >= endYear; i--) {
+                Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                        eq(ScoreInformationPO::getGrade, "" + i));
+
+                int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
+                        "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
+                formattedMsg = String.format(i + " 年，新系统学历教育成绩数量 " +
+                        new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
+                        old_gradeInformation_count + (new_gradeInformation_count != old_gradeInformation_count
+                        ? " 两者不同" : " 两者相同"));
+                log.info(formattedMsg);
+                if(new_gradeInformation_count != old_gradeInformation_count){
+                    allEqual = false;
+                }
+
+            }
+            if (allEqual) {
+                formattedMsg = String.format("新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
+                log.info(formattedMsg);
+            }
+
+
+            log.info("新旧系统校验同步结束");
+            log.info("开始记录校验同步之后的新旧系统的数据差异");
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
+    }
+
+    /**
      * 测试学籍数据同步
       */
     @Test
@@ -298,11 +436,11 @@ public class Test1 {
      */
     @Test
     public void test5(){
-        int grade = 2021;
+        int grade = 2023;
         try {
             int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>().
                     eq(ScoreInformationPO::getGrade, "" + grade));
-            log.info("查看删除 " + 2021 + "年 所有成绩的结果 " + delete);
+            log.info("查看删除 " + 2023 + "年 所有成绩的结果 " + delete);
             oldDataSynchronize.synchronizeGradeInformationData(grade, grade, true);
         }catch (Exception e){
             log.error("同步成绩数据错误 " + e.toString());
