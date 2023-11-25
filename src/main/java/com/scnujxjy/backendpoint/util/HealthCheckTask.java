@@ -258,38 +258,6 @@ public class HealthCheckTask {
 
     }
 
-//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
-    public void updateWhiteList() {
-        //先查出一小时内开好课的课程。然后将白名单
-
-    }
-
-
-    //    @Scheduled(fixedRate = 60_000) // 每60s触发一次
-    public void updateWatchStatus() {
-        //获取当天日期
-        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
-        LocalDate localDate = LocalDate.now(zoneId);//2023-11-02
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        String nowTime = now.format(formatter);
-
-
-        //live（直播中）、end（直播结束）、playback（回放中）、waiting（等待直播）
-        QueryWrapper<VideoStreamRecordPO> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("teaching_date", localDate)// 先筛选日期为今天的
-                .lt("TIMESTAMPDIFF(HOUR, end_time, '" + nowTime + "')", 1)//再筛选下课程结束时间-现在超过了1小时
-                .in("watch_status", "waiting", "live", "end");
-
-        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(queryWrapper);//这样就拿到了所有的直播记录
-        for (VideoStreamRecordPO videoStreamRecordPO : videoStreamRecordPOS) {
-            singleLivingService.GetChannelDetail(videoStreamRecordPO.getChannelId());
-            //找出所有的观看页面
-        }
-
-
-    }
 
 }
 
