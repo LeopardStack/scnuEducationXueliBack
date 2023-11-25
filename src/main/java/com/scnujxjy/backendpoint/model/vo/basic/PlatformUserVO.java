@@ -49,8 +49,8 @@ public class PlatformUserVO {
      */
     private String wechatOpenId;
     /**
-     * 补充权限集合
+     * 补充角色 id集合
      */
-    private List<Long> supplementaryPermissionIdSet;
+    private List<Long> supplementaryRoleIdSet;
 
 }

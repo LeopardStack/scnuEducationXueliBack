@@ -19,15 +19,6 @@ import java.util.List;
 public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
 
     /**
-     * 根据 用户名查找用户
-     *
-     * @param username 用户名
-     * @return 平台用户信息集合，类型为 PlatformUserPO
-     */
-    @Select("SELECT * FROM platform_user WHERE username = #{username}")
-    List<PlatformUserPO> selectPlatformUsers1(String username);
-
-    /**
      * 根据学院和年级查询用户
      *
      * @return 满足条件的平台用户信息集合，类型为 PlatformUserPO
@@ -45,39 +36,13 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
             "AND grade = #{grade})")
     int deleteUsersByCollegeAndGrade(String grade, String college);
 
-    /**
-     * 检查用户名是否在数据库中存在
-     *
-     * @param username 用户名
-     * @return 如果存在返回 true，否则返回 false
-     */
-    @Select("SELECT COUNT(*) FROM platform_user WHERE username = #{username}")
-    boolean existsByUsername(String username);
-
-    /**
-     * 根据用户名返回 user_id
-     *
-     * @param username 用户名
-     * @return user_id
-     */
-    @Select("SELECT user_id FROM platform_user WHERE username = #{username}")
-    long getUserIdByUsername(String username);
-
-    /**
-     * 根据学生的身份证号码删除其账户信息
-     *
-     * @param idNumber 身份证号码
-     * @return 删除的记录数
-     */
-    @Delete("DELETE FROM platform_user WHERE username = #{idNumber}")
-    int deleteStudentByIdNumber(String idNumber);
 
     @Select("SELECT 1")
     Long healthCheck();
 
     /**
      * 根据userId更新数据
-     * <p>目前只更新补充权限id名单</p>
+     * <p>目前只更新补充角色id名单</p>
      *
      * @param platformUserPO
      * @return

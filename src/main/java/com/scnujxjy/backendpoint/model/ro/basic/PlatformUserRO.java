@@ -52,9 +52,9 @@ public class PlatformUserRO {
     private String wechatOpenId;
 
     /**
-     * 补充权限集合
+     * 补充角色 id 集合
      */
-    private List<Long> supplementaryPermissionIdSet;
+    private List<Long> supplementaryRoleIdSet;
 
     @Override
     public boolean equals(Object o) {
@@ -72,11 +72,11 @@ public class PlatformUserRO {
                 Objects.equals(username, that.username) &&
                 Objects.equals(name, that.name) &&
                 Objects.equals(wechatOpenId, that.wechatOpenId) &&
-                CollUtil.isEqualList(supplementaryPermissionIdSet, that.supplementaryPermissionIdSet);
+                CollUtil.isEqualList(supplementaryRoleIdSet, that.supplementaryRoleIdSet);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, roleId, avatarImagePath, password, username, name, wechatOpenId, supplementaryPermissionIdSet);
+        return Objects.hash(userId, roleId, avatarImagePath, password, username, name, wechatOpenId, supplementaryRoleIdSet);
     }
 }

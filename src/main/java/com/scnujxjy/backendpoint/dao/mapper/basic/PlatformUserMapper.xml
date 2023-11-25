@@ -15,7 +15,7 @@
     </resultMap>
     <update id="updateUser">
         UPDATE platform_user
-        SET supplementary_permission_id_set = #{platformUserPO.supplementaryPermissionIdSet,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
+        SET supplementary_role_id_set = #{platformUserPO.supplementaryRoleIdSet,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
         WHERE user_id = #{platformUserPO.userId}
     </update>
 

@@ -1,14 +1,15 @@
 package com.scnujxjy.backendpoint.config;
 
 import cn.dev33.satoken.stp.StpInterface;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformRoleMapper;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
-import com.scnujxjy.backendpoint.service.basic.PlatformRoleService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class StpInterfaceConfig implements StpInterface {
     private PlatformUserService platformUserService;
 
     @Resource
-    private PlatformRoleService platformRoleService;
+    private PlatformRoleMapper platformRoleMapper;
 
     /**
      * 根据用户id获取用户权限列表
@@ -84,23 +85,33 @@ public class StpInterfaceConfig implements StpInterface {
         // 参数校验
         PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
 
-
         // 角色信息校验
         if (Objects.isNull(platformUserVO)) {
             log.error("获取角色信息失败，userId：{}", loginUserName);
             return ListUtil.of();
         }
-
-        // 获取用户角色权限信息
-        Long userId = platformUserVO.getUserId();
-
         // 权限信息校验
-        if (Objects.isNull(platformUserVO.getRoleId())) {
+        Long roleId = platformUserVO.getRoleId();
+        if (Objects.isNull(roleId)) {
             log.error("用户角色信息为空，用户信息：{}", platformUserVO);
             return ListUtil.of();
         }
-
+        // 获取其他角色信息
+        List<Long> roleIdList = ListUtil.toList(platformUserVO.getRoleId());
+        if (CollUtil.isNotEmpty(platformUserVO.getSupplementaryRoleIdSet())) {
+            roleIdList.addAll(platformUserVO.getSupplementaryRoleIdSet());
+        }
+        // 查询数据
+        List<PlatformRolePO> platformRolePOS = platformRoleMapper.selectList(Wrappers.<PlatformRolePO>lambdaQuery()
+                .in(PlatformRolePO::getRoleId, roleIdList));
+        if (CollUtil.isEmpty(platformRolePOS)) {
+            log.error("查询角色信息为空，角色 id 集合为：{}", roleIdList);
+            return ListUtil.of();
+        }
         // 返回数据
-        return ListUtil.of(String.valueOf(platformRoleService.detailById(platformUserVO.getRoleId()).getRoleName()));
+        return platformRolePOS.stream()
+                .map(PlatformRolePO::getRoleName)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toList());
     }
 }

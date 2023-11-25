@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
@@ -27,7 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
-import static com.scnujxjy.backendpoint.util.ResultCode.*;
+import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
+import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_FAIL;
 
 /**
  * 用户登录控制
@@ -70,31 +72,28 @@ public class PlatformUserController {
             StpUtil.login(platformUserRO.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            if (StpUtil.getRoleList().size() != 1) {
-                if (StpUtil.getRoleList().size() == 0) {
-                    return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
-                } else if (StpUtil.getRoleList().size() > 1) {
-                    return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
-                }
+            List<String> roleList = StpUtil.getRoleList();
+            if (roleList.isEmpty()) {
+                return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
             }
-
-            String roleName = StpUtil.getRoleList().get(0);
+            // 第一个是主要权限人
+            String roleName = roleList.get(0);
             String tmp = "管理员";
             if (roleName.contains(tmp)) {
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
-                        isLogin.getName(), isLogin.getWechatOpenId());
+                        isLogin.getName(), isLogin.getWechatOpenId(), roleList);
 
 
                 // 更新角色在线人数和总在线人数
-                updateOnlineCounts(StpUtil.getRoleList().get(0), true);
+                updateOnlineCounts(roleList.get(0), true);
                 return SaResult.data("成功登录 " + platformUserRO.getUsername())
                         .set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
-                    isLogin.getName(), isLogin.getWechatOpenId());
+                    isLogin.getName(), isLogin.getWechatOpenId(), roleList);
             // 更新角色在线人数和总在线人数
-            updateOnlineCounts(StpUtil.getRoleList().get(0), true);
+            updateOnlineCounts(roleList.get(0), true);
             return SaResult.data("成功登录 " + platformUserRO.getUsername()).set("userInfo", userLoginVO);
         } else {
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());
@@ -103,12 +102,13 @@ public class PlatformUserController {
 
     /**
      * 根据userId批量更新用户信息
-     * <p>目前只支持更新补充权限id集合</p>
+     * <p>目前只支持更新补充角色id集合</p>
      *
      * @param platformUserROS
      * @return
      */
     @PostMapping("/batch-update-user")
+    @SaCheckRole("超级管理员")
     public SaResult batchUpdateUser(@RequestBody List<PlatformUserRO> platformUserROS) {
         if (CollUtil.isEmpty(platformUserROS)) {
             throw dataMissError();
@@ -156,27 +156,25 @@ public class PlatformUserController {
             StpUtil.login(isLogin.getUsername());
             Object tokenInfo = StpUtil.getTokenInfo();
             List<String> permissionList = StpUtil.getPermissionList();
-            if (StpUtil.getRoleList().size() != 1) {
-                if (StpUtil.getRoleList().size() == 0) {
-                    return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
-                } else if (StpUtil.getRoleList().size() > 1) {
-                    return SaResult.error(USER_LOGIN_FAIL1.getMessage()).setCode(USER_LOGIN_FAIL1.getCode());
-                }
+            List<String> roleList = StpUtil.getRoleList();
+            if (roleList.isEmpty()) {
+                return SaResult.error(USER_LOGIN_FAIL.getMessage()).setCode(USER_LOGIN_FAIL.getCode());
             }
-            String roleName = StpUtil.getRoleList().get(0);
+            // 第一个是主要权限
+            String roleName = roleList.get(0);
             String tmp = "管理员";
             if (roleName.contains(tmp)) {
                 UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, tmp, roleName, (String) StpUtil.getLoginId(),
-                        isLogin.getName(), isLogin.getWechatOpenId());
+                        isLogin.getName(), isLogin.getWechatOpenId(), roleList);
                 // 更新角色在线人数和总在线人数
-                updateOnlineCounts(StpUtil.getRoleList().get(0), true);
+                updateOnlineCounts(roleList.get(0), true);
                 return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
             }
 
             UserLoginVO userLoginVO = new UserLoginVO(tokenInfo, permissionList, roleName, roleName, (String) StpUtil.getLoginId(),
-                    isLogin.getName(), isLogin.getWechatOpenId());
+                    isLogin.getName(), isLogin.getWechatOpenId(), roleList);
             // 更新角色在线人数和总在线人数
-            updateOnlineCounts(StpUtil.getRoleList().get(0), true);
+            updateOnlineCounts(roleList.get(0), true);
             return SaResult.data("成功登录 " + isLogin.getUsername()).set("userInfo", userLoginVO);
         } else {
             return SaResult.error(USER_LOGIN_ERROR.getMessage()).setCode(USER_LOGIN_ERROR.getCode());

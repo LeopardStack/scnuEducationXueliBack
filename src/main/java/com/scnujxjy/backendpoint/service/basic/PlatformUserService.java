@@ -60,7 +60,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
 
     /**
      * 根据userId批量更新用户信息
-     * <p>目前只支持更新补充权限id集合</p>
+     * <p>目前只支持更新补充角色id集合</p>
      *
      * @param platformUserROS
      * @return
@@ -70,12 +70,12 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         if (CollUtil.isEmpty(platformUserROS)) {
             throw new BusinessException("传入数组为空");
         }
-        List<PlatformUserVO> platformUserVOS = platformUserROS.stream()
+        return platformUserROS.stream()
                 .filter(ele -> Objects.nonNull(ele.getUserId()))
                 .map(ele -> {
                     int count = baseMapper.updateUser(PlatformUserPO.builder()
                             .userId(ele.getUserId())
-                            .supplementaryPermissionIdSet(ele.getSupplementaryPermissionIdSet())
+                            .supplementaryRoleIdSet(ele.getSupplementaryRoleIdSet())
                             .build());
                     if (count <= 0) {
                         log.error("更新失败，更新参数为：{}，目前已回滚", ele);
@@ -85,7 +85,6 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        return platformUserVOS;
     }
 
     /**
@@ -109,22 +108,23 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     /**
      * 根据用户名获取用户信息
      *
-     * @param userName 用户登录账号
+     * @param username 用户登录账号
      * @return 用户信息
      */
-    public PlatformUserVO detailByUsername(String userName) {
+    public PlatformUserVO detailByUsername(String username) {
         // 参数校验
-        if (Objects.isNull(userName)) {
+        if (Objects.isNull(username)) {
             log.error("参数缺失");
             return null;
         }
         // 查询数据
-        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUsers1(userName);
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectList(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, username));
         if (platformUserPOS.size() > 1) {
-            log.error("该账号存在多名用户 " + userName);
+            log.error("该账号存在多名用户 " + username);
             return null;
-        } else if (platformUserPOS.size() == 0) {
-            log.error("该账号不存在 " + userName);
+        } else if (platformUserPOS.isEmpty()) {
+            log.error("该账号不存在 " + username);
             return null;
         }
         PlatformUserPO platformUserPO = platformUserPOS.get(0);
@@ -227,18 +227,17 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         // 获取权限详情列表
         Long roleId = platformUserVO.getRoleId();
         List<PermissionVO> permissionVOS = platformRoleService.permissionVOSByRoleId(roleId);
-        // 添加额外的权限
-        if (Objects.nonNull(permissionVOS) && CollUtil.isNotEmpty(platformUserVO.getSupplementaryPermissionIdSet())) {
-            List<PermissionVO> permissions = permissionService.detailById(platformUserVO.getSupplementaryPermissionIdSet());
-            if (CollUtil.isNotEmpty(permissions)) {
-                permissionVOS.addAll(permissions);
-            }
-        }
 
         // 参数校验
         if (CollUtil.isEmpty(permissionVOS)) {
             log.error("获取权限详情列表为空，roleId：{}", roleId);
             return null;
+        }
+        // 获取其他角色对应的资源列表
+        List<Long> supplementaryRoleIdSet = platformUserVO.getSupplementaryRoleIdSet();
+        if (CollUtil.isNotEmpty(supplementaryRoleIdSet)) {
+            supplementaryRoleIdSet
+                    .forEach(ele -> permissionVOS.addAll(platformRoleService.permissionVOSByRoleId(ele)));
         }
 
         // 获取资源列表

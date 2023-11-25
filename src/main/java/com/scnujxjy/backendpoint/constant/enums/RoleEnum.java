@@ -14,11 +14,11 @@ public enum RoleEnum {
 
     XUELIJIAOYUBU_ADMIN(3, "学历教育部管理员");
 
-    private Integer roleId;
+    private Long roleId;
 
     private String roleName;
 
-    RoleEnum(int roleId, String roleName) {
+    RoleEnum(long roleId, String roleName) {
         this.roleId = roleId;
         this.roleName = roleName;
     }

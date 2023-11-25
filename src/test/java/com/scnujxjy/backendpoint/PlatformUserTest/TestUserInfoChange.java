@@ -2,9 +2,9 @@ package com.scnujxjy.backendpoint.PlatformUserTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @SpringBootTest
 @Slf4j
@@ -43,7 +44,7 @@ public class TestUserInfoChange {
     private PersonalInfoMapper personalInfoMapper;
 
     @Test
-    public void changePassword(){
+    public void changePassword() {
         PlatformUserVO platformUserVO = platformUserService.detailByUsername("liweitang");
         Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "liweitang2023@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
@@ -55,7 +56,7 @@ public class TestUserInfoChange {
      * 添加超级管理员
      */
     @Test
-    public void addSuperAdmin(){
+    public void addSuperAdmin() {
         log.info("生成超级管理员");
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
@@ -72,7 +73,7 @@ public class TestUserInfoChange {
      * 添加学历教育部管理员
      */
     @Test
-    public void addManager(){
+    public void addManager() {
         log.info("生成学历教育部管理员账号");
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
@@ -88,7 +89,7 @@ public class TestUserInfoChange {
      * 添加教学点管理员
      */
     @Test
-    public void addTeachingPointManager(){
+    public void addTeachingPointManager() {
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
@@ -103,7 +104,7 @@ public class TestUserInfoChange {
      * 添加老师
      */
     @Test
-    public void addTeacher(){
+    public void addTeacher() {
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
@@ -118,17 +119,17 @@ public class TestUserInfoChange {
      * 生成教学点的教务员账号
      */
     @Test
-    public void addTeachingPointAdmin(){
+    public void addTeachingPointAdmin() {
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(null);
-        for(TeachingPointAdminInformationPO teachingPointAdminInformationPO: teachingPointAdminInformationPOS ){
+        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
             PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
                     .eq(PlatformUserPO::getUsername, "M" + teachingPointAdminInformationPO.getIdCardNumber()));
-            if(platformUserPO == null){
-                String userName = "M" + teachingPointAdminInformationPO.getIdCardNumber();
+            if (platformUserPO == null) {
+                String username = "M" + teachingPointAdminInformationPO.getIdCardNumber();
                 PlatformUserRO platformUserRO = new PlatformUserRO();
-                platformUserRO.setUsername(userName);
-                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+                platformUserRO.setUsername(username);
+                platformUserRO.setPassword(username.substring(username.length() - 6));
                 platformUserRO.setRoleId(7L);
                 platformUserROList.add(platformUserRO);
             }
@@ -140,20 +141,20 @@ public class TestUserInfoChange {
      * 指定学生群体创建登录账号
      */
     @Test
-    public void addStudentLoginAccount(){
+    public void addStudentLoginAccount() {
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGradeCollege("2023", "教育科学学院");
         log.info(studentStatusPOS.toString());
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
 
-        for(StudentStatusPO studentStatusPO: studentStatusPOS){
+        for (StudentStatusPO studentStatusPO : studentStatusPOS) {
             PlatformUserRO platformUserRO = new PlatformUserRO();
-            String userName = studentStatusPO.getIdNumber();
-            platformUserRO.setUsername(userName);
-            if(userName.length() >= 6) {
-                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+            String username = studentStatusPO.getIdNumber();
+            platformUserRO.setUsername(username);
+            if (username.length() >= 6) {
+                platformUserRO.setPassword(username.substring(username.length() - 6));
             } else {
-                platformUserRO.setPassword(userName); // 如果 account 长度小于6，则直接使用 account 作为密码
+                platformUserRO.setPassword(username); // 如果 account 长度小于6，则直接使用 account 作为密码
             }
             platformUserRO.setRoleId(1L);
             platformUserROList.add(platformUserRO);
@@ -167,11 +168,11 @@ public class TestUserInfoChange {
      * 删除指定学生群体的登录账号
      */
     @Test
-    public void deleteStudentLoginAccount(){
+    public void deleteStudentLoginAccount() {
         List<PlatformUserPO> usersToDelete = platformUserService.getBaseMapper().selectUsersByCollegeAndGrade("2023", "计算机学院");
         int deletedCount = platformUserService.getBaseMapper().deleteUsersByCollegeAndGrade("2023", "计算机学院");
 
-        if(deletedCount == usersToDelete.size()) {
+        if (deletedCount == usersToDelete.size()) {
             // 所有查询到的用户都被成功删除
             log.info("查询到所有用户都被删除了");
         } else {
@@ -182,27 +183,33 @@ public class TestUserInfoChange {
     }
 
     @Test
-    public void addCollegeManager(){
-        String userName = "Mjiaokeyuan001";
+    public void addCollegeManager() {
+        String username = "Mjiaokeyuan001";
         String password = "test001";
         PlatformUserPO platformUserPO = new PlatformUserPO();
-        platformUserPO.setUsername(userName);
+        platformUserPO.setUsername(username);
         platformUserPO.setPassword(password);
         platformUserPO.setRoleId(6L);
-        if(!platformUserService.getBaseMapper().existsByUsername(userName)){
+        LambdaQueryWrapper<PlatformUserPO> wrapper = Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, username);
+        Integer count = platformUserService.getBaseMapper().selectCount(wrapper);
+        if (count == 0) {
             int insert = platformUserService.getBaseMapper().insert(platformUserPO);
             log.info("生成新账号 " + insert);
         }
     }
 
     @Test
-    public void addCollegeManager2(){
-        String userName = "Mjiaokeyuan001";
-        long userIdByUsername = -1L;
-        userIdByUsername = platformUserService.getBaseMapper().getUserIdByUsername(userName);
+    public void addCollegeManager2() {
+        String username = "Mjiaokeyuan001";
+        long userId = -1L;
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(username);
+        if (Objects.nonNull(platformUserVO)) {
+            userId = platformUserVO.getUserId();
+        }
         // 设置其为某个学院的教务员
         CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO();
-        collegeAdminInformationPO.setUserId(String.valueOf(userIdByUsername));
+        collegeAdminInformationPO.setUserId(String.valueOf(userId));
         collegeAdminInformationPO.setCollegeId("07");
         collegeAdminInformationPO.setName("教育科学学院测试教务员1");
         log.info(collegeAdminInformationPO.toString());
@@ -212,34 +219,36 @@ public class TestUserInfoChange {
 
     /**
      * 根据年级来添加用户账号
+     *
      * @param grade 年级
      */
-    private void generateStudentAccount(String grade){
+    private void generateStudentAccount(String grade) {
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGrade(grade);
 //        log.info(studentStatusPOS.toString());
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
 
-        for(StudentStatusPO studentStatusPO: studentStatusPOS){
+        for (StudentStatusPO studentStatusPO : studentStatusPOS) {
             // 获取学生的姓名
             PersonalInfoPO personalInfoPO = personalInfoMapper.selectOne(new LambdaQueryWrapper<PersonalInfoPO>().
                     eq(PersonalInfoPO::getGrade, studentStatusPO.getGrade()).
                     eq(PersonalInfoPO::getIdNumber, studentStatusPO.getIdNumber()));
             PlatformUserRO platformUserRO = new PlatformUserRO();
-            String userName = studentStatusPO.getIdNumber();
-            platformUserRO.setUsername(userName);
+            String username = studentStatusPO.getIdNumber();
+            platformUserRO.setUsername(username);
             platformUserRO.setName(personalInfoPO.getName());
-            if(userName.length() >= 6) {
-                platformUserRO.setPassword(userName.substring(userName.length() - 6));
+            if (username.length() >= 6) {
+                platformUserRO.setPassword(username.substring(username.length() - 6));
             } else {
-                platformUserRO.setPassword(userName); // 如果 account 长度小于6，则直接使用 account 作为密码
+                platformUserRO.setPassword(username); // 如果 account 长度小于6，则直接使用 account 作为密码
             }
             platformUserRO.setRoleId(1L);
             // 检测是否该用户存在
-            if(platformUserService.getBaseMapper().selectPlatformUsers1(userName).size() > 0){
+            PlatformUserVO platformUserVO = platformUserService.detailByUsername(username);
+            if (Objects.nonNull(platformUserVO)) {
                 // 存在账号，如果姓名为空 则更新姓名信息 以最新年份的个人信息为准
-                log.info("该用户已存在平台账户 " + platformUserRO.toString());
-            }else{
+                log.info("该用户已存在平台账户 " + platformUserRO);
+            } else {
                 platformUserROList.add(platformUserRO);
             }
         }
@@ -253,13 +262,13 @@ public class TestUserInfoChange {
      * 指定一个年级的学生群体创建登录账号
      */
     @Test
-    public void addStudentLoginAccountByGrade(){
+    public void addStudentLoginAccountByGrade() {
         /**
          * 2023 - 2019 都有了
          */
         int gradeStart = 2018;
         int gradeEnd = 2015;
-        for(int i = gradeStart; i >= gradeEnd; i--){
+        for (int i = gradeStart; i >= gradeEnd; i--) {
             generateStudentAccount("" + i);
         }
     }
@@ -269,14 +278,16 @@ public class TestUserInfoChange {
         // 获取指定年级的所有学生的账号
         List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectStudentsByGrade(grade);
 
-        if(studentStatusPOS.isEmpty()) {
+        if (studentStatusPOS.isEmpty()) {
             log.info("没有找到年级为 " + grade + " 的用户账号");
             return;
         }
 
         // 删除这些账号
-        for(StudentStatusPO studentStatusPO : studentStatusPOS) {
-            platformUserService.getBaseMapper().deleteStudentByIdNumber(studentStatusPO.getIdNumber());
+        for (StudentStatusPO studentStatusPO : studentStatusPOS) {
+            LambdaQueryWrapper<PlatformUserPO> wrapper = Wrappers.<PlatformUserPO>lambdaQuery()
+                    .eq(PlatformUserPO::getUsername, studentStatusPO.getIdNumber());
+            platformUserService.getBaseMapper().delete(wrapper);
             log.info("成功删除了用户账号：" + studentStatusPO.getIdNumber());
         }
     }
@@ -285,9 +296,11 @@ public class TestUserInfoChange {
     public void testDeleteStudentAccountByGrade() {
 //        String gradeToDelete = "2023";  // 你可以根据需要更改这个值
 //        deleteStudentAccountByGrade(gradeToDelete);
-        String userName = "";
-        platformUserService.getBaseMapper().deleteStudentByIdNumber(userName);
-        log.info("成功删除了用户账号：" + userName);
+        String username = "";
+        LambdaQueryWrapper<PlatformUserPO> wrapper = Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, username);
+        platformUserService.getBaseMapper().delete(wrapper);
+        log.info("成功删除了用户账号：" + username);
     }
 
 
@@ -295,10 +308,10 @@ public class TestUserInfoChange {
      * 为华为云服务器的数据库添加用户
      */
     @Test
-    public void addStudentLoginAccountByGrade1(){
+    public void addStudentLoginAccountByGrade1() {
         int gradeStart = 2023;
         int gradeEnd = 2023;
-        for(int i = gradeStart; i >= gradeEnd; i--){
+        for (int i = gradeStart; i >= gradeEnd; i--) {
             generateStudentAccount("" + i);
         }
     }
@@ -308,23 +321,23 @@ public class TestUserInfoChange {
      * 更新二级学院管理员名字
      */
     @Test
-    public void updateCollegeAdminNames(){
+    public void updateCollegeAdminNames() {
         List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper().selectList(null);
-        for(CollegeAdminInformationPO collegeAdminInformationPO: collegeAdminInformationPOS){
+        for (CollegeAdminInformationPO collegeAdminInformationPO : collegeAdminInformationPOS) {
             String name = collegeAdminInformationPO.getName();
             String userId = collegeAdminInformationPO.getUserId();
             PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
                     .eq(PlatformUserPO::getUserId, Long.parseLong(userId)));
-            if(platformUserPO == null){
+            if (platformUserPO == null) {
                 throw new IllegalArgumentException("不存在账号 " + collegeAdminInformationPO);
-            }else{
+            } else {
                 // 更新名字
                 UpdateWrapper<PlatformUserPO> updateWrapper = new UpdateWrapper<>();
                 updateWrapper.set("name", name)
                         .eq("user_id", platformUserPO.getUserId());
 
                 int i = platformUserService.getBaseMapper().update(null, updateWrapper);
-                if(i > 0){
+                if (i > 0) {
                     log.info("更新姓名成功 " + i + " " + collegeAdminInformationPO);
                 }
             }

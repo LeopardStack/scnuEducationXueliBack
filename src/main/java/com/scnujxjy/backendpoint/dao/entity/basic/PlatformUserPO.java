@@ -67,14 +67,14 @@ public class PlatformUserPO implements Serializable {
     private String wechatOpenId;
 
     /**
-     * 补充权限集合
+     * 补充角色id集合
      * <p>create、insert的typeHandler生效</p>
      * <p>注意update时typeHandler会失效，参考：</p>
      *
      * @see com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper#updateUser(PlatformUserPO)
      */
     @TableField(typeHandler = LongTypeHandler.class)
-    private List<Long> supplementaryPermissionIdSet;
+    private List<Long> supplementaryRoleIdSet;
 
 
 }
