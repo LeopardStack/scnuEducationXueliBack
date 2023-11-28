@@ -22,10 +22,12 @@ import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.GlobalConfigMapper;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
@@ -76,6 +78,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -786,6 +789,11 @@ public class ManagerFilter extends AbstractFilter {
                 examInfoVO.getTutors().add(teacherInformationPO);
             }
 
+            // 获取班级人数
+            Integer classSize = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
+                    .eq(StudentStatusPO::getClassIdentifier, courseExamInfoPO.getClassIdentifier()));
+            examInfoVO.setClassSize(classSize);
+
             if(scheduleCourseInformationVOS.isEmpty()){
                 examInfoVO.setTeachingMethod("线下");
             }else{
@@ -1344,6 +1352,7 @@ public class ManagerFilter extends AbstractFilter {
         GlobalConfigMapper globalConfigMapper1 = ctx.getBean(GlobalConfigMapper.class);
         PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
         DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
+        PlatformUserMapper platformUserMapper1 = ctx.getBean(PlatformUserMapper.class);
 
         // 获取数据
         List<ExamTeachersInfoVO> examTeachersInfoVOS = new ArrayList<>();
@@ -1357,17 +1366,38 @@ public class ManagerFilter extends AbstractFilter {
             // 构造器、getters 和 setters
         }
 
-        // 设置填表时间
-        DateInfo dateInfo = new DateInfo();
-        dateInfo.setYear("2023");
-        dateInfo.setMonth("09");
-        dateInfo.setDay("01");
+        // 获取当前日期
+        LocalDate now = LocalDate.now();
 
+        // 使用 LocalDate 获取年、月、日
+        String year = String.valueOf(now.getYear());
+        int monthValue = now.getMonthValue();
+        String month = String.format("%02d", now.getMonthValue()); // 保证月份是两位数字
+        String day = String.format("%02d", now.getDayOfMonth()); // 保证天数是两位数字
+
+        // 设置填表时间到 DateInfo 对象
+        DateInfo dateInfo = new DateInfo();
+        dateInfo.setYear(year);
+        dateInfo.setMonth(month);
+        dateInfo.setDay(day);
+
+        String season;
+        if (monthValue >= 2 && monthValue <= 7) {
+            season = "春季";
+        } else {
+            season = "秋季";
+        }
+        // 获取管理员的名字
+        PlatformUserPO platformUserPO = platformUserMapper1.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, loginId));
         // 或者使用 Map
         Map<String, Object> dateInfoMap = new HashMap<>();
-        dateInfoMap.put("year", "2023");
-        dateInfoMap.put("month", "09");
-        dateInfoMap.put("day", "01");
+        dateInfoMap.put("year", year);
+        dateInfoMap.put("month", month);
+        dateInfoMap.put("day", day);
+        dateInfoMap.put("collegeAdminName", platformUserPO.getName());
+        dateInfoMap.put("collegeAdminPhone", "");
+        dateInfoMap.put("season", season);
 
         List<CourseExamInfoPO> courseExamInfoPOS = courseExamInfoMapper1.batchSelectData(entity);
         int count = 1;
@@ -1393,6 +1423,8 @@ public class ManagerFilter extends AbstractFilter {
             examTeachersInfoVO.setLevel(classInformationPO.getLevel());
             examTeachersInfoVO.setCourseName(courseInformationPO.getCourseName());
             examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
+            examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
+            examTeachersInfoVO.setClassName(courseExamInfoPO.getClassName());
 
             List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper1.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                     .eq(CourseSchedulePO::getGrade, courseInformationPO.getGrade())

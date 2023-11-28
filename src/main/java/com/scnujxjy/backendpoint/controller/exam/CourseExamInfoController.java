@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
@@ -196,10 +197,20 @@ public class CourseExamInfoController {
             } else {
                 PageRO<BatchSetTeachersInfoRO> batchSetTeachersInfoROPageVO = new PageRO<>();
                 batchSetTeachersInfoROPageVO.setEntity(batchSetTeachersInfoRO);
-                boolean send = messageSender.sendExportMsg(batchSetTeachersInfoROPageVO, managerFilter, userId);
-                if (send) {
-                    return SaResult.ok("导出学籍数据成功");
+                if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+                    CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+                    batchSetTeachersInfoROPageVO.getEntity().setCollege(userBelongCollege.getCollegeName());
+                    boolean send = messageSender.sendExportMsg(batchSetTeachersInfoROPageVO, collegeAdminFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出学籍数据成功");
+                    }
+                }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+                    boolean send = messageSender.sendExportMsg(batchSetTeachersInfoROPageVO, managerFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出学籍数据成功");
+                    }
                 }
+
             }
             return SaResult.ok("批量导出考试信息失败");
 

@@ -102,10 +102,10 @@ public class Test3 {
 
         List<ExamTeachersInfoVO> examTeachersInfoVOS = Arrays.asList(
                 new ExamTeachersInfoVO(1, "学院A", "学前教育", "全日制", "本科",
-                        "教学班A", "课程A", "是", "开卷",
+                        "教学班A", "教学班A", "课程A", "是", "开卷",
                         "张三", "1234567890", "李四",
                         "0987654321", "备注信息A"),
-                new ExamTeachersInfoVO(2, "学院B", "计算机科学与技术",
+                new ExamTeachersInfoVO(2, "学院B", "教学班A", "计算机科学与技术",
                         "非全日制", "研究生", "教学班B", "课程B",
                         "否", "闭卷", "王五\n阿龙", "1231231234\n14122341414",
                         "赵六", "4321432143", "备注信息B")

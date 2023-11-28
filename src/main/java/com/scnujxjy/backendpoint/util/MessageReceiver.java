@@ -213,13 +213,11 @@ public class MessageReceiver {
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
                     managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
                 }else if(roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())){
-                    // 学历教育部管理员
-                    AbstractFilter managerFilter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                    // 二级学院管理员
+                    AbstractFilter collegeAdminFilter = JSON.parseObject(message.getString("filter"), new TypeReference<CollegeAdminFilter>() {
                     });
-                    CollegeInformationPO userBelongCollegeByLoginId = scnuXueliTools.getUserBelongCollegeByLoginId(loginId);
-                    pageRO.getEntity().setCollege(userBelongCollegeByLoginId.getCollegeName());
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
-                    managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                    collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
                 }
 
             }

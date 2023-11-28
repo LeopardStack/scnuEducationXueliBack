@@ -571,7 +571,7 @@ public class CourseScheduleController {
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return SaResult.error("用户角色为空").setCode(2001);
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(collegeAdminFilter);
