@@ -685,7 +685,7 @@ public class DataImportScnuOldSys {
      * 获取所有学籍异动数据
      * @return
      */
-    public static ArrayList<HashMap<String, String>> getStudentStatusData(){
+    public static ArrayList<HashMap<String, String>> getStudentStatusChangeData(){
         // 获取开始时间
         long startTime = System.nanoTime();
 

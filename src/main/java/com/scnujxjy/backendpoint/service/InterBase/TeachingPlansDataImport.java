@@ -94,7 +94,7 @@ public class TeachingPlansDataImport {
 
 
     @Transactional(rollbackFor = Exception.class)
-    int insertData(HashMap<String, String> hashMap){
+    public int insertData(HashMap<String, String> hashMap){
         CourseInformationPO courseInformationPO = new CourseInformationPO();
         String classIdentifier = hashMap.get("BSHI");
 
