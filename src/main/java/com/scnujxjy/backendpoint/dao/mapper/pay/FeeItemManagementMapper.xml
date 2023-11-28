@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.pay.FeeItemManagementMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.pay.FeeItemManagementPO">
+        <id column="id" property="id" />
+        <result column="year" property="year" />
+        <result column="fee_item_name" property="feeItemName" />
+        <result column="fee_type" property="feeType" />
+        <result column="school_type" property="schoolType" />
+        <result column="start_date" property="startDate" />
+        <result column="end_date" property="endDate" />
+        <result column="fee_batch_no" property="feeBatchNo" />
+        <result column="fee_switch" property="feeSwitch" />
+        <result column="secret_key" property="secretKey" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, year, fee_item_name, fee_type, school_type, start_date, end_date, fee_batch_no, fee_switch, secret_key
+    </sql>
+
+</mapper>

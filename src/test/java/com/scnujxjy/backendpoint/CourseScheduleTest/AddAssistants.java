@@ -32,8 +32,9 @@ public class AddAssistants {
 
     @Test
     public void test1(){
-        String mainName = "郑福明";
-        String tutorName = "赖晨希";
+        String mainName = "刘晶" +
+                "";
+        String tutorName = "黄敏丰";
         TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getName, tutorName));
         TeacherInformationPO mainTeacher = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
@@ -58,6 +59,9 @@ public class AddAssistants {
                 log.info(mainName + " 老师增加了一位新的助教" + tutorName + " 插入结果 " + insert);
             }
 
+        }
+        if(uniqueBatchIndexes.isEmpty()){
+            log.info("该老师没有在本平台上课");
         }
     }
 }

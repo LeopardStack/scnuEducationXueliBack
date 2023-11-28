@@ -4,8 +4,11 @@ import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -34,6 +37,12 @@ public class Test1 {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
+
+    @Resource
+    private TeachingAssistantsCourseScheduleMapper teachingAssistantsCourseScheduleMapper;
 
     @Test
     public void test1() {
@@ -92,5 +101,23 @@ public class Test1 {
 
         platformUserService.batchCreateUser(platformUserROList);
         log.info("共计生成教师账号 " + platformUserROList.size() + " 个");
+    }
+
+    /**
+     * 为指定主讲老师 配置指定助教
+     */
+    @Test
+    public void test3(){
+        String mainTeacher = "秦晓华";
+        String tutorName = "黄云霞";
+        TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getName, mainTeacher));
+        TeacherInformationPO tutor = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getName, tutorName));
+        List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeacherUsername, teacherInformationPO.getTeacherUsername()));
+        if(!courseSchedulePOS.isEmpty() && teacherInformationPO != null && tutor != null){
+
+        }
     }
 }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.oa.ResumptionRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.oa.ResumptionRecordPO">
+        <id column="id" property="id" />
+        <result column="serial_number" property="serialNumber" />
+        <result column="id_number" property="idNumber" />
+        <result column="exam_registration_number" property="examRegistrationNumber" />
+        <result column="name" property="name" />
+        <result column="student_number" property="studentNumber" />
+        <result column="old_class_identifier" property="oldClassIdentifier" />
+        <result column="old_grade" property="oldGrade" />
+        <result column="old_study_form" property="oldStudyForm" />
+        <result column="old_major_name" property="oldMajorName" />
+        <result column="new_class_identifier" property="newClassIdentifier" />
+        <result column="new_grade" property="newGrade" />
+        <result column="new_study_form" property="newStudyForm" />
+        <result column="new_major_name" property="newMajorName" />
+        <result column="resumption_date" property="resumptionDate" />
+        <result column="suspension_serial_number" property="suspensionSerialNumber" />
+        <result column="reason" property="reason" />
+        <result column="handle_date" property="handleDate" />
+        <result column="approval_user_id" property="approvalUserId" />
+        <result column="approval_history_id" property="approvalHistoryId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, serial_number, id_number, exam_registration_number, name, student_number, old_class_identifier, old_grade, old_study_form, old_major_name, new_class_identifier, new_grade, new_study_form, new_major_name, resumption_date, suspension_serial_number, reason, handle_date, approval_user_id, approval_history_id
+    </sql>
+
+</mapper>
