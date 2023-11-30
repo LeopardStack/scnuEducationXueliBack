@@ -32,8 +32,6 @@ public class SingleLivingController {
 
     @Resource
     private SingleLivingService singleLivingService;
-    @Resource
-    private CourseScheduleMapper courseScheduleMapper;
 
     /**
      * 刪除直播间
@@ -114,12 +112,23 @@ public class SingleLivingController {
     @PostMapping("/edit/addChannelWhiteStudent")
     public SaResult addChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数
-        if (StrUtil.isBlank(request.getChannelId()) || StrUtil.isBlank(request.getCode()) || StrUtil.isBlank(request.getChannelName())) {
+        if (StrUtil.isBlank(request.getChannelId()) || request.getStudentWhiteList().isEmpty()) {
             throw dataMissError();
         }
 
         return singleLivingService.addChannelWhiteStudent(request);
     }
+
+    @PostMapping("/edit/deleteChannelWhiteStudent")
+    public SaResult deleteChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId()) || request.getDeleteCodeList().isEmpty()) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.deleteChannelWhiteStudent(request);
+    }
+
 
     //获取频道下的场次信息
     @PostMapping("/edit/getChannelSessionInfo")

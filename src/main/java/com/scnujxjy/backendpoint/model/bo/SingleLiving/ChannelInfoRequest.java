@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.model.bo.SingleLiving;
 
+import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class ChannelInfoRequest {
@@ -16,6 +18,8 @@ public class ChannelInfoRequest {
     //以下用于添加单个白名单字段
     private String code;
     private String name;
+    private List<String> deleteCodeList;
+    private List<StudentWhiteListVO> studentWhiteList;
 
     //以下用于获取频道场次信息字段
     private Date startDate;//开始日期，格式yyyy-MM-dd HH:mm:ss

@@ -9,7 +9,6 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
@@ -24,7 +23,7 @@ public interface SingleLivingService {
 
     SaResult getStudentChannelUrl(String channelId);
 
-    SaResult getTutorChannelUrl(String channelId,String userId);
+    SaResult getTutorChannelUrl(String channelId, String userId);
 
     SaResult createTutor(String channelId, String tutorName);
 
@@ -33,6 +32,8 @@ public interface SingleLivingService {
     SaResult GetChannelDetail(String channelId);
 
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
+
+    SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
     List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 

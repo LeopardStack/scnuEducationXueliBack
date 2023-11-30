@@ -43,6 +43,7 @@ import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
 import net.polyv.live.v1.entity.channel.playback.*;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
+import net.polyv.live.v1.entity.web.auth.LiveDeleteChannelWhiteListRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
@@ -605,34 +606,100 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     //添加单个白名单
     @Override
     public SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
+        log.info("调用批量新增白名单接口，请求入参为:{}",channelInfoRequest);
         SaResult saResult = new SaResult();
-        LiveCreateChannelWhiteListRequest liveCreateChannelWhiteListRequest = new LiveCreateChannelWhiteListRequest();
         Boolean liveCreateChannelWhiteListResponse;
+        List<StudentWhiteListVO> successList=new ArrayList<>();
+        List<StudentWhiteListVO> failList=channelInfoRequest.getStudentWhiteList();
+        Iterator<StudentWhiteListVO> iterator = failList.iterator();
         try {
-            liveCreateChannelWhiteListRequest.setRank(1)
-                    .setChannelId(channelInfoRequest.getChannelId())
-                    .setCode(channelInfoRequest.getCode())
-                    .setName(channelInfoRequest.getName());
-            liveCreateChannelWhiteListResponse = new LiveWebAuthServiceImpl().createChannelWhiteList(
-                    liveCreateChannelWhiteListRequest);
-            if (liveCreateChannelWhiteListResponse != null && liveCreateChannelWhiteListResponse) {
-                log.info("测试添加单个白名单-频道白名单成功");
+            while (iterator.hasNext()) {
+                LiveCreateChannelWhiteListRequest liveCreateChannelWhiteListRequest = new LiveCreateChannelWhiteListRequest();
+                StudentWhiteListVO studentWhite = iterator.next();
+                liveCreateChannelWhiteListRequest
+                        .setRank(1)
+                        .setChannelId(channelInfoRequest.getChannelId())
+                        .setCode(studentWhite.getCode())
+                        .setName(studentWhite.getName());
+                liveCreateChannelWhiteListResponse = new LiveWebAuthServiceImpl().createChannelWhiteList(
+                        liveCreateChannelWhiteListRequest);
+                if (liveCreateChannelWhiteListResponse != null && liveCreateChannelWhiteListResponse) {
+                    successList.add(studentWhite);
+                    iterator.remove(); // 删除元素使用 iterator.remove()
+                }
+            }
+            if (failList.size()!=0) {
+                log.info("新增部分白名单成功"+successList);
+                saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
+                saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
+                saResult.setData(failList);
+                return saResult;
+            }else {
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 return saResult;
             }
-        } catch (PloyvSdkException e) {
+
+        }catch (Exception e) {
             e.printStackTrace();
-        } catch (Exception e) {
             log.error("添加白名单接口调用异常", e);
         }
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setData(failList);
         return saResult;
 
     }
 
+    //删除白名单
+    @Override
+    public SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
+        log.info("调用批量删除白名单接口，请求入参为:{}",channelInfoRequest);
+        SaResult saResult = new SaResult();
+        Boolean liveDeleteChannelWhiteListResponse;
+        List<String> successList=new ArrayList<>();
+        List<String> failList=channelInfoRequest.getDeleteCodeList();
+        Iterator<String> iterator = failList.iterator();
+        try {
+            //遍历需要删除的白名单list，成功的装进successList,删除失败的放入failList
+            while (iterator.hasNext()) {
+                String code = iterator.next();
+                LiveDeleteChannelWhiteListRequest liveDeleteChannelWhiteListRequest = new LiveDeleteChannelWhiteListRequest();
+                liveDeleteChannelWhiteListRequest
+                        .setRank(1)
+                        .setChannelId(channelInfoRequest.getChannelId())
+                        .setIsClear("N")
+                        .setCode(code);
+                liveDeleteChannelWhiteListResponse = new LiveWebAuthServiceImpl().deleteChannelWhiteList(
+                        liveDeleteChannelWhiteListRequest);
+                if (liveDeleteChannelWhiteListResponse != null && liveDeleteChannelWhiteListResponse) {
+                    successList.add(code);
+                    iterator.remove(); // 删除元素使用 iterator.remove()
+                }
+            }
 
+            if (failList.size()!=0) {
+                log.info("删除部分白名单成功"+successList);
+                saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
+                saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
+                saResult.setData(failList);
+                return saResult;
+            }else {
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
+            }
+
+        }catch (Exception e) {
+            e.printStackTrace();
+            log.error("删除白名单接口调用异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setData(failList);
+        return saResult;
+
+    }
 
 
     /**
