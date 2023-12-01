@@ -98,6 +98,15 @@ public class SingleLivingController {
         return singleLivingService.getTutorChannelUrl(channelId,userId);
     }
 
+    //创建助教并返回单点登录链接
+    @PostMapping("/edit/createTutorChannel")
+    public  SaResult createTutorChannel(String channelId,String userId){
+        if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
+            throw dataMissError();
+        }
+        return singleLivingService.createTutorChannel(channelId,userId);
+    }
+
     @PostMapping("/edit/UpdateChannelNameAndImg")
     public SaResult UpdateChannelNameAndImg(@RequestBody ChannelInfoRequest request) {
         // 校验参数

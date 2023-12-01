@@ -10,6 +10,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
@@ -17,6 +18,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Con
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.ViewFirstStudentResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
@@ -87,6 +89,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private VideoStreamInverter videoStreamInverter;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -517,6 +522,56 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setCode(ResultCode.SUCCESS.getCode());
         saResult.setMsg(ResultCode.SUCCESS.getMessage());
         saResult.setData(channelInfoResponse);
+        return saResult;
+    }
+
+    @Override
+    public SaResult createTutorChannel(String channelId, String userId) {
+        SaResult saResult = new SaResult();
+        LiveCreateAccountRequest liveCreateAccountRequest = new LiveCreateAccountRequest();
+        LiveCreateAccountResponse liveCreateAccountResponse;
+        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
+        PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
+
+        try {
+            liveCreateAccountRequest.setChannelId(channelId)
+                    .setRole("Assistant")
+                    .setActor("助教")
+                    .setNickName(platformUserPO.getUsername())
+                    .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
+                            LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
+                            .setEnabled(LiveConstant.Flag.YES.getFlag())));
+            liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
+            if (liveCreateAccountResponse != null) {
+//                https://console.polyv.net/live/login.html?channelId=0024368180
+                log.info("创建助教角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
+                channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
+                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
+                channelInfoResponse.setAccount(liveCreateAccountResponse.getAccount());
+                //返回助教信息，同时插入助教表
+                TutorInformation tutorInformation = new TutorInformation();
+                tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
+                tutorInformation.setTutorName(platformUserPO.getUsername());
+                tutorInformation.setUserId(userId);
+                tutorInformation.setChannelId(channelId);
+                tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
+                tutorInformation.setAccount(liveCreateAccountResponse.getAccount());
+
+                int insert = tutorInformationMapper.insert(tutorInformation);
+                if (insert > 0) {
+                    saResult.setCode(ResultCode.SUCCESS.getCode());
+                    saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                    saResult.setData(channelInfoResponse);
+                    return saResult;
+                }
+            }
+        } catch (PloyvSdkException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("创建助教接口调用异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
 

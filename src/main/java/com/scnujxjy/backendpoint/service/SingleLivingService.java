@@ -25,6 +25,8 @@ public interface SingleLivingService {
 
     SaResult getTutorChannelUrl(String channelId, String userId);
 
+    SaResult createTutorChannel(String channelId, String userId);
+
     SaResult createTutor(String channelId, String tutorName);
 
     SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest);
