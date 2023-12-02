@@ -128,6 +128,16 @@ public class SingleLivingController {
         return singleLivingService.addChannelWhiteStudent(request);
     }
 
+    @PostMapping("/edit/queryChannelWhiteStudent")
+    public SaResult queryChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId())) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.getChannelWhiteList(request);
+    }
+
     @PostMapping("/edit/deleteChannelWhiteStudent")
     public SaResult deleteChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数

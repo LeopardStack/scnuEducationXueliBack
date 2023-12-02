@@ -45,10 +45,7 @@ import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
 import net.polyv.live.v1.entity.channel.playback.*;
-import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
-import net.polyv.live.v1.entity.web.auth.LiveDeleteChannelWhiteListRequest;
-import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
-import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
+import net.polyv.live.v1.entity.web.auth.*;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
@@ -662,6 +659,36 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
+
+    @Override
+    public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest)  {
+        SaResult saResult = new SaResult();
+        LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+        LiveChannelWhiteListResponse liveChannelWhiteListResponse;
+        try {
+            liveChannelWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
+                    .setRank(1)
+                    .setKeyword(channelInfoRequest.getKeyword())
+                    .setCurrentPage(channelInfoRequest.getCurrentPage())
+                    .setPageSize(channelInfoRequest.getPageSize());
+            liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(
+                    liveChannelWhiteListRequest);
+            if (liveChannelWhiteListResponse != null) {
+                log.info("测试查询频道观看白名单列表成功,{}", JSON.toJSONString(liveChannelWhiteListResponse));
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult.setData(liveChannelWhiteListResponse.getContents());
+                return saResult;
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+            log.error("调用查询白名单接口异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
+    }
+
 
 
     //添加单个白名单

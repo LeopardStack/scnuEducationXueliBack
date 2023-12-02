@@ -31,6 +31,8 @@ public interface SingleLivingService {
 
     SaResult UpdateChannelNameAndImg(ChannelInfoRequest channelInfoRequest);
 
+    SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest);
+
     SaResult GetChannelDetail(String channelId);
 
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
