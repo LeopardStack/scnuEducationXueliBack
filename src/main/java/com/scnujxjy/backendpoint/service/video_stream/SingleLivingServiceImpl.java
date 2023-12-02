@@ -35,6 +35,7 @@ import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
+import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
@@ -92,6 +93,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private VideoStreamUtils videoStreamUtils;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -377,9 +381,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         channelInfoData.setChannelId(request.getChannelId());
         channelInfoData.setGlobalSettingEnabled("N");
         channelInfoData.setPlaybackEnabled(request.getPlaybackEnabled());
-        channelInfoData.setType("single");
+        channelInfoData.setType("list");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");
-        channelInfoData.setOrigin("record");
+        channelInfoData.setOrigin("playback");//默认列表回放，使用回放列表
 
         String url = "http://api.polyv.net/live/v3/channel/playback/set-setting";
 
@@ -393,15 +397,15 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         requestMap.put("timestamp", timestamp);
         requestMap.put("channelId", channelInfoData.getChannelId() == null ? "" : channelInfoData.getChannelId());
         requestMap.put("globalSettingEnabled", channelInfoData.getGlobalSettingEnabled() == null ? "" : channelInfoData.getGlobalSettingEnabled());
-        requestMap.put("crontabType", channelInfoData.getCrontType() == null ? "" : channelInfoData.getCrontType());
-        requestMap.put("startTime", channelInfoData.getStartTime() == null ? "" : "" + channelInfoData.getStartTime());
-        requestMap.put("endTime", channelInfoData.getEndTime() == null ? "" : "" + channelInfoData.getEndTime());
+//        requestMap.put("crontabType", channelInfoData.getCrontType() == null ? null : channelInfoData.getCrontType());
+//        requestMap.put("startTime", channelInfoData.getStartTime() == null ? null : "" + channelInfoData.getStartTime());
+//        requestMap.put("endTime", channelInfoData.getEndTime() == null ? null : "" + channelInfoData.getEndTime());
         requestMap.put("playbackEnabled", channelInfoData.getPlaybackEnabled() == null ? "" : channelInfoData.getPlaybackEnabled());
         requestMap.put("type", channelInfoData.getType() == null ? "" : channelInfoData.getType());
         requestMap.put("origin", channelInfoData.getOrigin() == null ? "" : channelInfoData.getOrigin());
         requestMap.put("videoId", channelInfoData.getVideoId() == null ? "" : channelInfoData.getVideoId());
-        requestMap.put("sectionEnabled", channelInfoData.getSectionEnabled() == null ? "" : channelInfoData.getSectionEnabled());
-        requestMap.put("chatPlaybackEnabled", channelInfoData.getChatPlaybackEnabled() == null ? "" : channelInfoData.getChatPlaybackEnabled());
+//        requestMap.put("sectionEnabled", channelInfoData.getSectionEnabled() == null ? null : channelInfoData.getSectionEnabled());
+//        requestMap.put("chatPlaybackEnabled", channelInfoData.getChatPlaybackEnabled() == null ? null : channelInfoData.getChatPlaybackEnabled());
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, LiveGlobalConfig.getAppSecret()));
 
         log.info("请求参数  " + requestMap);
@@ -409,12 +413,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             String response = PolyvHttpUtil.postFormBody(url, requestMap);  // assuming PolyvHttpUtil can be used here
             log.info("回放设置返回值 \n" + response);
-            // 解析响应为 PlaybackSettingResponse POJO
             playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {
             });
-            saResult.setCode(ResultCode.SUCCESS.getCode());
-            saResult.setMsg(ResultCode.SUCCESS.getMessage());
-            saResult.setData(playbackResponse);
+            saResult.setCode(playbackResponse.getCode());
+            saResult.setMsg(playbackResponse.getMessage());
+            saResult.setData(playbackResponse.getData());
             return saResult;
         } catch (Exception e) {
             log.error("设置频道 (" + channelInfoData.getChannelId() + ") 的回放参数失败 " + e);
@@ -546,8 +549,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                https://console.polyv.net/live/login.html?channelId=0024368180
                 log.info("创建助教角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
                 channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
-                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
+//                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 channelInfoResponse.setAccount(liveCreateAccountResponse.getAccount());
+
+                String tutorSSOLink = videoStreamUtils.generateTutorSSOLink(channelId, liveCreateAccountResponse.getAccount());
+                channelInfoResponse.setUrl(tutorSSOLink);
                 //返回助教信息，同时插入助教表
                 TutorInformation tutorInformation = new TutorInformation();
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
