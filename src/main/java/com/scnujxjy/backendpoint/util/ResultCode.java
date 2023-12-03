@@ -6,6 +6,8 @@ public enum ResultCode {
     SUCCESS(200, "成功"),
     FAIL(0,"失败"),
 
+    PARTIALSUCCESS(100, "操作部分名单成功"),
+
     // 参数错误：10001-19999
     PARAM_IS_INVALID(10001, "参数无效"),
 

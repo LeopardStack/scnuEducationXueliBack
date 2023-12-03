@@ -32,8 +32,6 @@ public class SingleLivingController {
 
     @Resource
     private SingleLivingService singleLivingService;
-    @Resource
-    private CourseScheduleMapper courseScheduleMapper;
 
     /**
      * 刪除直播间
@@ -100,6 +98,15 @@ public class SingleLivingController {
         return singleLivingService.getTutorChannelUrl(channelId,userId);
     }
 
+    //创建助教并返回单点登录链接
+    @PostMapping("/edit/createTutorChannel")
+    public  SaResult createTutorChannel(String channelId,String userId){
+        if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
+            throw dataMissError();
+        }
+        return singleLivingService.createTutorChannel(channelId,userId);
+    }
+
     @PostMapping("/edit/UpdateChannelNameAndImg")
     public SaResult UpdateChannelNameAndImg(@RequestBody ChannelInfoRequest request) {
         // 校验参数
@@ -114,12 +121,33 @@ public class SingleLivingController {
     @PostMapping("/edit/addChannelWhiteStudent")
     public SaResult addChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数
-        if (StrUtil.isBlank(request.getChannelId()) || StrUtil.isBlank(request.getCode()) || StrUtil.isBlank(request.getChannelName())) {
+        if (StrUtil.isBlank(request.getChannelId()) || request.getStudentWhiteList().isEmpty()) {
             throw dataMissError();
         }
 
         return singleLivingService.addChannelWhiteStudent(request);
     }
+
+    @PostMapping("/edit/queryChannelWhiteStudent")
+    public SaResult queryChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId())) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.getChannelWhiteList(request);
+    }
+
+    @PostMapping("/edit/deleteChannelWhiteStudent")
+    public SaResult deleteChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId()) || request.getDeleteCodeList().isEmpty()) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.deleteChannelWhiteStudent(request);
+    }
+
 
     //获取频道下的场次信息
     @PostMapping("/edit/getChannelSessionInfo")
