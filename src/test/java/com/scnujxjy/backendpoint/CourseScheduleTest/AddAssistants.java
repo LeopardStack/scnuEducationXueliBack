@@ -30,11 +30,13 @@ public class AddAssistants {
     TeacherInformationMapper teacherInformationMapper;
 
 
+    /**
+     * 为指定老师指定助教
+     */
     @Test
     public void test1(){
-        String mainName = "刘晶" +
-                "";
-        String tutorName = "黄敏丰";
+        String mainName = "邓思婧";
+        String tutorName = "陈洪碧";
         TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getName, tutorName));
         TeacherInformationPO mainTeacher = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()

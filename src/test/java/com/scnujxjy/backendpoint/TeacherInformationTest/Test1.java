@@ -108,8 +108,8 @@ public class Test1 {
      */
     @Test
     public void test3(){
-        String mainTeacher = "秦晓华";
-        String tutorName = "黄云霞";
+        String mainTeacher = "王忠";
+        String tutorName = "崔涛";
         TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getName, mainTeacher));
         TeacherInformationPO tutor = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()

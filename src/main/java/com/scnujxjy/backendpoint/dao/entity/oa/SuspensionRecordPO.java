@@ -29,6 +29,11 @@ public class SuspensionRecordPO implements Serializable {
     private Long id;
 
     /**
+     * 年份
+     */
+    private String currentYear;
+
+    /**
      * 序号
      */
     private Integer serialNumber;
@@ -42,6 +47,11 @@ public class SuspensionRecordPO implements Serializable {
      * 身份证号码
      */
     private String idNumber;
+
+    /**
+     * 学号
+     */
+    private String studentNumber;
 
     /**
      * 姓名

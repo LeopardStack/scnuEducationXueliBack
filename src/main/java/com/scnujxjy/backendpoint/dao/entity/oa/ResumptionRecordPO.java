@@ -36,6 +36,11 @@ public class ResumptionRecordPO implements Serializable {
     private Integer serialNumber;
 
     /**
+     * 年份
+     */
+    private String currentYear;
+
+    /**
      * 身份证号码
      */
     private String idNumber;
@@ -98,7 +103,7 @@ public class ResumptionRecordPO implements Serializable {
     /**
      * 复学时间
      */
-    private Date resumptionDate;
+    private String resumptionDate;
 
     /**
      * 休学序号

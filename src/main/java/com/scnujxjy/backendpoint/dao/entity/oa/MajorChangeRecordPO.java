@@ -31,7 +31,7 @@ public class MajorChangeRecordPO implements Serializable {
     /**
      * 序号
      */
-    private String serialNumber;
+    private Integer serialNumber;
 
     /**
      * 当下年份
@@ -117,6 +117,11 @@ public class MajorChangeRecordPO implements Serializable {
      * 办理日期
      */
     private String approvalDate;
+
+    /**
+     * 备注信息
+     */
+    private String remark;
 
 
 }

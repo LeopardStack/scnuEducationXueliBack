@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.controller.InterBase;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.lang.hash.Hash;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.constant.enums.OldDataType;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -157,7 +159,7 @@ public class oldSystemDataSynchronize {
 
         Boolean isTaskRunning = redisTemplate.opsForValue().get(taskRunningKey) != null;
         if (isTaskRunning) {
-            return SaResult.ok("数据同步任务已在执行，请稍后查询");
+            return SaResult.ok("数据对比任务已在执行，请稍后查询");
         } else {
             redisTemplate.opsForValue().set(taskRunningKey, true, 20, TimeUnit.MINUTES);
             if (dataType.equals(OldDataType.STUDENT_STATUS.getOld_data_type())) {
@@ -184,6 +186,13 @@ public class oldSystemDataSynchronize {
             }
         }
         return SaResult.ok();
+    }
+
+    @GetMapping("/get_student_basic_data")
+    public SaResult getStudentBasicData(String year){
+        log.info("获取到请求数据参数 " +  year);
+        HashMap<String, Integer> ret =  asyncDataSynchronizeService.getStudentBasicData(year);
+        return SaResult.ok().setData(ret);
     }
 
 }
