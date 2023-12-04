@@ -4,6 +4,7 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
@@ -675,6 +676,25 @@ public class CourseScheduleController {
         return SaResult.ok();
     }
 
+    @PostMapping("/update_single_schedule_courses")
+    @SaCheckPermission("修改排课表上课时间和上课教师")
+    public SaResult updateSingleScheduleCoursesInformation(@RequestBody CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleUpdateROPageRO)) {
+            return SaResult.error("未做任何修改");
+        }
+        try {
+            courseScheduleService.updateSingleScheduleInfor(courseScheduleUpdateROPageRO);
+        } catch (Exception e) {
+            // 2000 的值 说明修改失败
+            return SaResult.error(e.toString()).setCode(2000);
+        }
+
+        log.info("更新的排课表信息为 " + courseScheduleUpdateROPageRO);
+        return SaResult.ok();
+    }
+
+
     /**
      * 删除排课表相关信息
      *
@@ -695,7 +715,7 @@ public class CourseScheduleController {
                 return SaResult.error("删除失败").setCode(2000);
             } else {
                 // 删除排课要检查是否是有直播间 如果有 不让删除
-                if (courseSchedulePO.getOnlinePlatform() != null) {
+                if (StrUtil.isNotBlank(courseSchedulePO.getOnlinePlatform())) {
                     return SaResult.error("删除失败，该排课记录已存在上课记录").setCode(2000);
                 } else {
                     int i = courseScheduleService.getBaseMapper().deleteById(courseSchedulePO.getId());
@@ -712,28 +732,6 @@ public class CourseScheduleController {
             log.error("删除排课表记录失败 " + scheduldId + " " + e.toString());
             return SaResult.error("删除失败，请联系管理员").setCode(2000);
         }
-    }
-
-    /**
-     * 添加排课表相关信息
-     *
-     * @return
-     */
-    @PostMapping("/add_schedule_courses")
-//    @SaCheckPermission("删除排课表")
-    public SaResult addScheduleCoursesInformation(@RequestBody CourseSchedulePO courseSchedule) {
-        // 校验参数
-        if (Objects.isNull(courseSchedule)) {
-            return SaResult.error("courseSchedulePO 不能为空");
-        }
-        try {
-            int i = courseScheduleService.addeScheduleInfor(courseSchedule);
-        }catch (Exception e) {
-            log.error(courseSchedule+"添加排课表记录失败"+ e);
-            return SaResult.error("添加失败，请联系管理员").setCode(2000);
-        }
-        return SaResult.ok("添加该排课表记录成功").setCode(2000);
-
     }
 
 

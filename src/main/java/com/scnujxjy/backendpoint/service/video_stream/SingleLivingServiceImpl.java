@@ -803,6 +803,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
         try {
             //获取该排课表的频道直播间id
+            SaResult saResult=new SaResult();
             CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
             //学生的学号、姓名、班别、观看时长
@@ -818,16 +819,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             channelViewRequest.setPageSize("10000");
             SaResult channelCardPush = getChannelCardPush(channelViewRequest);
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
-            if (viewLogResponseList.size()==0){
-
+            if (viewLogResponseList.size()==0) {
+                saResult.setCode(ResultCode.FAIL.getCode());
+                saResult.setMsg(ResultCode.FAIL.getMessage());
+                return saResult;
             }
-            List<AttendanceVO> attendanceVOList = new ArrayList<>();
 
+            List<AttendanceVO> attendanceVOList = new ArrayList<>();
             for (ViewLogResponse viewLogResponse:viewLogResponseList) {
                 AttendanceVO attendanceVO=new AttendanceVO();
                 QueryWrapper<StudentStatusPO> queryWrapper = new QueryWrapper<>();
                 queryWrapper.eq("id_number", viewLogResponse.getParam1());
                 List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(queryWrapper);
+
                 if (studentStatusPOS.size()!=0){
                     attendanceVO.setCode(studentStatusPOS.get(0).getStudentNumber());
 
@@ -837,8 +841,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     if (classInformationPOS.size()!=0) {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
-                }else {
-
                 }
 
                 attendanceVO.setName(viewLogResponse.getParam2());
@@ -848,7 +850,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }else {
                     attendanceVO.setAttendance("否");
                 }
-
                 attendanceVOList.add(attendanceVO);
             }
             String templateFilePath="考勤数据.xls";
@@ -857,9 +858,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             // 设置响应内容的类型,响应头部信息，指定文件名
             response.setContentType("application/octet-stream");
-            LocalDateTime now = LocalDateTime.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedDateTime = now.format(formatter);
             response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
             // 获取response的输出流
             OutputStream outputStream = response.getOutputStream();

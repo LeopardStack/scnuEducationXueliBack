@@ -577,6 +577,22 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         return true;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateSingleCourseScheduleInfoByTeacher(CourseSchedulePO courseSchedulePO, TeacherInformationPO teacherInformationPO) {
+            // 更新时间
+        courseSchedulePO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+        courseSchedulePO.setMainTeacherName(teacherInformationPO.getName());
+        courseSchedulePO.setMainTeacherId(teacherInformationPO.getWorkNumber());
+        courseSchedulePO.setMainTeacherIdentity(teacherInformationPO.getIdCardNumber());
+
+            int update = getBaseMapper().update(courseSchedulePO, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO.getId()));
+            if (update <= 0) {
+                throw new RuntimeException("Failed to update record: " + courseSchedulePO.getId());
+            }
+        return true;
+    }
+
+
     // 修改排课表记录的教师和上课时间
     @Transactional(rollbackFor = {Exception.class, IllegalArgumentException.class})
     public void updateScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) throws ParseException {
@@ -738,37 +754,147 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     }
 
     @Transactional(rollbackFor = {Exception.class, IllegalArgumentException.class})
-    public Integer addeScheduleInfor(CourseSchedulePO schedule) throws ParseException {
-        // 同一个时间、同一个老师、同一个教学班级、同一门课程，如果有合班直接将其批次设为同样
-        List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
-                .eq(CourseSchedulePO::getTeachingDate, schedule.getTeachingDate())
-                .eq(CourseSchedulePO::getTeachingTime, schedule.getTeachingTime())
-                .eq(CourseSchedulePO::getMainTeacherName, schedule.getMainTeacherName())
-                .eq(CourseSchedulePO::getCourseName, schedule.getCourseName())
-        );
-//        if (courseSchedulePOS.isEmpty()) {
-//            throw new IllegalArgumentException("修改排课表失败，没有找到对应的排课表");
-//        }
-        //如果不存在合班情况，则找出最大批次值+1
-        if (courseSchedulePOS.isEmpty()) {
-            Long MaxBitch = courseScheduleMapper.selectMaxBitch();
-            schedule.setBatchIndex(++MaxBitch);
-        } else {//说明存在合班
-            CourseSchedulePO schedulePO = courseSchedulePOS.get(0);
-            schedule.setBatchIndex(schedulePO.getBatchIndex());
-        }
-
-        int insert = courseScheduleMapper.insert(schedule);
-        if (insert > 0) {
-            log.info("添加该排课表成功" + schedule);
-            return insert;
+    public void updateSingleScheduleInfor(CourseScheduleUpdateRO courseScheduleUpdateROPageRO) throws ParseException {
+        if (courseScheduleUpdateROPageRO.getId() == null) {
+            throw new RuntimeException("没有找到任何排课表信息，更新失败");
         } else {
-            log.error("添加排课表失败");
-            throw new IllegalArgumentException("添加排课表失败，请联系管理员");
+            if (courseScheduleUpdateROPageRO.getTeachingStartDate() != null) {
+                // 更新排课表的上课时间
+                Date start = courseScheduleUpdateROPageRO.getTeachingStartDate();
+                Date end = courseScheduleUpdateROPageRO.getTeachingEndDate();
+
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+                String formattedTime = sdf.format(start) + "-" + sdf.format(end);
+                log.info("更新后的时间 " + start + "\n" + formattedTime);
+
+                //修改后的课程开始时间必须是当前时间的一小时后，不然就距离上课不到1小时了
+                Date current = new Date();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(current);
+                calendar.add(Calendar.HOUR_OF_DAY, 1);
+                Date afterOneHour = calendar.getTime();//一小时后的时间
+
+                int compareResult = start.compareTo(afterOneHour);//将课程开始时间与现在时间进行比较，返回一个整数值
+                if (compareResult <= 0) {    // 课程开始在现在之前
+                    throw new IllegalArgumentException("修改后的课程开始时间必须在当前时间的一小时后");
+                }
+
+                CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                        eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+
+                if (StrUtil.isNotBlank(courseSchedulePO.getOnlinePlatform())) {
+                    // 存在直播间 看一下保利威该直播间是否还存在
+//                        VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
+//                                .eq(VideoStreamRecordPO::getId, courseSchedulePO1.getOnlinePlatform()));
+//
+                    LocalDateTime now = LocalDateTime.now();
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm");
+                    String formattedNowDateTime = now.format(dateTimeFormatter);//获取当前时间,格式为2023-11-08 21:43
+
+                    //将数据库的Sun Nov 12 00:00:00 CST 2023转为"2023-11-08"
+                    Date teachingDate = courseSchedulePO.getTeachingDate();
+                    LocalDate teachingDate1 = teachingDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                    DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    String formattedStartDate = teachingDate1.format(outputFormatter);
+                    //获取课程开始时间14:30—17:00前面的14:30
+                    String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
+                    String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));
+                    //得到开始时间"2023-11-08 14:30"
+                    String startTime = formattedStartDate + " " + courseStartTime;//获取课程开始时间
+
+                    //计算二者时间差
+                    DateTimeFormatter df2 = DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm");
+                    LocalDateTime formattedNowTime = LocalDateTime.parse(formattedNowDateTime, df2);
+                    LocalDateTime formattedCourseStartTime = LocalDateTime.parse(startTime, df2);
+                    long milliseconds = ChronoUnit.MILLIS.between(formattedNowTime, formattedCourseStartTime);//formattedCourseStartTime-formattedNowTime
+                    long minuteDiff = milliseconds / (1000 * 60);
+
+                    if (minuteDiff > 60) {//到课程开始时间还有60分钟以上，允许修改
+                        courseSchedulePO.setTeachingDate(start);
+                        courseSchedulePO.setTeachingTime(formattedTime);
+                        getBaseMapper().updateById(courseSchedulePO);
+                    } else if (minuteDiff >= 0 && minuteDiff < 60) {// 距离开始只剩1小时
+                        throw new IllegalArgumentException("距离开课时间不足1小时，不允许修改");
+                    } else {
+                        throw new IllegalArgumentException("课程已经开始，不允许修改");
+                    }
+                } else {
+                    // 不存在直播间 直接修改
+                    courseSchedulePO.setTeachingDate(start);
+                    courseSchedulePO.setTeachingTime(formattedTime);
+                    getBaseMapper().updateById(courseSchedulePO);
+                }
+                log.info("更新教学时间成功");
+
+            }
+
+            if (courseScheduleUpdateROPageRO.getTeacherName() != null) {
+                // 更换老师
+                List<TeacherInformationPO> teacherInformationPOS = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                        eq(TeacherInformationPO::getName, courseScheduleUpdateROPageRO.getTeacherName()));
+                if (teacherInformationPOS.size() > 1) {
+                    // 存在同名老师 必须提供 工号或者身份证号码
+                    String work_id = courseScheduleUpdateROPageRO.getTeacherId();
+                    String id_number = courseScheduleUpdateROPageRO.getTeacherIdentity();
+                    if (work_id != null) {
+                        List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                                eq(TeacherInformationPO::getWorkNumber, work_id));
+                        if (teacherInformationPOS1.size() == 1) {
+
+                            TeacherInformationPO teacherInformationPO = teacherInformationPOS1.get(0);
+
+                            CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                                    eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                            boolean update = updateSingleCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                            if (update) {
+                                log.info("更新课程教师成功");
+                            } else {
+                                throw new RuntimeException("更新排课表上课教师失败");
+                            }
+                            // 确定了这一名老师，开始更新
+                            log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS1.get(0));
+                        } else {
+                            // 工号确定不了 或者为空
+                            List<TeacherInformationPO> teacherInformationPOS2 = teacherInformationMapper.selectList(new LambdaQueryWrapper<TeacherInformationPO>().
+                                    eq(TeacherInformationPO::getIdCardNumber, id_number));
+                            if (teacherInformationPOS2.size() == 1) {
+                                // 确定了这一名老师，开始更新
+                                TeacherInformationPO teacherInformationPO = teacherInformationPOS2.get(0);
+
+                                CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                                        eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                                boolean update = updateSingleCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                                if (update) {
+                                    log.info("更新课程教师成功");
+                                } else {
+                                    throw new RuntimeException("更新排课表上课教师失败");
+                                }
+                                log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS2.get(0));
+                            } else {
+                                throw new RuntimeException("更新失败，教师信息无法确定，请提供工号或者身份证号码");
+                            }
+                        }
+
+                    }
+                } else if (teacherInformationPOS.size() == 1) {
+                    TeacherInformationPO teacherInformationPO = teacherInformationPOS.get(0);
+
+                    CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
+                            eq(CourseSchedulePO::getId, courseScheduleUpdateROPageRO.getId()));
+                    boolean update = updateSingleCourseScheduleInfoByTeacher(courseSchedulePO, teacherInformationPO);
+                    if (update) {
+                        log.info("更新课程教师成功");
+                    } else {
+                        throw new RuntimeException("更新排课表上课教师失败");
+                    }
+                    log.info("\n" + courseScheduleUpdateROPageRO + " 更新教师为 " + teacherInformationPOS.get(0));
+                } else {
+                    throw new RuntimeException("更新失败，教师信息错误");
+                }
+            }
+
         }
-
     }
-
 
     public void deleteScheduleInfor(Long scheduldId) {
         try {
