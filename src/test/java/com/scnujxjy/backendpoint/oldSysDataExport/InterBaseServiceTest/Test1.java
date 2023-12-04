@@ -436,11 +436,11 @@ public class Test1 {
      */
     @Test
     public void test5(){
-        int grade = 2023;
+        int grade = 2021;
         try {
             int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>().
                     eq(ScoreInformationPO::getGrade, "" + grade));
-            log.info("查看删除 " + 2023 + "年 所有成绩的结果 " + delete);
+            log.info("查看删除 " + grade + "年 所有成绩的结果 " + delete);
             oldDataSynchronize.synchronizeGradeInformationData(grade, grade, true);
         }catch (Exception e){
             log.error("同步成绩数据错误 " + e.toString());

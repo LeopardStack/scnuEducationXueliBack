@@ -61,6 +61,10 @@ public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImport
                     .eq(StudentStatusPO::getIdNumber, idNumber)
             );
             if(studentStatusPO == null){
+                // 没学号
+                PaymentInfoOldSystemVO paymentInfoOldSystemVO = new PaymentInfoOldSystemVO();
+                BeanUtils.copyProperties(data, paymentInfoOldSystemVO);
+                validRecords.add(paymentInfoOldSystemVO);
                 throw new IllegalArgumentException("通过年级和身份证号码未找到学生 ");
             }
             PaymentInfoOldSystemVO paymentInfoOldSystemVO = new PaymentInfoOldSystemVO();
@@ -99,7 +103,7 @@ public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImport
             }
 
             EasyExcel.write(relativePath + "/" + errorFileName,
-                    TeacherInformationErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
+                    PaymentInfoImportErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
 
 
         }

@@ -37,7 +37,7 @@
     </sql>
 
     <select id="batchSelectData" resultType="com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO">
-        select cei.*
+        select cei.*, ci.class_name
         <include refid="commonJoin"></include>
         WHERE 1=1
         <include refid="commonFiltersForExam"></include>

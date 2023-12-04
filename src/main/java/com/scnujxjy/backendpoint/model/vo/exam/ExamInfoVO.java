@@ -101,4 +101,9 @@ public class ExamInfoVO implements Serializable {
     private String mainTeacherUsername;
 
     private String mainTeacherName;
+
+    /**
+     * 班级总人数
+     */
+    private int classSize;
 }

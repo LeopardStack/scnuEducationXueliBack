@@ -473,6 +473,7 @@ public class OldDataSynchronize {
         String errorFileName = relativePath + currentDateTime + "_"  + "导入学籍异动结果总览.txt";
         studentStatusChangeDataImport.insertLogsList.add("各个学籍异动数据的总数为 " + studentStatusChangeDataImport.getApplyCount());
         log.info("各个学籍异动数据的总数为\n " + studentStatusChangeDataImport.getApplyCount());
+        log.info("各个学籍异动插入的数据条数为\n " + studentStatusChangeDataImport.getApplyImportCount());
         exportListToTxtAndUploadToMinio(studentStatusChangeDataImport.insertLogsList,
                 errorFileName, "datasynchronize");
     }

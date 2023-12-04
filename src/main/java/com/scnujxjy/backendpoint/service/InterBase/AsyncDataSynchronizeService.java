@@ -6,12 +6,14 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.oldData.OldDataFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.util.SCNUXLJYDatabase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +40,10 @@ public class AsyncDataSynchronizeService {
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private AdmissionInformationMapper admissionInformationMapper;
+
     @Resource
     private ClassInformationMapper classInformationMapper;
     @Resource
@@ -414,17 +422,55 @@ public class AsyncDataSynchronizeService {
         return CompletableFuture.completedFuture(null);
     }
 
-    public void studentGradesSummary(String cacheKey, String taskRunningKey, OldDataFilterRO oldDataFilterRO) {
+    public CompletableFuture<Void> studentGradesSummary(String cacheKey, String taskRunningKey, OldDataFilterRO oldDataFilterRO) {
+        SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+        try{
+            int startYear = Integer.parseInt(oldDataFilterRO.getEndYear());
+            int endYear = Integer.parseInt(oldDataFilterRO.getStartYear());
+
+
+            boolean allEqual = true;
+            StringBuilder ret = new StringBuilder();
+            // 获取当前时间
+            String timeStamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            String formattedMsg = timeStamp + "新旧系统成绩信息对比";
+            ret.append(formattedMsg).append("\n");
+            for (int i = startYear; i >= endYear; i--) {
+                Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
+                        eq(ScoreInformationPO::getGrade, "" + i));
+
+                int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
+                        "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
+                formattedMsg = String.format(i + " 年，新系统学历教育成绩数量 " +
+                        new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
+                        old_gradeInformation_count + (new_gradeInformation_count != old_gradeInformation_count
+                        ? " 两者不同" : " 两者相同"));
+                ret.append(formattedMsg).append("\n");
+                if(new_gradeInformation_count != old_gradeInformation_count){
+                    allEqual = false;
+                }
+
+            }
+            if (allEqual) {
+                formattedMsg = String.format("新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
+                ret.append(formattedMsg).append("\n");
+            }
+            redisTemplate.opsForValue().set(cacheKey, ret.toString(), 10, TimeUnit.MINUTES);
+        }catch (Exception e){
+            log.error("获取班级对比信息失败 " + e);
+        }finally {
+            scnuxljyDatabase.close();
+            redisTemplate.delete(taskRunningKey);
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     @Async
     public CompletableFuture<Void> teachingPlansSummary(String cacheKey, String taskRunningKey, OldDataFilterRO oldDataFilterRO) {
         SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
         try {
-            int startYear = Integer.parseInt(oldDataFilterRO.getEndYear());
-            int endYear = Integer.parseInt(oldDataFilterRO.getStartYear());
-            startYear = 2023;
-            endYear = 2015;
+            int startYear = 2023;
+            int endYear = 2015;
 
 
             boolean allEqual = true;
@@ -442,12 +488,13 @@ public class AsyncDataSynchronizeService {
                 int old_teachingPlans_count1 = (int) scnuxljyDatabase.getValue(
                         "select count(*) from courseDATA where bshi not LIKE 'WP%' and bshi LIKE '" + year_c + "%';");
 
+                formattedMsg = String.format(i + " 年，新系统学历教育教学计划数量 " +
+                        new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
+                        old_teachingPlans_count1 + (new_teachingPlans_count1 != old_teachingPlans_count1
+                        ? " 两者不同" : " 两者相同"));
+                ret.append(formattedMsg).append("\n");
                 if (new_teachingPlans_count1 != old_teachingPlans_count1) {
                     allEqual = false;
-                    formattedMsg = String.format(i +
-                            " 年，新系统学历教育教学计划数量 " + new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
-                            old_teachingPlans_count1 + " 两者不同");
-                    ret.append(formattedMsg).append("\n");
                 }
             }
             if (allEqual) {
@@ -506,5 +553,11 @@ public class AsyncDataSynchronizeService {
             redisTemplate.delete(taskRunningKey);
         }
         return CompletableFuture.completedFuture(null);
+    }
+
+    public HashMap<String, Integer> getStudentBasicData(String year) {
+        List<String> distinctGrades = studentStatusMapper.getDistinctGrades(new StudentStatusFilterRO());
+//        for()
+        return null;
     }
 }
