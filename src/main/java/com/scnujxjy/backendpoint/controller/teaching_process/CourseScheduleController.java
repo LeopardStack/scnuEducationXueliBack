@@ -9,10 +9,7 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -27,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -715,6 +713,29 @@ public class CourseScheduleController {
             return SaResult.error("删除失败，请联系管理员").setCode(2000);
         }
     }
+
+    /**
+     * 添加排课表相关信息
+     *
+     * @return
+     */
+    @PostMapping("/add_schedule_courses")
+//    @SaCheckPermission("删除排课表")
+    public SaResult addScheduleCoursesInformation(@RequestBody CourseSchedulePO courseSchedule) {
+        // 校验参数
+        if (Objects.isNull(courseSchedule)) {
+            return SaResult.error("courseSchedulePO 不能为空");
+        }
+        try {
+            int i = courseScheduleService.addeScheduleInfor(courseSchedule);
+        }catch (Exception e) {
+            log.error(courseSchedule+"添加排课表记录失败"+ e);
+            return SaResult.error("添加失败，请联系管理员").setCode(2000);
+        }
+        return SaResult.ok("添加该排课表记录成功").setCode(2000);
+
+    }
+
 
     /**
      * 获取直播间信息

@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.service.SingleLivingService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -57,6 +58,16 @@ public class SingleLivingController {
         return singleLivingService.getChannelCardPush(channelViewRequest);
     }
 
+    //导出考勤表接口
+    @PostMapping("/edit/exportStudentSituation")
+    public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+        // 校验参数
+        if (StrUtil.isBlank(courseId)) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.exportStudentSituation(courseId,response);
+    }
 
     /**
      * 设置直播间是否回放

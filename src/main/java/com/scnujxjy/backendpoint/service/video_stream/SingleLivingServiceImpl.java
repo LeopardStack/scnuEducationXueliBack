@@ -12,6 +12,8 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
@@ -20,6 +22,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiRespons
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
@@ -29,6 +32,7 @@ import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
@@ -57,10 +61,13 @@ import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRespons
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -93,6 +100,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private VideoStreamUtils videoStreamUtils;
+
+    @Resource
+    private ClassInformationMapper classInformationMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -508,7 +518,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             if (StrUtil.isNotBlank(tutorInformation.getTutorPassword())) {
                 channelInfoResponse.setPassword(tutorInformation.getTutorPassword());
             }
-            if (StrUtil.isNotBlank(tutorInformation.getAccount())){
+            if (StrUtil.isNotBlank(tutorInformation.getAccount())) {
                 channelInfoResponse.setAccount(tutorInformation.getAccount());
             }
 
@@ -661,7 +671,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest)  {
+    public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest) {
         SaResult saResult = new SaResult();
         LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
         LiveChannelWhiteListResponse liveChannelWhiteListResponse;
@@ -680,7 +690,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 saResult.setData(liveChannelWhiteListResponse.getContents());
                 return saResult;
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             log.error("调用查询白名单接口异常", e);
         }
@@ -690,15 +700,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
 
-
     //添加单个白名单
     @Override
     public SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
-        log.info("调用批量新增白名单接口，请求入参为:{}",channelInfoRequest);
+        log.info("调用批量新增白名单接口，请求入参为:{}", channelInfoRequest);
         SaResult saResult = new SaResult();
         Boolean liveCreateChannelWhiteListResponse;
-        List<StudentWhiteListVO> successList=new ArrayList<>();
-        List<StudentWhiteListVO> failList=channelInfoRequest.getStudentWhiteList();
+        List<StudentWhiteListVO> successList = new ArrayList<>();
+        List<StudentWhiteListVO> failList = channelInfoRequest.getStudentWhiteList();
         Iterator<StudentWhiteListVO> iterator = failList.iterator();
         try {
             while (iterator.hasNext()) {
@@ -716,19 +725,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     iterator.remove(); // 删除元素使用 iterator.remove()
                 }
             }
-            if (failList.size()!=0) {
-                log.info("新增部分白名单成功"+successList);
+            if (failList.size() != 0) {
+                log.info("新增部分白名单成功" + successList);
                 saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
                 saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
                 saResult.setData(failList);
                 return saResult;
-            }else {
+            } else {
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 return saResult;
             }
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             log.error("添加白名单接口调用异常", e);
         }
@@ -742,11 +751,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     //删除白名单
     @Override
     public SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
-        log.info("调用批量删除白名单接口，请求入参为:{}",channelInfoRequest);
+        log.info("调用批量删除白名单接口，请求入参为:{}", channelInfoRequest);
         SaResult saResult = new SaResult();
         Boolean liveDeleteChannelWhiteListResponse;
-        List<String> successList=new ArrayList<>();
-        List<String> failList=channelInfoRequest.getDeleteCodeList();
+        List<String> successList = new ArrayList<>();
+        List<String> failList = channelInfoRequest.getDeleteCodeList();
         Iterator<String> iterator = failList.iterator();
         try {
             //遍历需要删除的白名单list，成功的装进successList,删除失败的放入failList
@@ -766,19 +775,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
             }
 
-            if (failList.size()!=0) {
-                log.info("删除部分白名单成功"+successList);
+            if (failList.size() != 0) {
+                log.info("删除部分白名单成功" + successList);
                 saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
                 saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
                 saResult.setData(failList);
                 return saResult;
-            }else {
+            } else {
                 saResult.setCode(ResultCode.SUCCESS.getCode());
                 saResult.setMsg(ResultCode.SUCCESS.getMessage());
                 return saResult;
             }
 
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             log.error("删除白名单接口调用异常", e);
         }
@@ -787,6 +796,94 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setData(failList);
         return saResult;
 
+    }
+
+
+    @Override
+    public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+        try {
+            //获取该排课表的频道直播间id
+            CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
+            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
+            //学生的学号、姓名、班别、观看时长
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String startTime = format.format(videoStreamRecordPO.getStartTime());
+            String endTime = format.format(videoStreamRecordPO.getEndTime());
+            
+            ChannelViewRequest channelViewRequest=new ChannelViewRequest();
+            channelViewRequest.setChannelId(videoStreamRecordPO.getChannelId());
+            channelViewRequest.setStartTime(startTime);
+            channelViewRequest.setEndTime(endTime);
+            channelViewRequest.setParam3("live");
+            channelViewRequest.setPageSize("10000");
+            SaResult channelCardPush = getChannelCardPush(channelViewRequest);
+            List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
+            if (viewLogResponseList.size()==0){
+
+            }
+            List<AttendanceVO> attendanceVOList = new ArrayList<>();
+
+            for (ViewLogResponse viewLogResponse:viewLogResponseList) {
+                AttendanceVO attendanceVO=new AttendanceVO();
+                QueryWrapper<StudentStatusPO> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("id_number", viewLogResponse.getParam1());
+                List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(queryWrapper);
+                if (studentStatusPOS.size()!=0){
+                    attendanceVO.setCode(studentStatusPOS.get(0).getStudentNumber());
+
+                    QueryWrapper<ClassInformationPO> queryWrapper1 = new QueryWrapper<>();
+                    queryWrapper1.eq("class_identifier", studentStatusPOS.get(0).getClassIdentifier());
+                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper1);
+                    if (classInformationPOS.size()!=0) {
+                        attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                    }
+                }else {
+
+                }
+
+                attendanceVO.setName(viewLogResponse.getParam2());
+                attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
+                if((viewLogResponse.getPlayDuration()>0)){
+                    attendanceVO.setAttendance("是");
+                }else {
+                    attendanceVO.setAttendance("否");
+                }
+
+                attendanceVOList.add(attendanceVO);
+            }
+            String templateFilePath="考勤数据.xls";
+            EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
+            File file = new File(templateFilePath);
+
+            // 设置响应内容的类型,响应头部信息，指定文件名
+            response.setContentType("application/octet-stream");
+            LocalDateTime now = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String formattedDateTime = now.format(formatter);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
+            // 获取response的输出流
+            OutputStream outputStream = response.getOutputStream();
+            // 读取文件内容并输出到response
+            FileInputStream fileInputStream = new FileInputStream(file);
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = fileInputStream.read(buffer)) >= 0) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+
+            fileInputStream.close();
+            outputStream.flush();
+            outputStream.close();
+            boolean delete = file.delete();
+            if (delete) {
+                log.info("删除文件成功");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
 

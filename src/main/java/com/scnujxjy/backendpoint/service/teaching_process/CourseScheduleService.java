@@ -38,10 +38,7 @@ import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverte
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
@@ -113,6 +110,9 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
     @Resource
     private VideoStreamUtils videoStreamUtils;
+
+    @Resource
+    private CourseScheduleMapper courseScheduleMapper;
 
     /**
      * 根据id查询排课表信息
@@ -198,11 +198,11 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             }
             // 根据行政班级、课程名、主讲教师名筛选
             courseSchedulePOS = courseSchedulePOS.stream().filter(ele -> {
-                        if (StrUtil.isNotBlank(entity.getAdminClass())) {
-                            return StrUtil.contains(ele.getAdminClass(), entity.getAdminClass());
-                        }
-                        return true;
-                    })
+                if (StrUtil.isNotBlank(entity.getAdminClass())) {
+                    return StrUtil.contains(ele.getAdminClass(), entity.getAdminClass());
+                }
+                return true;
+            })
                     .filter(ele -> {
                         if (StrUtil.isNotBlank(entity.getCourseName())) {
                             return StrUtil.contains(ele.getCourseName(), entity.getCourseName());
@@ -737,6 +737,39 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
         }
     }
 
+    @Transactional(rollbackFor = {Exception.class, IllegalArgumentException.class})
+    public Integer addeScheduleInfor(CourseSchedulePO schedule) throws ParseException {
+        // 同一个时间、同一个老师、同一个教学班级、同一门课程，如果有合班直接将其批次设为同样
+        List<CourseSchedulePO> courseSchedulePOS = getBaseMapper().selectList(new LambdaQueryWrapper<CourseSchedulePO>()
+                .eq(CourseSchedulePO::getTeachingDate, schedule.getTeachingDate())
+                .eq(CourseSchedulePO::getTeachingTime, schedule.getTeachingTime())
+                .eq(CourseSchedulePO::getMainTeacherName, schedule.getMainTeacherName())
+                .eq(CourseSchedulePO::getCourseName, schedule.getCourseName())
+        );
+//        if (courseSchedulePOS.isEmpty()) {
+//            throw new IllegalArgumentException("修改排课表失败，没有找到对应的排课表");
+//        }
+        //如果不存在合班情况，则找出最大批次值+1
+        if (courseSchedulePOS.isEmpty()) {
+            Long MaxBitch = courseScheduleMapper.selectMaxBitch();
+            schedule.setBatchIndex(++MaxBitch);
+        } else {//说明存在合班
+            CourseSchedulePO schedulePO = courseSchedulePOS.get(0);
+            schedule.setBatchIndex(schedulePO.getBatchIndex());
+        }
+
+        int insert = courseScheduleMapper.insert(schedule);
+        if (insert > 0) {
+            log.info("添加该排课表成功" + schedule);
+            return insert;
+        } else {
+            log.error("添加排课表失败");
+            throw new IllegalArgumentException("添加排课表失败，请联系管理员");
+        }
+
+    }
+
+
     public void deleteScheduleInfor(Long scheduldId) {
         try {
             CourseSchedulePO courseSchedulePO = getBaseMapper().selectOne(new LambdaQueryWrapper<CourseSchedulePO>().
@@ -1004,6 +1037,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     /**
      * 获取不同角色考试信息
+     *
      * @param courseScheduleFilterROPageRO
      * @param filter
      * @return

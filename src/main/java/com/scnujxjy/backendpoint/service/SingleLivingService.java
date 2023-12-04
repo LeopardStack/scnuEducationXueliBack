@@ -8,6 +8,7 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -38,6 +39,8 @@ public interface SingleLivingService {
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
+
+    SaResult exportStudentSituation(String courseId, HttpServletResponse response);
 
     List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
