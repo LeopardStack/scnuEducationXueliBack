@@ -118,7 +118,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
         String timestamp = String.valueOf(beijingTimestamp);
 
-        // 密码都不设置 让 保利威自行设置
+        // 密码都不设置 让保利威自行设置
         liveRequestBody.setStartTime(channelCreateRequestBO.getStartDate().getTime());
         liveRequestBody.setEndTime(channelCreateRequestBO.getEndDate().getTime());
         liveRequestBody.setType("normal");
@@ -673,6 +673,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Override
     public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest) {
         SaResult saResult = new SaResult();
+        if (channelInfoRequest.getPageSize()!=null && channelInfoRequest.getPageSize()>1000){
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg("每页的最大数量不能超过1000");
+            return saResult;
+        }
+
         LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
         LiveChannelWhiteListResponse liveChannelWhiteListResponse;
         try {
@@ -801,10 +807,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+        SaResult saResult=new SaResult();
         try {
             //获取该排课表的频道直播间id
-            SaResult saResult=new SaResult();
             CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
+            if (StrUtil.isBlank(schedulePO.getOnlinePlatform())){
+                saResult.setCode(ResultCode.FAIL.getCode());
+                saResult.setMsg("该排课表还未创建直播间");
+                return saResult;
+            }
+
             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
             //学生的学号、姓名、班别、观看时长
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -821,15 +833,17 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
             if (viewLogResponseList.size()==0) {
                 saResult.setCode(ResultCode.FAIL.getCode());
-                saResult.setMsg(ResultCode.FAIL.getMessage());
+                saResult.setMsg("该排课时间段内没有学生观看数据，请联系管理员");
                 return saResult;
             }
 
+            //考勤List
             List<AttendanceVO> attendanceVOList = new ArrayList<>();
             for (ViewLogResponse viewLogResponse:viewLogResponseList) {
                 AttendanceVO attendanceVO=new AttendanceVO();
                 QueryWrapper<StudentStatusPO> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("id_number", viewLogResponse.getParam1());
+                queryWrapper.eq("id_number", viewLogResponse.getParam1())
+                            .eq("grade",schedulePO.getGrade());
                 List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(queryWrapper);
 
                 if (studentStatusPOS.size()!=0){
@@ -852,36 +866,62 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
                 attendanceVOList.add(attendanceVO);
             }
+
+            LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+                liveChannelWhiteListRequest.setChannelId(videoStreamRecordPO.getChannelId())
+                        .setRank(1);
+//                        .setCurrentPage(channelInfoRequest.getCurrentPage())
+//                        .setPageSize(channelInfoRequest.getPageSize());
+            LiveChannelWhiteListResponse  liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+            List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+//
+//            List<LiveChannelWhiteListResponse.ChannelWhiteList> result = contents.stream()
+//                    .filter(channel -> attendanceVOList.stream()
+//                            .noneMatch(attendance -> channel.get().equals(attendance.getId())))
+//                    .collect(Collectors.toList());
+
+
+
             String templateFilePath="考勤数据.xls";
             EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
             File file = new File(templateFilePath);
+            OutputStream outputStream = response.getOutputStream();
+            FileInputStream fileInputStream = new FileInputStream(file);
 
             // 设置响应内容的类型,响应头部信息，指定文件名
-            response.setContentType("application/octet-stream");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"");
-            // 获取response的输出流
-            OutputStream outputStream = response.getOutputStream();
-            // 读取文件内容并输出到response
-            FileInputStream fileInputStream = new FileInputStream(file);
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = fileInputStream.read(buffer)) >= 0) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
+            try {
+//                LocalDateTime now = LocalDateTime.now();
+//                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+//                String currentTime = now.format(formatter);
+                response.setContentType("application/vnd.ms-excel");
+//                response.setHeader("Content-Disposition", "attachment; filename=\"" +currentTime+ "考勤数据.xls" + "\"");
 
-            fileInputStream.close();
-            outputStream.flush();
-            outputStream.close();
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) >= 0) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                outputStream.flush();
+            } finally {
+                fileInputStream.close();
+                outputStream.close();
+            }
             boolean delete = file.delete();
             if (delete) {
                 log.info("删除文件成功");
             }
+            saResult.setCode(ResultCode.SUCCESS.getCode());
+            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+            return saResult;
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        return saResult;
     }
 
 

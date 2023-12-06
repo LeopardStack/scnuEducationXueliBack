@@ -156,7 +156,7 @@ public class HealthCheckTask {
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(queryWrapper);
 
         if (courseSchedulePOS.size() > 0) {
-            for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
+            out: for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
 
                 //1、获得排课表的开始和结束时间
                 String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
@@ -181,6 +181,28 @@ public class HealthCheckTask {
                 String OnlinePlatform = courseSchedulePO.getOnlinePlatform();
 
                 if (minuteDiff >= 0 && minuteDiff <= 60 && StrUtil.isBlank(OnlinePlatform)) {
+
+                    //如果没有直播间并且批次有和之前一样的。复用之前同批次的直播间
+                    QueryWrapper<CourseSchedulePO> poQueryWrapper = new QueryWrapper<>();
+                    poQueryWrapper.eq("batch_index", courseSchedulePO.getBatchIndex());
+                    //获取到该课同批次的课程信息
+                    List<CourseSchedulePO> poList = courseScheduleMapper.selectList(poQueryWrapper);
+                    if (poList.size()!=0){
+                        for (CourseSchedulePO schedulePO:poList) {
+                            if (StrUtil.isNotBlank(schedulePO.getOnlinePlatform())){
+                                UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                                updateWrapper.set("online_platform",schedulePO.getOnlinePlatform())
+                                        .eq("id", courseSchedulePO.getId());
+                                int update = courseScheduleMapper.update(null, updateWrapper);
+                                if (update>0){
+                                    log.info(courseSchedulePO+"该课程批次已存在直播间，直接复用无需新建");
+                                  continue out;
+                                }
+                            }
+                        }
+
+                    }
+
                     try {
                         ChannelCreateRequestBO channelCreateRequestBO = new ChannelCreateRequestBO();
                         channelCreateRequestBO.setLivingRoomTitle(courseSchedulePO.getCourseName());
