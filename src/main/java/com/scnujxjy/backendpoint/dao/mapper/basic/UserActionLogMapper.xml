@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.basic.UserActionLogMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.basic.UserActionLogPO">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="name" property="name" />
+        <result column="role_name" property="roleName" />
+        <result column="action_type" property="actionType" />
+        <result column="action_description" property="actionDescription" />
+        <result column="action_timestamp" property="actionTimestamp" />
+        <result column="ip_address" property="ipAddress" />
+        <result column="device_info" property="deviceInfo" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user_id, name, role_name, action_type, action_description, action_timestamp, ip_address, device_info
+    </sql>
+
+</mapper>

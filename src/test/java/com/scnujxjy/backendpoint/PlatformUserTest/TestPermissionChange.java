@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.PlatformUserTest;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
@@ -20,11 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.TEACHING_POINT_ADMIN;
+import java.util.*;
 
 @SpringBootTest
 @Slf4j
@@ -135,13 +132,20 @@ public class TestPermissionChange {
      */
     @Test
     public void testUpdateUser() {
-        List<PlatformUserVO> platformUserVOS = platformUserService.updateUser(ListUtil.of(
-                PlatformUserRO.builder()
-                        .userId(7L)
-                        .supplementaryRoleIdSet(ListUtil.of(TEACHING_POINT_ADMIN.getRoleId()))
-                        .build()
-                // 此处继续添加用户
-        ));
+        Long userId = 7L;
+        Set<Long> roleIdSet = new HashSet<>();
+        // 此处添加角色id
+        roleIdSet.add(6L);
+        PlatformUserVO platformUserVO = platformUserService.detailById(userId);
+        if (Objects.nonNull(platformUserVO)) {
+            if (CollUtil.isNotEmpty(platformUserVO.getSupplementaryRoleIdSet())) {
+                CollUtil.addAll(roleIdSet, platformUserVO.getSupplementaryRoleIdSet());
+            }
+        }
+        List<PlatformUserVO> platformUserVOS = platformUserService.updateUser(ListUtil.of(PlatformUserRO.builder()
+                .userId(userId)
+                .supplementaryRoleIdSet(new ArrayList<>(roleIdSet))
+                .build()));
         log.info("更新后的用户数据为：{}", platformUserVOS);
     }
 }
