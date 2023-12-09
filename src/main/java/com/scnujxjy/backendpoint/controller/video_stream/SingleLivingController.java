@@ -135,8 +135,8 @@ public class SingleLivingController {
         if (StrUtil.isBlank(request.getChannelId()) || request.getStudentWhiteList().isEmpty()) {
             throw dataMissError();
         }
-
-        return singleLivingService.addChannelWhiteStudent(request);
+//        return singleLivingService.addChannelWhiteStudent(request);
+        return singleLivingService.addChannelWhiteStudentByFile(request);
     }
 
     @PostMapping("/edit/queryChannelWhiteStudent")

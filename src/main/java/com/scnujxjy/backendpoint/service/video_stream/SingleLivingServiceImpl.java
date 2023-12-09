@@ -32,6 +32,7 @@ import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
@@ -62,10 +63,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -111,6 +109,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         liveRequestBody.setName(channelCreateRequestBO.getLivingRoomTitle());
         liveRequestBody.setNewScene("topclass");
         liveRequestBody.setTemplate("ppt");
+        liveRequestBody.setCategoryId(510209);//设置直播分类为学历教育。 510210是非学历培训
         // 设置是否开启无延迟
         liveRequestBody.setPureRtcEnabled(channelCreateRequestBO.getPureRtcEnabled());
 
@@ -184,7 +183,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("调用创建直播间异常，异常信息为" + e);
         }
 
         saResult.setCode(ResultCode.FAIL.getCode());
@@ -673,7 +672,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Override
     public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest) {
         SaResult saResult = new SaResult();
-        if (channelInfoRequest.getPageSize()!=null && channelInfoRequest.getPageSize()>1000){
+        if (channelInfoRequest.getPageSize() != null && channelInfoRequest.getPageSize() > 1000) {
             saResult.setCode(ResultCode.FAIL.getCode());
             saResult.setMsg("每页的最大数量不能超过1000");
             return saResult;
@@ -754,6 +753,41 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     }
 
+    @Override
+    public SaResult addChannelWhiteStudentByFile(ChannelInfoRequest channelInfoRequest) {
+        log.info("调用批量新增白名单通过文件接口，请求入参为:{}", channelInfoRequest);
+        SaResult saResult = new SaResult();
+
+        try {
+            String templateFilePath = "暂存白名单文件.xls";
+            EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(channelInfoRequest.getStudentWhiteList());
+                File file = new File(templateFilePath);
+                LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
+                Boolean liveUploadWhiteListResponse;
+                liveUploadWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
+                        .setRank(1)
+                        .setFile(file);
+                liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
+                if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
+                    //上传白名单成功
+                    boolean delete = file.delete();
+                    if (delete) {
+                        log.info("删除文件成功");
+                    }
+                }
+
+        } catch (Exception e) {
+            log.error("通过文件新增白名单接口调用异常", e);
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg(ResultCode.FAIL.getMessage());
+            return saResult;
+        }
+        saResult.setCode(ResultCode.SUCCESS.getCode());
+        saResult.setMsg(ResultCode.SUCCESS.getMessage());
+        return saResult;
+    }
+
+
     //删除白名单
     @Override
     public SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
@@ -807,11 +841,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
-        SaResult saResult=new SaResult();
+        SaResult saResult = new SaResult();
         try {
             //获取该排课表的频道直播间id
             CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
-            if (StrUtil.isBlank(schedulePO.getOnlinePlatform())){
+            if (StrUtil.isBlank(schedulePO.getOnlinePlatform())) {
                 saResult.setCode(ResultCode.FAIL.getCode());
                 saResult.setMsg("该排课表还未创建直播间");
                 return saResult;
@@ -822,8 +856,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             String startTime = format.format(videoStreamRecordPO.getStartTime());
             String endTime = format.format(videoStreamRecordPO.getEndTime());
-            
-            ChannelViewRequest channelViewRequest=new ChannelViewRequest();
+
+            ChannelViewRequest channelViewRequest = new ChannelViewRequest();
             channelViewRequest.setChannelId(videoStreamRecordPO.getChannelId());
             channelViewRequest.setStartTime(startTime);
             channelViewRequest.setEndTime(endTime);
@@ -831,58 +865,111 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             channelViewRequest.setPageSize("10000");
             SaResult channelCardPush = getChannelCardPush(channelViewRequest);
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
-            if (viewLogResponseList.size()==0) {
+            if (viewLogResponseList.size() == 0) {
                 saResult.setCode(ResultCode.FAIL.getCode());
                 saResult.setMsg("该排课时间段内没有学生观看数据，请联系管理员");
                 return saResult;
             }
 
-            //考勤List
+            Set<String> phoneSet = new HashSet<>();
+            List<ViewLogResponse> viewLogResponseListDistinct = new ArrayList<>();
+
+            for (ViewLogResponse viewLogResponse : viewLogResponseList) {
+                String phone = viewLogResponse.getParam1();
+                if (!phoneSet.contains(phone)) {
+                    viewLogResponseListDistinct.add(viewLogResponse);
+                    phoneSet.add(phone);
+                }
+            }
+
+
+            //考勤导出attendanceVOList,拥有出勤的所有学生数据
             List<AttendanceVO> attendanceVOList = new ArrayList<>();
-            for (ViewLogResponse viewLogResponse:viewLogResponseList) {
-                AttendanceVO attendanceVO=new AttendanceVO();
-                QueryWrapper<StudentStatusPO> queryWrapper = new QueryWrapper<>();
-                queryWrapper.eq("id_number", viewLogResponse.getParam1())
-                            .eq("grade",schedulePO.getGrade());
-                List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(queryWrapper);
+            for (ViewLogResponse viewLogResponse : viewLogResponseList) {
+                AttendanceVO attendanceVO = new AttendanceVO();
+//                QueryWrapper<StudentStatusPO> queryWrapper = new QueryWrapper<>();
+//                queryWrapper.eq("id_number", viewLogResponse.getParam1())
+//                            .eq("grade",schedulePO.getGrade());
+                StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), schedulePO.getGrade());
 
-                if (studentStatusPOS.size()!=0){
-                    attendanceVO.setCode(studentStatusPOS.get(0).getStudentNumber());
+                if (studentStatusVO != null) {
+                    attendanceVO.setCode(studentStatusVO.getStudentNumber());
 
-                    QueryWrapper<ClassInformationPO> queryWrapper1 = new QueryWrapper<>();
-                    queryWrapper1.eq("class_identifier", studentStatusPOS.get(0).getClassIdentifier());
-                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper1);
-                    if (classInformationPOS.size()!=0) {
+                    QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
+                    queryWrapper.eq("class_identifier", studentStatusVO.getClassIdentifier());
+                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
+                    if (classInformationPOS.size() != 0) {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
 
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
-                if((viewLogResponse.getPlayDuration()>0)){
-                    attendanceVO.setAttendance("是");
-                }else {
-                    attendanceVO.setAttendance("否");
-                }
+                attendanceVO.setAttendance("是");
                 attendanceVOList.add(attendanceVO);
             }
 
-            LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+
+            List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
+            for (int i = 1; i < 10; i++) {
+                LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
                 liveChannelWhiteListRequest.setChannelId(videoStreamRecordPO.getChannelId())
-                        .setRank(1);
-//                        .setCurrentPage(channelInfoRequest.getCurrentPage())
-//                        .setPageSize(channelInfoRequest.getPageSize());
-            LiveChannelWhiteListResponse  liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
-            List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
-//
-//            List<LiveChannelWhiteListResponse.ChannelWhiteList> result = contents.stream()
-//                    .filter(channel -> attendanceVOList.stream()
-//                            .noneMatch(attendance -> channel.get().equals(attendance.getId())))
+                        .setRank(1)
+                        .setCurrentPage(i)
+                        .setPageSize(1000);
+                LiveChannelWhiteListResponse liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+                if (liveChannelWhiteListResponse.getContents().size() != 0) {
+                    List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+                    whiteLists.addAll(contents);
+                } else {
+                    break;
+                }
+            }
+
+            //这样就拿到了直播间所有学生数据whiteLists
+//            List<LiveChannelWhiteListResponse.ChannelWhiteList> noAttendList = whiteLists.stream()
+//                    .filter(channel -> viewLogResponseList.stream()
+//                            .noneMatch(attendance -> channel.getPhone().equals(attendance.getParam1())))
 //                    .collect(Collectors.toList());
+            List<LiveChannelWhiteListResponse.ChannelWhiteList> noAttendList = new ArrayList<>();
+            for (LiveChannelWhiteListResponse.ChannelWhiteList channel : whiteLists) {
+                boolean found = false;
+                for (ViewLogResponse viewLogResponse : viewLogResponseList) {
+                    // 假设有一个名为id的属性用于比较
+                    if (channel.getPhone().equals(viewLogResponse.getParam1())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    noAttendList.add(channel);
+                }
+            }
 
 
+            for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : noAttendList) {
+                AttendanceVO attendanceVO = new AttendanceVO();
+                StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), schedulePO.getGrade());
 
-            String templateFilePath="考勤数据.xls";
+                if (studentStatusVO != null) {
+                    attendanceVO.setCode(studentStatusVO.getStudentNumber());
+
+                    QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
+                    queryWrapper.eq("class_identifier", studentStatusVO.getClassIdentifier());
+                    List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
+                    if (classInformationPOS.size() != 0) {
+                        attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                    }
+                }
+
+                attendanceVO.setName(channelWhiteList.getName());
+                attendanceVO.setPlayDuration("0");
+                attendanceVO.setAttendance("否");
+                attendanceVOList.add(attendanceVO);
+            }
+
+
+            String templateFilePath = "考勤数据.xls";
             EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
             File file = new File(templateFilePath);
             OutputStream outputStream = response.getOutputStream();

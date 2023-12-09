@@ -38,6 +38,8 @@ public interface SingleLivingService {
 
     SaResult addChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
+    SaResult addChannelWhiteStudentByFile(ChannelInfoRequest channelInfoRequest);
+
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
     SaResult exportStudentSituation(String courseId, HttpServletResponse response);
