@@ -34,6 +34,24 @@ public class PersonalInfoService extends ServiceImpl<PersonalInfoMapper, Persona
     @Resource
     private PersonalInfoInverter personalInfoInverter;
 
+
+
+
+
+    /**
+    * @Version：1.0.0
+    * @Description：插入个人信息
+    * @Author：3304393868@qq.com
+    * @Date：2023/12/7-23:27
+    */
+    public Integer InsterPersonalInfo(PersonalInfoRO personalInfoRO){
+        PersonalInfoPO personalInfoPO = personalInfoInverter.ro2PO(personalInfoRO);
+        int count = baseMapper.insert(personalInfoPO);
+        return count;
+    }
+
+
+
     /**
      * 根据id查询个人基本信息
      *

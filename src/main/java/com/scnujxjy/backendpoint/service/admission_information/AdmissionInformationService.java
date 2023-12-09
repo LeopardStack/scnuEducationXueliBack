@@ -36,6 +36,18 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
     private AdmissionInformationInverter admissionInformationInverter;
 
     /**
+    * @Version：1.0.0
+    * @Description：添加录取学生信息
+    * @Author：3304393868@qq.com
+    * @Date：2023/12/7-16:00
+    */
+    public Integer insterAdmissionInformation(AdmissionInformationRO admissionInformationRO){
+        AdmissionInformationPO admissionInformationPO =  admissionInformationInverter.ro2PO(admissionInformationRO);
+        return   baseMapper.insert(admissionInformationPO);
+    }
+
+
+    /**
      * 根据id查询录取学生信息表
      *
      * @param id 录取学生信息id
