@@ -52,6 +52,12 @@ public class ApprovalRecordPO {
     private String status;
 
     /**
+     * 审核表单 id
+     * <p>存储在 MongoDB 中</p>
+     */
+    private String documentId;
+
+    /**
      * 用户查看集合
      */
     @TableField(typeHandler = LongTypeHandler.class)

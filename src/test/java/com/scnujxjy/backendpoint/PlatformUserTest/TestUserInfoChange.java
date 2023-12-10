@@ -200,7 +200,7 @@ public class TestUserInfoChange {
         userIdByUsername = platformUserService.getBaseMapper().getUserIdByUsername(userName);
         // 设置其为某个学院的教务员
         CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO();
-        collegeAdminInformationPO.setUserId(String.valueOf(userIdByUsername));
+        collegeAdminInformationPO.setUserId(userIdByUsername);
         collegeAdminInformationPO.setCollegeId("07");
         collegeAdminInformationPO.setName("教育科学学院测试教务员1");
         log.info(collegeAdminInformationPO.toString());

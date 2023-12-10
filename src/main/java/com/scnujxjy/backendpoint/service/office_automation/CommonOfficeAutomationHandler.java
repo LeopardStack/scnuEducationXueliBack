@@ -1,3 +1,4 @@
+/*
 package com.scnujxjy.backendpoint.service.office_automation;
 
 import cn.dev33.satoken.stp.StpUtil;
@@ -15,34 +16,59 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
+*/
+/**
+ * OA 系统通用实现类
+ * <p>
+ * 处理后的过程
+ *
+ * @param approvalStepRecordPO
+ * <p>
+ * 根据信息插入步骤记录
+ * @param approvalId 事件记录 Id
+ * @param date       添加时间
+ * @param stepId     步骤 id
+ * <p>
+ * 插入表单
+ * @param map
+ * @return 新增一个审批记录
+ * @param approvalRecordPO 审批记录
+ * @return 新增的审批记录
+ *//*
+
 @Service
 @Slf4j
 @Transactional
 public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
-    /**
+    */
+/**
      * 处理后的过程
      *
      * @param approvalStepRecordPO
-     */
+     *//*
+
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO) {
         log.info("审核后的处理参数: {}", approvalStepRecordPO);
     }
 
-    /**
+    */
+/**
      * 根据信息插入步骤记录
      *
      * @param approvalId 事件记录 Id
      * @param date       添加时间
      * @param stepId     步骤 id
-     */
+     *//*
+
     @Override
-    protected int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
+    public int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
         if (Objects.isNull(approvalId)
                 || Objects.isNull(date)
                 || Objects.isNull(stepId)) {
@@ -68,6 +94,19 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         return count;
     }
 
+    */
+/**
+     * 插入表单
+ *
+ * @param map
+     * @return
+     *//*
+
+    @Override
+    public String insertDocument(Map<String, Object> map) {
+        return null;
+    }
+
 
     @Override
     public OfficeAutomationHandlerType supportType() {
@@ -75,12 +114,14 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
     }
 
 
-    /**
+    */
+/**
      * 新增一个审批记录
      *
      * @param approvalRecordPO 审批记录
      * @return 新增的审批记录
-     */
+     *//*
+
     @Override
     public Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
         if (Objects.isNull(approvalRecordPO)
@@ -111,3 +152,4 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         return true;
     }
 }
+*/

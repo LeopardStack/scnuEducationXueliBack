@@ -25,6 +25,7 @@ import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithReco
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +33,6 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
 
 @Service
 @Slf4j
@@ -59,7 +58,7 @@ public class OfficeAutomationService {
     @Resource
     private PlatformUserService platformUserService;
 
-    public OfficeAutomationService(List<OfficeAutomationHandler> officeAutomationList) {
+    public OfficeAutomationService(List<OfficeAutomationHandler> officeAutomationList, List<MongoRepository> mongoRepositories) {
         officeAutomationHandlers = officeAutomationList.stream()
                 .collect(Collectors.toMap(
                         OfficeAutomationHandler::supportType,
@@ -70,18 +69,14 @@ public class OfficeAutomationService {
     /**
      * 根据类型获取具体处理类
      *
-     * @param handlerType 处理类型
+     * @param typeId 类型 id
      * @return
      * @see OfficeAutomationHandlerType
      */
     private OfficeAutomationHandler getHandler(Long typeId) {
         OfficeAutomationHandlerType handlerType = OfficeAutomationHandlerType.match(typeId);
         return Optional.ofNullable(officeAutomationHandlers.get(handlerType))
-                .orElse(officeAutomationHandlers.get(COMMON));
-    }
-
-    public void trigger(OfficeAutomationHandlerType type) {
-        OfficeAutomationHandler automationHandler = getHandler(1L);
+                .orElseThrow(() -> new BusinessException("获取 OA 类型失败"));
     }
 
     /**
@@ -154,16 +149,13 @@ public class OfficeAutomationService {
         if (Objects.isNull(approvalRecordPO)) {
             approvalRecordPO = new ApprovalRecordPO();
         }
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername(StpUtil.getLoginIdAsString());
-        if (Objects.isNull(platformUserVO)
-                || Objects.isNull(platformUserVO.getUserId())) {
-            throw new BusinessException("无法查询用户信息");
-        }
         LambdaQueryWrapper<ApprovalRecordPO> wrapper = Wrappers.<ApprovalRecordPO>lambdaQuery()
                 .eq(Objects.nonNull(approvalRecordPO.getApprovalTypeId()), ApprovalRecordPO::getApprovalTypeId, approvalRecordPO.getApprovalTypeId())
                 .eq(StrUtil.isNotBlank(approvalRecordPO.getInitiatorUserId()), ApprovalRecordPO::getInitiatorUserId, approvalRecordPO.getInitiatorUserId())
                 .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus())
-                .like(ApprovalRecordPO::getUserWatchSet, platformUserVO.getUserId());
+                .and(lambdaQueryWrapper -> {
+                    lambdaQueryWrapper.last(String.format("JSON_CONTAINS(user_watch_set, JSON_ARRAY(%s))", String.valueOf(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))));
+                });
         Page<ApprovalRecordPO> approvalRecordPOPage = approvalRecordMapper.selectPage(approvalRecordPOPageRO.getPage(), wrapper);
         if (Objects.isNull(approvalRecordPOPage) || CollUtil.isEmpty(approvalRecordPOPage.getRecords())) {
             throw new BusinessException("OA 记录数据查询为空");
@@ -278,5 +270,23 @@ public class OfficeAutomationService {
         approvalRecordMapper.deleteById(approvalId);
         approvalStepRecordMapper.delete(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
                 .eq(ApprovalStepRecordPO::getApprovalId, approvalId));
+    }
+
+    /**
+     * 插入表单
+     *
+     * @param map
+     * @param typeId
+     * @return
+     */
+    public String insertDocument(Map<String, Object> map, Long typeId) {
+        if (Objects.isNull(typeId)) {
+            throw new BusinessException("类型 id 为空");
+        }
+        String id = getHandler(typeId).insertDocument(map);
+        if (StrUtil.isBlank(id)) {
+            throw new BusinessException("插入失败");
+        }
+        return id;
     }
 }

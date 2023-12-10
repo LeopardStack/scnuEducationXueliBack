@@ -1,5 +1,7 @@
 package com.scnujxjy.backendpoint.service.college;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -8,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
+import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.college.CollegeAdminInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -132,6 +136,27 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
             return null;
         }
         return count;
+    }
+
+    /**
+     * 根据学院查询学院管理员 userId
+     *
+     * @param collegeId 学院 id
+     * @return
+     */
+    public List<Long> adminUserIdByCollegeId(Long collegeId) {
+        if (Objects.isNull(collegeId)) {
+            throw new BusinessException("学院 id 为空");
+        }
+        List<CollegeAdminInformationPO> collegeAdminInformationPOS = baseMapper.selectList(Wrappers.<CollegeAdminInformationPO>lambdaQuery()
+                .eq(CollegeAdminInformationPO::getCollegeId, collegeId)
+                .select(CollegeAdminInformationPO::getUserId));
+        if (CollUtil.isEmpty(collegeAdminInformationPOS)) {
+            return ListUtil.of();
+        }
+        return ListUtil.toList(collegeAdminInformationPOS.stream()
+                .map(CollegeAdminInformationPO::getUserId)
+                .collect(Collectors.toSet()));
     }
 
 

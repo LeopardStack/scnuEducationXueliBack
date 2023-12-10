@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.service.oa;
 
-import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplication;
-import com.scnujxjy.backendpoint.dao.repository.StudentTransferApplicationRepository;
+import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferMajorDocument;
+import com.scnujxjy.backendpoint.dao.repository.StudentTransferMajorRepository;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -12,17 +12,17 @@ import javax.annotation.Resource;
 @Service
 public class StudentTransferApplicationService {
     @Resource
-    private StudentTransferApplicationRepository repository;
+    private StudentTransferMajorRepository repository;
 
 
     // 添加一个新的转专业申请
-    public StudentTransferApplication addNewTransferApplication(StudentTransferApplication application) {
+    public StudentTransferMajorDocument addNewTransferApplication(StudentTransferMajorDocument application) {
         return repository.save(application);
     }
 
     // 根据学生ID更新专业
-    public StudentTransferApplication updateMajor(String studentId, String newMajor) {
-        StudentTransferApplication application = repository.findById(studentId).orElse(null);
+    public StudentTransferMajorDocument updateMajor(String studentId, String newMajor) {
+        StudentTransferMajorDocument application = repository.findById(studentId).orElse(null);
         if (application != null) {
             application.setIntendedMajor(newMajor);
             return repository.save(application);
@@ -32,8 +32,8 @@ public class StudentTransferApplicationService {
     }
 
     // 根据学生ID更新姓名
-    public StudentTransferApplication updateStudentName(String studentId, String newName) {
-        StudentTransferApplication application = repository.findById(studentId).orElse(null);
+    public StudentTransferMajorDocument updateStudentName(String studentId, String newName) {
+        StudentTransferMajorDocument application = repository.findById(studentId).orElse(null);
         if (application != null) {
             application.setName(newName);
             return repository.save(application);
@@ -43,7 +43,7 @@ public class StudentTransferApplicationService {
     }
 
     // 根据ID获取转专业申请
-    public StudentTransferApplication getApplicationById(String id) {
+    public StudentTransferMajorDocument getApplicationById(String id) {
         return repository.findById(id).orElse(null);
         // 你也可以选择在找不到文档时抛出一个异常
     }

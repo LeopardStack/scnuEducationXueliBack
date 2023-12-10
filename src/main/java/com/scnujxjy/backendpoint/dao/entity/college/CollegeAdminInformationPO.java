@@ -1,6 +1,5 @@
 package com.scnujxjy.backendpoint.dao.entity.college;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -33,7 +32,7 @@ public class CollegeAdminInformationPO implements Serializable {
      * 用户代码
      */
     @TableId(value = "user_id")
-    private String userId;
+    private Long userId;
 
     /**
      * 姓名

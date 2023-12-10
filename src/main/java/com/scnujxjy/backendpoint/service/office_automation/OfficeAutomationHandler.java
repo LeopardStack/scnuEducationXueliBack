@@ -18,9 +18,9 @@ import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalStepRecord
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalTypeMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;
-import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordWithStepInformation;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -49,6 +49,9 @@ public abstract class OfficeAutomationHandler {
 
     @Resource
     protected PlatformUserService platformUserService;
+
+    @Resource
+    private MongoTemplate mongoTemplate;
 
     /**
      * 获取支持类型
@@ -88,7 +91,8 @@ public abstract class OfficeAutomationHandler {
      * @param stepId     步骤 id
      * @see CommonOfficeAutomationHandler#createApprovalStepRecord(Long, Date, Long)
      */
-    protected abstract int createApprovalStepRecord(Long approvalId, Date date, Long stepId);
+    public abstract int createApprovalStepRecord(Long approvalId, Date date, Long stepId);
+
 
     /**
      * 根据类型查询审批流程
@@ -152,13 +156,9 @@ public abstract class OfficeAutomationHandler {
             throw new BusinessException("流转状态下必须给出下一个步骤");
         }
         // 检查是否有审核权限
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername(StpUtil.getLoginIdAsString());
-        if (Objects.isNull(platformUserVO)
-                || Objects.isNull(platformUserVO.getUserId())) {
-            throw new BusinessException("查询用户信息失败");
-        }
+        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
         ApprovalStepRecordPO stepRecordPO = approvalStepRecordMapper.selectById(approvalStepRecordPO.getId());
-        if (!CollUtil.contains(stepRecordPO.getUserApprovalSet(), platformUserVO.getUserId())) {
+        if (!CollUtil.contains(stepRecordPO.getUserApprovalSet(), userId)) {
             throw new BusinessException("当前用户无审核权限");
         }
         return true;
@@ -303,9 +303,8 @@ public abstract class OfficeAutomationHandler {
             throw new BusinessException("参数非法");
         }
         // 基本参数
-        String userId = StpUtil.getLoginIdAsString();
-//        String userId = "xuelijiaoyuTest1";
-
+        String username = StpUtil.getLoginIdAsString();
+        Long userId = platformUserService.getUserIdByUsername(username);
         DateTime date = DateUtil.date();
         // 更新当前步骤记录状态
         LambdaUpdateWrapper<ApprovalStepRecordPO> wrapper = Wrappers.<ApprovalStepRecordPO>lambdaUpdate()
@@ -335,4 +334,38 @@ public abstract class OfficeAutomationHandler {
         afterProcess(approvalStepRecordPO);
         return true;
     }
+
+
+    /**
+     * 插入表单
+     *
+     * @param map
+     * @return 表单 id
+     */
+    public abstract String insertDocument(Map<String, Object> map);
+
+    /**
+     * 根据 id 删除表单
+     *
+     * @param id
+     * @return
+     */
+    public abstract Integer deleteDocument(String id);
+
+    /**
+     * 根据 id 查询表单
+     *
+     * @param id
+     * @return
+     */
+    public abstract Map<String, Object> selectDocument(String id);
+
+    /**
+     * 根据 id 更新表单信息
+     *
+     * @param map 表单信息
+     * @param id  表单 id
+     * @return
+     */
+    public abstract Map<String, Object> updateById(Map<String, Object> map, String id);
 }

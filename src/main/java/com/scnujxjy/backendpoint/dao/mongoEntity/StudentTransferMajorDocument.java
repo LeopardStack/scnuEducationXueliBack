@@ -3,11 +3,12 @@ package com.scnujxjy.backendpoint.dao.mongoEntity;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDate;
 
-@Document(collection = "studentTransferApplications")
+@Document(collection = "student_transfer_major_document")
 @Data
-public class StudentTransferApplication {
+public class StudentTransferMajorDocument {
     @Id
     private String id;
     private String name; // 姓名
@@ -31,17 +32,37 @@ public class StudentTransferApplication {
 
     // 转出学院意见
     private String transferOutCollegeOpinion;
-    private String transferOutApprover;
+    private String transferOutApproval;
     private LocalDate transferOutApprovalDate;
+    /**
+     * 转出学院 id
+     */
+    private Long fromCollegeId;
+
+    private String fromCollegeName;
 
     // 转入学院意见
     private String transferInCollegeOpinion;
-    private String transferInApprover;
+    private String transferInApproval;
     private LocalDate transferInApprovalDate;
 
+    /**
+     * 转入学院 id
+     */
+    private Long toCollegeId;
+
+    /**
+     * 转入学院名称
+     */
+    private String toCollegeName;
+
     // 继续教育学院意见
+    /**
+     * 继续教育学院 id
+     */
+    private Long continuingEducationCollegeId;
     private String continuingEducationCollegeOpinion;
-    private String continuingEducationApprover;
+    private String continuingEducationApproval;
     private LocalDate continuingEducationApprovalDate;
 
     // 费用结算情况

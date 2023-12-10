@@ -1,7 +1,7 @@
 package com.scnujxjy.backendpoint.controller.office_automation;
 
 import cn.dev33.satoken.util.SaResult;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
+import com.alibaba.fastjson2.JSONObject;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalTypePO;
@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationServi
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -25,12 +26,6 @@ public class OfficeAutomationController {
 
     @Resource
     private OfficeAutomationService officeAutomationService;
-
-    @PostMapping("/trigger")
-    public SaResult trigger() {
-        officeAutomationService.trigger(OfficeAutomationHandlerType.COMMON);
-        return SaResult.ok();
-    }
 
     /**
      * 分页查询所有OA类型
@@ -106,5 +101,14 @@ public class OfficeAutomationController {
         }
         officeAutomationService.deleteApprovalRecord(approvalId);
         return SaResult.ok();
+    }
+
+    @PostMapping("/create-document")
+    public SaResult createDocument(@RequestBody Map<String, Object> map) {
+        if (Objects.isNull(map) || map.containsKey("typeId") == false) {
+            return SaResult.error("插入信息缺失");
+        }
+        String id = officeAutomationService.insertDocument(map, (long) map.get("typeId"));
+        return SaResult.data(JSONObject.of("id", id));
     }
 }

@@ -11,12 +11,10 @@ import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationExcelOutputVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -104,7 +102,7 @@ public class AdminDataListener implements ReadListener<ExcelAdminData> {
                 PlatformUserPO userPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().eq(
                         PlatformUserPO::getUsername, platformUserPO.getUsername()
                 ));
-                String userId = String.valueOf(userPO.getUserId());
+                Long userId = userPO.getUserId();
                 List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationMapper.
                         selectList(new LambdaQueryWrapper<CollegeAdminInformationPO>().eq(
                         CollegeAdminInformationPO::getUserId, userId));
@@ -116,7 +114,7 @@ public class AdminDataListener implements ReadListener<ExcelAdminData> {
                 String collegeId = collegeInformationPO.getCollegeId();
                 po.setCollegeId(collegeId);
 
-                po.setUserId("" + userId);
+                po.setUserId(userId);
                 log.info("读取到的原始教务员信息 " + data + "\n插入数据库中的信息 " + po);
                 int insert = collegeAdminInformationMapper.insert(po);
                 log.info("二级学院教务员插入结果 " + insert);
