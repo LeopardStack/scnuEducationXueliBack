@@ -12,6 +12,7 @@
     <sql id="slectStu">
         SELECT a.id,a.student_number,a.`name`,a.address,a.admission_number
                 ,a.college,a.major_name,a.gender,
+                 (select (count(*)) from admission_information) as total,
                a.major_code,a.birth_date,a.graduation_date,a.graduation_school,a.id_card_number,a.short_student_number,a.study_form,pca.admissions_subject_categorie,pca.`contact_number`,pca.`teaching point id`
         FROM `admission_information` AS a
                  LEFT  JOIN professional_contact_details as pca
