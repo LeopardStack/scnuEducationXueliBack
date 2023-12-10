@@ -52,6 +52,7 @@ public class NewStudentListener implements ReadListener<NewStudentVo> {
 //                   开始插入用户导入消息表
                    UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
                    userAnnouncementRo.setTitle("账号导入成功");
+                   userAnnouncementRo.setContent("用户信息导入成功");
                    userAnnouncementRo.setUserId(Long.parseLong(newstu.getIdCardNumber()));
                    userAnnouncementRo.setIsRead(false);
                    userAnnouncementRo.setMessageType(String.valueOf(MessageEnum.ANNOUNCEMENT_MSG));

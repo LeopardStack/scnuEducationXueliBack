@@ -71,10 +71,7 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
         userAnnouncementRo.setRelatedMessageId(announcementMessagePO.getId());
         if (count>0){
             PlatformMessagePO platformMessagePO = platformMessageInverter.ro2PO(userAnnouncementRo);
-           if (  platformMessageMapper.insert(platformMessagePO)>0){
-               return true;
-           }
-           return  false;
+            return platformMessageMapper.insert(platformMessagePO) > 0;
         }
         return false;
 
