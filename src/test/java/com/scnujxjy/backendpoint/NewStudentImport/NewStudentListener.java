@@ -4,10 +4,12 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.util.ListUtils;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.inverter.newStudent.NewStudentExcelInverter;
 import com.scnujxjy.backendpoint.inverter.newStudent.NewStudentInverter;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserAnnouncementRo;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.PersonalInfoRO;
+import com.scnujxjy.backendpoint.model.vo.newStudentVo.NewStudentExcel;
 import com.scnujxjy.backendpoint.model.vo.newStudentVo.NewStudentVo;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
@@ -17,55 +19,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 @Slf4j
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NewStudentListener implements ReadListener<NewStudentVo> {
+public class NewStudentListener implements ReadListener<NewStudentExcel> {
 
 
-    //执行数据库操作
-    private AdmissionInformationService admissionInformationService;
-
-    private PlatformMessageService platformMessageService;
-
-   private   PersonalInfoService personalInfoService;
-
-   private NewStudentInverter newStudentInverter;
-
-/**
-* @Version：1.0.0
-* @Description：插入数据库逻辑
-* @Author：3304393868@qq.com
-* @Date：2023/12/8-15:16
-*/
-   private void wirteDataBase(List<NewStudentVo> newStudentVoList){
-       for (NewStudentVo newstu:newStudentVoList){
-         AdmissionInformationRO admissionInformationRO= newStudentInverter.Vo2AdmissionInformationRo(newStudentVo);
-           if (admissionInformationService.insterAdmissionInformation(admissionInformationRO)>0){
-               PersonalInfoRO personalInfoRO = newStudentInverter.Vo2PersonalInfoInRo(newStudentVo);
-               if (personalInfoService.InsterPersonalInfo(personalInfoRO)>0){
-//                   开始插入用户导入消息表
-                   UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
-                   userAnnouncementRo.setTitle("账号导入成功");
-                   userAnnouncementRo.setContent("用户信息导入成功");
-                   userAnnouncementRo.setUserId(Long.parseLong(newstu.getIdCardNumber()));
-                   userAnnouncementRo.setIsRead(false);
-                   userAnnouncementRo.setMessageType(String.valueOf(MessageEnum.ANNOUNCEMENT_MSG));
-                   userAnnouncementRo.setCreatedAt(new Date());
-                platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
-               }
-           }
-       }
-   }
-
-//**
-//        * 每隔5条存储数据库，实际使用中可以100条，然后清理list ，方便内存回收
-//     */
+    private NewStudentExcelInverter newStudentExcelInverter;
 
     private static final int BATCH_COUNT = 100;
     /**
@@ -73,15 +38,128 @@ public class NewStudentListener implements ReadListener<NewStudentVo> {
      */
     private List<NewStudentVo> cachedDataList = ListUtils.newArrayListWithExpectedSize(BATCH_COUNT);
 
-    private NewStudentVo newStudentVo;
+
+
+
+    private NewStudentExcel newStudentExcel;
+
+
+
+    /**
+    * @Version：1.0.0
+    * @Description：下面是数据库相关
+    * @Author：3304393868@qq.com
+    * @Date：2023/12/11-16:56
+    */
+
+    private AdmissionInformationService admissionInformationService;
+    private PlatformMessageService platformMessageService;
+    private PersonalInfoService personalInfoService;
+    private NewStudentInverter newStudentInverter;
+
+    public NewStudentListener(AdmissionInformationService admissionInformationService, PlatformMessageService platformMessageService, PersonalInfoService personalInfoService, NewStudentInverter newStudentInverter) {
+        this.admissionInformationService = admissionInformationService;
+        this.platformMessageService = platformMessageService;
+        this.personalInfoService = personalInfoService;
+        this.newStudentInverter = newStudentInverter;
+    }
+
+    /**
+     * @Version：1.0.0
+     * @Description：插入数据库逻辑
+     * @Author：3304393868@qq.com
+     * @Date：2023/12/8-15:16
+     */
+    public void wirteDataBase(List<NewStudentVo> newStudentVoList) {
+        int i =0;
+        for (NewStudentVo newstu : newStudentVoList) {
+            AdmissionInformationRO admissionInformationRO = newStudentInverter.Vo2AdmissionInformationRo(newstu);
+            if (admissionInformationService.insterAdmissionInformation(admissionInformationRO) > 0) {
+                PersonalInfoRO personalInfoRO = newStudentInverter.Vo2PersonalInfoInRo(newstu);
+                if (personalInfoService.InsterPersonalInfo(personalInfoRO) > 0) {
+//                   开始插入用户导入消息表
+                    UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
+                    userAnnouncementRo.setTitle("账号导入成功");
+                    userAnnouncementRo.setContent("用户信息导入成功");
+                    userAnnouncementRo.setUserId(newstu.getIdCardNumber());
+                    userAnnouncementRo.setIsRead(false);
+                    userAnnouncementRo.setMessageType(String.valueOf(MessageEnum.ANNOUNCEMENT_MSG.getMessage_name()));
+                    userAnnouncementRo.setCreatedAt(new Date());
+                    platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
+                }
+            }
+            i++;
+        }
+        log.info("信息全部导入完成,一共导入[{}]条",i);
+    }
+
+
+
+
+
+
+
+    private NewStudentVo ExcelTOVo(NewStudentExcel newStudentExcel) {
+        NewStudentVo newStudentVo = new NewStudentVo();
+
+        newStudentVo.setStudentNumber(newStudentExcel.getStudentNumber());
+        newStudentVo.setName(newStudentExcel.getName());
+        newStudentVo.setGender(newStudentExcel.getGender());
+        newStudentVo.setTotalScore(newStudentExcel.getTotalScore());
+        newStudentVo.setMajorCode(newStudentExcel.getMajorCode());
+        newStudentVo.setMajorName(newStudentExcel.getMajorName());
+        newStudentVo.setLevel(newStudentExcel.getLevel());
+        newStudentVo.setStudyForm(newStudentExcel.getStudyForm());
+        newStudentVo.setOriginalEducation(newStudentExcel.getOriginalEducation());
+        newStudentVo.setGraduationSchool(newStudentExcel.getGraduationSchool());
+        newStudentVo.setGraduationDate(newStudentExcel.getGraduationDate());
+        newStudentVo.setPhoneNumber(newStudentExcel.getPhoneNumber());
+        newStudentVo.setIdCardNumber(newStudentExcel.getIdCardNumber());
+        newStudentVo.setBirthDate(newStudentExcel.getBirthDate());
+        newStudentVo.setAddress(newStudentExcel.getAddress());
+        newStudentVo.setPostalCode(newStudentExcel.getPostalCode());
+        newStudentVo.setEthnicity(newStudentExcel.getEthnicity());
+        newStudentVo.setPoliticalStatus(newStudentExcel.getPoliticalStatus());
+        newStudentVo.setAdmissionNumber(newStudentExcel.getAdmissionNumber());
+        newStudentVo.setCollege(newStudentExcel.getCollege());
+        newStudentVo.setTeachingPoint(newStudentExcel.getTeachingPoint());
+        newStudentVo.setReportLocation(newStudentExcel.getReportLocation());
+        newStudentVo.setEntrancePhotoUrl(newStudentExcel.getEntrancePhotoUrl());
+        newStudentVo.setGrade(newStudentExcel.getGrade());
+
+        // You may need to set other properties if there are additional fields
+
+        return newStudentVo;
+    }
 
     @Override
-    public void invoke(NewStudentVo newStudentVo, AnalysisContext analysisContext) {
-        this.newStudentVo =  newStudentVo;
+    public void invoke(NewStudentExcel newStudentExcel, AnalysisContext analysisContext) {
+//        log.info("解析到一条数据："+newStudentExcel.toString());
+        NewStudentVo newStudentDateVo = this.ExcelTOVo(newStudentExcel);
+
+//        newStudentVo = newStudentExcel;
+        cachedDataList.add(newStudentDateVo);
+        // 达到BATCH_COUNT了，需要去存储一次数据库，防止数据几万条数据在内存，容易OOM
+        if (cachedDataList.size() >= BATCH_COUNT) {
+
+            log.info(cachedDataList.toString());
+            this.Save();
+            // 存储完成清理 list
+            cachedDataList = ListUtils.newArrayListWithExpectedSize(BATCH_COUNT);
+        }
+    }
+
+
+    private void Save() {
+//        this.wirteDataBase(cachedDataList);
+        this.wirteDataBase(cachedDataList);
+
     }
 
     @Override
     public void doAfterAllAnalysed(AnalysisContext analysisContext) {
-
+        log.info("数据解析完成");
+        this.Save();
+//        log.info(cachedDataList.toString());
     }
 }

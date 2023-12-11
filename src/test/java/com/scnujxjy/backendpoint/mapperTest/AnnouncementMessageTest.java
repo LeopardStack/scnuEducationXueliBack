@@ -21,7 +21,7 @@ public class AnnouncementMessageTest {
         userAnnouncementRo.setContent("測試公告");
         userAnnouncementRo.setIsRead(false);
         userAnnouncementRo.setAttachmentId(2);
-        userAnnouncementRo.setUserId(121424312);
+        userAnnouncementRo.setUserId("121424312");
         userAnnouncementRo.setTitle("hello");
       boolean a=   platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
       log.info("打印[{}]",a);

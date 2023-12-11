@@ -1,10 +1,7 @@
 package com.scnujxjy.backendpoint.model.vo.admission_information;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
@@ -13,7 +10,9 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Accessors(chain = true)
+@Getter
+@Setter
+@Accessors(chain = false)
 @Builder
 public class AdmissionInformationVO implements Serializable {
     private static final long serialVersionUID = 1L;

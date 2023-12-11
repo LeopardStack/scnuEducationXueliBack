@@ -70,7 +70,7 @@ public class Test1 {
         userAnnouncementRo.setMessageType(MessageEnum.ANNOUNCEMENT_MSG.getMessage_name());
         userAnnouncementRo.setContent("測試公告");
         userAnnouncementRo.setIsRead(false);
-        userAnnouncementRo.setUserId(121424312);
+        userAnnouncementRo.setUserId("121424312");
         boolean a=   platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
         log.info("打印[{}]",a);
     }

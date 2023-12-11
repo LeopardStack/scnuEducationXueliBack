@@ -19,7 +19,7 @@ public class UserAnnouncementRo {
     private  String title;
     private  String content;
     private  long attachmentId;
-    private  long userId;
+    private  String userId;
     private  String messageType;
     private  long relatedMessageId;
     private Date createdAt;
