@@ -27,6 +27,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelImportVO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -101,6 +102,9 @@ public class MessageReceiver {
 
     @Resource
     private CourseScheduleMapper courseScheduleMapper;
+
+    @Resource
+    private PlatformUserService platformUserService;
 
     @RabbitListener(queuesToDeclare = @Queue("${spring.rabbitmq.queue1}"))
     public void process(String msg, Channel channel, Message message) {
@@ -198,21 +202,20 @@ public class MessageReceiver {
                 String userId = message.getString("userId");
                 log.info("接收到根据批次id: {} 导出学生信息消息，正在下载内容");
                 courseScheduleFilter.exportStudentInformationBatchIndex(pageRO, userId);
-            }
-            else if ("com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO".equals(type)) {
+            } else if ("com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO".equals(type)) {
                 PageRO<BatchSetTeachersInfoRO> pageRO = JSON.parseObject(message.getString("data"),
                         new TypeReference<PageRO<BatchSetTeachersInfoRO>>() {
                         });
                 String loginId = message.getString("userId");
                 List<String> roleList = StpUtil.getRoleList(loginId);
-                if(roleList.contains(RoleEnum.XUELIJIAOYUBU_ADMIN.getRoleName())){
+                if (roleList.contains(RoleEnum.XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     // 学历教育部管理员
                     AbstractFilter managerFilter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
                     });
 
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
                     managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
-                }else if(roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())){
+                } else if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 二级学院管理员
                     AbstractFilter collegeAdminFilter = JSON.parseObject(message.getString("filter"), new TypeReference<CollegeAdminFilter>() {
                     });
@@ -236,11 +239,11 @@ public class MessageReceiver {
         }
     }
 
-    private PlatformMessagePO generateMessage(String userId) {
+    private PlatformMessagePO generateMessage(String username) {
         PlatformMessagePO platformMessagePO = new PlatformMessagePO();
         Date generateData = new Date();
         platformMessagePO.setCreatedAt(generateData);
-        platformMessagePO.setUserId(userId);
+        platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
         platformMessagePO.setRelatedMessageId(null);
         platformMessagePO.setIsRead(false);
         platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
@@ -389,7 +392,7 @@ public class MessageReceiver {
                 // 处理pageRO
                 // 单独处理二级学院
                 List<String> roleList = StpUtil.getRoleList(loginId);
-                if(roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())){
+                if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
                     CollegeInformationPO userBelongCollegeByLoginId = scnuXueliTools.getUserBelongCollegeByLoginId(loginId);
                     batchSetTeachersInfoRO.setCollege(userBelongCollegeByLoginId.getCollegeName());
                 }
@@ -399,7 +402,7 @@ public class MessageReceiver {
 
             // 手动确认消息
             channel.basicAck(msg.getMessageProperties().getDeliveryTag(), false);
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("处理系统消息时出现异常: ", e);
             try {
                 /**

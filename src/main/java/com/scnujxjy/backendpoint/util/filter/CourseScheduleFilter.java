@@ -31,7 +31,7 @@ import static com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum.DATA_DOWN
 @Slf4j
 public class CourseScheduleFilter extends AbstractFilter {
     @Override
-    public void exportStudentInformationBatchIndex(PageRO<CourseScheduleStudentExcelBO> courseScheduleStudentExcelBOPageRO, String userId) {
+    public void exportStudentInformationBatchIndex(PageRO<CourseScheduleStudentExcelBO> courseScheduleStudentExcelBOPageRO, String username) {
         if (Objects.isNull(courseScheduleStudentExcelBOPageRO)
                 || Objects.isNull(courseScheduleStudentExcelBOPageRO.getEntity())
                 || Objects.isNull(courseScheduleStudentExcelBOPageRO.getEntity().getBatchIndex())) {
@@ -63,7 +63,7 @@ public class CourseScheduleFilter extends AbstractFilter {
         // 使用当前时间作为文件名前缀
         DateTime currentDate = DateUtil.date();
         String date = DateUtil.format(currentDate, "yyyyMMdd_HHmmss_SSS");
-        String filename = subDirectory + "/" + userId + "_" + date + "_CourseScheduleStudentInformationDate.xlsx";
+        String filename = subDirectory + "/" + username + "_" + date + "_CourseScheduleStudentInformationDate.xlsx";
         // 上传到minio
         boolean isUpload = minioService.uploadStreamToMinio(inputStream, filename, bucketName);
         if (isUpload) {
@@ -83,7 +83,7 @@ public class CourseScheduleFilter extends AbstractFilter {
             Long id = downloadMessagePO.getId();
             PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
                     .createdAt(currentDate)
-                    .userId(userId)
+                    .userId(String.valueOf(platformUserService.getUserIdByUsername(username)))
                     .isRead(false)
                     .relatedMessageId(id)
                     .messageType(MessageEnum.DOWNLOAD_MSG.getMessage_name())

@@ -44,7 +44,10 @@ import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.exam.ExamInfoVO;
@@ -528,7 +531,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(CourseExamInfoPO::getClassIdentifier, courseInformationVO.getAdminClass())
                     .eq(CourseExamInfoPO::getCourse, courseInformationVO.getCourseName())
             );
-            if(courseExamInfoPO == null){
+            if (courseExamInfoPO == null) {
                 throw new IllegalArgumentException("获取不到指定教学计划的考试信息 " + courseInformationVO);
             }
             examInfoVO.setExamMethod(courseExamInfoPO.getExamMethod());
@@ -538,7 +541,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
             List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
                     .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
-            for(CourseExamAssistantsPO courseExamAssistantsPO: courseExamAssistantsPOS){
+            for (CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS) {
                 String teacherUsername = courseExamAssistantsPO.getTeacherUsername();
                 TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                         .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
@@ -550,9 +553,9 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(StudentStatusPO::getClassIdentifier, courseExamInfoPO.getClassIdentifier()));
             examInfoVO.setClassSize(classSize);
 
-            if(scheduleCourseInformationVOS.isEmpty()){
+            if (scheduleCourseInformationVOS.isEmpty()) {
                 examInfoVO.setTeachingMethod("线下");
-            }else{
+            } else {
                 examInfoVO.setTeachingMethod(scheduleCourseInformationVOS.get(0).getTeachingMethod());
             }
 
@@ -749,7 +752,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 二级学院得单独加一个条件
         courseScheduleFilterROPageRO.getEntity().setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
 
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
@@ -907,7 +910,6 @@ public class CollegeAdminFilter extends AbstractFilter {
     }
 
 
-
     private boolean processScheduleCoursesInformationVO(
             ScheduleCoursesInformationVO scheduleCoursesInformationVO,
             List<String> errorCourses, CourseScheduleFilterRO courseScheduleFilterRO) {
@@ -976,7 +978,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
                 scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
             }
-            if(onlinePlatform.equals("已结束")){
+            if (onlinePlatform.equals("已结束")) {
                 scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
             }
         } else {
@@ -990,7 +992,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 if (!scheduleCoursesInformationVO.getLivingStatus().equals(courseScheduleFilterRO.getLivingStatus())) {
                     return false; // 表示不保留这个对象
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error(e.toString());
                 return false;
             }
@@ -1002,12 +1004,13 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取继续教育学院管理员的排课表课程管理的筛选参数
+     *
      * @param courseScheduleFilterROPageRO 前端限制参数
      * @return
      */
     public ScheduleCourseManagetArgs getSelectScheduleCourseManageArgs(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
         ScheduleCourseManagetArgs selectArgs = new ScheduleCourseManagetArgs();
-        CourseScheduleFilterRO filter =courseScheduleFilterROPageRO.getEntity();
+        CourseScheduleFilterRO filter = courseScheduleFilterROPageRO.getEntity();
 
         // 二级学院得单独加一个条件
         filter.setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
@@ -1048,10 +1051,11 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 考试信息批量导出
+     *
      * @param entity
-     * @param loginId
+     * @param username
      */
-    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String loginId) {
+    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String username) {
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
         CourseExamInfoMapper courseExamInfoMapper1 = ctx.getBean(CourseExamInfoMapper.class);
         CourseInformationMapper courseInformationMapper1 = ctx.getBean(CourseInformationMapper.class);
@@ -1103,7 +1107,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 获取管理员的名字
 
         PlatformUserPO platformUserPO1 = platformUserMapper1.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
-                .eq(PlatformUserPO::getUsername, loginId));
+                .eq(PlatformUserPO::getUsername, username));
         CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper1.selectOne(new LambdaQueryWrapper<CollegeAdminInformationPO>()
                 .eq(CollegeAdminInformationPO::getUserId, platformUserPO1.getUserId()));
         // 或者使用 Map
@@ -1117,17 +1121,15 @@ public class CollegeAdminFilter extends AbstractFilter {
 
         List<CourseExamInfoPO> courseExamInfoPOS = courseExamInfoMapper1.batchSelectData(entity);
         int count = 1;
-        for(CourseExamInfoPO courseExamInfoPO: courseExamInfoPOS){
+        for (CourseExamInfoPO courseExamInfoPO : courseExamInfoPOS) {
             ExamTeachersInfoVO examTeachersInfoVO = new ExamTeachersInfoVO();
             examTeachersInfoVO.setIndex(count);
-
 
 
             CourseInformationPO courseInformationPO = courseInformationMapper1.selectOne(new LambdaQueryWrapper<CourseInformationPO>()
                     .eq(CourseInformationPO::getAdminClass, courseExamInfoPO.getClassIdentifier())
                     .eq(CourseInformationPO::getCourseName, courseExamInfoPO.getCourse())
             );
-
 
 
             ClassInformationPO classInformationPO = classInformationMapper1.selectOne(new LambdaQueryWrapper<ClassInformationPO>()
@@ -1150,7 +1152,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(CourseSchedulePO::getLevel, courseInformationPO.getLevel())
                     .eq(CourseSchedulePO::getCourseName, courseInformationPO.getCourseName())
             );
-            if(!courseSchedulePOS.isEmpty()){
+            if (!courseSchedulePOS.isEmpty()) {
                 // 使用stream来提取教学班别字段，并且去重
                 List<String> uniqueTeachingClasses = courseSchedulePOS.stream()
                         .map(CourseSchedulePO::getTeachingClass) // 提取教学班别
@@ -1164,38 +1166,37 @@ public class CollegeAdminFilter extends AbstractFilter {
                 // 将这个字符串设置到examTeachersInfoVO对象的teachingClass属性
                 examTeachersInfoVO.setTeachingClass(teachingClassesString);
                 examTeachersInfoVO.setXueliPlatform("是");
-            }else{
+            } else {
                 examTeachersInfoVO.setXueliPlatform("否");
             }
 
 
-
             String teacherUsername = courseExamInfoPO.getTeacherUsername();
-            if(teacherUsername != null){
+            if (teacherUsername != null) {
                 TeacherInformationPO teacherInformationPO = teacherInformationMapper1.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                         .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
                 examTeachersInfoVO.setMainTeacherName(teacherInformationPO.getName());
                 examTeachersInfoVO.setMainTeacherPhone(teacherInformationPO.getPhone());
-            }else{
+            } else {
                 examTeachersInfoVO.setMainTeacherName("");
                 examTeachersInfoVO.setMainTeacherPhone("");
             }
 
             List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper1.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
                     .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
-            if(courseExamAssistantsPOS.isEmpty()){
+            if (courseExamAssistantsPOS.isEmpty()) {
                 examTeachersInfoVO.setTutorName("");
                 examTeachersInfoVO.setTutorPhone("");
-            }else{
+            } else {
                 StringBuilder tutorNames = new StringBuilder();
                 StringBuilder tutorPhones = new StringBuilder();
-                for(CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS){
+                for (CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS) {
                     TeacherInformationPO teacherInformationPO = teacherInformationMapper1.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                             .eq(TeacherInformationPO::getTeacherUsername, courseExamAssistantsPO.getTeacherUsername()));
-                    if(teacherInformationPO != null){
+                    if (teacherInformationPO != null) {
                         tutorNames.append(teacherInformationPO.getName()).append(" \n");
                         tutorPhones.append(teacherInformationPO.getPhone()).append(" \n");
-                    }else{
+                    } else {
                         log.error("存在考试信息中的助教为空 " + courseExamAssistantsPO);
                     }
 
@@ -1207,7 +1208,6 @@ public class CollegeAdminFilter extends AbstractFilter {
             examTeachersInfoVOS.add(examTeachersInfoVO);
             count += 1;
         }
-
 
 
         log.info("导出了 " + examTeachersInfoVOS.size() + " 条考试信息数据");
@@ -1263,7 +1263,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         String currentDateTime = sdf.format(generateData);
 
         // 构建文件名
-        String fileName = subDirectory + "/" + loginId + "_" + currentDateTime + "_examTeachersData.xlsx";
+        String fileName = subDirectory + "/" + username + "_" + currentDateTime + "_examTeachersData.xlsx";
 
         // 上传到 Minio
         // 将流转换为 ByteArrayInputStream
@@ -1284,7 +1284,7 @@ public class CollegeAdminFilter extends AbstractFilter {
             Long generatedId = downloadMessagePO.getId();
             PlatformMessagePO platformMessagePO = new PlatformMessagePO();
             platformMessagePO.setCreatedAt(generateData);
-            platformMessagePO.setUserId(loginId);
+            platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
             platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());

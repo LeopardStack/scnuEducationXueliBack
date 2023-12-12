@@ -1,18 +1,20 @@
 package com.scnujxjy.backendpoint.dao.entity.platform_message;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
-
-import lombok.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author 谢辉龙
@@ -23,7 +25,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("user_uploads")
+@TableName("user_upload")
 public class UserUploadsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -37,7 +39,7 @@ public class UserUploadsPO implements Serializable {
     /**
      * 上传文件的用户名
      */
-    private String userName;
+    private String userId;
 
     /**
      * 用户上传的 Minio 地址
