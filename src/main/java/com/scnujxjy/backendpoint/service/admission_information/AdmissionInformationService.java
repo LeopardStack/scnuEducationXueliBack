@@ -85,7 +85,6 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
         // 分页查询 或 列表查询 最后返回结果
         LambdaQueryWrapper<AdmissionInformationPO> wrapper = Wrappers.<AdmissionInformationPO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getId()), AdmissionInformationPO::getId, entity.getId())
-                .eq(StrUtil.isNotBlank(entity.getStudentNumber()), AdmissionInformationPO::getStudentNumber, entity.getStudentNumber())
                 .eq(StrUtil.isNotBlank(entity.getName()), AdmissionInformationPO::getName, entity.getName())
                 .eq(StrUtil.isNotBlank(entity.getGender()), AdmissionInformationPO::getGender, entity.getGender())
                 .eq(Objects.nonNull(entity.getTotalScore()), AdmissionInformationPO::getTotalScore, entity.getTotalScore())

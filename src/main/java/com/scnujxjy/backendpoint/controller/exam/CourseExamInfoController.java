@@ -32,9 +32,7 @@ import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
- * <p>
- * 存储考试信息 前端控制器
- * </p>
+ * 考试信息获取
  *
  * @author 谢辉龙
  * @since 2023-11-15
