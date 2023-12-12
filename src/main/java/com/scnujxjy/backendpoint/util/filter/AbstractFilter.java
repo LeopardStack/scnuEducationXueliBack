@@ -9,6 +9,8 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.DegreeInfoP
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.MajorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
@@ -17,6 +19,7 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
@@ -67,6 +70,15 @@ import java.util.stream.Collectors;
 public abstract class AbstractFilter {
     @Resource
     protected PlatformUserMapper platformUserMapper;
+
+    @Resource
+    protected AdmissionInformationMapper admissionInformationMapper;
+
+    @Resource
+    protected PersonalInfoMapper personalInfoMapper;
+
+    @Resource
+    protected MajorInformationMapper majorInformationMapper;
 
     @Resource
     protected CollegeAdminInformationMapper collegeAdminInformationMapper;

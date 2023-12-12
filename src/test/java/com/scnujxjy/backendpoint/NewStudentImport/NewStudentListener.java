@@ -116,13 +116,13 @@ public class NewStudentListener implements ReadListener<NewStudentExcel> {
         newStudentVo.setPhoneNumber(newStudentExcel.getPhoneNumber());
         newStudentVo.setIdCardNumber(newStudentExcel.getIdCardNumber());
         newStudentVo.setBirthDate(newStudentExcel.getBirthDate());
-        newStudentVo.setAddress(newStudentExcel.getAddress());
+//        newStudentVo.setAddress(newStudentExcel.getAddress());
         newStudentVo.setPostalCode(newStudentExcel.getPostalCode());
         newStudentVo.setEthnicity(newStudentExcel.getEthnicity());
         newStudentVo.setPoliticalStatus(newStudentExcel.getPoliticalStatus());
         newStudentVo.setAdmissionNumber(newStudentExcel.getAdmissionNumber());
-        newStudentVo.setCollege(newStudentExcel.getCollege());
-        newStudentVo.setTeachingPoint(newStudentExcel.getTeachingPoint());
+//        newStudentVo.setCollege(newStudentExcel.getCollege());
+//        newStudentVo.setTeachingPoint(newStudentExcel.getTeachingPoint());
         newStudentVo.setReportLocation(newStudentExcel.getReportLocation());
         newStudentVo.setEntrancePhotoUrl(newStudentExcel.getEntrancePhotoUrl());
         newStudentVo.setGrade(newStudentExcel.getGrade());
