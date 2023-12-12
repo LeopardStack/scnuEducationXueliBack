@@ -151,7 +151,7 @@ public class OfficeAutomationService {
         }
         LambdaQueryWrapper<ApprovalRecordPO> wrapper = Wrappers.<ApprovalRecordPO>lambdaQuery()
                 .eq(Objects.nonNull(approvalRecordPO.getApprovalTypeId()), ApprovalRecordPO::getApprovalTypeId, approvalRecordPO.getApprovalTypeId())
-                .eq(StrUtil.isNotBlank(approvalRecordPO.getInitiatorUserId()), ApprovalRecordPO::getInitiatorUserId, approvalRecordPO.getInitiatorUserId())
+                .eq(Objects.nonNull(approvalRecordPO.getInitiatorUserId()), ApprovalRecordPO::getInitiatorUserId, approvalRecordPO.getInitiatorUserId())
                 .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus())
                 .and(lambdaQueryWrapper -> {
                     lambdaQueryWrapper.last(String.format("JSON_CONTAINS(user_watch_set, JSON_ARRAY(%s))", String.valueOf(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))));
@@ -235,6 +235,17 @@ public class OfficeAutomationService {
             throw new BusinessException("获取步骤全部信息为空");
         }
         return approvalInverter.approvalRecordStep2Information(approvalRecordPO, approvalStepWithRecordLists);
+    }
+
+    @Transactional
+    public Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
+        if (Objects.isNull(approvalRecordPO)
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())) {
+            throw new BusinessException("获取审核记录参数失败");
+        }
+        OfficeAutomationHandler handler = getHandler(approvalRecordPO.getApprovalTypeId());
+        return handler.createApprovalRecord(approvalRecordPO);
+
     }
 
     /**

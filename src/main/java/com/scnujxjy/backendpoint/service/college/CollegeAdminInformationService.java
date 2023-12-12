@@ -144,7 +144,7 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
      * @param collegeId 学院 id
      * @return
      */
-    public List<Long> adminUserIdByCollegeId(Long collegeId) {
+    public List<Long> adminUserIdByCollegeId(String collegeId) {
         if (Objects.isNull(collegeId)) {
             throw new BusinessException("学院 id 为空");
         }

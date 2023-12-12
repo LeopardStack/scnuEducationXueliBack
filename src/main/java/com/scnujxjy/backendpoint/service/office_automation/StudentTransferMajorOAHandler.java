@@ -74,7 +74,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
     @Override
     protected Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
         if (Objects.isNull(approvalRecordPO)
-                || Objects.isNull(approvalRecordPO.getApprovalTypeId())) {
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())
+                || Objects.isNull(approvalRecordPO.getDocumentId())) {
             throw new BusinessException("OA记录为空或OA类型id为空");
         }
         // 获取申请表单
@@ -82,13 +83,11 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(studentTransferMajorDocument)) {
             throw new BusinessException("学生装专业表单为空");
         }
-        // 获取转入学院以及转出学院
-        Long fromCollegeId = studentTransferMajorDocument.getFromCollegeId();
-        Long toCollegeId = studentTransferMajorDocument.getToCollegeId();
         // 根据转出学院以及转入学院 id 来获取可见用户名单
         List<Long> watchUserIdSet = ListUtil.toList(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(fromCollegeId));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(toCollegeId));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getToCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
         approvalRecordPO.setUserWatchSet(watchUserIdSet);
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
@@ -99,10 +98,10 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         // 填充记录表数据
         DateTime date = DateUtil.date();
         ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
-        String userId = StpUtil.getLoginIdAsString();
+        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
         approvalRecordPO.setInitiatorUserId(userId)
                 .setCreatedAt(date)
-                .setCreatedAt(date)
+                .setUpdateAt(date)
                 .setStatus(WAITING.getStatus())
                 .setCurrentStepId(approvalStepPO.getId());
         int count = approvalRecordMapper.insert(approvalRecordPO);
@@ -124,6 +123,18 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO) {
 
+    }
+
+    /**
+     * 处理完所有审核流程后会执行的方法
+     * <p>实现时可以根据approvalRecordPO.status来定义不同的行为</p>
+     *
+     * @param approvalRecordPO     审批完成的审批记录
+     * @param approvalStepRecordPO 最后一个步骤记录
+     */
+    @Override
+    public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
+        log.info("学生转专业审核完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
     }
 
     /**
@@ -160,7 +171,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
 
         // 根据不同步骤填充不同的审核用户群
         if (stepId == 1) {
-            userApprovalSet.add(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()));
+            userApprovalSet.add(studentTransferMajorDocument.getStudentUserId());
         } else if (stepId == 2) {
             List<Long> userIdSet = collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getFromCollegeId());
             CollUtil.addAll(userApprovalSet, userIdSet);
@@ -207,10 +218,17 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(studentTransferMajorDocument)) {
             throw new BusinessException("转专业表单为空");
         }
-        studentTransferMajorDocument = studentTransferMajorRepository.insert(studentTransferMajorDocument);
-        if (Objects.isNull(studentTransferMajorDocument)) {
-            throw new BusinessException("插入转专业表单失败");
+        if (Objects.isNull(studentTransferMajorDocument.getStudentUserId())) {
+            studentTransferMajorDocument.setStudentUserId(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()));
         }
+        if (Objects.isNull(studentTransferMajorDocument.getFromCollegeId())) {
+            throw new BusinessException("转出学院 id 不能为空");
+        }
+        if (Objects.isNull(studentTransferMajorDocument.getToCollegeId())) {
+            throw new BusinessException("转出学院 id 不能为空");
+        }
+
+        studentTransferMajorDocument = studentTransferMajorRepository.insert(studentTransferMajorDocument);
         return studentTransferMajorDocument.getId();
     }
 

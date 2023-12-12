@@ -11,6 +11,10 @@ import java.time.LocalDate;
 public class StudentTransferMajorDocument {
     @Id
     private String id;
+    /**
+     * 学生在系统中的 user_id
+     */
+    private Long studentUserId;
     private String name; // 姓名
     private String gender; // 性别
     private String candidateNumber; // 考生号
@@ -37,7 +41,7 @@ public class StudentTransferMajorDocument {
     /**
      * 转出学院 id
      */
-    private Long fromCollegeId;
+    private String fromCollegeId;
 
     private String fromCollegeName;
 
@@ -49,7 +53,7 @@ public class StudentTransferMajorDocument {
     /**
      * 转入学院 id
      */
-    private Long toCollegeId;
+    private String toCollegeId;
 
     /**
      * 转入学院名称
@@ -60,7 +64,7 @@ public class StudentTransferMajorDocument {
     /**
      * 继续教育学院 id
      */
-    private Long continuingEducationCollegeId;
+    private String continuingEducationCollegeId;
     private String continuingEducationCollegeOpinion;
     private String continuingEducationApproval;
     private LocalDate continuingEducationApprovalDate;

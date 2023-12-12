@@ -1,4 +1,4 @@
-/*
+
 package com.scnujxjy.backendpoint.service.office_automation;
 
 import cn.dev33.satoken.stp.StpUtil;
@@ -22,50 +22,47 @@ import java.util.Objects;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
-*/
+
 /**
  * OA 系统通用实现类
- * <p>
- * 处理后的过程
- *
- * @param approvalStepRecordPO
- * <p>
- * 根据信息插入步骤记录
- * @param approvalId 事件记录 Id
- * @param date       添加时间
- * @param stepId     步骤 id
- * <p>
- * 插入表单
- * @param map
- * @return 新增一个审批记录
- * @param approvalRecordPO 审批记录
- * @return 新增的审批记录
- *//*
+ */
 
 @Service
 @Slf4j
 @Transactional
 public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
-    */
-/**
-     * 处理后的过程
+
+    /**
+     * 处理每一步审核之后的过程
      *
      * @param approvalStepRecordPO
-     *//*
+     */
 
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO) {
         log.info("审核后的处理参数: {}", approvalStepRecordPO);
     }
 
-    */
-/**
+    /**
+     * 处理完所有审核流程后会执行的方法
+     * <p>实现时可以根据approvalRecordPO.status来定义不同的行为</p>
+     *
+     * @param approvalRecordPO     审批完成的审批记录
+     * @param approvalStepRecordPO 最后一个步骤记录
+     */
+    @Override
+    public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
+        log.info("审批完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
+    }
+
+
+    /**
      * 根据信息插入步骤记录
      *
      * @param approvalId 事件记录 Id
      * @param date       添加时间
      * @param stepId     步骤 id
-     *//*
+     */
 
     @Override
     public int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
@@ -94,16 +91,50 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         return count;
     }
 
-    */
-/**
+
+    /**
      * 插入表单
- *
- * @param map
+     *
+     * @param map
      * @return
-     *//*
+     */
 
     @Override
     public String insertDocument(Map<String, Object> map) {
+        return null;
+    }
+
+    /**
+     * 根据 id 删除表单
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Integer deleteDocument(String id) {
+        return null;
+    }
+
+    /**
+     * 根据 id 查询表单
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Map<String, Object> selectDocument(String id) {
+        return null;
+    }
+
+    /**
+     * 根据 id 更新表单信息
+     *
+     * @param map 表单信息
+     * @param id  表单 id
+     * @return
+     */
+    @Override
+    public Map<String, Object> updateById(Map<String, Object> map, String id) {
         return null;
     }
 
@@ -114,13 +145,12 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
     }
 
 
-    */
-/**
+    /**
      * 新增一个审批记录
      *
      * @param approvalRecordPO 审批记录
      * @return 新增的审批记录
-     *//*
+     */
 
     @Override
     public Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
@@ -137,7 +167,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         // 填充记录表数据
         DateTime date = DateUtil.date();
         ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
-        String userId = StpUtil.getLoginIdAsString();
+        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
         approvalRecordPO.setInitiatorUserId(userId)
                 .setCreatedAt(date)
                 .setCreatedAt(date)
@@ -152,4 +182,4 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         return true;
     }
 }
-*/
+

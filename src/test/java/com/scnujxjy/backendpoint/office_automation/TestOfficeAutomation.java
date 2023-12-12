@@ -1,12 +1,11 @@
 package com.scnujxjy.backendpoint.office_automation;
 
 import cn.hutool.core.collection.ListUtil;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalRecordMapper;
-import com.scnujxjy.backendpoint.service.office_automation.CommonOfficeAutomationHandler;
 import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
+import com.scnujxjy.backendpoint.service.office_automation.StudentTransferMajorOAHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +19,9 @@ import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatu
 @Slf4j
 @AutoConfigureMockMvc
 public class TestOfficeAutomation {
+
     @Autowired
-    private CommonOfficeAutomationHandler handler;
+    private StudentTransferMajorOAHandler handler;
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,11 +31,6 @@ public class TestOfficeAutomation {
 
     @Autowired
     private ApprovalRecordMapper approvalRecordMapper;
-
-    @Test
-    void testTrigger() {
-        officeAutomationService.trigger(OfficeAutomationHandlerType.COMMON);
-    }
 
     @Test
     void testCreateRecord() {

@@ -80,6 +80,15 @@ public abstract class OfficeAutomationHandler {
      */
     public abstract void afterProcess(ApprovalStepRecordPO approvalStepRecordPO);
 
+    /**
+     * 处理完所有审核流程后会执行的方法
+     * <p>实现时可以根据approvalRecordPO.status来定义不同的行为</p>
+     *
+     * @param approvalRecordPO     审批完成的审批记录
+     * @param approvalStepRecordPO 最后一个步骤记录
+     */
+    public abstract void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO);
+
 
     /**
      * 根据信息插入步骤记录
@@ -332,6 +341,15 @@ public abstract class OfficeAutomationHandler {
                 return false;
         }
         afterProcess(approvalStepRecordPO);
+        // 如果当前审批记录为success或者failed状态则说明已经完成，执行完成的步骤
+        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectOne(Wrappers.<ApprovalRecordPO>lambdaQuery()
+                .eq(ApprovalRecordPO::getId, approvalStepRecordPO.getApprovalId())
+                .eq(ApprovalRecordPO::getStatus, SUCCESS.getStatus())
+                .or()
+                .eq(ApprovalRecordPO::getStatus, FAILED.getStatus()));
+        if (Objects.nonNull(approvalRecordPO)) {
+            afterApproval(approvalRecordPO, approvalStepRecordPO);
+        }
         return true;
     }
 

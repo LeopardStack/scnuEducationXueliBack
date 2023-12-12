@@ -82,6 +82,16 @@ public class OfficeAutomationController {
         return SaResult.data(approvalRecordAllInformation);
     }
 
+    @PostMapping("/create-approval-record")
+    public SaResult createApprovalRecord(@RequestBody ApprovalRecordPO approvalRecordPO) {
+        if (Objects.isNull(approvalRecordPO)
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())) {
+            return SaResult.error("审批参数为空");
+        }
+        Boolean created = officeAutomationService.createApprovalRecord(approvalRecordPO);
+        return SaResult.data(JSONObject.of("created", created));
+    }
+
     @PostMapping("/process-approval-step-record")
     public SaResult processApprovalStepRecord(@RequestBody ApprovalStepRecordPO approvalStepRecordPO) {
         if (Objects.isNull(approvalStepRecordPO)) {
@@ -108,7 +118,7 @@ public class OfficeAutomationController {
         if (Objects.isNull(map) || map.containsKey("typeId") == false) {
             return SaResult.error("插入信息缺失");
         }
-        String id = officeAutomationService.insertDocument(map, (long) map.get("typeId"));
+        String id = officeAutomationService.insertDocument(map, Long.valueOf((String) map.get("typeId")));
         return SaResult.data(JSONObject.of("id", id));
     }
 }

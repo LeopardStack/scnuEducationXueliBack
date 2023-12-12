@@ -33,7 +33,7 @@ public class ApprovalRecordPO {
     /**
      * 发起人id
      */
-    private String initiatorUserId;
+    private Long initiatorUserId;
     /**
      * 审批发起时间
      */
