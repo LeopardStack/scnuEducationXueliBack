@@ -13,6 +13,7 @@ import com.scnujxjy.backendpoint.service.SingleLivingService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -32,8 +33,6 @@ public class SingleLivingController {
 
     @Resource
     private SingleLivingService singleLivingService;
-    @Resource
-    private CourseScheduleMapper courseScheduleMapper;
 
     /**
      * 刪除直播间
@@ -59,6 +58,16 @@ public class SingleLivingController {
         return singleLivingService.getChannelCardPush(channelViewRequest);
     }
 
+    //导出考勤表接口
+    @PostMapping("/edit/exportStudentSituation")
+    public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+        // 校验参数
+        if (StrUtil.isBlank(courseId)) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.exportStudentSituation(courseId,response);
+    }
 
     /**
      * 设置直播间是否回放
@@ -100,6 +109,15 @@ public class SingleLivingController {
         return singleLivingService.getTutorChannelUrl(channelId,userId);
     }
 
+    //创建助教并返回单点登录链接
+    @PostMapping("/edit/createTutorChannel")
+    public  SaResult createTutorChannel(String channelId,String userId){
+        if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
+            throw dataMissError();
+        }
+        return singleLivingService.createTutorChannel(channelId,userId);
+    }
+
     @PostMapping("/edit/UpdateChannelNameAndImg")
     public SaResult UpdateChannelNameAndImg(@RequestBody ChannelInfoRequest request) {
         // 校验参数
@@ -114,12 +132,33 @@ public class SingleLivingController {
     @PostMapping("/edit/addChannelWhiteStudent")
     public SaResult addChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数
-        if (StrUtil.isBlank(request.getChannelId()) || StrUtil.isBlank(request.getCode()) || StrUtil.isBlank(request.getChannelName())) {
+        if (StrUtil.isBlank(request.getChannelId()) || request.getStudentWhiteList().isEmpty()) {
+            throw dataMissError();
+        }
+//        return singleLivingService.addChannelWhiteStudent(request);
+        return singleLivingService.addChannelWhiteStudentByFile(request);
+    }
+
+    @PostMapping("/edit/queryChannelWhiteStudent")
+    public SaResult queryChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId())) {
             throw dataMissError();
         }
 
-        return singleLivingService.addChannelWhiteStudent(request);
+        return singleLivingService.getChannelWhiteList(request);
     }
+
+    @PostMapping("/edit/deleteChannelWhiteStudent")
+    public SaResult deleteChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
+        // 校验参数
+        if (StrUtil.isBlank(request.getChannelId()) || request.getDeleteCodeList().isEmpty()) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.deleteChannelWhiteStudent(request);
+    }
+
 
     //获取频道下的场次信息
     @PostMapping("/edit/getChannelSessionInfo")

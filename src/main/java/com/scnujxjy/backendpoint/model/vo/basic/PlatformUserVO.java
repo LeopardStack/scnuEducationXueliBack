@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -46,4 +48,9 @@ public class PlatformUserVO {
      * 微信 openId
      */
     private String wechatOpenId;
+    /**
+     * 补充角色 id集合
+     */
+    private List<Long> supplementaryRoleIdSet;
+
 }

@@ -4,15 +4,13 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseExtraInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -27,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -571,7 +570,7 @@ public class CourseScheduleController {
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return SaResult.error("用户角色为空").setCode(2001);
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(collegeAdminFilter);
@@ -677,6 +676,25 @@ public class CourseScheduleController {
         return SaResult.ok();
     }
 
+    @PostMapping("/update_single_schedule_courses")
+    @SaCheckPermission("修改排课表上课时间和上课教师")
+    public SaResult updateSingleScheduleCoursesInformation(@RequestBody CourseScheduleUpdateRO courseScheduleUpdateROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseScheduleUpdateROPageRO)) {
+            return SaResult.error("未做任何修改");
+        }
+        try {
+            courseScheduleService.updateSingleScheduleInfor(courseScheduleUpdateROPageRO);
+        } catch (Exception e) {
+            // 2000 的值 说明修改失败
+            return SaResult.error(e.toString()).setCode(2000);
+        }
+
+        log.info("更新的排课表信息为 " + courseScheduleUpdateROPageRO);
+        return SaResult.ok();
+    }
+
+
     /**
      * 删除排课表相关信息
      *
@@ -697,7 +715,7 @@ public class CourseScheduleController {
                 return SaResult.error("删除失败").setCode(2000);
             } else {
                 // 删除排课要检查是否是有直播间 如果有 不让删除
-                if (courseSchedulePO.getOnlinePlatform() != null) {
+                if (StrUtil.isNotBlank(courseSchedulePO.getOnlinePlatform())) {
                     return SaResult.error("删除失败，该排课记录已存在上课记录").setCode(2000);
                 } else {
                     int i = courseScheduleService.getBaseMapper().deleteById(courseSchedulePO.getId());
@@ -715,6 +733,7 @@ public class CourseScheduleController {
             return SaResult.error("删除失败，请联系管理员").setCode(2000);
         }
     }
+
 
     /**
      * 获取直播间信息

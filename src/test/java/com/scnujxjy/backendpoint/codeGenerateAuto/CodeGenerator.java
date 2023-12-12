@@ -55,13 +55,15 @@ public class CodeGenerator {
         dsc.setUsername("root");
         dsc.setPassword("xhl2023@");
         mpg.setDataSource(dsc);
-
+        // fee_item_management,shared_materials,major_information,dropout_record,
+        // major_change_record,resumption_record,retention_record,suspension_record
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.exam");
-        pc.setEntity("dao.entity.exam");
-        pc.setController("controller.exam");
+        pc.setMapper("dao.mapper.teaching_process");
+        pc.setEntity("dao.entity.teaching_process");
+        pc.setController("controller.teaching_process");
+        pc.setXml("dao.mapper.teaching_process");
         mpg.setPackageInfo(pc);
 
         // 策略配置

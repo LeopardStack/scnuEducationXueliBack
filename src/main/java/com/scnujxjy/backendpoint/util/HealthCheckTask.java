@@ -156,7 +156,7 @@ public class HealthCheckTask {
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(queryWrapper);
 
         if (courseSchedulePOS.size() > 0) {
-            for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
+            out: for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
 
                 //1、获得排课表的开始和结束时间
                 String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
@@ -181,6 +181,28 @@ public class HealthCheckTask {
                 String OnlinePlatform = courseSchedulePO.getOnlinePlatform();
 
                 if (minuteDiff >= 0 && minuteDiff <= 60 && StrUtil.isBlank(OnlinePlatform)) {
+
+                    //如果没有直播间并且批次有和之前一样的。复用之前同批次的直播间
+                    QueryWrapper<CourseSchedulePO> poQueryWrapper = new QueryWrapper<>();
+                    poQueryWrapper.eq("batch_index", courseSchedulePO.getBatchIndex());
+                    //获取到该课同批次的课程信息
+                    List<CourseSchedulePO> poList = courseScheduleMapper.selectList(poQueryWrapper);
+                    if (poList.size()!=0){
+                        for (CourseSchedulePO schedulePO:poList) {
+                            if (StrUtil.isNotBlank(schedulePO.getOnlinePlatform())){
+                                UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
+                                updateWrapper.set("online_platform",schedulePO.getOnlinePlatform())
+                                        .eq("id", courseSchedulePO.getId());
+                                int update = courseScheduleMapper.update(null, updateWrapper);
+                                if (update>0){
+                                    log.info(courseSchedulePO+"该课程批次已存在直播间，直接复用无需新建");
+                                  continue out;
+                                }
+                            }
+                        }
+
+                    }
+
                     try {
                         ChannelCreateRequestBO channelCreateRequestBO = new ChannelCreateRequestBO();
                         channelCreateRequestBO.setLivingRoomTitle(courseSchedulePO.getCourseName());
@@ -258,38 +280,6 @@ public class HealthCheckTask {
 
     }
 
-//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
-    public void updateWhiteList() {
-        //先查出一小时内开好课的课程。然后将白名单
-
-    }
-
-
-    //    @Scheduled(fixedRate = 60_000) // 每60s触发一次
-    public void updateWatchStatus() {
-        //获取当天日期
-        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
-        LocalDate localDate = LocalDate.now(zoneId);//2023-11-02
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        String nowTime = now.format(formatter);
-
-
-        //live（直播中）、end（直播结束）、playback（回放中）、waiting（等待直播）
-        QueryWrapper<VideoStreamRecordPO> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("teaching_date", localDate)// 先筛选日期为今天的
-                .lt("TIMESTAMPDIFF(HOUR, end_time, '" + nowTime + "')", 1)//再筛选下课程结束时间-现在超过了1小时
-                .in("watch_status", "waiting", "live", "end");
-
-        List<VideoStreamRecordPO> videoStreamRecordPOS = videoStreamRecordsMapper.selectList(queryWrapper);//这样就拿到了所有的直播记录
-        for (VideoStreamRecordPO videoStreamRecordPO : videoStreamRecordPOS) {
-            singleLivingService.GetChannelDetail(videoStreamRecordPO.getChannelId());
-            //找出所有的观看页面
-        }
-
-
-    }
 
 }
 

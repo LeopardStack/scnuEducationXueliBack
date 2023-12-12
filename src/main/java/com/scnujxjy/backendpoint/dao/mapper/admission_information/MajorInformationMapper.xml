@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.admission_information.MajorInformationMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.admission_information.MajorInformationPO">
+        <id column="id" property="id" />
+        <result column="grade" property="grade" />
+        <result column="level" property="level" />
+        <result column="study_form" property="studyForm" />
+        <result column="major_name" property="majorName" />
+        <result column="tuition" property="tuition" />
+        <result column="admission_major_code" property="admissionMajorCode" />
+        <result column="admission_type" property="admissionType" />
+        <result column="xuexinwang_major_code" property="xuexinwangMajorCode" />
+        <result column="xuexinwang_major_name" property="xuexinwangMajorName" />
+        <result column="college_id" property="collegeId" />
+        <result column="teaching_point_id" property="teachingPointId" />
+        <result column="personnel_cultivating_program_url" property="personnelCultivatingProgramUrl" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, grade, level, study_form, major_name, tuition, admission_major_code, admission_type, xuexinwang_major_code, xuexinwang_major_name, college_id, teaching_point_id, personnel_cultivating_program_url
+    </sql>
+
+</mapper>

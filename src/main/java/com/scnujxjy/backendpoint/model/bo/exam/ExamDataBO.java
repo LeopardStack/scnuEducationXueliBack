@@ -52,4 +52,6 @@ public class ExamDataBO {
 
     private String examStatus;
 
+    private String examType;
+
 }

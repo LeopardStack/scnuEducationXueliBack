@@ -13,6 +13,10 @@ spring:
     host: 113.108.140.173
     port: 8001
     password: 12345A
+  data:
+    mongodb:
+      uri: mongodb://scnuXueli:ScnuXueliDB2023@113.108.140.172:27017,113.108.140.174:27017,113.108.140.173:27017/scnuXueliDB?replicaSet=rs0
+
   # rabbitmq
   rabbitmq:
     host: 113.108.140.173
@@ -23,6 +27,7 @@ spring:
     queue2: test1
     queue3: data_export
     queue4: data_export2
+    queue5: data_system_msg
     queue6: data_upload
 
   servlet:

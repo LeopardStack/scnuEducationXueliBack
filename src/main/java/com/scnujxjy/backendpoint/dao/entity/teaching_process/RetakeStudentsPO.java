@@ -34,9 +34,19 @@ public class RetakeStudentsPO implements Serializable {
     private String studentNumber;
 
     /**
-     * 批次ID，代表教师、课程以及合班的班级
+     * 插入到指定班级中进行补休
      */
-    private Long batchId;
+    private String classIdentifier;
+
+    /**
+     * 课程代码
+     */
+    private String courseCode;
+
+    /**
+     * 课程名称
+     */
+    private String courseName;
 
 
 }

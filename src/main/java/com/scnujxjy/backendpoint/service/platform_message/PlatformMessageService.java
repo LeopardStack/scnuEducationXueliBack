@@ -6,15 +6,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.AnnouncementMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.AnnouncementMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.UserUploadsMapper;
-import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
+import com.scnujxjy.backendpoint.inverter.platform_message.AnnouncementMessageInverter;
 import com.scnujxjy.backendpoint.inverter.platform_message.PlatformMessageInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.UserAnnouncementRo;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.DownloadMessageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
@@ -38,13 +41,45 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, PlatformMessagePO> implements IService<PlatformMessagePO> {
     @Resource
-    private PlatformMessageInverter paymentInfoInverter;
+    private PlatformMessageInverter platformMessageInverter;
 
     @Resource
     private DownloadMessageMapper downloadMessageMapper;
 
     @Resource
     private UserUploadsMapper userUploadsMapper;
+
+    @Resource
+    private  PlatformMessageMapper platformMessageMapper;
+
+    @Resource
+    private AnnouncementMessageMapper announcementMessageMapper;
+
+    @Resource
+    private AnnouncementMessageInverter announcementMessageInverter;
+
+    /**
+    * @Version：1.0.0
+    * @Description：插入公告消息
+    * @Author：3304393868@qq.com
+    * @Date：2023/12/8-9:15
+    */
+    public boolean InsterAnnouncementMessage (UserAnnouncementRo userAnnouncementRo){
+
+        AnnouncementMessagePO announcementMessagePO = announcementMessageInverter.ro2PO(userAnnouncementRo);
+        int count =  announcementMessageMapper.insert(announcementMessagePO);
+        userAnnouncementRo.setRelatedMessageId(announcementMessagePO.getId());
+        if (count>0){
+            PlatformMessagePO platformMessagePO = platformMessageInverter.ro2PO(userAnnouncementRo);
+            return platformMessageMapper.insert(platformMessagePO) > 0;
+        }
+        return false;
+
+
+
+    }
+
+
 
 
     public PlatformMessageVO getUserMsg(String msgType) {

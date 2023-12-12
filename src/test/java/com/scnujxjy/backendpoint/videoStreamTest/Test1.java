@@ -20,9 +20,12 @@ import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingServiceImpl;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.ResultCode;
+import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
+import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
+import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.constant.LiveConstant;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.web.auth.*;
@@ -133,6 +136,27 @@ public class Test1 {
 //        sing.deleteChannel(a);
 //        sing.setWatchCondition("4368180");
 //        sing.testCreateChannelWhiteList(Integer.valueOf("4368180"));
+    }
+
+    @Test
+    public void testGetCategoryList() throws IOException, NoSuchAlgorithmException {
+        //公共参数,填写自己的实际
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String userId = "27b07c2dc9";
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        //业务参数
+        String url = "http://api.polyv.net/live/v3/user/category/list";
+
+        //http 调用逻辑
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", appId);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        String response = HttpUtil.postFormBody(url, requestMap);
+        log.info("测试查询直播分类，返回值：{}", response);
+        //do somethings
+
     }
 
 

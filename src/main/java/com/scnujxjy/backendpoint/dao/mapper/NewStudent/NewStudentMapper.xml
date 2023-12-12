@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.NewStudent.NewStudentMapper">
+
+<!--    <resultMap id="newstumap" type="com.scnujxjy.backendpoint.model.vo.admission_information.NewStudentAdmissionInformationVo">-->
+<!--        <result column="id" property="id"></result>-->
+<!--        <result property="address" column="address"></result>-->
+<!--        <result property="contactNumber" column="contact_number"></result>-->
+<!--    </resultMap>-->
+
+
+    <sql id="slectStu">
+        SELECT a.id,a.student_number,a.`name`,a.address,a.admission_number
+                ,a.college,a.major_name,a.gender,
+                 (select (count(*)) from admission_information) as total,
+               a.major_code,a.birth_date,a.graduation_date,a.graduation_school,a.id_card_number,a.short_student_number,a.study_form,pca.admissions_subject_categorie,pca.`contact_number`,pca.`teaching point id`
+        FROM `admission_information` AS a
+                 LEFT  JOIN professional_contact_details as pca
+                            ON pca.` major_code` = a.major_code
+                 LEFT JOIN teaching_point_information as ti
+                           ON
+                               pca.`teaching point id` = ti.teaching_point_id
+                 LEFT JOIN college_information as c
+                           on pca.college_id = c.college_id
+    </sql>
+
+    <select id="selectNewStudentInfo" resultType="com.scnujxjy.backendpoint.model.vo.admission_information.NewStudentAdmissionInformationVo">
+        <include refid="slectStu"/>
+            <where>
+                <if test="entity != null and entity.grade != null and entity.grade != ''">
+                    a.grade = #{entity.grade}
+                </if>
+                <if test="entity !=null and entity.studentNumber != null and entity.studentNumber != ''">
+                    and a.student_number = #{entity.studentNumber}
+                </if>
+                <if test="entity != null and entity.idCardNumber != null and entity.idCardNumber != ''">
+                    and id_card_number = #{entity.idCardNumber}
+                </if>
+                <if test="entity != null and entity.admissionCollege != null and entity.admissionCollege != ''">
+                    AND admission_college = #{entity.admissionCollege}
+                </if>
+            </where>
+        LIMIT ${pageNumber-1}, #{pageSize}
+    </select>
+
+</mapper>

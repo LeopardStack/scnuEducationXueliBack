@@ -67,5 +67,14 @@ public class CourseExamInfoPO implements Serializable {
      */
     private String examStatus;
 
+    /**
+     * 考试形式：开卷、闭卷
+     */
+    private String examType;
+
+    /**
+     * 授课学期
+     */
+    private String teachingSemester;
 
 }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.teaching_process.SharedMaterialsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.teaching_process.SharedMaterialsPO">
+        <id column="id" property="id" />
+        <result column="class_identifier" property="classIdentifier" />
+        <result column="file_id" property="fileId" />
+        <result column="upload_time" property="uploadTime" />
+        <result column="uploader_id" property="uploaderId" />
+        <result column="is_visible" property="isVisible" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, class_identifier, file_id, upload_time, uploader_id, is_visible
+    </sql>
+
+</mapper>

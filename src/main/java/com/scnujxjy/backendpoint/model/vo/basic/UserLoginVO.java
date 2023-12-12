@@ -48,5 +48,10 @@ public class UserLoginVO {
      * 用户的微信 openId
      */
     private String openId;
+
+    /**
+     * 用户所有角色
+     */
+    private List<String> allRoleNameList;
 }
 

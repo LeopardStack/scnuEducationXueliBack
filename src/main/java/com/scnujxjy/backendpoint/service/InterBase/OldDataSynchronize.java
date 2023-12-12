@@ -10,6 +10,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.oa.*;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
@@ -36,7 +37,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 300;
+    public static final int CONSUMER_COUNT = 800;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -61,6 +62,17 @@ public class OldDataSynchronize {
 
     @Resource
     private ScoreInformationMapper scoreInformationMapper;
+
+    @Resource
+    private DropoutRecordMapper dropoutRecordMapper;
+    @Resource
+    private MajorChangeRecordMapper majorChangeRecordMapper;
+    @Resource
+    private ResumptionRecordMapper resumptionRecordMapper;
+    @Resource
+    private RetentionRecordMapper retentionRecordMapper;
+    @Resource
+    private SuspensionRecordMapper suspensionRecordMapper;
 
     @Resource
     private MinioService minioService;
@@ -139,7 +151,7 @@ public class OldDataSynchronize {
      * @param fileName
      * @param diyBucketName
      */
-    public <T> void exportErrorListToExcelAndUploadToMinio(List<T> errorList, Class<T> type, String fileName, String diyBucketName) {
+    public <T> boolean exportErrorListToExcelAndUploadToMinio(List<T> errorList, Class<T> type, String fileName, String diyBucketName) {
         // Step 1: Write data to ByteArrayOutputStream
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         EasyExcel.write(outputStream, type).sheet("Sheet1").doWrite(errorList); // 注意，这里直接使用 T.class 是不允许的。我们需要其他方式来传递类的类型。
@@ -150,12 +162,6 @@ public class OldDataSynchronize {
         // Step 3: Upload to Minio
         boolean success = minioService.uploadStreamToMinio(inputStream, fileName, diyBucketName);
 
-        if (success) {
-            log.info("Successfully uploaded to Minio.");
-        } else {
-            log.error("Failed to upload to Minio.");
-        }
-
         // Close the streams
         try {
             inputStream.close();
@@ -163,6 +169,16 @@ public class OldDataSynchronize {
         } catch (IOException e) {
             log.error("Error closing streams: " + e.getMessage());
         }
+
+        if (success) {
+            log.info("Successfully uploaded to Minio.");
+            return true;
+        } else {
+            log.error("Failed to upload to Minio.");
+            return false;
+        }
+
+
     }
 
 
@@ -402,6 +418,63 @@ public class OldDataSynchronize {
         exportMapToTxtAndUploadToMinio(classInformationDataImport.updateCountMap, errorFileName1,
                 "datasynchronize");
         exportListToTxtAndUploadToMinio(classInformationDataImport.insertLogs,
+                errorFileName, "datasynchronize");
+    }
+
+    /**
+     * 同步旧系统与新系统的学籍异动数据
+     */
+    public void synchronizeStudentStatusChangeData(boolean updateAny) throws InterruptedException {
+        StudentStatusChangeDataImport studentStatusChangeDataImport = new StudentStatusChangeDataImport();
+        studentStatusChangeDataImport.setUpdateAny(updateAny);
+
+        ArrayList<HashMap<String, String>> studentStatusChangeData = getStudentStatusChangeData();
+        studentStatusChangeDataImport.insertLogsList.add("旧系统学籍异动数据总数 " + studentStatusChangeData.size());
+
+        Integer dropoutRecordCount = dropoutRecordMapper.selectCount(null);
+        Integer majorChangeRecordCount = majorChangeRecordMapper.selectCount(null);
+        Integer resumptionRecordCount = resumptionRecordMapper.selectCount(null);
+        Integer retentionRecordCount = retentionRecordMapper.selectCount(null);
+        Integer suspensionRecordCount = suspensionRecordMapper.selectCount(null);
+        Integer integer = dropoutRecordCount + majorChangeRecordCount + resumptionRecordCount + retentionRecordCount +
+                suspensionRecordCount;
+
+        SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+        String query = "select count(*) from classdata c1,classdata c2,stuchangedata , " +
+                "studentdata where (substr(xhao,1,2)>='07') and (substr(stuchangedata.xhao,1,1)<>'9') " +
+                "and (oldbshi=c1.bshi) and (newbshi=c2.bshi) and (stuchangedata.xhao=studentdata.xhao) ";
+        Object value = scnuxljyDatabase.getValue(query);
+
+        studentStatusChangeDataImport.insertLogsList.add("新系统中导入的学籍异动总数为 " + integer);
+        studentStatusChangeDataImport.insertLogsList.add("旧系统中的学籍异动总数为 " + value);
+
+
+        for (HashMap<String, String> hashMap : studentStatusChangeData) {
+
+            studentStatusChangeDataImport.queue.put(hashMap); // Put the object in the queue
+        }
+
+        // 传递毒药对象
+        for (int i = 0; i < CONSUMER_COUNT; i++) {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("END", "TRUE");
+            studentStatusChangeDataImport.queue.put(hashMap);
+        }
+
+        studentStatusChangeDataImport.latch.await();
+
+        if (studentStatusChangeDataImport.executorService != null) {
+            studentStatusChangeDataImport.executorService.shutdown();
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String currentDateTime = LocalDateTime.now().format(formatter);
+        String relativePath = "data_import_error_excel/studentStatusChangeData/";
+        String errorFileName = relativePath + currentDateTime + "_"  + "导入学籍异动结果总览.txt";
+        studentStatusChangeDataImport.insertLogsList.add("各个学籍异动数据的总数为 " + studentStatusChangeDataImport.getApplyCount());
+        log.info("各个学籍异动数据的总数为\n " + studentStatusChangeDataImport.getApplyCount());
+        log.info("各个学籍异动插入的数据条数为\n " + studentStatusChangeDataImport.getApplyImportCount());
+        exportListToTxtAndUploadToMinio(studentStatusChangeDataImport.insertLogsList,
                 errorFileName, "datasynchronize");
     }
 

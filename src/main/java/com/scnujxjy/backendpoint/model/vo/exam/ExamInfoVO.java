@@ -93,7 +93,17 @@ public class ExamInfoVO implements Serializable {
      */
     private String examStatus;
 
+    /**
+     * 考试形式：开卷、闭卷
+     */
+    private String examType;
+
     private String mainTeacherUsername;
 
     private String mainTeacherName;
+
+    /**
+     * 班级总人数
+     */
+    private int classSize;
 }

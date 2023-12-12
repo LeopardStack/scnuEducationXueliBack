@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -689,7 +690,17 @@ public class SCNUXLJYDatabase {
                     if("ERTOTAL".equals(name) || "BYFEMALE".equals(name) || "BYTOTAL".equals(name) || "TOTAL".equals(name)
                             || "FEMALE".equals(name) || "PK".equals(name)){
                         hashMap.put(name, String.valueOf(rs.getInt(i)));
-                    }else{
+                    }else if("UPDATETIME".equals(name)){
+                        Date date = rs.getDate(i);
+
+                        // 创建一个 SimpleDateFormat 对象并设置格式
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+                        // 将 Date 对象转换为指定格式的字符串
+                        String formattedDate = sdf.format(date);
+                        hashMap.put(name, formattedDate);
+                    }
+                    else{
                         byte[] columnValue = null;
                         try {
                             columnValue = rs.getBytes(i);
@@ -699,7 +710,12 @@ public class SCNUXLJYDatabase {
                             }
                             String tmp = new String(columnValue, "GBK");
                             tmp = tmp.trim();
-                            hashMap.put(name, tmp);
+                            if(hashMap.containsKey(name)){
+                                hashMap.put("new_" + name, tmp);
+                            }else{
+                                hashMap.put(name, tmp);
+                            }
+
                         }catch (Exception e){
                             logger.error(e.toString() + '\n' + name);
                         }

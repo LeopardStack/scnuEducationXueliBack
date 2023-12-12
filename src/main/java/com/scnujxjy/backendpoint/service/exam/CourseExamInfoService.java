@@ -15,8 +15,10 @@ import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO;
+import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
+import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,9 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
     @Resource
     private ScnuXueliTools scnuXueliTools;
 
+    @Resource
+    private OldDataSynchronize oldDataSynchronize;
+
 
     /**
      * 单个设置一条教学计划的考试方式
@@ -76,7 +81,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
         return false;
     }
 
-    public boolean batchSetExamType(ExamFilterRO entity) {
+    public boolean batchSetExamType(BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
         List<String> roleList = StpUtil.getRoleList();
 
         // 获取访问者 ID
@@ -88,17 +93,17 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
                 CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
-                entity.setCollege(userBelongCollege.getCollegeName());
+                batchSetTeachersInfoRO.setCollege(userBelongCollege.getCollegeName());
 
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
             }
         }
-        log.info("考试信息筛选参数为 " + entity);
+        log.info("考试信息筛选参数为 " + batchSetTeachersInfoRO);
         int count = 0;
-        List<ExamDataBO> examDataBOS = courseInformationMapper.selectAllExamData(entity);
-        for(ExamDataBO examDataBO: examDataBOS){
-            Long examId = examDataBO.getExamId();
+        List<CourseExamInfoPO> courseExamInfoPOs = courseExamInfoMapper.batchSelectData(batchSetTeachersInfoRO);
+        for(CourseExamInfoPO examDataBO: courseExamInfoPOs){
+            Long examId = examDataBO.getId();
             CourseExamInfoPO courseExamInfoPO = courseExamInfoMapper.selectOne(new LambdaQueryWrapper<CourseExamInfoPO>()
                     .eq(CourseExamInfoPO::getId, examId));
             courseExamInfoPO.setExamMethod("机考");
@@ -110,12 +115,12 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
             }
         }
 
-        log.info("批量获取到了所有的教学计划所对应的考试信息表 " + examDataBOS.size() + " 条 成功了 " + count + " 条");
+        log.info("批量获取到了所有的教学计划所对应的考试信息表 " + courseExamInfoPOs.size() + " 条 成功了 " + count + " 条");
 
         return true;
     }
 
-    public boolean batchUnSetExamType(ExamFilterRO entity) {
+    public boolean batchUnSetExamType(BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
         List<String> roleList = StpUtil.getRoleList();
 
         // 获取访问者 ID
@@ -127,17 +132,17 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
                 CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
-                entity.setCollege(userBelongCollege.getCollegeName());
+                batchSetTeachersInfoRO.setCollege(userBelongCollege.getCollegeName());
 
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
             }
         }
-        log.info("考试信息筛选参数为 " + entity);
+        log.info("考试信息筛选参数为 " + batchSetTeachersInfoRO);
         int count = 0;
-        List<ExamDataBO> examDataBOS = courseInformationMapper.selectAllExamData(entity);
-        for(ExamDataBO examDataBO: examDataBOS){
-            Long examId = examDataBO.getExamId();
+        List<CourseExamInfoPO> courseExamInfoPOs = courseExamInfoMapper.batchSelectData(batchSetTeachersInfoRO);
+        for(CourseExamInfoPO examDataBO: courseExamInfoPOs){
+            Long examId = examDataBO.getId();
             CourseExamInfoPO courseExamInfoPO = courseExamInfoMapper.selectOne(new LambdaQueryWrapper<CourseExamInfoPO>()
                     .eq(CourseExamInfoPO::getId, examId));
             courseExamInfoPO.setExamMethod("线下");
@@ -148,7 +153,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
                 count += 1;
             }
         }
-        log.info("批量获取到了所有的教学计划所对应的考试信息表 " + examDataBOS.size() + " 条 成功了 " + count + " 条");
+        log.info("批量获取到了所有的教学计划所对应的考试信息表 " + courseExamInfoPOs.size() + " 条 成功了 " + count + " 条");
         return true;
     }
 
@@ -232,5 +237,78 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
         }
 
         return delete1 + delete2;
+    }
+
+    /**
+     * 批量设置命题人和阅卷人
+     * @param batchSetTeachersInfoRO
+     * @return
+     */
+    public boolean batchSetTeachers(BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
+        List<CourseExamInfoPO> courseExamInfoPOs = courseExamInfoMapper.batchSelectData(batchSetTeachersInfoRO);
+        // 获取到所有的考试信息后 开始更新 主讲和助教信息
+        for(CourseExamInfoPO courseExamInfoPO: courseExamInfoPOs){
+            String mainTeacher1 = batchSetTeachersInfoRO.getMainTeacher();
+            if(mainTeacher1 == null || mainTeacher1.trim().isEmpty()){
+                if(batchSetTeachersInfoRO.getClearAllTeachers()){
+                    // 清除主讲老师信息
+                    UpdateWrapper<CourseExamInfoPO> updateWrapper = new UpdateWrapper<>();
+                    updateWrapper.set("main_teacher", null)
+                            .eq("id", courseExamInfoPO.getId());
+                    updateWrapper.set("teacher_username", null)
+                            .eq("id", courseExamInfoPO.getId());
+                    int i = courseExamInfoMapper.update(null, updateWrapper);
+
+                }
+            } else{
+                int mainTeacher = Integer.parseInt(mainTeacher1);
+                TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getUserId, mainTeacher));
+                courseExamInfoPO.setMainTeacher(teacherInformationPO.getName()) ;
+                courseExamInfoPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+                int i = courseExamInfoMapper.updateById(courseExamInfoPO);
+                if(i > 0){
+                    log.info("更新考试信息主讲教师成功 !");
+                }else{
+                    log.error("更新考试信息主讲教师以失败 !" + courseExamInfoPO + "\n更新结果 " + i);
+                    return false;
+                }
+
+            }
+
+            if(batchSetTeachersInfoRO.getAssistants() != null && !batchSetTeachersInfoRO.getAssistants().isEmpty()){
+                int delete = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                        .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                log.info("删除指定教学计划所对应的考试计划的所有助教信息 " + delete);
+            }
+            int count = 0;
+            if(batchSetTeachersInfoRO.getAssistants() != null && batchSetTeachersInfoRO.getAssistants().size() != 0) {
+                for (String tutorId : batchSetTeachersInfoRO.getAssistants()) {
+                    int userId = Integer.parseInt(tutorId);
+                    TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                            .eq(TeacherInformationPO::getUserId, userId));
+                    CourseExamAssistantsPO courseExamAssistantsPO = new CourseExamAssistantsPO();
+                    courseExamAssistantsPO.setCourseId(courseExamInfoPO.getId());
+                    courseExamAssistantsPO.setAssistantName(teacherInformationPO.getName());
+                    courseExamAssistantsPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+                    int insert = courseExamAssistantsMapper.insert(courseExamAssistantsPO);
+                    if (insert > 0) {
+                        count += 1;
+                    }
+                }
+                if (count > 0) {
+                    log.info(courseExamInfoPO + "插入更新 " + count + " 个助教");
+                }
+            }else{
+                if(batchSetTeachersInfoRO.getClearAllTeachers()){
+                    // 清除阅卷助教老师信息
+                    int delete_ = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                            .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+
+                }
+            }
+        }
+        log.info("批量修改主讲和助教信息 \n" + courseExamInfoPOs);
+        return false;
     }
 }

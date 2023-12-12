@@ -62,6 +62,30 @@ public class ScnuXueliTools {
         return null;
     }
 
+    public CollegeInformationPO getUserBelongCollegeByLoginId(String loginId){
+        try{
+            if (StrUtil.isBlank(loginId)) {
+                return null;
+            }
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+            if (Objects.isNull(platformUserPO)) {
+                return null;
+            }
+            CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper.selectById(platformUserPO.getUserId());
+            if (Objects.isNull(collegeAdminInformationPO)) {
+                return null;
+            }
+            CollegeInformationPO collegeInformationPO = collegeInformationMapper.selectById(collegeAdminInformationPO.getCollegeId());
+            if (Objects.isNull(collegeInformationPO)) {
+                return null;
+            }
+            return collegeInformationPO;
+        }catch (Exception e){
+            log.error("获取用户所属学院信息失败 " + e.toString());
+        }
+        return null;
+    }
+
     public ScnuTimeInterval getTimeInterval(Date teachingDate, String teachingTime){
         ScnuTimeInterval scnuTimeInterval = new ScnuTimeInterval();
         Calendar calendar = Calendar.getInstance();
@@ -110,7 +134,7 @@ public class ScnuXueliTools {
      * 将指定对象的所有字符串属性 只要其值为空字符串 将其置为 null
      * @param obj
      */
-    public void convertEmptyStringsToNull(CourseScheduleFilterRO obj) {
+    public void convertEmptyStringsToNull(Object obj) {
         if (obj == null) {
             return;
         }
@@ -135,4 +159,5 @@ public class ScnuXueliTools {
             }
         }
     }
+
 }
