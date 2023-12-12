@@ -1,39 +1,24 @@
-package com.scnujxjy.backendpoint.dao.entity.platform_message;
+package com.scnujxjy.backendpoint.model.ro.platform_message;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.util.Date;
+import java.util.Set;
 
-/**
- * <p>
- * 公告消息表
- * </p>
- *
- * @author 谢辉龙
- * @since 2023-09-23
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("announcement_message")
-public class AnnouncementMessagePO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class AnnouncementMessageRO {
 
     /**
      * 自增主键
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -70,4 +55,17 @@ public class AnnouncementMessagePO implements Serializable {
      * 状态：1-草稿，2-发布，3-撤销，4-删除
      */
     private Integer status;
+    /**
+     * 年级 集合
+     */
+    private Set<Long> gradeSet;
+    /**
+     * 专业 id 集合
+     */
+    private Set<Long> majorIdSet;
+    /**
+     * 教学点 id 集合
+     */
+    private Set<String> teachingPointIdSet;
+
 }

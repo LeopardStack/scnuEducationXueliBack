@@ -1,38 +1,17 @@
-package com.scnujxjy.backendpoint.dao.entity.platform_message;
+package com.scnujxjy.backendpoint.model.vo.platform_message;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
-
-/**
- * <p>
- * 附件表
- * </p>
- *
- * @author 谢辉龙
- * @since 2023-09-23
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("attachment")
-public class AttachmentPO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 自增主键
-     */
-    @TableId(value = "id", type = IdType.AUTO)
+public class AttachmentVO {
     private Long id;
 
     /**
@@ -66,9 +45,7 @@ public class AttachmentPO implements Serializable {
     private Long attachmentSize;
 
     /**
-     * 用户 id
+     * 上传用户名称
      */
-    private Long userId;
-
-
+    private String name;
 }

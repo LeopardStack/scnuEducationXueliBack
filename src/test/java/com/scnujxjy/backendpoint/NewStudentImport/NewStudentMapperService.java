@@ -1,9 +1,7 @@
 package com.scnujxjy.backendpoint.NewStudentImport;
 
-import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.inverter.newStudent.NewStudentInverter;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.UserAnnouncementRo;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.PersonalInfoRO;
 import com.scnujxjy.backendpoint.model.vo.newStudentVo.NewStudentVo;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
@@ -15,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @SpringBootTest
@@ -44,15 +41,6 @@ public  class NewStudentMapperService {
             if (admissionInformationService.insterAdmissionInformation(admissionInformationRO) > 0) {
                 PersonalInfoRO personalInfoRO = newStudentInverter.Vo2PersonalInfoInRo(newstu);
                 if (personalInfoService.InsterPersonalInfo(personalInfoRO) > 0) {
-//                   开始插入用户导入消息表
-                    UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
-                    userAnnouncementRo.setTitle("账号导入成功");
-                    userAnnouncementRo.setContent("用户信息导入成功");
-                    userAnnouncementRo.setUserId(newstu.getIdCardNumber());
-                    userAnnouncementRo.setIsRead(false);
-                    userAnnouncementRo.setMessageType(String.valueOf(MessageEnum.ANNOUNCEMENT_MSG.getMessage_name()));
-                    userAnnouncementRo.setCreatedAt(new Date());
-                    platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
                 }
             }
         }

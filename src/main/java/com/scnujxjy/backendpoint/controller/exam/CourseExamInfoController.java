@@ -8,27 +8,20 @@ import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
-import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
-import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
@@ -163,7 +156,7 @@ public class CourseExamInfoController {
             // 将前端 this.form 字段里为 空字符串的属性 设置为 null
             scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
             // 处理完非空 直接调用消息队列 异步处理 前端直接返回 OK
-            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(), MessageEnum.BATCH_SET_Exam_Teachers.getMessage_name());
+            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(), MessageEnum.BATCH_SET_Exam_Teachers.getMessageName());
 
 //            boolean b = courseExamInfoService.batchSetTeachers(batchSetTeachersInfoRO);
             if(b1){

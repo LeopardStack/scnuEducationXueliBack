@@ -246,7 +246,7 @@ public class MessageReceiver {
         platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
         platformMessagePO.setRelatedMessageId(null);
         platformMessagePO.setIsRead(false);
-        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
         int insert1 = platformMessageMapper.insert(platformMessagePO);
         log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
         return platformMessagePO;

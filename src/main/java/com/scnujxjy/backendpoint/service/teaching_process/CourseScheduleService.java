@@ -1066,7 +1066,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             platformMessagePO.setUserId(String.valueOf(userId));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.UPLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.UPLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户上传文件的消息插入结果 " + insert1);
             return generatedId;

@@ -403,5 +403,18 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         return platformUserVO.getUserId();
     }
 
+    /**
+     * 根据 userId 获取用户名称
+     *
+     * @param userId
+     * @return
+     */
+    public String getNameByUserId(Long userId) {
+        if (Objects.isNull(userId)) {
+            return null;
+        }
+
+        return null;
+    }
 
 }

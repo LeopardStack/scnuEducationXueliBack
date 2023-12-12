@@ -1,22 +1,15 @@
 package com.scnujxjy.backendpoint.mapperTest;
 
-import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
-import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.UserAnnouncementRo;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.PersonalInfoRO;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
-import com.scnujxjy.backendpoint.service.admission_information.AdmissionsImport;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import com.scnujxjy.backendpoint.service.registration_record_card.PersonalInfoService;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.util.Date;
 
 @SpringBootTest
 @Slf4j
@@ -66,12 +59,5 @@ public class Test1 {
 
     @Test
     public void InsertAnnoucementessage(){
-        UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
-        userAnnouncementRo.setMessageType(MessageEnum.ANNOUNCEMENT_MSG.getMessage_name());
-        userAnnouncementRo.setContent("測試公告");
-        userAnnouncementRo.setIsRead(false);
-        userAnnouncementRo.setUserId("121424312");
-        boolean a=   platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
-        log.info("打印[{}]",a);
     }
 }

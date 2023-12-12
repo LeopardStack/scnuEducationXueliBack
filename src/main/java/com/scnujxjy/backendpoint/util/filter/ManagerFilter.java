@@ -316,7 +316,7 @@ public class ManagerFilter extends AbstractFilter {
             platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }
@@ -527,7 +527,7 @@ public class ManagerFilter extends AbstractFilter {
             platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }
@@ -1565,7 +1565,7 @@ public class ManagerFilter extends AbstractFilter {
             platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }

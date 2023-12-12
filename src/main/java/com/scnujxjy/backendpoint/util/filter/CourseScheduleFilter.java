@@ -86,7 +86,7 @@ public class CourseScheduleFilter extends AbstractFilter {
                     .userId(String.valueOf(platformUserService.getUserIdByUsername(username)))
                     .isRead(false)
                     .relatedMessageId(id)
-                    .messageType(MessageEnum.DOWNLOAD_MSG.getMessage_name())
+                    .messageType(MessageEnum.DOWNLOAD_MSG.getMessageName())
                     .build();
             count = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入 {} 条", count);
