@@ -109,7 +109,7 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                     DownloadMessageVO tempMsg = new DownloadMessageVO();
                     BeanUtils.copyProperties(downloadMessage, tempMsg);
                     tempMsg.setIsRead(platformMessagePOS.stream()
-                            .filter(po -> po.getRelatedMessageId().equals(downloadMessage.getId()))
+                            .filter(po -> downloadMessage.getId().equals(po.getRelatedMessageId()))
                             .findFirst()
                             .map(PlatformMessagePO::getIsRead)
                             .orElse(false));  // Set default value as false if not found
