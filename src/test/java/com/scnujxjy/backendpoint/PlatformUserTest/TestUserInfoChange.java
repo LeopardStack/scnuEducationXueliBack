@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
@@ -15,9 +16,11 @@ import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
+import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -35,6 +38,9 @@ public class TestUserInfoChange {
     private CollegeAdminInformationService collegeAdminInformationService;
 
     @Resource
+    private CollegeInformationService collegeInformationService;
+
+    @Resource
     private StudentStatusMapper studentStatusMapper;
 
     @Resource
@@ -45,8 +51,8 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword() {
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername("liweitang");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "liweitang2023@");
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername("M450722200008016522");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "016522");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -99,6 +105,21 @@ public class TestUserInfoChange {
         platformUserROList.add(platformUserRO);
         platformUserService.batchCreateUser(platformUserROList);
     }
+
+    /**
+     * 添加二级学院管理员
+     */
+//    @Test
+//    public void addCollegeManager() {
+//
+//        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+//        PlatformUserRO platformUserRO = new PlatformUserRO();
+//        platformUserRO.setUsername("guangzhoudadeTest1");
+//        platformUserRO.setPassword("guangzhoudadeTest12023@");
+//        platformUserRO.setRoleId(7L);
+//        platformUserROList.add(platformUserRO);
+//        platformUserService.batchCreateUser(platformUserROList);
+//    }
 
     /**
      * 添加老师
@@ -184,8 +205,12 @@ public class TestUserInfoChange {
 
     @Test
     public void addCollegeManager() {
-        String username = "Mjiaokeyuan001";
-        String password = "test001";
+        String idNumber = "450722200008016522";
+        String username = "M" + idNumber;
+        String password = "016522";
+        String name = "刘舒婷";
+        String collegeName = "文学院";
+        String phoneNumber = "15362954650";
         PlatformUserPO platformUserPO = new PlatformUserPO();
         platformUserPO.setUsername(username);
         platformUserPO.setPassword(password);
@@ -196,6 +221,23 @@ public class TestUserInfoChange {
         if (count == 0) {
             int insert = platformUserService.getBaseMapper().insert(platformUserPO);
             log.info("生成新账号 " + insert);
+            // 给二级学院生成账号后 再录入其个人信息
+            CollegeInformationPO collegeInformationPO = collegeInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
+                    .eq(CollegeInformationPO::getCollegeName, collegeName));
+            if(collegeInformationPO == null){
+                throw new IllegalArgumentException("该学院信息为空 " + collegeName);
+            }
+
+            CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO();
+            collegeAdminInformationPO.setUserId(String.valueOf(platformUserPO.getUserId()));
+            collegeAdminInformationPO.setCollegeId(collegeInformationPO.getCollegeId());
+            collegeAdminInformationPO.setIdNumber(idNumber);
+            collegeAdminInformationPO.setPhone(phoneNumber);
+            collegeAdminInformationPO.setName(name);
+            int insert1 = collegeAdminInformationService.getBaseMapper().insert(collegeAdminInformationPO);
+            if(insert1 > 0){
+                log.info("更新新二级学院教务员成功");
+            }
         }
     }
 

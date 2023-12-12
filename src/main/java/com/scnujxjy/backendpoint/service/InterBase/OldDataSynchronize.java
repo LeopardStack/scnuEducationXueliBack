@@ -243,6 +243,9 @@ public class OldDataSynchronize {
                             eq(PersonalInfoPO::getGrade, i + ""));
                     int delete4 = originalEducationInfoMapper.delete(new LambdaQueryWrapper<OriginalEducationInfoPO>().
                             eq(OriginalEducationInfoPO::getGrade, i + ""));
+                    if(delete1 > 0){
+                        log.info("已删除所有学籍数据 " + i);
+                    }
                 }
 
                 ArrayList<HashMap<String, String>> studentStatusData = getStudentInfos(String.valueOf(i));

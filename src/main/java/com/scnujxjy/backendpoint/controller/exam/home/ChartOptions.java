@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.controller.home;
+package com.scnujxjy.backendpoint.controller.exam.home;
 
 import lombok.Data;
 

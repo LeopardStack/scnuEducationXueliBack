@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.controller.home;
+package com.scnujxjy.backendpoint.controller.exam.home;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;

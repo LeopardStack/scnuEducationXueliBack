@@ -86,15 +86,14 @@ sa-token:
   is-log: false
 
 
+# 开启 springboot exporter 能够被普罗米修斯监控到
 management:
+  server:
+    port: 10056 # 管理端口
   endpoints:
     web:
       exposure:
-        include: "*"
-    health:
-      show-details: always
-    prometheus:
-      enabled: true
+        include: "prometheus" # 只在管理端口上暴露 Prometheus 端点
   metrics:
     export:
       prometheus:

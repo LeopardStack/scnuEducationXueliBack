@@ -479,7 +479,8 @@ public class StudentStatusDataImport {
 
 
             String graduateDateString = studentData.get("BYRQ");
-            if(graduateDateString != null && !graduateDateString.equals("NULL")){
+            String bypic = studentData.get("BYPIC");
+            if((graduateDateString != null && !graduateDateString.equals("NULL")) || bypic != null){
                 Date graduateDate = null;
                 graduateDate = dateFormat5.parse(graduateDateString);
                 graduationInfoPO.setGraduationDate(graduateDate);
