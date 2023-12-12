@@ -209,7 +209,7 @@ public class TestUserInfoChange {
         }
         // 设置其为某个学院的教务员
         CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO();
-        collegeAdminInformationPO.setCollegeId("07");u
+        collegeAdminInformationPO.setCollegeId("07");
         collegeAdminInformationPO.setUserId(userId);
         collegeAdminInformationPO.setName("教育科学学院测试教务员1");
         log.info(collegeAdminInformationPO.toString());
@@ -325,9 +325,9 @@ public class TestUserInfoChange {
         List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper().selectList(null);
         for (CollegeAdminInformationPO collegeAdminInformationPO : collegeAdminInformationPOS) {
             String name = collegeAdminInformationPO.getName();
-            String userId = collegeAdminInformationPO.getUserId();
+            Long userId = collegeAdminInformationPO.getUserId();
             PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
-                    .eq(PlatformUserPO::getUserId, Long.parseLong(userId)));
+                    .eq(PlatformUserPO::getUserId, userId));
             if (platformUserPO == null) {
                 throw new IllegalArgumentException("不存在账号 " + collegeAdminInformationPO);
             } else {
