@@ -31,7 +31,7 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     List<AdmissionInformationVO> getAdmissionInformationByAllRoles(@Param("entity")AdmissionInformationRO entity,
                                                                    @Param("pageNumber")Long pageNumber, @Param("pageSize")Long pageSize);
 
-    long getAdmissionInformationByAllRolesCount(AdmissionInformationRO entity);
+    long getAdmissionInformationByAllRolesCount(@Param("entity")AdmissionInformationRO entity);
 
     List<String> getDistinctGrades(@Param("entity") AdmissionInformationRO entity);
 

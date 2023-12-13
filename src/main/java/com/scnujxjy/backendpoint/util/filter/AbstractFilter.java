@@ -648,9 +648,13 @@ public abstract class AbstractFilter {
      * 考试信息批量导出
      *
      * @param entity
-     * @param loginId
+     * @param username
      */
     public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String username) {
+
+    }
+
+    public void exportExamStudentsInfo(BatchSetTeachersInfoRO entity, String loginId) {
 
     }
 }

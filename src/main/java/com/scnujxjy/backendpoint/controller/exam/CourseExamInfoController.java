@@ -210,5 +210,47 @@ public class CourseExamInfoController {
             return SaResult.error("批量更新教师信息失败").setCode(2001);
         }
     }
+
+    /**
+     * 批量导出机考名单
+     * @param batchSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/batch_export_exam_students")
+    public SaResult batchExportExamStudentsInfo(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
+
+        try {
+            // 将前端 this.form 字段里为 空字符串的属性 设置为 null
+            scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
+            // 处理完非空 直接调用消息队列 异步处理 前端直接返回 OK
+            List<String> roleList = StpUtil.getRoleList();
+            String userId = (String) StpUtil.getLoginId();
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                PageRO<BatchSetTeachersInfoRO> batchSetTeachersInfoROPageVO = new PageRO<>();
+                batchSetTeachersInfoROPageVO.setEntity(batchSetTeachersInfoRO);
+                if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+                    CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+                    batchSetTeachersInfoROPageVO.getEntity().setCollege(userBelongCollege.getCollegeName());
+                    boolean send = messageSender.sendExportExamStudents(batchSetTeachersInfoROPageVO, collegeAdminFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出考试名单信息成功");
+                    }
+                }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+                    boolean send = messageSender.sendExportExamStudents(batchSetTeachersInfoROPageVO, managerFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出考试名单信息成功");
+                    }
+                }
+
+            }
+            return SaResult.ok("批量导出考试名单信息失败");
+
+        }catch (Exception e){
+            log.error("批量导出考试名单信息失败 " + batchSetTeachersInfoRO + "\n" + e.toString());
+            return SaResult.error("批量导出考试名单信息失败").setCode(2001);
+        }
+    }
 }
 

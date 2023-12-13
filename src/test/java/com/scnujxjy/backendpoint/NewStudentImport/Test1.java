@@ -71,7 +71,7 @@ public class Test1 {
     @Test
     public  void test1(){
 
-        String fileName = "D:\\ScnuWork\\xueliBackEnd\\src\\main\\resources\\data\\2024级录取数据16410人.xlsx";
+        String fileName = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\新生录取数据\\2024级录取数据16410人.xlsx";
         String collegeName = extractContentFromFileName(fileName);
         int headRowNumber = 1;  // 根据你的 Excel 调整这个值
         // 使用ExcelReaderBuilder注册自定义的日期转换器
@@ -153,9 +153,9 @@ public class Test1 {
     @Test
     public void test2(){
         // 源文件夹路径
-        String sourceFolderPath = "D:\\华师工作\\2023年系统建设\\学历教育\\新生录取模板\\2023年成高录取相片（16410人）\\temp";
+        String sourceFolderPath = "D:\\ScnuWork\\xueli\\测试数据\\新生录取\\基础数据\\2023年成高录取相片（16410人）";
         // 目标文件夹路径
-        String destinationFolderPath = "D:\\华师工作\\2023年系统建设\\学历教育\\新生录取模板\\2023年成高录取相片（16410人）\\xuelistudentpictures\\2024\\import";
+        String destinationFolderPath = "D:\\ScnuWork\\xueli\\测试数据\\新生录取\\基础数据\\xuelistudentpictures\\2024\\import";
 
         try {
             File sourceFolder = new File(sourceFolderPath);

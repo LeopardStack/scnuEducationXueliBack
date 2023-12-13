@@ -14,7 +14,7 @@
         <if test='entity.shortStudentNumber != null'>AND ai.short_student_number = #{entity.shortStudentNumber}</if>
         <if test='entity.grade != null'>AND ai.grade = #{entity.grade}</if>
         <if test='entity.college != null'>AND ci.college_name = #{entity.college}</if>
-        <if test='entity.teachingPoint != null'>AND ai.teaching_point_name = #{entity.teachingPoint}</if>
+        <if test='entity.teachingPoint != null'>AND tpi.teaching_point_name = #{entity.teachingPoint}</if>
         <if test='entity.majorName != null'>AND ai.major_name = #{entity.majorName}</if>
         <if test='entity.studyForm != null'>AND ai.study_form = #{entity.studyForm}</if>
         <if test='entity.level != null'>AND ai.level = #{entity.level}</if>
@@ -44,12 +44,15 @@
     <select id="getAdmissionInformationByAllRolesCount" resultType="java.lang.Long">
         SELECT count(*)
         <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
     </select>
     <select id="getDistinctGrades" resultType="java.lang.String">
         SELECT DISTINCT ai.grade
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>
+        ORDER BY ai.grade DESC
     </select>
     <select id="getDistinctCollegeNames" resultType="java.lang.String">
         SELECT DISTINCT ci.college_name

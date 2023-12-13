@@ -207,6 +207,7 @@ public class MessageReceiver {
                         new TypeReference<PageRO<BatchSetTeachersInfoRO>>() {
                         });
                 String loginId = message.getString("userId");
+                String dataType = message.getString("dataType");
                 List<String> roleList = StpUtil.getRoleList(loginId);
                 if (roleList.contains(RoleEnum.XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     // 学历教育部管理员
@@ -214,13 +215,22 @@ public class MessageReceiver {
                     });
 
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
-                    managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                    if(dataType.equals("机考名单")){
+                        managerFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId);
+                    }else{
+                        managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                    }
+
                 } else if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 二级学院管理员
                     AbstractFilter collegeAdminFilter = JSON.parseObject(message.getString("filter"), new TypeReference<CollegeAdminFilter>() {
                     });
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
-                    collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                    if(dataType.equals("机考名单")){
+                        collegeAdminFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId);
+                    }else{
+                        collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                    }
                 }
 
             }
