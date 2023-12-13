@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -645,5 +646,8 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
 
     @Select("SELECT MAX(batch_index) FROM course_schedule")
     long selectMaxBitch();
+
+    @Select("SELECT distinct online_platform FROM course_schedule WHERE main_teacher_name = #{mainTeacherName} and main_teacher_id = #{mainTeacherId} ")
+    List<String> selectByNameAndWorkNumber(String mainTeacherName, String mainTeacherId);
 
 }

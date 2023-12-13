@@ -50,5 +50,7 @@ public interface SingleLivingService {
 
     SaResult getChannelSessionInfo(ChannelInfoRequest channelInfoRequest);
 
+    SaResult getTotalTeachingTime(String courseId);
+
     SaResult getStudentViewlogDetail(ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException;
 }
