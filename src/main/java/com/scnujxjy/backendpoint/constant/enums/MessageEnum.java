@@ -1,8 +1,12 @@
 package com.scnujxjy.backendpoint.constant.enums;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public enum MessageEnum {
     DOWNLOAD_MSG("下载消息"),
     ANNOUNCEMENT_MSG("公告消息"),
@@ -10,9 +14,6 @@ public enum MessageEnum {
     UPLOAD_MSG("上传消息");
 
 
-    private String message_name;
+    String messageName;
 
-    MessageEnum(String message_name) {
-        this.message_name = message_name;
-    }
 }

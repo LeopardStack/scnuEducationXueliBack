@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.admission_information;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -13,12 +14,22 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
+import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
+import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
+import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
+
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.TEACHING_POINT_ADMIN;
+import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * <p>
@@ -34,6 +45,18 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
 
     @Resource
     private AdmissionInformationInverter admissionInformationInverter;
+
+    @Resource
+    private CollegeAdminFilter collegeAdminFilter;
+
+    @Resource
+    private TeacherFilter teacherFilter;
+
+    @Resource
+    private ManagerFilter managerFilter;
+
+    @Resource
+    private TeachingPointFilter teachingPointFilter;
 
     /**
     * @Version：1.0.0
@@ -64,6 +87,21 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
         // 返回结果
         return admissionInformationInverter.po2VO(admissionInformationPO);
     }
+    public PageVO<AdmissionInformationVO> getAdmissionInformationByAllRoles(PageRO<AdmissionInformationRO> admissionInformationROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 查询继续教育管理员权限范围内的教学计划
+
+        } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+            // 查询继续教育管理员权限范围内的教学计划
+            return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
+
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+
+        }
+        return null;
+    }
 
     /**
      * 分页查询学生录取信息
@@ -85,7 +123,6 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
         // 分页查询 或 列表查询 最后返回结果
         LambdaQueryWrapper<AdmissionInformationPO> wrapper = Wrappers.<AdmissionInformationPO>lambdaQuery()
                 .eq(Objects.nonNull(entity.getId()), AdmissionInformationPO::getId, entity.getId())
-                .eq(StrUtil.isNotBlank(entity.getStudentNumber()), AdmissionInformationPO::getStudentNumber, entity.getStudentNumber())
                 .eq(StrUtil.isNotBlank(entity.getName()), AdmissionInformationPO::getName, entity.getName())
                 .eq(StrUtil.isNotBlank(entity.getGender()), AdmissionInformationPO::getGender, entity.getGender())
                 .eq(Objects.nonNull(entity.getTotalScore()), AdmissionInformationPO::getTotalScore, entity.getTotalScore())
@@ -168,4 +205,24 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
         return count;
     }
 
+    /**
+     * 获取新生录取信息查询的筛选参数
+     * @param admissionInformationRO
+     * @return
+     */
+    public AdmissionSelectArgs getAdmissionArgsByAllRoles(AdmissionInformationRO admissionInformationRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 查询继续教育管理员权限范围内的教学计划
+
+        } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+            // 查询继续教育管理员权限范围内的教学计划
+            return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
+
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+
+        }
+        return null;
+    }
 }

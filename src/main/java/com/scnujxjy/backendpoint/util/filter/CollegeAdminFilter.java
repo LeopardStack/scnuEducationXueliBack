@@ -22,6 +22,7 @@ import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
@@ -35,6 +36,8 @@ import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
@@ -44,16 +47,21 @@ import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.exam.ExamInfoVO;
+import com.scnujxjy.backendpoint.model.vo.exam.ExamStudentsInfoVO;
 import com.scnujxjy.backendpoint.model.vo.exam.ExamTeachersInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
 import com.scnujxjy.backendpoint.util.tool.LogExecutionTime;
@@ -528,7 +536,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(CourseExamInfoPO::getClassIdentifier, courseInformationVO.getAdminClass())
                     .eq(CourseExamInfoPO::getCourse, courseInformationVO.getCourseName())
             );
-            if(courseExamInfoPO == null){
+            if (courseExamInfoPO == null) {
                 throw new IllegalArgumentException("获取不到指定教学计划的考试信息 " + courseInformationVO);
             }
             examInfoVO.setExamMethod(courseExamInfoPO.getExamMethod());
@@ -538,7 +546,7 @@ public class CollegeAdminFilter extends AbstractFilter {
 
             List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
                     .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
-            for(CourseExamAssistantsPO courseExamAssistantsPO: courseExamAssistantsPOS){
+            for (CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS) {
                 String teacherUsername = courseExamAssistantsPO.getTeacherUsername();
                 TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                         .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
@@ -550,9 +558,9 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(StudentStatusPO::getClassIdentifier, courseExamInfoPO.getClassIdentifier()));
             examInfoVO.setClassSize(classSize);
 
-            if(scheduleCourseInformationVOS.isEmpty()){
+            if (scheduleCourseInformationVOS.isEmpty()) {
                 examInfoVO.setTeachingMethod("线下");
-            }else{
+            } else {
                 examInfoVO.setTeachingMethod(scheduleCourseInformationVOS.get(0).getTeachingMethod());
             }
 
@@ -749,7 +757,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 二级学院得单独加一个条件
         courseScheduleFilterROPageRO.getEntity().setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
 
-        log.info(StpUtil.getLoginId( ) + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
+        log.info(StpUtil.getLoginId() + " 查询排课表课程信息的参数是 " + courseScheduleFilterROPageRO);
         // 展示给前端的排课课程管理信息
         List<ScheduleCoursesInformationVO> scheduleCoursesInformationVOS = new ArrayList<>();
 
@@ -907,7 +915,6 @@ public class CollegeAdminFilter extends AbstractFilter {
     }
 
 
-
     private boolean processScheduleCoursesInformationVO(
             ScheduleCoursesInformationVO scheduleCoursesInformationVO,
             List<String> errorCourses, CourseScheduleFilterRO courseScheduleFilterRO) {
@@ -976,7 +983,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 scheduleCoursesInformationVO.setLivingStatus(videoStreamRecordPO.getWatchStatus());
                 scheduleCoursesInformationVO.setChannelId(videoStreamRecordPO.getChannelId());
             }
-            if(onlinePlatform.equals("已结束")){
+            if (onlinePlatform.equals("已结束")) {
                 scheduleCoursesInformationVO.setLivingStatus(LiveStatusEnum.END.status);
             }
         } else {
@@ -990,7 +997,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                 if (!scheduleCoursesInformationVO.getLivingStatus().equals(courseScheduleFilterRO.getLivingStatus())) {
                     return false; // 表示不保留这个对象
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error(e.toString());
                 return false;
             }
@@ -1002,12 +1009,13 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 获取继续教育学院管理员的排课表课程管理的筛选参数
+     *
      * @param courseScheduleFilterROPageRO 前端限制参数
      * @return
      */
     public ScheduleCourseManagetArgs getSelectScheduleCourseManageArgs(PageRO<CourseScheduleFilterRO> courseScheduleFilterROPageRO) {
         ScheduleCourseManagetArgs selectArgs = new ScheduleCourseManagetArgs();
-        CourseScheduleFilterRO filter =courseScheduleFilterROPageRO.getEntity();
+        CourseScheduleFilterRO filter = courseScheduleFilterROPageRO.getEntity();
 
         // 二级学院得单独加一个条件
         filter.setCollege(Objects.requireNonNull(getCollegeName()).getCollegeName());
@@ -1048,10 +1056,11 @@ public class CollegeAdminFilter extends AbstractFilter {
 
     /**
      * 考试信息批量导出
+     *
      * @param entity
-     * @param loginId
+     * @param username
      */
-    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String loginId) {
+    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String username) {
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
         CourseExamInfoMapper courseExamInfoMapper1 = ctx.getBean(CourseExamInfoMapper.class);
         CourseInformationMapper courseInformationMapper1 = ctx.getBean(CourseInformationMapper.class);
@@ -1059,7 +1068,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         CourseScheduleMapper courseScheduleMapper1 = ctx.getBean(CourseScheduleMapper.class);
         CourseExamAssistantsMapper courseExamAssistantsMapper1 = ctx.getBean(CourseExamAssistantsMapper.class);
         TeacherInformationMapper teacherInformationMapper1 = ctx.getBean(TeacherInformationMapper.class);
-        OldDataSynchronize oldDataSynchronize1 = ctx.getBean(OldDataSynchronize.class);
+        PlatformUserService platformUserService1 = ctx.getBean(PlatformUserService.class);
         MinioService minioService1 = ctx.getBean(MinioService.class);
         GlobalConfigMapper globalConfigMapper1 = ctx.getBean(GlobalConfigMapper.class);
         PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
@@ -1103,7 +1112,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         // 获取管理员的名字
 
         PlatformUserPO platformUserPO1 = platformUserMapper1.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
-                .eq(PlatformUserPO::getUsername, loginId));
+                .eq(PlatformUserPO::getUsername, username));
         CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper1.selectOne(new LambdaQueryWrapper<CollegeAdminInformationPO>()
                 .eq(CollegeAdminInformationPO::getUserId, platformUserPO1.getUserId()));
         // 或者使用 Map
@@ -1117,17 +1126,15 @@ public class CollegeAdminFilter extends AbstractFilter {
 
         List<CourseExamInfoPO> courseExamInfoPOS = courseExamInfoMapper1.batchSelectData(entity);
         int count = 1;
-        for(CourseExamInfoPO courseExamInfoPO: courseExamInfoPOS){
+        for (CourseExamInfoPO courseExamInfoPO : courseExamInfoPOS) {
             ExamTeachersInfoVO examTeachersInfoVO = new ExamTeachersInfoVO();
             examTeachersInfoVO.setIndex(count);
-
 
 
             CourseInformationPO courseInformationPO = courseInformationMapper1.selectOne(new LambdaQueryWrapper<CourseInformationPO>()
                     .eq(CourseInformationPO::getAdminClass, courseExamInfoPO.getClassIdentifier())
                     .eq(CourseInformationPO::getCourseName, courseExamInfoPO.getCourse())
             );
-
 
 
             ClassInformationPO classInformationPO = classInformationMapper1.selectOne(new LambdaQueryWrapper<ClassInformationPO>()
@@ -1150,7 +1157,7 @@ public class CollegeAdminFilter extends AbstractFilter {
                     .eq(CourseSchedulePO::getLevel, courseInformationPO.getLevel())
                     .eq(CourseSchedulePO::getCourseName, courseInformationPO.getCourseName())
             );
-            if(!courseSchedulePOS.isEmpty()){
+            if (!courseSchedulePOS.isEmpty()) {
                 // 使用stream来提取教学班别字段，并且去重
                 List<String> uniqueTeachingClasses = courseSchedulePOS.stream()
                         .map(CourseSchedulePO::getTeachingClass) // 提取教学班别
@@ -1164,38 +1171,37 @@ public class CollegeAdminFilter extends AbstractFilter {
                 // 将这个字符串设置到examTeachersInfoVO对象的teachingClass属性
                 examTeachersInfoVO.setTeachingClass(teachingClassesString);
                 examTeachersInfoVO.setXueliPlatform("是");
-            }else{
+            } else {
                 examTeachersInfoVO.setXueliPlatform("否");
             }
 
 
-
             String teacherUsername = courseExamInfoPO.getTeacherUsername();
-            if(teacherUsername != null){
+            if (teacherUsername != null) {
                 TeacherInformationPO teacherInformationPO = teacherInformationMapper1.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                         .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
                 examTeachersInfoVO.setMainTeacherName(teacherInformationPO.getName());
                 examTeachersInfoVO.setMainTeacherPhone(teacherInformationPO.getPhone());
-            }else{
+            } else {
                 examTeachersInfoVO.setMainTeacherName("");
                 examTeachersInfoVO.setMainTeacherPhone("");
             }
 
             List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper1.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
                     .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
-            if(courseExamAssistantsPOS.isEmpty()){
+            if (courseExamAssistantsPOS.isEmpty()) {
                 examTeachersInfoVO.setTutorName("");
                 examTeachersInfoVO.setTutorPhone("");
-            }else{
+            } else {
                 StringBuilder tutorNames = new StringBuilder();
                 StringBuilder tutorPhones = new StringBuilder();
-                for(CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS){
+                for (CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS) {
                     TeacherInformationPO teacherInformationPO = teacherInformationMapper1.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                             .eq(TeacherInformationPO::getTeacherUsername, courseExamAssistantsPO.getTeacherUsername()));
-                    if(teacherInformationPO != null){
+                    if (teacherInformationPO != null) {
                         tutorNames.append(teacherInformationPO.getName()).append(" \n");
                         tutorPhones.append(teacherInformationPO.getPhone()).append(" \n");
-                    }else{
+                    } else {
                         log.error("存在考试信息中的助教为空 " + courseExamAssistantsPO);
                     }
 
@@ -1207,7 +1213,6 @@ public class CollegeAdminFilter extends AbstractFilter {
             examTeachersInfoVOS.add(examTeachersInfoVO);
             count += 1;
         }
-
 
 
         log.info("导出了 " + examTeachersInfoVOS.size() + " 条考试信息数据");
@@ -1263,7 +1268,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         String currentDateTime = sdf.format(generateData);
 
         // 构建文件名
-        String fileName = subDirectory + "/" + loginId + "_" + currentDateTime + "_examTeachersData.xlsx";
+        String fileName = subDirectory + "/" + username + "_" + currentDateTime + "_examTeachersData.xlsx";
 
         // 上传到 Minio
         // 将流转换为 ByteArrayInputStream
@@ -1284,10 +1289,210 @@ public class CollegeAdminFilter extends AbstractFilter {
             Long generatedId = downloadMessagePO.getId();
             PlatformMessagePO platformMessagePO = new PlatformMessagePO();
             platformMessagePO.setCreatedAt(generateData);
-            platformMessagePO.setUserId(loginId);
+            platformMessagePO.setUserId(String.valueOf(platformUserService1.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
+            int insert1 = platformMessageMapper.insert(platformMessagePO);
+            log.info("用户下载消息插入结果 " + insert1);
+        }
+    }
+
+    /**
+     * 导出机考名单
+     * @param entity
+     * @param username
+     */
+    public void exportExamStudentsInfo(BatchSetTeachersInfoRO entity, String username) {
+        log.info("机考名单筛选参数" + entity);
+        ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
+        CourseExamInfoMapper courseExamInfoMapper1 = ctx.getBean(CourseExamInfoMapper.class);
+        CourseInformationMapper courseInformationMapper1 = ctx.getBean(CourseInformationMapper.class);
+        StudentStatusMapper studentStatusMapper1 = ctx.getBean(StudentStatusMapper.class);
+        ClassInformationMapper classInformationMapper1 = ctx.getBean(ClassInformationMapper.class);
+        PersonalInfoMapper personalInfoMapper1 = ctx.getBean(PersonalInfoMapper.class);
+        CollegeAdminInformationMapper collegeAdminInformationMapper1 = ctx.getBean(CollegeAdminInformationMapper.class);
+        TeacherInformationMapper teacherInformationMapper1 = ctx.getBean(TeacherInformationMapper.class);
+        PlatformUserService platformUserService1 = ctx.getBean(PlatformUserService.class);
+        MinioService minioService1 = ctx.getBean(MinioService.class);
+        GlobalConfigMapper globalConfigMapper1 = ctx.getBean(GlobalConfigMapper.class);
+        PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
+        DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
+        PlatformUserMapper platformUserMapper1 = ctx.getBean(PlatformUserMapper.class);
+
+        // 获取数据
+        List<ExamStudentsInfoVO> examStudentsInfoVOS = new ArrayList<>();
+        @Data
+        class DateInfo {
+            private String year;
+            private String month;
+            private String day;
+
+            // 构造器、getters 和 setters
+        }
+
+        // 获取当前日期
+        LocalDate now = LocalDate.now();
+
+        // 使用 LocalDate 获取年、月、日
+        String year = String.valueOf(now.getYear());
+        int monthValue = now.getMonthValue();
+        String month = String.format("%02d", now.getMonthValue()); // 保证月份是两位数字
+        String day = String.format("%02d", now.getDayOfMonth()); // 保证天数是两位数字
+
+        // 设置填表时间到 DateInfo 对象
+        DateInfo dateInfo = new DateInfo();
+        dateInfo.setYear(year);
+        dateInfo.setMonth(month);
+        dateInfo.setDay(day);
+
+        String season;
+        if (monthValue >= 2 && monthValue <= 7) {
+            season = "春季";
+        } else {
+            season = "秋季";
+        }
+        // 获取管理员的名字
+
+        PlatformUserPO platformUserPO1 = platformUserMapper1.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, username));
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper1.selectOne(new LambdaQueryWrapper<CollegeAdminInformationPO>()
+                .eq(CollegeAdminInformationPO::getUserId, platformUserPO1.getUserId()));
+        // 或者使用 Map
+        Map<String, Object> dateInfoMap = new HashMap<>();
+        dateInfoMap.put("year", year);
+        dateInfoMap.put("month", month);
+        dateInfoMap.put("day", day);
+        dateInfoMap.put("collegeAdminName", collegeAdminInformationPO.getName());
+        dateInfoMap.put("collegeAdminPhone", collegeAdminInformationPO.getPhone());
+        dateInfoMap.put("season", season);
+
+        List<CourseExamInfoPO> courseExamInfoPOS = courseExamInfoMapper1.batchSelectData(entity);
+        int count = 1;
+        for (CourseExamInfoPO courseExamInfoPO : courseExamInfoPOS) {
+            ExamStudentsInfoVO examStudentsInfoVO = new ExamStudentsInfoVO();
+            examStudentsInfoVO.setIndex(count);
+
+
+            CourseInformationPO courseInformationPO = courseInformationMapper1.selectOne(new LambdaQueryWrapper<CourseInformationPO>()
+                    .eq(CourseInformationPO::getAdminClass, courseExamInfoPO.getClassIdentifier())
+                    .eq(CourseInformationPO::getCourseName, courseExamInfoPO.getCourse())
+            );
+
+
+            ClassInformationPO classInformationPO = classInformationMapper1.selectOne(new LambdaQueryWrapper<ClassInformationPO>()
+                    .eq(ClassInformationPO::getClassIdentifier, courseExamInfoPO.getClassIdentifier()));
+
+            examStudentsInfoVO.setCollege(classInformationPO.getCollege());
+            examStudentsInfoVO.setMajorName(classInformationPO.getMajorName());
+            examStudentsInfoVO.setStudyForm(classInformationPO.getStudyForm());
+            examStudentsInfoVO.setLevel(classInformationPO.getLevel());
+            examStudentsInfoVO.setCourseName(courseInformationPO.getCourseName());
+            examStudentsInfoVO.setClassName(courseExamInfoPO.getClassName());
+
+
+            String teacherUsername = courseExamInfoPO.getTeacherUsername();
+            if (teacherUsername != null) {
+                TeacherInformationPO teacherInformationPO = teacherInformationMapper1.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getTeacherUsername, teacherUsername));
+                examStudentsInfoVO.setMainTeacherName(teacherInformationPO.getName());
+                examStudentsInfoVO.setMainTeacherPhone(teacherInformationPO.getPhone());
+            } else {
+                examStudentsInfoVO.setMainTeacherName("");
+                examStudentsInfoVO.setMainTeacherPhone("");
+            }
+
+            List<StudentStatusPO> studentStatusPOS = studentStatusMapper1.selectList(new LambdaQueryWrapper<StudentStatusPO>()
+                    .eq(StudentStatusPO::getClassIdentifier, courseExamInfoPO.getClassIdentifier()));
+            for(StudentStatusPO studentStatusPO: studentStatusPOS){
+                examStudentsInfoVO.setStudentNumber(studentStatusPO.getStudentNumber());
+                PersonalInfoPO personalInfoPO = personalInfoMapper1.selectOne(new LambdaQueryWrapper<PersonalInfoPO>()
+                        .eq(PersonalInfoPO::getGrade, studentStatusPO.getGrade())
+                        .eq(PersonalInfoPO::getIdNumber, studentStatusPO.getIdNumber())
+                );
+                examStudentsInfoVO.setStudentName(personalInfoPO.getName());
+                ExamStudentsInfoVO examStudentsInfoVO1 = new ExamStudentsInfoVO();
+                BeanUtils.copyProperties(examStudentsInfoVO, examStudentsInfoVO1);
+                examStudentsInfoVOS.add(examStudentsInfoVO1);
+                count += 1;
+            }
+
+
+        }
+
+
+        log.info("导出了 " + examStudentsInfoVOS.size() + " 条考生信息数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < examStudentsInfoVOS.size(); i++) {
+            examStudentsInfoVOS.get(i).setIndex(i + 1);
+        }
+
+        InputStream fileInputStreamFromMinio = minioService1.getFileInputStreamFromMinio(globalConfigMapper1.selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
+                .eq(GlobalConfigPO::getConfigKey, "机考考生信息模板")).getConfigValue());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        // 配置 Excel 写入操作
+        ExcelWriter excelWriter = null;
+        try {
+            // 设置响应头（如果在Web环境中）
+            // ExcelDataUtil.setResponseHeader(response, errorFileName);
+
+            excelWriter = EasyExcel.write(outputStream, ExamTeachersInfoVO.class)
+                    .withTemplate(fileInputStreamFromMinio)
+                    .build();
+
+            WriteSheet writeSheet = EasyExcel.writerSheet().build();
+            FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
+            excelWriter.fill(examStudentsInfoVOS, fillConfig, writeSheet);
+            // 填充填表时间
+            excelWriter.fill(dateInfoMap, writeSheet);  // 如果使用 Map
+            excelWriter.finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (excelWriter != null) {
+                excelWriter.finish();
+            }
+        }
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_EXAM_STUDENT.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_EXAM_STUDENT.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + username + "_" + currentDateTime + "_examStudentsData.xlsx";
+
+        // 上传到 Minio
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        boolean b = minioService1.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if (b) {
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.EXAM_STUDENTS_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+            log.info("下载考试信息数据、下载文件消息插入 " + insert);
+
+            // 获取自增ID
+            Long generatedId = downloadMessagePO.getId();
+            PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+            platformMessagePO.setCreatedAt(generateData);
+            platformMessagePO.setUserId(String.valueOf(platformUserService1.getUserIdByUsername(username)));
+            platformMessagePO.setIsRead(false);
+            platformMessagePO.setRelatedMessageId(generatedId);
+            platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }

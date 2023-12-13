@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * <p>
- * 存储阅卷助教 前端控制器
- * </p>
+ * 阅卷助教信息获取
  *
  * @author 谢辉龙
  * @since 2023-11-15

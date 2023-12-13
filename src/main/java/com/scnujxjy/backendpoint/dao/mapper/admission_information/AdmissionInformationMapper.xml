@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper">
+    <sql id="commonJoin">
+        FROM admission_information ai
+        LEFT JOIN personal_info pi ON ai.grade = pi.grade and ai.id_card_number=pi.id_number
+        LEFT JOIN major_information mi ON mi.admission_major_code=ai.major_code
+        LEFT JOIN college_information ci ON mi.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON tpi.teaching_point_id=mi.teaching_point_id
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND ai.id = #{entity.id}</if>
+        <if test='entity.shortStudentNumber != null'>AND ai.short_student_number = #{entity.shortStudentNumber}</if>
+        <if test='entity.grade != null'>AND ai.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college_name = #{entity.college}</if>
+        <if test='entity.teachingPoint != null'>AND tpi.teaching_point_name = #{entity.teachingPoint}</if>
+        <if test='entity.majorName != null'>AND ai.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ai.study_form = #{entity.studyForm}</if>
+        <if test='entity.level != null'>AND ai.level = #{entity.level}</if>
+        <if test='entity.name != null'>AND ai.name = #{entity.name}</if>
+        <if test='entity.admissionNumber != null'>AND ai.admission_number = #{entity.admissionNumber}</if>
+
+        <if test='entity.idCardNumber != null'>AND ai.id_card_number = #{entity.idCardNumber}</if>
+
+    </sql>
+
+    <select id="getAdmissionInformationByAllRoles"
+            resultType="com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO">
+        SELECT ai.*, mi.tuition, mi.admission_type, mi.payment_type,
+               mi.college_id, mi.teaching_point_id,
+               tpi.teaching_point_name, tpi.phone as teachingPointPhone, tpi.address as teaching_point_address,
+               ci.college_name, ci.college_address, ci.college_phone,
+               pi.address as student_address, pi.phone_number as student_phone_number
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY ai.grade DESC
+--         , ss.college, ss.major_name, ss.level, ci.class_name
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+
+    <select id="getAdmissionInformationByAllRolesCount" resultType="java.lang.Long">
+        SELECT count(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctGrades" resultType="java.lang.String">
+        SELECT DISTINCT ai.grade
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY ai.grade DESC
+    </select>
+    <select id="getDistinctCollegeNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.college_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT ai.major_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctLevels" resultType="java.lang.String">
+        SELECT DISTINCT ai.level
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctStudyForms" resultType="java.lang.String">
+        SELECT DISTINCT ai.study_form
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctTeachingPoints" resultType="java.lang.String">
+        SELECT DISTINCT tpi.teaching_point_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+</mapper>

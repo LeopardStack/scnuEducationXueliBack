@@ -8,33 +8,24 @@ import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
-import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
-import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
-import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
- * <p>
- * 存储考试信息 前端控制器
- * </p>
+ * 考试信息获取
  *
  * @author 谢辉龙
  * @since 2023-11-15
@@ -163,7 +154,7 @@ public class CourseExamInfoController {
             // 将前端 this.form 字段里为 空字符串的属性 设置为 null
             scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
             // 处理完非空 直接调用消息队列 异步处理 前端直接返回 OK
-            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(), MessageEnum.BATCH_SET_Exam_Teachers.getMessage_name());
+            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(), MessageEnum.BATCH_SET_Exam_Teachers.getMessageName());
 
 //            boolean b = courseExamInfoService.batchSetTeachers(batchSetTeachersInfoRO);
             if(b1){
@@ -217,6 +208,48 @@ public class CourseExamInfoController {
         }catch (Exception e){
             log.error("批量更新教师信息失败 " + batchSetTeachersInfoRO + "\n" + e.toString());
             return SaResult.error("批量更新教师信息失败").setCode(2001);
+        }
+    }
+
+    /**
+     * 批量导出机考名单
+     * @param batchSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/batch_export_exam_students")
+    public SaResult batchExportExamStudentsInfo(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
+
+        try {
+            // 将前端 this.form 字段里为 空字符串的属性 设置为 null
+            scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
+            // 处理完非空 直接调用消息队列 异步处理 前端直接返回 OK
+            List<String> roleList = StpUtil.getRoleList();
+            String userId = (String) StpUtil.getLoginId();
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                PageRO<BatchSetTeachersInfoRO> batchSetTeachersInfoROPageVO = new PageRO<>();
+                batchSetTeachersInfoROPageVO.setEntity(batchSetTeachersInfoRO);
+                if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+                    CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+                    batchSetTeachersInfoROPageVO.getEntity().setCollege(userBelongCollege.getCollegeName());
+                    boolean send = messageSender.sendExportExamStudents(batchSetTeachersInfoROPageVO, collegeAdminFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出考试名单信息成功");
+                    }
+                }else if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+                    boolean send = messageSender.sendExportExamStudents(batchSetTeachersInfoROPageVO, managerFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出考试名单信息成功");
+                    }
+                }
+
+            }
+            return SaResult.ok("批量导出考试名单信息失败");
+
+        }catch (Exception e){
+            log.error("批量导出考试名单信息失败 " + batchSetTeachersInfoRO + "\n" + e.toString());
+            return SaResult.error("批量导出考试名单信息失败").setCode(2001);
         }
     }
 }

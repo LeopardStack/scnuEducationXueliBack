@@ -38,11 +38,14 @@ import com.scnujxjy.backendpoint.inverter.teaching_process.CourseScheduleInverte
 import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.*;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseExtraInformationRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleUpdateRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
-import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -80,6 +83,10 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     @Resource
     private PlatformUserMapper platformUserMapper;
+
+
+    @Resource
+    private PlatformUserService platformUserService;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -198,11 +205,11 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             }
             // 根据行政班级、课程名、主讲教师名筛选
             courseSchedulePOS = courseSchedulePOS.stream().filter(ele -> {
-                if (StrUtil.isNotBlank(entity.getAdminClass())) {
-                    return StrUtil.contains(ele.getAdminClass(), entity.getAdminClass());
-                }
-                return true;
-            })
+                        if (StrUtil.isNotBlank(entity.getAdminClass())) {
+                            return StrUtil.contains(ele.getAdminClass(), entity.getAdminClass());
+                        }
+                        return true;
+                    })
                     .filter(ele -> {
                         if (StrUtil.isNotBlank(entity.getCourseName())) {
                             return StrUtil.contains(ele.getCourseName(), entity.getCourseName());
@@ -579,16 +586,16 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
 
     @Transactional(rollbackFor = Exception.class)
     public boolean updateSingleCourseScheduleInfoByTeacher(CourseSchedulePO courseSchedulePO, TeacherInformationPO teacherInformationPO) {
-            // 更新时间
+        // 更新时间
         courseSchedulePO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
         courseSchedulePO.setMainTeacherName(teacherInformationPO.getName());
         courseSchedulePO.setMainTeacherId(teacherInformationPO.getWorkNumber());
         courseSchedulePO.setMainTeacherIdentity(teacherInformationPO.getIdCardNumber());
 
-            int update = getBaseMapper().update(courseSchedulePO, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO.getId()));
-            if (update <= 0) {
-                throw new RuntimeException("Failed to update record: " + courseSchedulePO.getId());
-            }
+        int update = getBaseMapper().update(courseSchedulePO, new LambdaQueryWrapper<CourseSchedulePO>().eq(CourseSchedulePO::getId, courseSchedulePO.getId()));
+        if (update <= 0) {
+            throw new RuntimeException("Failed to update record: " + courseSchedulePO.getId());
+        }
         return true;
     }
 
@@ -1033,8 +1040,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
     public long generateCourseScheduleListUploadMsg(String uploadFileUrl) {
         String userName = (String) StpUtil.getLoginId();
         try {
-            PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().
-                    eq(PlatformUserPO::getUsername, userName));
+            Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
             // 生成一个上传消息 状态为处理中
             // 获取当前的 LocalDateTime 实例
             LocalDateTime now = LocalDateTime.now();
@@ -1046,7 +1052,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             Date date = Date.from(instant);
 
             UserUploadsPO userUploadsPO = new UserUploadsPO();
-            userUploadsPO.setUserName(platformUserPO.getUsername());
+            userUploadsPO.setUserId(String.valueOf(userId));
             userUploadsPO.setUploadTime(date);
             userUploadsPO.setUploadType(UploadType.COURSE_SCHEDULE_LIST.getUpload_type());
             userUploadsPO.setFileUrl(uploadFileUrl);
@@ -1057,10 +1063,10 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             Long generatedId = userUploadsPO.getId();
             PlatformMessagePO platformMessagePO = new PlatformMessagePO();
             platformMessagePO.setCreatedAt(date);
-            platformMessagePO.setUserId(platformUserPO.getUsername());
+            platformMessagePO.setUserId(String.valueOf(userId));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
-            platformMessagePO.setMessageType(MessageEnum.UPLOAD_MSG.getMessage_name());
+            platformMessagePO.setMessageType(MessageEnum.UPLOAD_MSG.getMessageName());
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户上传文件的消息插入结果 " + insert1);
             return generatedId;

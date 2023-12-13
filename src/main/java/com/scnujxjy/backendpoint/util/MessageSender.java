@@ -87,6 +87,33 @@ public class MessageSender {
             message.put("type", pageRO.getEntity().getClass().getName());
             message.put("data", JSON.toJSONString(pageRO));
             message.put("filter", JSON.toJSONString(filter));
+            message.put("dataType", "普通消息");
+            message.put("userId", userId);
+
+            this.rabbitTemplate.convertAndSend(queue4, message.toJSONString());
+            log.info("成功发送导出文件处理消息 ");
+            return true;
+        } catch (AmqpException e) {
+            log.error("发送导出文件处理消息失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 往消息队列中发送导出消息 后台异步处理导出任务
+     * @param pageRO
+     * @param filter
+     * @param userId
+     * @return
+     */
+    public boolean sendExportExamStudents(PageRO<?> pageRO, AbstractFilter filter, String userId){
+        try {
+            // 创建一个包含数据和类型信息的JSON对象
+            JSONObject message = new JSONObject();
+            message.put("type", pageRO.getEntity().getClass().getName());
+            message.put("data", JSON.toJSONString(pageRO));
+            message.put("filter", JSON.toJSONString(filter));
+            message.put("dataType", "机考名单");
             message.put("userId", userId);
 
             this.rabbitTemplate.convertAndSend(queue4, message.toJSONString());

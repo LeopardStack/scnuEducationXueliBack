@@ -3,11 +3,9 @@ package com.scnujxjy.backendpoint.NewStudentImport;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.util.ListUtils;
-import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.inverter.newStudent.NewStudentExcelInverter;
 import com.scnujxjy.backendpoint.inverter.newStudent.NewStudentInverter;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.UserAnnouncementRo;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.PersonalInfoRO;
 import com.scnujxjy.backendpoint.model.vo.newStudentVo.NewStudentExcel;
 import com.scnujxjy.backendpoint.model.vo.newStudentVo.NewStudentVo;
@@ -18,10 +16,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Resource;
-import java.util.Date;
 import java.util.List;
 @Slf4j
 @Data
@@ -77,15 +72,7 @@ public class NewStudentListener implements ReadListener<NewStudentExcel> {
             if (admissionInformationService.insterAdmissionInformation(admissionInformationRO) > 0) {
                 PersonalInfoRO personalInfoRO = newStudentInverter.Vo2PersonalInfoInRo(newstu);
                 if (personalInfoService.InsterPersonalInfo(personalInfoRO) > 0) {
-//                   开始插入用户导入消息表
-                    UserAnnouncementRo userAnnouncementRo = new UserAnnouncementRo();
-                    userAnnouncementRo.setTitle("账号导入成功");
-                    userAnnouncementRo.setContent("用户信息导入成功");
-                    userAnnouncementRo.setUserId(newstu.getIdCardNumber());
-                    userAnnouncementRo.setIsRead(false);
-                    userAnnouncementRo.setMessageType(String.valueOf(MessageEnum.ANNOUNCEMENT_MSG.getMessage_name()));
-                    userAnnouncementRo.setCreatedAt(new Date());
-                    platformMessageService.InsterAnnouncementMessage(userAnnouncementRo);
+
                 }
             }
             i++;
@@ -116,13 +103,13 @@ public class NewStudentListener implements ReadListener<NewStudentExcel> {
         newStudentVo.setPhoneNumber(newStudentExcel.getPhoneNumber());
         newStudentVo.setIdCardNumber(newStudentExcel.getIdCardNumber());
         newStudentVo.setBirthDate(newStudentExcel.getBirthDate());
-        newStudentVo.setAddress(newStudentExcel.getAddress());
+//        newStudentVo.setAddress(newStudentExcel.getAddress());
         newStudentVo.setPostalCode(newStudentExcel.getPostalCode());
         newStudentVo.setEthnicity(newStudentExcel.getEthnicity());
         newStudentVo.setPoliticalStatus(newStudentExcel.getPoliticalStatus());
         newStudentVo.setAdmissionNumber(newStudentExcel.getAdmissionNumber());
-        newStudentVo.setCollege(newStudentExcel.getCollege());
-        newStudentVo.setTeachingPoint(newStudentExcel.getTeachingPoint());
+//        newStudentVo.setCollege(newStudentExcel.getCollege());
+//        newStudentVo.setTeachingPoint(newStudentExcel.getTeachingPoint());
         newStudentVo.setReportLocation(newStudentExcel.getReportLocation());
         newStudentVo.setEntrancePhotoUrl(newStudentExcel.getEntrancePhotoUrl());
         newStudentVo.setGrade(newStudentExcel.getGrade());
