@@ -40,6 +40,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMappe
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInformationBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
@@ -48,6 +49,9 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
@@ -1571,4 +1575,58 @@ public class ManagerFilter extends AbstractFilter {
         }
     }
 
+
+    /**
+     * 获取不同角色来获取新生信息
+     * @param admissionInformationROPageRO
+     * @return
+     */
+    public PageVO<AdmissionInformationVO> getAdmissionInformationByAllRoles(PageRO<AdmissionInformationRO> admissionInformationROPageRO) {
+        List<AdmissionInformationVO> admissionInformationVOS = admissionInformationMapper.getAdmissionInformationByAllRoles(admissionInformationROPageRO.getEntity(), admissionInformationROPageRO.getPageNumber(),
+                admissionInformationROPageRO.getPageSize());
+        long count = admissionInformationMapper.getAdmissionInformationByAllRolesCount(admissionInformationROPageRO.getEntity());
+        PageVO<AdmissionInformationVO> pageVO = new PageVO<AdmissionInformationVO>();
+        pageVO.setRecords(admissionInformationVOS);
+        pageVO.setTotal(count);
+        pageVO.setCurrent(admissionInformationROPageRO.getPageNumber());
+        return pageVO;
+    }
+
+    /**
+     * 获取新生录取的筛选参数
+     * @param admissionInformationRO
+     * @return
+     */
+    public AdmissionSelectArgs getAdmissionArgsByAllRoles(AdmissionInformationRO admissionInformationRO) {
+        AdmissionSelectArgs admissionSelectArgs = new AdmissionSelectArgs();
+
+        ExecutorService executor = Executors.newFixedThreadPool(6); // 6 代表你有6个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> admissionInformationMapper.getDistinctGrades(admissionInformationRO));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> admissionInformationMapper.getDistinctCollegeNames(admissionInformationRO));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> admissionInformationMapper.getDistinctMajorNames(admissionInformationRO));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> admissionInformationMapper.getDistinctLevels(admissionInformationRO));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> admissionInformationMapper.getDistinctStudyForms(admissionInformationRO));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> admissionInformationMapper.getDistinctTeachingPoints(admissionInformationRO));
+
+
+        try {
+            admissionSelectArgs.setGrades(distinctGradesFuture.get());
+
+            admissionSelectArgs.setLevels(distinctLevelsFuture.get());
+            admissionSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            admissionSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            admissionSelectArgs.setLevels(distinctLevelsFuture.get());
+            admissionSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            admissionSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return admissionSelectArgs;
+    }
 }

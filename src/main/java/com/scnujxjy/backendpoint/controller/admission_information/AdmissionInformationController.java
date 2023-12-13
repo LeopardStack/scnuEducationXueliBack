@@ -2,17 +2,24 @@ package com.scnujxjy.backendpoint.controller.admission_information;
 
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.TEACHING_POINT_ADMIN;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
 
 /**
@@ -68,13 +75,24 @@ public class AdmissionInformationController {
             admissionInformationROPageRO.setEntity(new AdmissionInformationRO());
         }
         // 查询数据
-        PageVO<AdmissionInformationVO> admissionInformationVOPageVO = admissionInformationService.pageQueryAdmissionInformation(admissionInformationROPageRO);
+        PageVO<AdmissionInformationVO> admissionInformationVOPageVO = admissionInformationService.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
+//        PageVO<AdmissionInformationVO> admissionInformationVOPageVO = admissionInformationService.pageQueryAdmissionInformation(admissionInformationROPageRO);
         // 校验数据
         if (Objects.isNull(admissionInformationVOPageVO)) {
             throw dataNotFoundError();
         }
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO);
+    }
+
+    @PostMapping("/get_admission_select_args")
+    public SaResult getAdmissionArgsByAllRoles(@RequestBody AdmissionInformationRO admissionInformationRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        AdmissionSelectArgs admissionSelectArgs =  admissionInformationService.getAdmissionArgsByAllRoles(admissionInformationRO);
+
+
+        return SaResult.data(admissionSelectArgs);
     }
 
     /**

@@ -2,7 +2,11 @@ package com.scnujxjy.backendpoint.dao.mapper.admission_information;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.PersonalInfoVO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -24,4 +28,20 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     @Select("SELECT * FROM admission_information WHERE grade = #{grade} And id_card_number = #{studentId}")
     List<AdmissionInformationPO> selectInfoByGradeAndIdNumber(String grade, String studentId);
 
+    List<AdmissionInformationVO> getAdmissionInformationByAllRoles(@Param("entity")AdmissionInformationRO entity,
+                                                                   @Param("pageNumber")Long pageNumber, @Param("pageSize")Long pageSize);
+
+    long getAdmissionInformationByAllRolesCount(AdmissionInformationRO entity);
+
+    List<String> getDistinctGrades(@Param("entity") AdmissionInformationRO entity);
+
+    List<String> getDistinctCollegeNames(@Param("entity")AdmissionInformationRO admissionInformationRO);
+
+    List<String> getDistinctMajorNames(@Param("entity")AdmissionInformationRO admissionInformationRO);
+
+    List<String> getDistinctLevels(@Param("entity")AdmissionInformationRO admissionInformationRO);
+
+    List<String> getDistinctStudyForms(@Param("entity")AdmissionInformationRO admissionInformationRO);
+
+    List<String> getDistinctTeachingPoints(@Param("entity")AdmissionInformationRO admissionInformationRO);
 }

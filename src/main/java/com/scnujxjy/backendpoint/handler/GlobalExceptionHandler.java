@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.handler;
 
+import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.exception.DataException;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler
     public SaResult handlerException(Exception e) {
-        if(e.toString().contains("token 无效")){
+        if(e instanceof NotPermissionException){
+            return SaResult.error(e.getMessage()).setCode(2001);
+        }
+        else if(e.toString().contains("token 无效")){
 
         }else{
             log.error("出现异常：", e);
