@@ -102,6 +102,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Resource
     private ClassInformationMapper classInformationMapper;
 
+
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
         SaResult saResult = new SaResult();
@@ -761,20 +762,20 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             String templateFilePath = "暂存白名单文件.xls";
             EasyExcel.write(templateFilePath, StudentWhiteListVO.class).sheet("Sheet1").doWrite(channelInfoRequest.getStudentWhiteList());
-                File file = new File(templateFilePath);
-                LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
-                Boolean liveUploadWhiteListResponse;
-                liveUploadWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
-                        .setRank(1)
-                        .setFile(file);
-                liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
-                if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
-                    //上传白名单成功
-                    boolean delete = file.delete();
-                    if (delete) {
-                        log.info("删除文件成功");
-                    }
+            File file = new File(templateFilePath);
+            LiveUploadWhiteListRequest liveUploadWhiteListRequest = new LiveUploadWhiteListRequest();
+            Boolean liveUploadWhiteListResponse;
+            liveUploadWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
+                    .setRank(1)
+                    .setFile(file);
+            liveUploadWhiteListResponse = new LiveWebAuthServiceImpl().uploadWhiteList(liveUploadWhiteListRequest);
+            if (liveUploadWhiteListResponse != null && liveUploadWhiteListResponse) {
+                //上传白名单成功
+                boolean delete = file.delete();
+                if (delete) {
+                    log.info("删除文件成功");
                 }
+            }
 
         } catch (Exception e) {
             log.error("通过文件新增白名单接口调用异常", e);
@@ -854,7 +855,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
-        log.info("传入的排课表id为"+courseId);
+        log.info("传入的排课表id为" + courseId);
         SaResult saResult = new SaResult();
         try {
             //获取该排课表的频道直播间id
@@ -893,7 +894,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     .stream()
                     .map(subList -> subList.get(0))
                     .collect(Collectors.toList());
-            for (ViewLogResponse viewLogResponse:distinctViewLogResponse) {
+            for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                 viewLogResponse.setPlayDuration(viewResult.get(viewLogResponse.getParam1()));
             }
 
@@ -977,7 +978,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             return saResult;
 
         } catch (Exception e) {
-            log.error("调用导出考勤表接口失败，异常信息为"+e);
+            log.error("调用导出考勤表接口失败，异常信息为" + e);
         }
 
         saResult.setCode(ResultCode.FAIL.getCode());
@@ -988,8 +989,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     private SaResult getStudentViewLog(VideoStreamRecordPO videoStreamRecordPO) throws IOException, NoSuchAlgorithmException {
         //学生的学号、姓名、班别、观看时长
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        Date exportStartTime=minusSubtractOneHour(videoStreamRecordPO.getStartTime());
-        Date exportEndTime=minusAddOneHour(videoStreamRecordPO.getEndTime());
+        Date exportStartTime = minusSubtractOneHour(videoStreamRecordPO.getStartTime());
+        Date exportEndTime = minusAddOneHour(videoStreamRecordPO.getEndTime());
         String startTime = format.format(exportStartTime);
         String endTime = format.format(exportEndTime);
 
@@ -999,7 +1000,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         channelViewRequest.setEndTime(endTime);
         channelViewRequest.setParam3("live");
         channelViewRequest.setPageSize("10000");
-        log.info("获取指定条件下的观看数据请求为："+channelViewRequest);
+        log.info("获取指定条件下的观看数据请求为：" + channelViewRequest);
         SaResult channelCardPush = getChannelCardPush(channelViewRequest);
         return channelCardPush;
     }
@@ -1136,6 +1137,82 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
+    }
+
+    @Override
+    public SaResult getTotalTeachingTime(String courseId) {
+        SaResult saResult = new SaResult();
+        CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
+        if (schedulePO == null) {
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg("找不到该排课信息，请联系管理员");
+            return saResult;
+        }
+        String teacherName = schedulePO.getMainTeacherName();
+        String workId = schedulePO.getMainTeacherId();
+        TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectByNameAndWorkNumber(teacherName, workId);
+        //找不到老师，直接返回失败
+        if (teacherInformationPO == null) {
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg("找不到该课程对应的老师信息，请联系管理员");
+            return saResult;
+        }
+        //获取到该老师的所有直播间
+        List<String> videoIdList = courseScheduleMapper.selectByNameAndWorkNumber(teacherName, workId);
+        if (videoIdList.isEmpty()) {
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg("找不到该课程与老师对应的直播间信息，请联系管理员");
+            return saResult;
+        }
+
+        List<String> channelIdList= videoStreamRecordsMapper.selectChannelIds(videoIdList);
+
+        try {
+            Long totalTime = 0L;
+//            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            Date startTime = format.parse("2023-01-01 00:00:00");
+//            Date endTime = format.parse("2099-01-01 00:00:00");
+            for (String channelId : channelIdList) {
+                LiveListChannelSessionInfoRequest liveListChannelSessionInfoRequest = new LiveListChannelSessionInfoRequest();
+                LiveListChannelSessionInfoResponse liveListChannelSessionInfoResponse;
+                liveListChannelSessionInfoRequest.setChannelId(channelId);
+                liveListChannelSessionInfoRequest.setPageSize(1000);
+//                liveListChannelSessionInfoRequest.setStartDate(startTime);
+//                liveListChannelSessionInfoRequest.setEndDate("2099-01-01 00:00:00");
+
+                liveListChannelSessionInfoResponse = new LiveChannelPlaybackServiceImpl().listChannelSessionInfo(
+                        liveListChannelSessionInfoRequest);
+                if (liveListChannelSessionInfoResponse != null) {
+                    List<LiveListChannelSessionInfoResponse.ChannelSessionInfo> contents = liveListChannelSessionInfoResponse.getContents();
+                    if (contents.size()==0){
+                        continue;
+                    }
+                    for (LiveListChannelSessionInfoResponse.ChannelSessionInfo channelSessionInfo:contents) {
+                        long startTimeMillis = channelSessionInfo.getStartTime().getTime();
+                        long endTimeMillis = channelSessionInfo.getEndTime().getTime();
+                        long timeDiffMillis =(endTimeMillis - startTimeMillis)/ 1000;
+                        totalTime+=timeDiffMillis;
+                    }
+                }
+            }
+            //这样将所有直播间的所有场次时间都加起来。
+            saResult.setCode(ResultCode.SUCCESS.getCode());
+            saResult.setMsg(ResultCode.SUCCESS.getMessage());
+            saResult.setData(String.format("%.2f", totalTime/3600.0));//转化为小时
+            return saResult;
+
+        } catch (Exception e) {
+            log.error("调用获取老师直播总时长接口异常", e);
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg(ResultCode.FAIL.getMessage());
+            return saResult;
+        }
+
+    }
+
+    public static void main(String[] args) {
+        Long totalTime = 86990L;
+        System.out.println(totalTime/3600.0);
     }
 
     @Override

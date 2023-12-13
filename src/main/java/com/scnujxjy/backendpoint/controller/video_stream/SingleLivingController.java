@@ -5,7 +5,6 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
@@ -159,6 +158,16 @@ public class SingleLivingController {
         return singleLivingService.deleteChannelWhiteStudent(request);
     }
 
+    //获取老师的总观看时长
+    @PostMapping("/edit/getTotalTeachingTime")
+    public SaResult getTotalTeachingTime(String courseId) {
+        // 校验参数  默认返回1,页20条。
+        if (StrUtil.isBlank(courseId)) {
+            throw dataMissError();
+        }
+
+        return singleLivingService.getTotalTeachingTime(courseId);
+    }
 
     //获取频道下的场次信息
     @PostMapping("/edit/getChannelSessionInfo")

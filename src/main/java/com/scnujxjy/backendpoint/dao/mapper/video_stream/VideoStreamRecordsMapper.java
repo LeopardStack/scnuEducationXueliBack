@@ -19,4 +19,17 @@ public interface VideoStreamRecordsMapper extends BaseMapper<VideoStreamRecordPO
     @Select("SELECT DISTINCT channel_id from video_stream_record")
     List<String> selectDistinctChannelIds();
 
+    @Select(
+            "<script>" +
+                    "SELECT DISTINCT channel_id " +
+                    "FROM video_stream_record " +
+                    "<if test='videoList != null'>" +
+                    "WHERE id IN " +
+                    "<foreach collection='videoList' item='id' open='(' close=')' separator=','>" +
+                    "#{id}" +
+                    "</foreach>" +
+                    "</if>" +
+                    "</script>"
+    )
+    List<String> selectChannelIds(List<String> videoList);
 }
