@@ -20,6 +20,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMa
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
@@ -27,6 +28,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelImportVO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
@@ -87,6 +89,9 @@ public class MessageReceiver {
 
     @Resource
     private CourseExamInfoService courseExamInfoService;
+
+    @Resource
+    private AdmissionInformationService admissionInformationService ;
 
     @Resource
     private PlatformMessageMapper platformMessageMapper;
@@ -232,6 +237,19 @@ public class MessageReceiver {
                         collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
                     }
                 }
+
+            }else if ("com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO".equals(type)) {
+                // 下载新生录取数据，获取筛选参数
+                PageRO<AdmissionInformationRO> pageRO = JSON.parseObject(message.getString("data"),
+                        new TypeReference<PageRO<AdmissionInformationRO>>() {
+                        });
+                AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
+                });
+                String userId = message.getString("userId");
+                log.info("拿到缴费数据筛选条件 ");
+                PlatformMessagePO platformMessagePO = generateMessage(userId);
+                // 处理pageRO
+                admissionInformationService.generateBatchAdmissionData(pageRO, filter, userId, platformMessagePO);
 
             }
             // 添加其他类型的处理逻辑

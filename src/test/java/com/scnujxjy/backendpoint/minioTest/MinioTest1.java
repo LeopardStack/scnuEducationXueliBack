@@ -292,4 +292,18 @@ public class MinioTest1 {
     }
 
 
+    @Test
+    public void testFileExist(){
+        try {
+            boolean exists = minioClient
+                    .statObject(StatObjectArgs.builder().bucket("xueli-system-config").object("学历教育导入模板/新生信息导出模板.xlsx").build()) != null;
+//            boolean exists = minioClient
+//                    .statObject(StatObjectArgs.builder().bucket("dataexport").object("成绩数据/xuelijiaoyuTest1_20231113_224443_864_CourseScheduleStudentInformationDate.xlsx").build()) != null;
+
+            logger.info("该文件存在 " + exists);
+        }catch (Exception e){
+            logger.error("该文件不存在 " + e.toString());
+        }
+    }
+
 }

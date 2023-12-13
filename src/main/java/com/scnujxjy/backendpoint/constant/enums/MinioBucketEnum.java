@@ -10,6 +10,7 @@ public enum MinioBucketEnum {
     DATA_DOWNLOAD_SYSTEM("dataexport", "系统反馈数据"),
     DATA_DOWNLOAD_EXAM_THEACHER("dataexport", "考试教师信息导出"),
     DATA_DOWNLOAD_EXAM_STUDENT("dataexport", "考试考生信息导出"),
+    DATA_DOWNLOAD_ADMISSION_STUDENT("dataexport", "新生录取信息导出"),
     DATA_DOWNLOAD_CLASS_INFORMATIONS("dataexport", "班级数据"),
     ANNOUNCEMENT_BUCKET("dataexport", "公告附件数据");
 

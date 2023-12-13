@@ -36,7 +36,6 @@
         WHERE 1=1
         <include refid="commonFilters" />
         ORDER BY ai.grade DESC
---         , ss.college, ss.major_name, ss.level, ci.class_name
         LIMIT #{pageNumber}, #{pageSize}
     </select>
 
@@ -83,5 +82,17 @@
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>
+    </select>
+    <select id="batchSelectData"
+            resultType="com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO">
+        SELECT ai.*, mi.tuition, mi.admission_type, mi.payment_type,
+        mi.college_id, mi.teaching_point_id,
+        tpi.teaching_point_name, tpi.phone as teachingPointPhone, tpi.address as teaching_point_address,
+        ci.college_name, ci.college_address, ci.college_phone,
+        pi.address as student_address, pi.phone_number as student_phone_number
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY ai.grade DESC, ci.college_name, ai.major_name, ai.level, ai.study_form
     </select>
 </mapper>

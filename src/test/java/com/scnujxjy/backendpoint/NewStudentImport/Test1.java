@@ -153,9 +153,9 @@ public class Test1 {
     @Test
     public void test2(){
         // 源文件夹路径
-        String sourceFolderPath = "D:\\ScnuWork\\xueli\\测试数据\\新生录取\\基础数据\\2023年成高录取相片（16410人）";
+        String sourceFolderPath = "D:\\华师工作\\2023年系统建设\\学历教育\\新生录取模板\\2023年成高录取相片（16410人）\\temp";
         // 目标文件夹路径
-        String destinationFolderPath = "D:\\ScnuWork\\xueli\\测试数据\\新生录取\\基础数据\\xuelistudentpictures\\2024\\import";
+        String destinationFolderPath = "D:\\华师工作\\2023年系统建设\\学历教育\\新生录取模板\\2023年成高录取相片（16410人）\\xuelistudentpictures\\2024\\import";
 
         try {
             File sourceFolder = new File(sourceFolderPath);

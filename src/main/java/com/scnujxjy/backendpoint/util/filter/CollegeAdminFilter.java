@@ -1439,7 +1439,7 @@ public class CollegeAdminFilter extends AbstractFilter {
             // 设置响应头（如果在Web环境中）
             // ExcelDataUtil.setResponseHeader(response, errorFileName);
 
-            excelWriter = EasyExcel.write(outputStream, ExamTeachersInfoVO.class)
+            excelWriter = EasyExcel.write(outputStream, ExamStudentsInfoVO.class)
                     .withTemplate(fileInputStreamFromMinio)
                     .build();
 

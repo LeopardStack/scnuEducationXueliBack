@@ -220,10 +220,10 @@ public class MinioService {
 
             return inputStream;
         } catch (ErrorResponseException e) {
+            log.error("从 Minio 获取文件失败: " + e.getMessage());
             if (e.errorResponse().code().equals("NoSuchKey")) {
                 return null; // 文件不存在
             }
-            log.error("从 Minio 获取文件失败: " + e.getMessage());
             throw new RuntimeException("从 Minio 获取文件失败: " + e.getMessage());
         } catch (Exception e) {
             log.error("从 Minio 获取文件失败: " + e.getMessage());

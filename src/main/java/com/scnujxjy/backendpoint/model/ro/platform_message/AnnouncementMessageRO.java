@@ -68,4 +68,14 @@ public class AnnouncementMessageRO {
      */
     private Set<String> teachingPointIdSet;
 
+    /**
+     * 学院 id 集合
+     */
+    private Set<String> collegeIdSet;
+
+    /**
+     * 身份证号码集合
+     */
+    private String idNumbers;
+
 }

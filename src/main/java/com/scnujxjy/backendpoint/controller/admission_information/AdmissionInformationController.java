@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInforma
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -30,6 +31,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  */
 @RestController
 @RequestMapping("/admission-information")
+@Slf4j
 public class AdmissionInformationController {
     @Resource
     private AdmissionInformationService admissionInformationService;
@@ -87,12 +89,28 @@ public class AdmissionInformationController {
 
     @PostMapping("/get_admission_select_args")
     public SaResult getAdmissionArgsByAllRoles(@RequestBody AdmissionInformationRO admissionInformationRO) {
-        List<String> roleList = StpUtil.getRoleList();
 
         AdmissionSelectArgs admissionSelectArgs =  admissionInformationService.getAdmissionArgsByAllRoles(admissionInformationRO);
 
 
         return SaResult.data(admissionSelectArgs);
+    }
+
+    /**
+     * 批量导出新生录取信息
+     * @param admissionInformationRO
+     * @return
+     */
+    @PostMapping("/batch_export_admission_information")
+    public SaResult batchExportAdmissionInformationByAllRoles(@RequestBody AdmissionInformationRO admissionInformationRO) {
+        log.info("批量导出筛选参数 " + admissionInformationRO);
+        Boolean ident =  admissionInformationService.batchExportAdmissionInformationByAllRoles(admissionInformationRO);
+
+        if(ident){
+            return SaResult.ok("导出新生录取数据成功");
+        }
+
+        return SaResult.error("导出新生录取数据失败").setCode(2001);
     }
 
     /**
