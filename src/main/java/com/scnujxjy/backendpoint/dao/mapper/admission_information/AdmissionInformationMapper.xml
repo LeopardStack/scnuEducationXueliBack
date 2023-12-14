@@ -20,6 +20,7 @@
         <if test='entity.level != null'>AND ai.level = #{entity.level}</if>
         <if test='entity.name != null'>AND ai.name = #{entity.name}</if>
         <if test='entity.admissionNumber != null'>AND ai.admission_number = #{entity.admissionNumber}</if>
+        <if test='entity.isConfirmed != null'>AND ai.is_confirmed = #{entity.isConfirmed}</if>
 
         <if test='entity.idCardNumber != null'>AND ai.id_card_number = #{entity.idCardNumber}</if>
 
@@ -94,5 +95,15 @@
         WHERE 1=1
         <include refid="commonFilters" />
         ORDER BY ai.grade DESC, ci.college_name, ai.major_name, ai.level, ai.study_form
+    </select>
+    <select id="selectSingleAdmissionInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO">
+        SELECT ai.*, mi.tuition, mi.admission_type, mi.payment_type,
+               mi.college_id, mi.teaching_point_id,
+               tpi.teaching_point_name, tpi.phone as teachingPointPhone, tpi.address as teaching_point_address,
+               ci.college_name, ci.college_address, ci.college_phone,
+               pi.address as student_address, pi.phone_number as student_phone_number
+        <include refid="commonJoin" />
+        WHERE ai.id_card_number=#{idNumber} and ai.grade=#{admissionYear}
     </select>
 </mapper>

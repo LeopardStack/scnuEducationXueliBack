@@ -53,4 +53,14 @@ public class PlatformUserVO {
      */
     private List<Long> supplementaryRoleIdSet;
 
+    /**
+     * 是否是新生
+     */
+    private Boolean isNewStudent;
+
+    /**
+     * 新生录取公告
+     */
+    private String newStudentAnnouncement;
+
 }

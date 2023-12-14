@@ -103,4 +103,15 @@ public class MinioController {
         }
     }
 
+    /**
+     * 根据 Minio 地址获取文件的 URL
+     * @param minioUrl
+     * @return
+     */
+    @PostMapping("/get_minio_attachment")
+    public SaResult getMinioAttachment(@RequestParam("minioUrl") String minioUrl){
+        String s = minioService.generatePresignedUrl(minioUrl);
+        return SaResult.data(s).setCode(200);
+    }
+
 }

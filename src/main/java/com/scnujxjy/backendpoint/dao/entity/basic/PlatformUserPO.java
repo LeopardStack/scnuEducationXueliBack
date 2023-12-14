@@ -76,5 +76,8 @@ public class PlatformUserPO implements Serializable {
     @TableField(typeHandler = LongTypeHandler.class)
     private List<Long> supplementaryRoleIdSet;
 
-
+    /**
+     * 是否允许登录 -1 表示禁止登录
+     */
+    private String login_on;
 }

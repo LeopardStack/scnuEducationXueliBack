@@ -15,6 +15,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
+import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
@@ -447,5 +448,15 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             int insert1 = platformMessageMapper.updateById(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }
+    }
+
+    /**
+     * 学生获取自己的录取信息
+     * @return
+     */
+    public AdmissionInformationVO getAdmission_info() {
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        String admissionYear = SystemEnum.NOW_NEW_STUDENT_GRADE.getSystemArg();
+        return getBaseMapper().selectSingleAdmissionInfo(loginIdAsString, admissionYear);
     }
 }

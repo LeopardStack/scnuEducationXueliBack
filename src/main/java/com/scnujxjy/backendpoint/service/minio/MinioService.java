@@ -108,6 +108,42 @@ public class MinioService {
         }
     }
 
+    /**
+     * 使用文件名获取临时7天的链接。
+     * 文件名格式应为 "bucketName/objectName" 或 "./bucketName/objectName"。
+     * @param fileName 文件名，格式为 "bucketName/objectName" 或 "./bucketName/objectName"。
+     * @return 预签名的URL，或者如果出现错误则为null。
+     */
+    public String generatePresignedUrl(String fileName) {
+        try {
+            // 如果文件名以 './' 开头，移除这两个字符
+            if (fileName.startsWith("./")) {
+                fileName = fileName.substring(2);
+            }
+
+            String[] parts = fileName.split("/", 2);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("文件名格式不正确。期望的格式为 'bucketName/objectName' 或 './bucketName/objectName'");
+            }
+            String bucketName = parts[0];
+            String objectName = parts[1];
+
+            String presignedUrl = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .expiry(7, TimeUnit.DAYS) // 设置链接有效期为7天
+                            .build());
+
+            return presignedUrl;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // 或者根据您的错误处理策略进行处理
+        }
+    }
+
+
     // 将图片转换为字节流
     public byte[] getImageAsBytes(String fileName) {
         try {
@@ -327,6 +363,10 @@ public class MinioService {
      */
     public byte[] downloadFileFromMinio(String minioUrl) {
         try {
+            // 如果文件名以 './' 开头，移除这两个字符
+            if (minioUrl.startsWith("./")) {
+                minioUrl = minioUrl.substring(2);
+            }
             // 从 URL 中解析出桶名和文件名
             String[] parts = minioUrl.split("/", 2);
             if (parts.length < 2) {

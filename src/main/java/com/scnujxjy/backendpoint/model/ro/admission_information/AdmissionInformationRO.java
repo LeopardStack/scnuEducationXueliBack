@@ -166,4 +166,9 @@ public class AdmissionInformationRO {
      */
     @ExcelProperty(index=23, value = "录取新生年级")
     private String grade;
+
+    /**
+     * 是否确认
+     */
+    private String isConfirmed;
 }

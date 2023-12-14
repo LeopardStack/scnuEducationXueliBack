@@ -46,4 +46,6 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     List<String> getDistinctTeachingPoints(@Param("entity")AdmissionInformationRO admissionInformationRO);
 
     List<AdmissionInformationVO> batchSelectData(@Param("entity")AdmissionInformationRO entity);
+
+    AdmissionInformationVO selectSingleAdmissionInfo(@Param("idNumber")String idNumber, @Param("admissionYear")String admissionYear);
 }

@@ -194,4 +194,10 @@ public class AdmissionInformationVO implements Serializable {
 
     @ExcelProperty(value = "招生科类", index = 30)
     private String admissionType;
+
+    /**
+     * 是否已确认
+     */
+    @ExcelIgnore
+    private Integer isConfirmed;
 }

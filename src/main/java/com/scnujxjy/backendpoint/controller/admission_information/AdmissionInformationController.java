@@ -4,6 +4,10 @@ package com.scnujxjy.backendpoint.controller.admission_information;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -11,6 +15,7 @@ import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInforma
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
+import com.scnujxjy.backendpoint.service.registration_record_card.PersonalInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +40,9 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
 public class AdmissionInformationController {
     @Resource
     private AdmissionInformationService admissionInformationService;
+
+    @Resource
+    private PersonalInfoService personalInfoService;
 
 
     /**
@@ -85,6 +93,70 @@ public class AdmissionInformationController {
         }
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO);
+    }
+
+    /**
+     * 学生查询自己的录取信息
+     * @return 录取学生分页信息
+     */
+    @GetMapping("/get_admission_info")
+    public SaResult getAdmission_info() {
+
+        // 查询数据
+        AdmissionInformationVO admissionInformationVO = admissionInformationService.getAdmission_info();
+
+        // 返回数据
+        return SaResult.data(admissionInformationVO);
+    }
+
+    /**
+     * 学生确认自己的录取信息
+     * @return 录取学生分页信息
+     */
+    @GetMapping("/confirm_admission_info")
+    public SaResult confirmAdmission_info() {
+        String systemArg = SystemEnum.NOW_NEW_STUDENT_GRADE.getSystemArg();
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        // 查询数据
+        AdmissionInformationPO admissionInformationPO = admissionInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<AdmissionInformationPO>()
+                .eq(AdmissionInformationPO::getIdCardNumber, loginIdAsString)
+                .eq(AdmissionInformationPO::getGrade, systemArg)
+        );
+        if(admissionInformationPO.getIsConfirmed().equals(1)){
+            return SaResult.ok("已确认成功");
+        }
+        admissionInformationPO.setIsConfirmed(1);
+        int i = admissionInformationService.getBaseMapper().updateById(admissionInformationPO);
+        // 返回数据
+        if(i > 0){
+            return SaResult.ok("确认成功");
+        }else{
+            return SaResult.error("新生录取信息确认失败").setCode(2001);
+        }
+    }
+
+    /**
+     * 学生修改自己自己的联系电话和通讯地址
+     * @return 录取学生分页信息
+     */
+    @GetMapping("/change_personal_info")
+    public SaResult getAdmission_info(@RequestParam("studentAddress")String studentAddress, @RequestParam("phoneNumber")String phoneNumber) {
+        String systemArg = SystemEnum.NOW_NEW_STUDENT_GRADE.getSystemArg();
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        // 查询数据
+        PersonalInfoPO personalInfoPO = personalInfoService.getBaseMapper().selectOne(new LambdaQueryWrapper<PersonalInfoPO>()
+                .eq(PersonalInfoPO::getGrade, systemArg)
+                .eq(PersonalInfoPO::getIdNumber, loginIdAsString)
+        );
+        personalInfoPO.setPhoneNumber(phoneNumber);
+        personalInfoPO.setAddress(studentAddress);
+        int i = personalInfoService.getBaseMapper().updateById(personalInfoPO);
+        if(i > 0){
+            return SaResult.ok("更新成功");
+        }
+
+        // 返回数据
+        return SaResult.error("未更新").setCode(2001);
     }
 
     @PostMapping("/get_admission_select_args")

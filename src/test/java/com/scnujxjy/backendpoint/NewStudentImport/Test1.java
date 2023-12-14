@@ -139,7 +139,7 @@ public class Test1 {
     @Test
     public void testUploadPictures(){
         String bucketName = "xuelistudentpictures";
-        String projectRootPath ="D:\\华师工作\\2023年系统建设\\学历教育\\新生录取模板\\2023年成高录取相片（16410人）";
+        String projectRootPath ="D:\\ScnuWork\\xueli\\测试数据\\新生录取\\基础数据";
         File rootDir = new File(projectRootPath, "xuelistudentpictures");
         rootDirPath = rootDir.getAbsolutePath();
 

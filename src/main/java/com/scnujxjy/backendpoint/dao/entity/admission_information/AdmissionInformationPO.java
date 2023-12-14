@@ -160,4 +160,10 @@ public class AdmissionInformationPO implements Serializable {
     private String grade;
 
 
+    /**
+     * 是否已确认
+     */
+    private Integer isConfirmed;
+
+
 }

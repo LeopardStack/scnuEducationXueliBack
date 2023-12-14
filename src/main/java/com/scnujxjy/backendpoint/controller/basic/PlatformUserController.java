@@ -7,12 +7,21 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import com.scnujxjy.backendpoint.constant.enums.AnnounceAttachmentEnum;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.OnlineCount;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
+import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
+import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -44,6 +53,12 @@ public class PlatformUserController {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private GlobalConfigService globalConfigService;
+
+    @Resource
+    private AdmissionInformationService admissionInformationService;
 
     @Resource
     protected RedisTemplate<String, Object> redisTemplate;
@@ -210,14 +225,37 @@ public class PlatformUserController {
      */
     @GetMapping("/detailUser")
     public SaResult detail() {
-        Object loginId = StpUtil.getLoginId();
+        String userName = StpUtil.getLoginIdAsString();
+        List<String> roleList = StpUtil.getRoleList();
+        boolean isNewStudent = false;
         // 查询数据
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginId);
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(userName);
+
+
+        if(roleList.contains(RoleEnum.STUDENT.getRoleName())){
+            // 学生需要区分是否是新生
+            String systemArg = SystemEnum.NOW_NEW_STUDENT_GRADE.getSystemArg();
+            AdmissionInformationPO admissionInformationPO = admissionInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<AdmissionInformationPO>()
+                    .eq(AdmissionInformationPO::getGrade, systemArg).eq(AdmissionInformationPO::getIdCardNumber, userName));
+
+            if(admissionInformationPO != null){
+                isNewStudent = true;
+                // 进一步判断是否需要将公告的 URL 给他
+                if(admissionInformationPO.getIsConfirmed().equals(0)){
+                    // 为0 代表 未读新生录取公告
+                    GlobalConfigPO globalConfigPO = globalConfigService.getBaseMapper().selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
+                            .eq(GlobalConfigPO::getConfigKey, AnnounceAttachmentEnum.NOW_NEW_STUDENT_ADMISSION.getSystemArg()));
+                    platformUserVO.setNewStudentAnnouncement(globalConfigPO.getConfigValue());
+                }
+            }
+        }
+
         // 校验返回数据
         if (Objects.isNull(platformUserVO)) {
             throw dataNotFoundError();
         }
         // 返回数据
+        platformUserVO.setIsNewStudent(isNewStudent);
         return SaResult.data(platformUserVO);
     }
 
