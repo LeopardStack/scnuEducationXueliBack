@@ -8,4 +8,6 @@ public class StatisticTableForStudentStatus {
     private String grade;
     private long degreeCount;
     private long graduationCount;
+
+    private long admissionCount;
 }

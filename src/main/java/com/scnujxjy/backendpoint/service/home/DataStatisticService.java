@@ -7,23 +7,44 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStat
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Resource;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class DataStatisticService extends ServiceImpl<StudentStatusMapper, StudentStatusPO> implements IService<StudentStatusPO> {
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+    @Async
+    public void loadTable1DataAsync(int yearRange) {
+        // 数据加载逻辑
+        List<StatisticTableForStudentStatus> data = getTable1Data(yearRange); // 加载数据
+        redisTemplate.opsForValue().set("table1Data", data, 1, TimeUnit.HOURS); // 存储到 Redis，有效期1小时
+    }
+
+    public List<Map<String, StatisticTableForStudentStatus>> getTable1DataWithRedis(int yearRange) {
+        if (!redisTemplate.hasKey("table1DataForStatistics")) {
+            loadTable1DataAsync(yearRange);
+            return new ArrayList<>(); // 返回空列表
+        } else {
+            return (List<Map<String, StatisticTableForStudentStatus>>) redisTemplate.opsForValue().get("table1DataForStatistics");
+        }
+    }
     /**
      * 获取指定范围内的毕业数据、学籍数据和学位数据
      * @param yearRange
      * @return
      */
-    public List<Map<String, StatisticTableForStudentStatus>> getTable1Data(int yearRange) {
+    public List<StatisticTableForStudentStatus> getTable1Data(int yearRange) {
+        log.info("开始执行数据统计");
         // 获取所有的年份
-        List<String> distinctGrades = baseMapper.getDistinctGrades(new StudentStatusFilterRO());
+        List<String> distinctGrades = baseMapper.getDistinctGradesForStatistics(new StudentStatusFilterRO());
 
         if (distinctGrades.isEmpty()) {
             return Collections.emptyList();
@@ -44,7 +65,32 @@ public class DataStatisticService extends ServiceImpl<StudentStatusMapper, Stude
         }
 
         // 获取数据
-        return baseMapper.getCountOfStudentStatus(String.valueOf(startYear), maxGrade);
+        // 获取学生状态数据
+        List<StatisticTableForStudentStatus> studentStatusData = baseMapper.getCountOfStudentStatus(String.valueOf(startYear), maxGrade);
+
+        // 获取录取信息数据
+        List<StatisticTableForStudentStatus> admissionInfoData = baseMapper.getCountOfAdmissionInformation(String.valueOf(startYear), maxGrade);
+
+        // 创建一个新的列表来存储合并后的数据
+        List<StatisticTableForStudentStatus> mergedData = new ArrayList<>();
+
+        // 将学生状态数据添加到合并后的列表
+        mergedData.addAll(admissionInfoData);
+
+        // 遍历录取信息数据，更新或添加到合并后的列表
+        for (StatisticTableForStudentStatus studentStatus : admissionInfoData) {
+            StatisticTableForStudentStatus studentStatus1 = studentStatusData.stream().filter(staData -> staData.getGrade().
+                    equals(studentStatus.getGrade())).findFirst().orElse(null);
+
+            if(studentStatus1 != null && studentStatus1.getGrade().equals(studentStatus.getGrade())){
+                studentStatus.setStudentCount(studentStatus1.getStudentCount());
+                studentStatus.setGraduationCount(studentStatus1.getGraduationCount());
+                studentStatus.setDegreeCount(studentStatus1.getDegreeCount());
+            }
+        }
+
+
+        return mergedData;
     }
 
     /**

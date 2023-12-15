@@ -32,14 +32,14 @@ public class ChartController {
     public SaResult getChartData() {
         ChartOptions chartOptions = new ChartOptions();
 
-        List<Map<String, StatisticTableForStudentStatus>> table1Data = dataStatisticService.getTable1Data(10);
+        List<StatisticTableForStudentStatus> table1Data = dataStatisticService.getTable1Data(10);
 
         ChartOptions.Title title = new ChartOptions.Title();
         title.setText("学生数量统计");
         chartOptions.setTitle(title);
 
         ChartOptions.Legend legend = new ChartOptions.Legend();
-        legend.setData(Arrays.asList("在籍学生数量", "毕业学生数量", "获取学位学生数量"));
+        legend.setData(Arrays.asList("新生录取数量", "在籍学生数量", "毕业学生数量", "获取学位学生数量"));
         chartOptions.setLegend(legend);
 
         // 从table1Data中提取年份（grade）作为xAxis的数据
@@ -47,7 +47,7 @@ public class ChartController {
         xAxis.setData(
                 table1Data.stream()
                         .map(data -> {
-                            String Year = String.valueOf(data.get("grade"));
+                            String Year = String.valueOf(data.getGrade());
                             return (Year != null) ? Year.toString() : null;
                         })
                         .filter(Objects::nonNull)  // 过滤掉 null 值
@@ -55,26 +55,33 @@ public class ChartController {
         );
         chartOptions.setXAxis(xAxis);
 
+        // 提取录取新生数量数据为series
+        ChartOptions.Series newStudentCountSeries = new ChartOptions.Series();
+        newStudentCountSeries.setName("新生录取数量");
+        newStudentCountSeries.setType("bar");
+        newStudentCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.getAdmissionCount()))).collect(Collectors.toList()));
+
+
         // 提取在籍学生数量数据为series
         ChartOptions.Series studentCountSeries = new ChartOptions.Series();
         studentCountSeries.setName("在籍学生数量");
         studentCountSeries.setType("bar");
-        studentCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.get("student_count")))).collect(Collectors.toList()));
+        studentCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.getStudentCount()))).collect(Collectors.toList()));
 
         // 提取毕业学生数量数据为series
         ChartOptions.Series graduationCountSeries = new ChartOptions.Series();
         graduationCountSeries.setName("毕业学生数量");
         graduationCountSeries.setType("bar");
-        graduationCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.get("graduation_count"))))
+        graduationCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.getGraduationCount())))
                 .collect(Collectors.toList()));
 
         // 提取获取学位学生数量数据为series
         ChartOptions.Series degreeCountSeries = new ChartOptions.Series();
         degreeCountSeries.setName("获取学位学生数量");
         degreeCountSeries.setType("bar");
-        degreeCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.get("degree_count")))).collect(Collectors.toList()));
+        degreeCountSeries.setData(table1Data.stream().map(map -> Long.parseLong(String.valueOf(map.getDegreeCount()))).collect(Collectors.toList()));
 
-        chartOptions.setSeries(Arrays.asList(studentCountSeries, graduationCountSeries, degreeCountSeries));
+        chartOptions.setSeries(Arrays.asList(newStudentCountSeries, studentCountSeries, graduationCountSeries, degreeCountSeries));
 
         return SaResult.data(chartOptions);
     }

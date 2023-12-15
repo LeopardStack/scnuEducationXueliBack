@@ -125,6 +125,19 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "</script>")
     List<String> getDistinctGrades(@Param("entity") StudentStatusFilterRO entity);
 
+
+    /**
+     * 统计 获取新生录取中的年级
+     *
+     * @param entity
+     * @return
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT ai.grade " +
+            "FROM admission_information ai " +
+            "</script>")
+    List<String> getDistinctGradesForStatistics(@Param("entity") StudentStatusFilterRO entity);
+
     /**
      * 根据筛选条件获取筛选条件层次
      * 如果是二级学院教务员登录，则加一个学院的字段限制
@@ -409,17 +422,28 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
 
     @Select("<script>" +
             "SELECT ss.grade, " +
-            "       COUNT(DISTINCT ss.student_number) AS student_count, " +
-            "       COUNT(DISTINCT gi.student_number) AS graduation_count, " +
-            "       COUNT(DISTINCT di.student_number) AS degree_count " +
+            "COUNT(DISTINCT ss.student_number) AS student_count, " +
+            "COUNT(DISTINCT gi.student_number) AS graduation_count, " +
+            "COUNT(DISTINCT di.student_number) AS degree_count " +
             "FROM student_status ss " +
             "LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number AND gi.graduation_number IS NOT NULL AND gi.graduation_date IS NOT NULL " +
             "LEFT JOIN degree_info di ON ss.student_number = di.student_number " +
             "WHERE ss.grade BETWEEN #{startYear} AND #{endYear} " +
             "GROUP BY ss.grade " +
-            "ORDER BY ss.grade ASC" +
+            "ORDER BY ss.grade ASC " +
             "</script>")
-    List<Map<String, StatisticTableForStudentStatus>> getCountOfStudentStatus(@Param("startYear") String startYear, @Param("endYear") String endYear);
+    List<StatisticTableForStudentStatus> getCountOfStudentStatus(@Param("startYear") String startYear,
+                                                                              @Param("endYear") String endYear);
+
+    @Select("<script>" +
+            "SELECT grade, COUNT(*) AS admission_count " +
+            "FROM admission_information ai " +
+            "WHERE ai.grade BETWEEN #{startYear} AND #{endYear} " +
+            "GROUP BY ai.grade " +
+            "ORDER BY ai.grade ASC " +
+            "</script>")
+    List<StatisticTableForStudentStatus> getCountOfAdmissionInformation(@Param("startYear") String startYear,
+                                                                              @Param("endYear") String endYear);
 
 
     @Select("<script>" +

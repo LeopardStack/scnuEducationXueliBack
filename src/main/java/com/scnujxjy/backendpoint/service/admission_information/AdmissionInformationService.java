@@ -12,10 +12,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
-import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
-import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
-import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
+import com.scnujxjy.backendpoint.constant.enums.*;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
@@ -138,6 +135,7 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
     }
     public PageVO<AdmissionInformationVO> getAdmissionInformationByAllRoles(PageRO<AdmissionInformationRO> admissionInformationROPageRO) {
         List<String> roleList = StpUtil.getRoleList();
+        List<String> permissionList = StpUtil.getPermissionList();
 
         if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
             // 查询继续教育管理员权限范围内的教学计划
@@ -145,7 +143,7 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             // 采用超级管理员的筛选器 在里面添加一个条件 即该二级学院管理员的学院
             admissionInformationROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
-        } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+        } else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
             // 查询继续教育管理员权限范围内的教学计划
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
 
@@ -264,6 +262,7 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
      */
     public AdmissionSelectArgs getAdmissionArgsByAllRoles(AdmissionInformationRO admissionInformationRO) {
         List<String> roleList = StpUtil.getRoleList();
+        List<String> permissionList = StpUtil.getPermissionList();
 
         if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
             // 查询继续教育管理员权限范围内的教学计划
@@ -271,7 +270,7 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             // 采用超级管理员的筛选器 在里面添加一个条件 即该二级学院管理员的学院
             admissionInformationRO.setCollege(userBelongCollege.getCollegeName());
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
-        } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+        } else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
             // 查询继续教育管理员权限范围内的教学计划
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
 

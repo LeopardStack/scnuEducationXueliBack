@@ -8,13 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AdmissionInformationRO {
+public class AdmissionInformationRO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**

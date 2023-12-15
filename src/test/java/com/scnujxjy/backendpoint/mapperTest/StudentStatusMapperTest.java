@@ -19,7 +19,7 @@ public class StudentStatusMapperTest {
 
     @Test
     public void test1(){
-        List<Map<String, StatisticTableForStudentStatus>> countOfStudentStatus = studentStatusMapper.getCountOfStudentStatus("2010", "2023");
+        List<StatisticTableForStudentStatus> countOfStudentStatus = studentStatusMapper.getCountOfStudentStatus("2010", "2023");
         log.info(countOfStudentStatus.toString());
 
         List<Map<String, StatisticTableForGraduation>> countOfGraduation = studentStatusMapper.getCountOfGraduation(2010, 2023);
