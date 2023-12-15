@@ -14,7 +14,10 @@ import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.basic.PlatformUserInverter;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
@@ -417,4 +420,7 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
         return null;
     }
 
+    public PageVO<AdmissionInformationVO> getPlatformUsersInformation(PageRO<PlatformUserRO> platformUserROPageRO) {
+        return null;
+    }
 }

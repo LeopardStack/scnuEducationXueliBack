@@ -132,10 +132,13 @@ public class TestPermissionChange {
      */
     @Test
     public void testUpdateUser() {
-        Long userId = 7L;
+        String userName = "scnuXueliAdmin";
+        PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, userName));
+        Long userId = platformUserPO.getUserId();
         Set<Long> roleIdSet = new HashSet<>();
         // 此处添加角色id
-        roleIdSet.add(6L);
+        roleIdSet.add(3L);
         PlatformUserVO platformUserVO = platformUserService.detailById(userId);
         if (Objects.nonNull(platformUserVO)) {
             if (CollUtil.isNotEmpty(platformUserVO.getSupplementaryRoleIdSet())) {

@@ -1,9 +1,12 @@
 package com.scnujxjy.backendpoint.handler;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.exception.DataException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -29,15 +32,29 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler
-    public SaResult handlerException(Exception e) {
-        if(e instanceof NotPermissionException){
-            return SaResult.error(e.getMessage()).setCode(2001);
-        }
-        else if(e.toString().contains("token 无效")){
-
-        }else{
+    public ResponseEntity<SaResult> handlerException(Exception e) {
+        if (e instanceof NotPermissionException) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN) // 403 Forbidden
+                    .body(SaResult.error(e.getMessage()).setCode(2001));
+        } else if (e instanceof NotLoginException) {
+            NotLoginException notLoginEx = (NotLoginException) e;
+            if (notLoginEx.getType().equals(NotLoginException.INVALID_TOKEN)) {
+                // Token 无效的情况
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED) // 401 Unauthorized
+                        .body(SaResult.error("Token 无效").setCode(401));
+            } else {
+                // 其他登录异常
+                return ResponseEntity
+                        .badRequest()
+                        .body(SaResult.error(e.getMessage()).setCode(2003));
+            }
+        } else {
             log.error("出现异常：", e);
+            return ResponseEntity
+                    .badRequest()
+                    .body(SaResult.error(e.getMessage()));
         }
-        return SaResult.error(e.getMessage());
     }
 }

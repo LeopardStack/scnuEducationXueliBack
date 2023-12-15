@@ -16,13 +16,18 @@ import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInfor
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.basic.OnlineCount;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.util.annotations.CheckIPWhiteList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -351,6 +356,31 @@ public class PlatformUserController {
 
         // 将更新后的统计信息存回 Redis
         redisTemplate.opsForValue().set("onlineCount", onlineCount, 100, TimeUnit.HOURS);
+    }
+
+    /**
+     * 平台用户信息管理
+     * @param platformUserROPageRO
+     * @return
+     */
+    @PostMapping("/get_platform_users_information")
+    @CheckIPWhiteList
+    public SaResult pageQueryAdmissionInformation(@RequestBody PageRO<PlatformUserRO> platformUserROPageRO) {
+        // 参数校验
+        if (Objects.isNull(platformUserROPageRO)) {
+            return SaResult.error("获取平台用户信息失败").setCode(2001);
+        }
+        if (Objects.isNull(platformUserROPageRO.getEntity())) {
+            platformUserROPageRO.setEntity(new PlatformUserRO());
+        }
+        // 查询数据
+        PageVO<AdmissionInformationVO> admissionInformationVOPageVO = platformUserService.getPlatformUsersInformation(platformUserROPageRO);
+        // 校验数据
+        if (Objects.isNull(admissionInformationVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(admissionInformationVOPageVO);
     }
 }
 

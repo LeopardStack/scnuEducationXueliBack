@@ -91,10 +91,10 @@ public class AdmissionInformationVO implements Serializable {
     private Date graduationDate;
 
     /**
-     * 学生电话
+     * 最新的学生个人电话
      */
     @ExcelProperty(value = "学生电话", index = 10)
-    private String phoneNumber;
+    private String studentPhoneNumber;
 
     /**
      * 身份证号码
@@ -200,4 +200,10 @@ public class AdmissionInformationVO implements Serializable {
      */
     @ExcelIgnore
     private Integer isConfirmed;
+
+    /**
+     * 录取信息中原始的电话
+     */
+    @ExcelIgnore
+    private String phoneNumber;
 }
