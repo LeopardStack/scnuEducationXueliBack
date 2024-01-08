@@ -34,8 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getGradeInfos;
-import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentInfos;
+import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 
 @Data
 class ErrorStudentStatusExportExcel extends StudentStatusCommonPO {
@@ -455,9 +454,13 @@ public class TestGetAllStudentStatusDataBetter {
 
 
             String graduateDateString = studentData.get("BYRQ");
-            if(graduateDateString != null && !graduateDateString.equals("NULL")){
+            String bypic = studentData.get("BYPIC");
+            if((graduateDateString != null && !graduateDateString.equals("NULL")) || bypic != null){
                 Date graduateDate = null;
-                graduateDate = dateFormat5.parse(graduateDateString);
+                if(graduateDateString != null && !graduateDateString.equals("NULL")
+                        && !graduateDateString.isEmpty()){
+                    graduateDate = dateFormat5.parse(graduateDateString);
+                }
                 graduationInfoPO.setGraduationDate(graduateDate);
 
                 graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
@@ -586,7 +589,7 @@ public class TestGetAllStudentStatusDataBetter {
 
         StringBuilder allGrades = new StringBuilder();
         for (int i = startYear; i >= endYear; i--) {
-            // 检测新旧系统的成绩数目是否相同，相同则不需要更新
+            // 检测新旧系统的学生数目是否相同，相同则不需要更新
             Integer integer = studentStatusMapper.selectCount(new
                     LambdaQueryWrapper<StudentStatusPO>().eq(StudentStatusPO::getGrade,
                     i));
@@ -637,6 +640,47 @@ public class TestGetAllStudentStatusDataBetter {
         String currentDateTime = LocalDateTime.now().format(formatter);
         String relativePath = "data_import_error_excel/studentStatusData/";
         String errorFileName = relativePath + currentDateTime + "_" + allGrades + "导入学籍数据失败的部分数据.xlsx";
+//        exportErrorListToExcel(errorList, errorFileName);
+        exportErrorListToExcelAndUploadToMinio(errorList, errorFileName, "datasynchronize");
+
+    }
+
+
+    /**
+     * 检测部分学生同步失败的原因
+     * @throws InterruptedException
+     */
+    @Test
+    public void test2() throws InterruptedException {
+        /**
+         * 同步指定年级的学籍数据，包含个人信息、学籍数据、毕业数据、学位数据、原学历数据
+         * 2023 年的数据需要单独校验
+         */
+        String sql = "SELECT * FROM STUDENT_VIEW_WITHPIC WHERE nj='2021' and sfzh='441424198512261389'";
+        ArrayList<HashMap<String, String>> studentStatusData = getCertainStudent(sql);
+        for (HashMap<String, String> hashMap : studentStatusData) {
+
+            queue.put(hashMap); // Put the object in the queue
+        }
+
+        // 传递毒药对象
+        for (int i = 0; i < CONSUMER_COUNT; i++) {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("END", "TRUE");
+            queue.put(hashMap);
+        }
+
+        latch.await();
+
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+
+        // 调用新方法导出errorList
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String currentDateTime = LocalDateTime.now().format(formatter);
+        String relativePath = "data_import_error_excel/studentStatusData/";
+        String errorFileName = relativePath + currentDateTime + "_" + "部分错误学生" + "导入学籍数据失败的部分数据.xlsx";
 //        exportErrorListToExcel(errorList, errorFileName);
         exportErrorListToExcelAndUploadToMinio(errorList, errorFileName, "datasynchronize");
 

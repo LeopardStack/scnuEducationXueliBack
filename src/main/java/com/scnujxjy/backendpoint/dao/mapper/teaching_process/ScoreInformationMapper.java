@@ -183,31 +183,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT pi.grade " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctGrades(@Param("entity") ScoreInformationFilterRO entity);
 
     /**
@@ -243,31 +218,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.level " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctLevels(@Param("entity") ScoreInformationFilterRO entity);
 
     /**
@@ -276,31 +226,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.study_form " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctStudyForms(@Param("entity") ScoreInformationFilterRO entity);
 
     /**
@@ -309,31 +234,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.class_name " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctClassNames(@Param("entity") ScoreInformationFilterRO entity);
 
     /**
@@ -342,31 +242,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT pi.course_name " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctCourseNames(@Param("entity") ScoreInformationFilterRO entity);
 
     /**
@@ -375,31 +250,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ci.major_name " +
-            "FROM score_information pi " +
-            "LEFT JOIN class_information ci ON pi.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentId != null'>AND pi.studentId = #{entity.studentId} </if>" +
-            "<if test='entity.grade != null'>AND pi.grade = #{entity.grade} </if>" +
-            "<if test='entity.college != null'>AND pi.college = #{entity.college} </if>" +
-            "<if test='entity.majorName != null'>AND pi.major_name = #{entity.majorName} </if>" +
-
-            "<if test='entity.semester != null'>AND pi.semester = #{entity.semester} </if>" +
-            "<if test='entity.courseName != null'>AND pi.course_name = #{entity.courseName} </if>" +
-            "<if test='entity.courseCode != null'>AND pi.course_code = #{entity.courseCode} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name LIKE CONCAT(#{entity.className}, '%') </if>" +
-
-            "<if test='entity.courseType != null'>AND pi.course_type = #{entity.courseType} </if>" +
-            "<if test='entity.assessmentType != null'>AND pi.assessment_type = #{entity.assessmentType} </if>" +
-            "</script>")
     List<String> getDistinctMajorNames(@Param("entity") ScoreInformationFilterRO entity);
 
     /**

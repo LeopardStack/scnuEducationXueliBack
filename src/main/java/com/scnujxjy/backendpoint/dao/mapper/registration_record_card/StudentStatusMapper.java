@@ -124,6 +124,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
             "ORDER BY ss.grade DESC" +
             "</script>")
     List<String> getDistinctGrades(@Param("entity") StudentStatusFilterRO entity);
+    List<String> getDistinctGradesByTeachingPoint(@Param("entity") StudentStatusFilterRO entity);
 
 
     /**
@@ -505,5 +506,17 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<StudentStatusAllVO> selectByFilterAndPageByTeachingPoint(@Param("entity") StudentStatusFilterRO entity, @Param("pageSize") Long pageSize, @Param("l") long l);
 
     long selectByFilterAndPageByTeachingPointCount(@Param("entity") StudentStatusFilterRO entity);
+
+    List<String> getDistinctMajorNamesByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<String> getDistinctLevelsByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<String> getDistinctStudyFormsByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<String> getDistinctClassNamesByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<String> getDistinctStudyDurationsByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<String> getDistinctAcademicStatussByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
 }
 

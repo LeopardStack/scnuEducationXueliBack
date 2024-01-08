@@ -657,4 +657,12 @@ public abstract class AbstractFilter {
     public void exportExamStudentsInfo(BatchSetTeachersInfoRO entity, String loginId) {
 
     }
+
+    public FilterDataVO filterNewStudentPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        return null;
+    }
+
+    public PaymentInformationSelectArgs getNewStudentPaymentInfoArgs(PaymentInfoFilterRO paymentInfoFilterRO) {
+        return null;
+    }
 }

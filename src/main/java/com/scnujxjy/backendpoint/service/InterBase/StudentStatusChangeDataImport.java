@@ -2,10 +2,7 @@ package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.oa.DropoutRecordPO;
-import com.scnujxjy.backendpoint.dao.entity.oa.MajorChangeRecordPO;
-import com.scnujxjy.backendpoint.dao.entity.oa.ResumptionRecordPO;
-import com.scnujxjy.backendpoint.dao.entity.oa.SuspensionRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.*;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.oa.*;
@@ -37,9 +34,6 @@ public class StudentStatusChangeDataImport {
 
     private MinioService minioService;
 
-    // 是否强行覆盖
-    private static boolean updateAny = false;
-
     // 记录各种审批类型的数量
     public Map<String, Integer> applyCount = new ConcurrentHashMap<>();
     public Map<String, Integer> applyImportCount = new ConcurrentHashMap<>();
@@ -48,9 +42,6 @@ public class StudentStatusChangeDataImport {
     // 存储插入日志
     public List<String> insertLogsList = Collections.synchronizedList(new ArrayList<>());
 
-    public void setUpdateAny(boolean updateAnySet){
-        updateAny = updateAnySet;
-    }
 
     public StudentStatusChangeDataImport(){
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
@@ -95,7 +86,6 @@ public class StudentStatusChangeDataImport {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public int insertData(HashMap<String, String> hashMap){
         try {
             if (hashMap.containsKey("CTYPE")) {
@@ -104,7 +94,7 @@ public class StudentStatusChangeDataImport {
                 OldStudentStatusChangeDataBO oldStudentStatusChangeDataBO = new OldStudentStatusChangeDataBO();
                 BeanUtils.populate(oldStudentStatusChangeDataBO, hashMap);
                 if("转学".equals(s)){
-                    log.info("转学到校内");
+//                    log.info("转学到校内");
                     MajorChangeRecordPO majorChangeRecordPO = new MajorChangeRecordPO();
                     String idnum = oldStudentStatusChangeDataBO.getIDNUM();
                     majorChangeRecordPO.setIdNumber(oldStudentStatusChangeDataBO.getSFZH());
@@ -125,13 +115,14 @@ public class StudentStatusChangeDataImport {
 
                     if("转学".equals(hashMap.get("new_BSHI"))){
                         // 转到校外或者省外的
-                        log.info("转学到校外");
+//                        log.info("转学到校外");
                         majorChangeRecordPO.setRemark("转学到校外/省外");
                     }else{
                         majorChangeRecordPO.setNewClassIdentifier(oldStudentStatusChangeDataBO.getNew_BSHI());
                         majorChangeRecordPO.setNewGrade(oldStudentStatusChangeDataBO.getNew_NJ());
                         majorChangeRecordPO.setNewStudyForm(oldStudentStatusChangeDataBO.getNew_XSHI());
                         majorChangeRecordPO.setNewMajorName(oldStudentStatusChangeDataBO.getNew_ZHY());
+                        majorChangeRecordPO.setRemark("在籍生校内转专业");
                     }
                     // 检测重复导入
                     Integer i = majorChangeRecordMapper.selectCount(new LambdaQueryWrapper<MajorChangeRecordPO>()
@@ -150,7 +141,7 @@ public class StudentStatusChangeDataImport {
                     }
 
                 }else if("休学".equals(s)){
-                    log.info("办理休学");
+//                    log.info("办理休学");
                     SuspensionRecordPO suspensionRecordPO = new SuspensionRecordPO();
                     suspensionRecordPO.setApprovalDate(oldStudentStatusChangeDataBO.getUPDATETIME());
                     suspensionRecordPO.setName(oldStudentStatusChangeDataBO.getXM());
@@ -191,8 +182,9 @@ public class StudentStatusChangeDataImport {
                     }
 
                 }else if("复学".equals(s)){
-                    log.info("复学");
+//                    log.info("复学");
                     ResumptionRecordPO resumptionRecordPO = new ResumptionRecordPO();
+                    resumptionRecordPO.setApprovalDate(oldStudentStatusChangeDataBO.getUPDATETIME());
                     resumptionRecordPO.setName(oldStudentStatusChangeDataBO.getXM());
                     resumptionRecordPO.setIdNumber(oldStudentStatusChangeDataBO.getSFZH());
                     resumptionRecordPO.setStudentNumber(oldStudentStatusChangeDataBO.getXHAO());
@@ -231,11 +223,68 @@ public class StudentStatusChangeDataImport {
                         }
                     }
                 }else if("退学".equals(s)){
-                    log.info("退学");
+//                    log.info("退学");
                     DropoutRecordPO dropoutRecordPO = new DropoutRecordPO();
-
+                    dropoutRecordPO.setSerialNumber(oldStudentStatusChangeDataBO.getIDNUM());
+                    dropoutRecordPO.setExamRegistrationNumber(oldStudentStatusChangeDataBO.getZKZH());
+                    dropoutRecordPO.setIdNumber(oldStudentStatusChangeDataBO.getSFZH());
+                    dropoutRecordPO.setStudentNumber(oldStudentStatusChangeDataBO.getXHAO());
+                    dropoutRecordPO.setName(oldStudentStatusChangeDataBO.getXM());
+                    dropoutRecordPO.setOldStudyForm(oldStudentStatusChangeDataBO.getXSHI());
+                    dropoutRecordPO.setOldGrade(oldStudentStatusChangeDataBO.getNJ());
+                    dropoutRecordPO.setOldMajorName(oldStudentStatusChangeDataBO.getZHY());
+                    dropoutRecordPO.setOldClassIdentifier(oldStudentStatusChangeDataBO.getBSHI());
+                    dropoutRecordPO.setReason(oldStudentStatusChangeDataBO.getREASON());
+                    dropoutRecordPO.setApprovalDate(oldStudentStatusChangeDataBO.getUPDATETIME());
+// 检测重复导入
+                    Integer i = dropoutRecordMapper.selectCount(new LambdaQueryWrapper<DropoutRecordPO>()
+                            .eq(DropoutRecordPO::getOldGrade, dropoutRecordPO.getOldGrade())
+                            .eq(DropoutRecordPO::getSerialNumber, dropoutRecordPO.getSerialNumber())
+                    );
+                    if(i > 0){
+                        log.info("已重复，不必导入");
+                    }else{
+                        int insert = dropoutRecordMapper.insert(dropoutRecordPO);
+                        if(insert <= 0){
+                            log.info("插入失败", insert);
+                        }else{
+                            applyImportCount.compute(s, (key, val) -> (val == null) ? 1 : val + 1);
+                        }
+                    }
                 }else if("留级".equals(s)){
-                    log.info("留级");
+//                    log.info("留级");
+                    RetentionRecordPO retentionRecordPO = new RetentionRecordPO();
+                    retentionRecordPO.setSerialNumber(oldStudentStatusChangeDataBO.getIDNUM());
+                    retentionRecordPO.setIdNumber(oldStudentStatusChangeDataBO.getSFZH());
+                    retentionRecordPO.setExamRegistrationNumber(oldStudentStatusChangeDataBO.getZKZH());
+                    retentionRecordPO.setStudentNumber(oldStudentStatusChangeDataBO.getXHAO());
+                    retentionRecordPO.setName(oldStudentStatusChangeDataBO.getXM());
+                    retentionRecordPO.setOldClassIdentifier(oldStudentStatusChangeDataBO.getXSHI());
+                    retentionRecordPO.setOldGrade(oldStudentStatusChangeDataBO.getNJ());
+                    retentionRecordPO.setOldStudyForm(oldStudentStatusChangeDataBO.getXSHI());
+                    retentionRecordPO.setOldMajorName(oldStudentStatusChangeDataBO.getZHY());
+                    retentionRecordPO.setNewClassIdentifier(oldStudentStatusChangeDataBO.getNew_BSHI());
+                    retentionRecordPO.setNewGrade(oldStudentStatusChangeDataBO.getNew_NJ());
+                    retentionRecordPO.setNewStudyForm(oldStudentStatusChangeDataBO.getNew_XSHI());
+                    retentionRecordPO.setNewMajorName(oldStudentStatusChangeDataBO.getNew_ZHY());
+                    retentionRecordPO.setRetentionStartDate(oldStudentStatusChangeDataBO.getFROM1());
+                    retentionRecordPO.setReason(oldStudentStatusChangeDataBO.getREASON());
+                    retentionRecordPO.setApprovalDate(oldStudentStatusChangeDataBO.getUPDATETIME());
+
+                    Integer i = retentionRecordMapper.selectCount(new LambdaQueryWrapper<RetentionRecordPO>()
+                            .eq(RetentionRecordPO::getOldGrade, retentionRecordPO.getOldGrade())
+                            .eq(RetentionRecordPO::getSerialNumber, retentionRecordPO.getSerialNumber())
+                    );
+                    if(i > 0){
+                        log.info("已重复，不必导入");
+                    }else{
+                        int insert = retentionRecordMapper.insert(retentionRecordPO);
+                        if(insert <= 0){
+                            log.info("插入失败", insert);
+                        }else{
+                            applyImportCount.compute(s, (key, val) -> (val == null) ? 1 : val + 1);
+                        }
+                    }
                 }else{
                     throw new RuntimeException("出现了休复转退留之外的审批类型" + hashMap);
                 }

@@ -1,14 +1,28 @@
 package com.scnujxjy.backendpoint.controller.oa;
 
 
+import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.oa.DropoutRecordRO;
+import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeRecordRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.oa.*;
+import com.scnujxjy.backendpoint.service.oa.DropoutRecordService;
+import com.scnujxjy.backendpoint.service.oa.MajorChangeRecordService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
+import java.util.Objects;
+
+import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
+import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
+
 /**
- * <p>
- * 退学记录表 前端控制器
- * </p>
+ * 退学 Rest 接口
  *
  * @author 谢辉龙
  * @since 2023-11-25
@@ -16,6 +30,57 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/dropout-record")
 public class DropoutRecordController {
+    @Resource
+    private DropoutRecordService dropoutRecordService;
 
+    /**
+     * 分页查询学生退学审核信息
+     *
+     * @param dropoutRecordROPageRO 学生退学审核分页查询参数
+     * @return 学生退学分页信息
+     */
+    @PostMapping("/page")
+    public SaResult pageQueryDropoutInformation(@RequestBody PageRO<DropoutRecordRO> dropoutRecordROPageRO) {
+        // 参数校验
+        if (Objects.isNull(dropoutRecordROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(dropoutRecordROPageRO.getEntity())) {
+            dropoutRecordROPageRO.setEntity(new DropoutRecordRO());
+        }
+        // 查询数据
+        PageVO<DropoutRecordWithClassInfoVO> dropoutRecordVOPageVO = dropoutRecordService.getDropoutInfos(dropoutRecordROPageRO);
+//        // 校验数据
+        if (Objects.isNull(dropoutRecordVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(dropoutRecordVOPageVO).setCode(200);
+    }
+
+    /**
+     * 查询学生退学审核筛选信息
+     *
+     * @param dropoutRecordROPageRO 学生退学审核分页查询参数
+     * @return 学生退学分页信息
+     */
+    @PostMapping("/query_dropout_select_args")
+    public SaResult queryDropoutInformationSelectArgs(@RequestBody PageRO<DropoutRecordRO> dropoutRecordROPageRO) {
+        // 参数校验
+        if (Objects.isNull(dropoutRecordROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(dropoutRecordROPageRO.getEntity())) {
+            dropoutRecordROPageRO.setEntity(new DropoutRecordRO());
+        }
+        // 查询数据
+        DropoutSelectArgs dropoutSelectArgs = dropoutRecordService.getDropoutInfosSelectArgs(dropoutRecordROPageRO.getEntity());
+//        // 校验数据
+        if (Objects.isNull(dropoutSelectArgs)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(dropoutSelectArgs).setCode(200);
+    }
 }
 

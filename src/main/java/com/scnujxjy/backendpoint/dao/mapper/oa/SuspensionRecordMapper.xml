@@ -29,4 +29,45 @@
         id, serial_number, exam_registration_number, id_number, name, old_class_identifier, old_grade, old_study_form, old_major_name, suspension_start_date, suspension_end_date, suspension_deal_start_date, suspension_deal_end_date, remark_serial_number, approval_user_id, reason, approval_date, approval_history_id
     </sql>
 
+
+    <sql id="commonJoin">
+        FROM suspension_record sr
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND sr.id = #{entity.id}</if>
+        <if test='entity.currentYear != null'>AND sr.current_year = #{entity.currentYear}</if>
+
+        <if test='entity.examRegistrationNumber != null'>AND sr.exam_registration_number = #{entity.examRegistrationNumber}</if>
+        <if test='entity.idNumber != null'>AND sr.id_number = #{entity.idNumber}</if>
+        <if test='entity.studentNumber != null'>AND sr.student_number = #{entity.studentNumber}</if>
+        <if test='entity.studentName != null'>AND sr.name = #{entity.studentName}</if>
+
+        <if test='entity.approvalStartDate != null'>AND sr.approval_date >= #{entity.approvalStartDate}</if>
+        <if test='entity.approvalEndDate != null'>AND #{entity.approvalEndDate} >= sr.approval_date</if>
+
+    </sql>
+
+    <select id="getRetentionInfos" resultType="com.scnujxjy.backendpoint.model.vo.oa.SuspensionRecordVO">
+        select *
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY sr.current_year DESC, sr.approval_date DESC
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+    <select id="getRetentionInfosCount" resultType="java.lang.Long">
+        select COUNT(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctGrades" resultType="java.lang.String">
+        select distinct current_year
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY current_year DESC
+    </select>
+
 </mapper>

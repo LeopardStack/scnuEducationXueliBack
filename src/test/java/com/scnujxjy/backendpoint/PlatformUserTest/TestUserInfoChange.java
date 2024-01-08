@@ -51,8 +51,8 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword() {
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername("M450722200008016522");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "016522");
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername("M13007");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M130072023@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);

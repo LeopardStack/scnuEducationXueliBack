@@ -1,7 +1,10 @@
 package com.scnujxjy.backendpoint.paymentInfoImport;
 
 import com.alibaba.excel.EasyExcel;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.TeacherInformationTest.TeacherInformationListener;
+import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoImportRO;
@@ -26,6 +29,12 @@ public class Test1 {
     @Resource
     private StudentStatusMapper studentStatusMapper;
 
+    @Resource
+    private AdmissionInformationMapper admissionInformationMapper;
+
+    /**
+     * 将财务部导出的数据 转成梁院系统所需的格式 从而导入
+     */
     @Test
     public void test1() {
         String directoryPath = "src/main/resources/data/缴费信息导入";
@@ -52,10 +61,32 @@ public class Test1 {
 
         // 打印每个文件的教师信息记录数
         fileDataCounts.forEach((fileName, count) -> {
-            log.info(fileName + " 包含 " + count + " 条教师信息记录");
+            log.info(fileName + " 包含 " + count + " 条缴费信息记录");
             allCount.addAndGet(count);
         });
 
         log.info("总共读入 " + allCount.get() + " 记录");
     }
+
+
+    /**
+     * 更新新生缴费数据
+     */
+    @Test
+    public void test2(){
+        // 清除 2024 的缴费数据
+        int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
+                .eq(PaymentInfoPO::getGrade, "2024"));
+        log.info("删除了 2024级的缴费数据 " + delete);
+
+        String newStudentFee = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\缴费信息导入\\成教新生收费20240104.xlsx";
+
+        NewStudentPaymentInfoListener listener = new NewStudentPaymentInfoListener(paymentInfoMapper,
+                admissionInformationMapper);
+        int headRowNumber = 1;
+        // 使用EasyExcel读取文件
+        EasyExcel.read(newStudentFee, PaymentInfoImportRO.class, listener)
+                .sheet().headRowNumber(headRowNumber).doRead();
+    }
+
 }

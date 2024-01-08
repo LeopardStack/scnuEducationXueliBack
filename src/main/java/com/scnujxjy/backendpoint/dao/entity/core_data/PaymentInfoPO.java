@@ -117,4 +117,10 @@ public class PaymentInfoPO implements Serializable {
     private String classIdentifier;
 
 
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    @ExcelProperty(value = "备注", index = 13)
+    private String remark;
+
 }

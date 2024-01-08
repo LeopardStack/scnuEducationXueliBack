@@ -45,11 +45,11 @@
         <if test='courseScheduleFilterROPageRO.batchIndex != null'>AND cs.batch_index =
             #{courseScheduleFilterROPageRO.batchIndex}
         </if>
-        <if test='courseScheduleFilterROPageRO.classNames != null and courseScheduleFilterROPageRO.classNames.size() > 0'>
+        <if test='courseScheduleFilterROPageRO.classSet != null and courseScheduleFilterROPageRO.classSet.size() > 0'>
             AND cs.admin_class LIKE
-            <foreach item="className" collection="courseScheduleFilterROPageRO.classNames" open="(" separator=","
+            <foreach item="className" collection="courseScheduleFilterROPageRO.classSet" open="(" separator=","
                      close=")">
-                #{className}
+                CONCAT('%', #{className}, '%')
             </foreach>
         </if>
 

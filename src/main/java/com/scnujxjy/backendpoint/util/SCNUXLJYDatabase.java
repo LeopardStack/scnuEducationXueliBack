@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.util;
 
+import cn.hutool.core.lang.hash.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ public class SCNUXLJYDatabase {
     private static boolean print_log_ident_1 = true;
     final String JDBC_DRIVER = "interbase.interclient.Driver"; // 请替换为你下载的 JDBC 驱动的类名
     final String DB_URL = "jdbc:interbase://10.248.5.64:3050/d:\\JJDATA\\JJDATA.IB"; // 请替换为你的数据库 URL
-    final String DB_URL1 = "jdbc:interbase://10.248.5.64:3050/d:\\JJDATA\\JJDATA.IB?charSet=GBK";
+    final String DB_URL1 = "jdbc:interbase://10.248.5.64:3050/d:\\JJDATA\\JJDATA.IB?CHARACTER_SET_NAME=GBK";
     // 请替换为你的数据库 URL
 
     // 数据库用户名和密码
@@ -565,6 +566,223 @@ public class SCNUXLJYDatabase {
         return ret;
     }
 
+    public ArrayList<HashMap<String, String>> getDataDIYWithDict(String sql, String key, List<String> values){
+        ResultSet rs = null;
+        long startTime1 = 0;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            // 获取开始时间
+            long startTime = System.nanoTime();
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+//            System.out.println(rs.next());
+            // 获取结束时间
+            long endTime = System.nanoTime();
+
+            // 计算运行时间
+            long duration = endTime - startTime;
+
+            // 转换为秒并打印
+            double durationInSeconds = duration / 1_000_000_000.0;
+            // System.out.println("SQL运行时间：" + durationInSeconds + " 秒");
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            // System.out.println("拿到数据了 ");
+
+            // 获取开始时间
+            startTime1 = System.nanoTime();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                // 记录一下考生号
+                String ksh = "";
+                BufferedImage imgBY = null;
+                BufferedImage imgRX = null;
+                // 遍历每一列
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+                    byte[] columnValue = null;
+                    if(name.equals("JINE")){
+                        // 学费
+                        hashMap.put(name, String.valueOf(rs.getDouble(i)));
+                        continue;
+                    }
+                    else if(name.equals("PXZF")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }
+                    else if(name.equals("CHANGENUM")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }else if(name.equals("UPDATETIME")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getDate(i)));
+                        continue;
+                    }
+                    else{
+                        try {
+                            columnValue = rs.getBytes(i);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+
+                    if (columnValue == null) {
+                        //System.out.println("Column " + name + " value: " + " NULL");
+                        hashMap.put(name, "NULL");
+                    } else if (name.trim().equals("PIC") || name.trim().equals("RXPIC")) {
+                        try {
+                            Blob blob = rs.getBlob(i);
+                            InputStream is = blob.getBinaryStream();
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[4096];
+                            int len;
+                            while (true) {
+                                try {
+                                    if ((len = is.read(buffer)) == -1) {
+                                        break;
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                os.write(buffer, 0, len);
+                            }
+                            byte[] bytes = os.toByteArray();
+
+                            InputStream in = new ByteArrayInputStream(bytes);
+                            try {
+                                if(name.trim().equals("PIC")) {
+                                    imgBY = ImageIO.read(in);
+                                }else{
+                                    imgRX = ImageIO.read(in);
+                                }
+
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }catch (Exception e){
+                            try {
+                                byte[] bytes = rs.getBytes(i);
+                                // 使用try-with-resources确保流的正确关闭
+                                try (InputStream is = new ByteArrayInputStream(bytes)) {
+                                    BufferedImage img;
+                                    try {
+                                        img = ImageIO.read(is);
+                                    } catch (IOException e1) {
+                                        throw new RuntimeException(e1);
+                                    }
+
+                                    if (name.trim().equals("PIC")) {
+                                        imgBY = img;
+                                    } else {
+                                        imgRX = img;
+                                    }
+                                } catch (IOException io) {
+                                    logger.error("读取学生照片信息失败 " + io.toString());
+//                                throw new RuntimeException(io);
+                                }
+                            }catch (Exception e1){
+                                logger.error("无法获取照片数据 " + e1.toString());
+                            }
+
+                        }
+
+                        // System.out.println("Column " + name + " value: " + new String(picBytes));
+
+                    } else {
+//                        String tmp = new String(columnValue, "GB2312");
+                        String tmp = new String(columnValue, "GBK");
+                        tmp = tmp.trim();
+//                        if(name.equals("KSH") && tmp.matches("\\d*")){
+//
+//                        }
+//                        else if (name.equals("KSH")){
+//                            tmp = new String(columnValue, "GBK");
+//                        }
+                        hashMap.put(name, tmp);
+                        //System.out.println("Column " + name + " value: " + new String(columnValue, "GB2312"));
+                    }
+                }
+
+                // 存储一下照片
+                ksh = hashMap.get("KSH");
+                // System.out.print("考生号 " + ksh + "  ");
+                if(ksh != null && hashMap.containsKey("NJ")){
+                    String nj = hashMap.get("NJ");
+                    if (imgRX != null && nj != null && nj.length() > 0) {
+                        String directoryPath = "./xuelistudentpictures" + "/" + nj + "/" + "import";
+                        File directory = new File(directoryPath);
+                        if (!directory.exists()){
+                            // 如果目录不存在则创建
+                            boolean result = directory.mkdirs();
+                            if(result) {
+                                System.out.println("Directory was created successfully");
+                            } else {
+                                System.out.println("Directory creation failed");
+                            }
+                        }
+
+                        File outputFile = new File(directoryPath + "/" + ksh + ".jpg");
+
+                        try {
+                            ImageIO.write(imgRX, "jpg", outputFile);
+                            hashMap.put("RXPIC", directoryPath + "/" + ksh + ".jpg");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        // System.out.println(" 照片为 " + ksh + ".jpg");
+                    }
+                    if(imgBY != null && nj != null && nj.length() > 0){
+                        String directoryPath = "./xuelistudentpictures" + "/" + nj + "/" + "export";
+                        File directory = new File(directoryPath);
+                        if (!directory.exists()){
+                            // 如果目录不存在则创建
+                            boolean result = directory.mkdirs();
+                            if(result) {
+                                System.out.println("Directory was created successfully");
+                            } else {
+                                System.out.println("Directory creation failed");
+                            }
+                        }
+
+                        File outputFile = new File(directoryPath + "/" + ksh + ".jpg");
+
+                        try {
+                            ImageIO.write(imgBY, "jpg", outputFile);
+                            hashMap.put("BYPIC", directoryPath + "/" + ksh + ".jpg");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+                if(hashMap.containsKey(key)){
+                    String value = hashMap.get(key);
+                    if(!values.contains(value)){
+                        continue;
+                    }
+                }
+
+                ret.add(hashMap);
+                // System.out.println(hashMap);
+            }
+        } catch (SQLException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        // 获取结束时间
+        long endTime1 = System.nanoTime();
+        // 计算运行时间
+        long duration1 = endTime1 - startTime1;
+
+        // 转换为秒并打印
+        double durationInSeconds1 = duration1 / 1_000_000_000.0;
+        // System.out.println("数据处理时间：" + durationInSeconds1 + " 秒");
+        return ret;
+    }
+
     public ArrayList<HashMap<String, String>> getDegreeData(String sql) {
         ResultSet rs = null;
         ArrayList<HashMap<String, String>> ret = new ArrayList<>();
@@ -1086,4 +1304,472 @@ public class SCNUXLJYDatabase {
         return ret;
     }
 
+    /**
+     * 获取指定批次的学生的毕业照片
+     */
+    public ArrayList<HashMap<String, String>> getCentainStudentsPhoto(String sql, String batch){
+        ResultSet rs = null;
+        long startTime1 = 0;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            // 获取开始时间
+            long startTime = System.nanoTime();
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+//            System.out.println(rs.next());
+            // 获取结束时间
+            long endTime = System.nanoTime();
+
+            // 计算运行时间
+            long duration = endTime - startTime;
+
+            // 转换为秒并打印
+            double durationInSeconds = duration / 1_000_000_000.0;
+            // System.out.println("SQL运行时间：" + durationInSeconds + " 秒");
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            // System.out.println("拿到数据了 ");
+
+            // 获取开始时间
+            startTime1 = System.nanoTime();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                // 记录一下考生号
+                String ksh = "";
+                BufferedImage imgBY = null;
+                BufferedImage imgRX = null;
+                // 遍历每一列
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+                    byte[] columnValue = null;
+                    if(name.equals("JINE")){
+                        // 学费
+                        hashMap.put(name, String.valueOf(rs.getDouble(i)));
+                        continue;
+                    }
+                    else if(name.equals("PXZF")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }
+                    else if(name.equals("CHANGENUM")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }else if(name.equals("UPDATETIME")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getDate(i)));
+                        continue;
+                    }
+                    else{
+                        try {
+                            columnValue = rs.getBytes(i);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+
+                    if (columnValue == null) {
+                        //System.out.println("Column " + name + " value: " + " NULL");
+                        hashMap.put(name, "NULL");
+                    } else if (name.trim().equals("PIC") || name.trim().equals("RXPIC")) {
+                        try {
+                            Blob blob = rs.getBlob(i);
+                            InputStream is = blob.getBinaryStream();
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[4096];
+                            int len;
+                            while (true) {
+                                try {
+                                    if ((len = is.read(buffer)) == -1) {
+                                        break;
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                os.write(buffer, 0, len);
+                            }
+                            byte[] bytes = os.toByteArray();
+
+                            InputStream in = new ByteArrayInputStream(bytes);
+                            try {
+                                if(name.trim().equals("PIC")) {
+                                    imgBY = ImageIO.read(in);
+                                }else{
+                                    imgRX = ImageIO.read(in);
+                                }
+
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }catch (Exception e){
+                            try {
+                                byte[] bytes = rs.getBytes(i);
+                                // 使用try-with-resources确保流的正确关闭
+                                try (InputStream is = new ByteArrayInputStream(bytes)) {
+                                    BufferedImage img;
+                                    try {
+                                        img = ImageIO.read(is);
+                                    } catch (IOException e1) {
+                                        throw new RuntimeException(e1);
+                                    }
+
+                                    if (name.trim().equals("PIC")) {
+                                        imgBY = img;
+                                    } else {
+                                        imgRX = img;
+                                    }
+                                } catch (IOException io) {
+                                    logger.error("读取学生照片信息失败 " + io.toString());
+//                                throw new RuntimeException(io);
+                                }
+                            }catch (Exception e1){
+                                logger.error("无法获取照片数据 " + e1.toString());
+                            }
+
+                        }
+
+                        // System.out.println("Column " + name + " value: " + new String(picBytes));
+
+                    } else {
+                        String tmp = new String(columnValue, "GBK");
+                        tmp = tmp.trim();
+                        hashMap.put(name, tmp);
+                        //System.out.println("Column " + name + " value: " + new String(columnValue, "GB2312"));
+                    }
+                }
+                // 存储一下毕业照片，以毕业证号命名
+                ksh = hashMap.get("BYZH");
+                // System.out.print("考生号 " + ksh + "  ");
+                if(ksh != null && hashMap.containsKey("NJ")){
+                    String nj = batch;
+                    if(imgBY != null && nj != null && nj.length() > 0){
+                        String directoryPath = "./xuelistudentpictures" + "/" + nj;
+                        File directory = new File(directoryPath);
+                        if (!directory.exists()){
+                            // 如果目录不存在则创建
+                            boolean result = directory.mkdirs();
+                            if(result) {
+                                System.out.println("Directory was created successfully");
+                            } else {
+                                System.out.println("Directory creation failed");
+                            }
+                        }
+
+                        File outputFile = new File(directoryPath + "/" + ksh + ".jpg");
+
+                        try {
+                            ImageIO.write(imgBY, "jpg", outputFile);
+                            hashMap.put("BYPIC", directoryPath + "/" + ksh + ".jpg");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+                ret.add(hashMap);
+                // System.out.println(hashMap);
+            }
+        } catch (SQLException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        // 获取结束时间
+        long endTime1 = System.nanoTime();
+        // 计算运行时间
+        long duration1 = endTime1 - startTime1;
+
+        // 转换为秒并打印
+        double durationInSeconds1 = duration1 / 1_000_000_000.0;
+        // System.out.println("数据处理时间：" + durationInSeconds1 + " 秒");
+        return ret;
+    }
+
+
+    /**
+     * 获取指定的学生信息 不需要照片信息
+     */
+    public ArrayList<HashMap<String, String>> getCertainStudents(String sql){
+        ResultSet rs = null;
+        long startTime1 = 0;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            // 获取开始时间
+            long startTime = System.nanoTime();
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+//            System.out.println(rs.next());
+            // 获取结束时间
+            long endTime = System.nanoTime();
+
+            // 计算运行时间
+            long duration = endTime - startTime;
+
+            // 转换为秒并打印
+            double durationInSeconds = duration / 1_000_000_000.0;
+            // System.out.println("SQL运行时间：" + durationInSeconds + " 秒");
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            // System.out.println("拿到数据了 ");
+
+            // 获取开始时间
+            startTime1 = System.nanoTime();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                // 记录一下考生号
+                String ksh = "";
+                BufferedImage imgBY = null;
+                BufferedImage imgRX = null;
+                // 遍历每一列
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+                    byte[] columnValue = null;
+                    if(name.equals("JINE")){
+                        // 学费
+                        hashMap.put(name, String.valueOf(rs.getDouble(i)));
+                        continue;
+                    }
+                    else if(name.equals("PXZF")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }
+                    else if(name.equals("CHANGENUM")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }else if(name.equals("UPDATETIME")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getDate(i)));
+                        continue;
+                    }
+                    else{
+                        try {
+                            columnValue = rs.getBytes(i);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+
+                    if (columnValue == null) {
+                        //System.out.println("Column " + name + " value: " + " NULL");
+                        hashMap.put(name, "NULL");
+                    } else if (name.trim().equals("PIC") || name.trim().equals("RXPIC")) {
+
+
+                    } else {
+                        String tmp = new String(columnValue, "GBK");
+                        tmp = tmp.trim();
+                        hashMap.put(name, tmp);
+                        //System.out.println("Column " + name + " value: " + new String(columnValue, "GB2312"));
+                    }
+                }
+
+                ret.add(hashMap);
+            }
+        } catch (SQLException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        // 获取结束时间
+        long endTime1 = System.nanoTime();
+        // 计算运行时间
+        long duration1 = endTime1 - startTime1;
+
+        // 转换为秒并打印
+        double durationInSeconds1 = duration1 / 1_000_000_000.0;
+        // System.out.println("数据处理时间：" + durationInSeconds1 + " 秒");
+        return ret;
+    }
+
+
+    /**
+     * 获取指定批次的学生的毕业照片
+     */
+    public ArrayList<HashMap<String, String>> getStudentsPhotoByDiySql(String sql,
+                                                                       String batch,
+                                                                       String type){
+        ResultSet rs = null;
+        long startTime1 = 0;
+        ArrayList<HashMap<String, String>> ret = new ArrayList<>();
+        try {
+            // 获取开始时间
+            long startTime = System.nanoTime();
+            rs = stmt.executeQuery(sql);
+            ResultSetMetaData rsmd = rs.getMetaData();
+//            System.out.println(rs.next());
+            // 获取结束时间
+            long endTime = System.nanoTime();
+
+            // 计算运行时间
+            long duration = endTime - startTime;
+
+            // 转换为秒并打印
+            double durationInSeconds = duration / 1_000_000_000.0;
+            // System.out.println("SQL运行时间：" + durationInSeconds + " 秒");
+
+            // 获取列数
+            int numberOfColumns = rsmd.getColumnCount();
+            // System.out.println("拿到数据了 ");
+
+            // 获取开始时间
+            startTime1 = System.nanoTime();
+            while (rs.next()) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                // 记录一下考生号
+                String ksh = "";
+                BufferedImage imgBY = null;
+                BufferedImage imgRX = null;
+                // 遍历每一列
+                for (int i = 1; i <= numberOfColumns; i++) {
+                    // System.out.println(hashMap);
+                    String name = rsmd.getColumnName(i);
+                    byte[] columnValue = null;
+                    if(name.equals("JINE")){
+                        // 学费
+                        hashMap.put(name, String.valueOf(rs.getDouble(i)));
+                        continue;
+                    }
+                    else if(name.equals("PXZF")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }
+                    else if(name.equals("CHANGENUM")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getInt(i)));
+                        continue;
+                    }else if(name.equals("UPDATETIME")){
+                        // 分数
+                        hashMap.put(name, String.valueOf(rs.getDate(i)));
+                        continue;
+                    }
+                    else{
+                        try {
+                            columnValue = rs.getBytes(i);
+                        }catch (Exception e){
+                            logger.error(e.toString() + '\n' + name);
+                        }
+                    }
+
+                    if (columnValue == null) {
+                        //System.out.println("Column " + name + " value: " + " NULL");
+                        hashMap.put(name, "NULL");
+                    } else if (name.trim().equals("PIC") || name.trim().equals("RXPIC")) {
+                        try {
+                            Blob blob = rs.getBlob(i);
+                            InputStream is = blob.getBinaryStream();
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            byte[] buffer = new byte[4096];
+                            int len;
+                            while (true) {
+                                try {
+                                    if ((len = is.read(buffer)) == -1) {
+                                        break;
+                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                os.write(buffer, 0, len);
+                            }
+                            byte[] bytes = os.toByteArray();
+
+                            InputStream in = new ByteArrayInputStream(bytes);
+                            try {
+                                if(name.trim().equals("PIC")) {
+                                    imgBY = ImageIO.read(in);
+                                }else{
+                                    imgRX = ImageIO.read(in);
+                                }
+
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }catch (Exception e){
+                            try {
+                                byte[] bytes = rs.getBytes(i);
+                                // 使用try-with-resources确保流的正确关闭
+                                try (InputStream is = new ByteArrayInputStream(bytes)) {
+                                    BufferedImage img;
+                                    try {
+                                        img = ImageIO.read(is);
+                                    } catch (IOException e1) {
+                                        throw new RuntimeException(e1);
+                                    }
+
+                                    if (name.trim().equals("PIC")) {
+                                        imgBY = img;
+                                    } else {
+                                        imgRX = img;
+                                    }
+                                } catch (IOException io) {
+                                    logger.error("读取学生照片信息失败 " + io.toString());
+//                                throw new RuntimeException(io);
+                                }
+                            }catch (Exception e1){
+                                logger.error("无法获取照片数据 " + e1.toString());
+                            }
+
+                        }
+
+                        // System.out.println("Column " + name + " value: " + new String(picBytes));
+
+                    } else {
+                        String tmp = new String(columnValue, "GBK");
+                        tmp = tmp.trim();
+                        hashMap.put(name, tmp);
+                        //System.out.println("Column " + name + " value: " + new String(columnValue, "GB2312"));
+                    }
+                }
+                // 存储一下毕业照片，以毕业证号命名
+                if(type.equals("机考")) {
+                    ksh = hashMap.get("XH") + "-" + hashMap.get("SFZH") + "-" + hashMap.get("XM");
+                }else{
+                    ksh = hashMap.get("SFZH");
+                }
+                // System.out.print("考生号 " + ksh + "  ");
+                if(ksh != null && hashMap.containsKey("NJ")){
+                    String nj = batch;
+                    if(imgRX != null && nj != null && nj.length() > 0){
+                        String directoryPath = "./xuelistudentpictures" + "/" + nj;
+                        File directory = new File(directoryPath);
+                        if (!directory.exists()){
+                            // 如果目录不存在则创建
+                            boolean result = directory.mkdirs();
+                            if(result) {
+                                System.out.println("Directory was created successfully");
+                            } else {
+                                System.out.println("Directory creation failed");
+                            }
+                        }
+
+                        File outputFile = new File(directoryPath + "/" + ksh + ".jpg");
+
+                        try {
+                            ImageIO.write(imgRX, "jpg", outputFile);
+                            hashMap.put("BYPIC", directoryPath + "/" + ksh + ".jpg");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+                ret.add(hashMap);
+                // System.out.println(hashMap);
+            }
+        } catch (SQLException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        // 获取结束时间
+        long endTime1 = System.nanoTime();
+        // 计算运行时间
+        long duration1 = endTime1 - startTime1;
+
+        // 转换为秒并打印
+        double durationInSeconds1 = duration1 / 1_000_000_000.0;
+        // System.out.println("数据处理时间：" + durationInSeconds1 + " 秒");
+        return ret;
+    }
 }

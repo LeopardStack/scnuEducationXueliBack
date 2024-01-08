@@ -33,7 +33,7 @@ public class RetentionRecordPO implements Serializable {
     /**
      * 序号
      */
-    private Integer serialNumber;
+    private String serialNumber;
 
     /**
      * 身份证号码
@@ -98,7 +98,7 @@ public class RetentionRecordPO implements Serializable {
     /**
      * 留级开始时间
      */
-    private Date retentionStartDate;
+    private String retentionStartDate;
 
     /**
      * 办理人

@@ -74,38 +74,7 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
      * @param entity
      * @return
      */
-    @Select("<script>" +
-            "SELECT DISTINCT ss.grade " +
-            "FROM payment_info pi " +
-            "LEFT JOIN student_status ss ON ss.student_number = pi.student_number " +
-            "LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier " +
-            "WHERE 1=1 " +
-            "<if test = 'entity.classNameSet != null and entity.classNameSet.size() != 0'>" +
-            "AND ci.class_name LIKE" +
-            "<foreach collection='entity.classNameSet' item = 'className' open='(' close=')' separator=','>" +
-            "#{className}" +
-            "</foreach>" +
-            "</if>" +
-            "<if test='entity.id != null'>AND pi.id = #{entity.id} </if>" +
-            "<if test='entity.studentNumber != null'>AND pi.student_number = #{entity.studentNumber} </if>" +
-            "<if test='entity.admissionNumber != null'>AND pi.admission_number = #{entity.admissionNumber} </if>" +
-            "<if test='entity.name != null'>AND pi.name = #{entity.name} </if>" +
-            "<if test='entity.idCardNumber != null'>AND pi.id_card_number = #{entity.idCardNumber} </if>" +
-            "<if test='entity.level != null'>AND ss.level = #{entity.level} </if>" +
-            "<if test='entity.studyForm != null'>AND ss.study_form = #{entity.studyForm} </if>" +
 
-            "<if test='entity.paymentBeginDate != null'>AND pi.payment_date >= #{entity.paymentBeginDate} </if>" +
-            "<if test='entity.paymentEndDate != null'>AND pi.payment_date &lt;= #{entity.paymentEndDate} </if>" +
-            "<if test='entity.paymentDate != null'>AND pi.payment_date = #{entity.paymentDate} </if>" +
-
-            "<if test='entity.paymentCategory != null'>AND pi.payment_category = #{entity.paymentCategory} </if>" +
-            "<if test='entity.academicYear != null'>AND pi.academic_year = #{entity.academicYear} </if>" +
-            "<if test='entity.paymentType != null'>AND pi.payment_type = #{entity.paymentType} </if>" +
-            "<if test='entity.isPaid != null'>AND pi.is_paid = #{entity.isPaid} </if>" +
-            "<if test='entity.paymentMethod != null'>AND pi.payment_method = #{entity.paymentMethod} </if>" +
-            "<if test='entity.college != null'>AND ci.college = #{entity.college} </if>" +
-            "<if test='entity.className != null'>AND ci.class_name = #{entity.className} </if>" +
-            "</script>")
     List<String> getDistinctGrades(@Param("entity") PaymentInfoFilterRO entity);
 
 
@@ -323,4 +292,20 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
     @Update("TRUNCATE TABLE payment_info")
     void truncateTable();
 
+    List<String> getDistinctRemarks(@Param("entity") PaymentInfoFilterRO filter);
+
+    List<PaymentInfoVO> getNewStudentPayInfoByFilter(@Param("entity") PaymentInfoFilterRO entity,
+                                                     @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    long getCountNewStudentPayInfoByFilter(@Param("entity")PaymentInfoFilterRO entity);
+
+    List<String> getDistinctNewStudentGrades(@Param("entity")PaymentInfoFilterRO filter);
+
+    List<String> getDistinctNewStudentLevels(@Param("entity")PaymentInfoFilterRO filter);
+
+    List<String> getDistinctNewStudentStudyForms(@Param("entity")PaymentInfoFilterRO filter);
+
+    List<String> getDistinctNewStudentTeachingPoints(@Param("entity")PaymentInfoFilterRO filter);
+
+    List<String> getDistinctNewStudentCollegeNames(@Param("entity")PaymentInfoFilterRO filter);
 }

@@ -6,6 +6,9 @@ run:
   checkLivingStatusScan: true  # 开启直播状态
 
 spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 

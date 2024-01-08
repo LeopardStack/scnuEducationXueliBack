@@ -3,7 +3,9 @@ package com.scnujxjy.backendpoint.controller.core_data;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
@@ -13,6 +15,7 @@ import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
+import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
@@ -42,6 +45,9 @@ public class PaymentInfoController {
 
     @Resource
     private PaymentInfoService paymentInfoService;
+
+    @Resource
+    private StudentStatusService studentStatusService;
 
     @Resource
     private CollegeAdminFilter collegeAdminFilter;
@@ -165,6 +171,7 @@ public class PaymentInfoController {
             throw dataMissError();
         }
 
+        // 判断以下是否属于新生  也就是 学籍信息是否存在
         // 查询数据
         List<PaymentInfoPO> paymentInfoPOS = paymentInfoService.getBaseMapper().getStudentPayInfo(loginId);
         if (Objects.isNull(paymentInfoPOS)) {
@@ -220,7 +227,10 @@ public class PaymentInfoController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO paymentInfoVOPageVO = null;
                     paymentInfoVOPageVO = paymentInfoService.
@@ -269,6 +279,76 @@ public class PaymentInfoController {
     }
 
     /**
+     * 根据不同角色来获取其权限范围内的缴费信息
+     *
+     * @param paymentInfoFilterROPageRO 缴费信息参数
+     * @return 支付信息详情分页列表
+     */
+    @PostMapping("/get_paymentInfo_data_new_student")
+    public SaResult getNewStudentPayInfoByRole(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        // 参数校验
+        if (Objects.isNull(paymentInfoFilterROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(paymentInfoFilterROPageRO.getEntity())) {
+            paymentInfoFilterROPageRO.setEntity(new PaymentInfoFilterRO());
+        }
+
+        // 生成缓存键
+        String cacheKey = StpUtil.getLoginIdAsString() + "newPaymentInfos:" + paymentInfoFilterROPageRO;
+
+        // 从Redis中尝试获取缓存
+        PageVO<FilterDataVO> filterDataVO = (PageVO<FilterDataVO>) redisTemplate.opsForValue().get(cacheKey);
+
+        if (filterDataVO == null) {
+            FilterDataVO paymentInfoVOPageVO = null;
+            List<String> roleList = StpUtil.getRoleList();
+            // 获取访问者 ID
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    // 查询二级学院管理员权限范围内的教学计划
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryNewStudentPayInfoFilter(paymentInfoFilterROPageRO, collegeAdminFilter);
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryNewStudentPayInfoFilter(paymentInfoFilterROPageRO, managerFilter);
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    // 查询继续教育管理员权限范围内的教学计划
+                    paymentInfoVOPageVO = paymentInfoService.
+                            allPageQueryNewStudentPayInfoFilter(paymentInfoFilterROPageRO, teachingPointFilter);
+                }
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(paymentInfoVOPageVO.getData());
+                filterDataVO.setTotal(paymentInfoVOPageVO.getTotal());
+                filterDataVO.setCurrent(paymentInfoFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(paymentInfoFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
+                        / paymentInfoFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (filterDataVO != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, filterDataVO, 10, TimeUnit.HOURS);
+                }
+
+            }
+        }
+        return SaResult.data(filterDataVO);
+
+    }
+
+    /**
      * 根据教务员获取筛选缴费参数
      *
      * @return 缴费参数
@@ -293,10 +373,58 @@ public class PaymentInfoController {
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, managerFilter);
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, teachingPointFilter);
+                }
+
+                // 如果获取的数据不为空，则放入Redis
+                if (paymentInformationSelectArgs != null) {
+                    // 设置10小时超时
+                    redisTemplate.opsForValue().set(cacheKey, paymentInformationSelectArgs, 10, TimeUnit.HOURS);
+                }
+            }
+        }
+
+        return SaResult.data(paymentInformationSelectArgs);
+    }
+
+    /**
+     * 根据新生缴费数据筛选参数
+     *
+     * @return 缴费参数
+     */
+    @PostMapping("/get_new_student_payment_info_select_args_admin")
+    public SaResult getNewStudentPaymentInformationArgsByCollege(@RequestBody PaymentInfoFilterRO paymentInfoFilterRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        Object loginId = StpUtil.getLoginId();
+        PaymentInformationSelectArgs paymentInformationSelectArgs = null;
+
+        // 生成缓存键
+        String cacheKey = "newStudentPaymentInformationSelectArgsAdmin:" + loginId.toString();
+
+        // 尝试从Redis中获取数据
+        paymentInformationSelectArgs = (PaymentInformationSelectArgs) redisTemplate.opsForValue().get(cacheKey);
+
+        if (paymentInformationSelectArgs == null) {
+            if (roleList.isEmpty()) {
+                throw dataNotFoundError();
+            } else {
+                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                    paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, collegeAdminFilter);
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
+                    paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, managerFilter);
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                    paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, teachingPointFilter);
                 }
 
                 // 如果获取的数据不为空，则放入Redis

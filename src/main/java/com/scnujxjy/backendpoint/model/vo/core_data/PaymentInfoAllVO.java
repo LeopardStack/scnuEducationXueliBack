@@ -129,4 +129,10 @@ public class PaymentInfoAllVO implements Serializable {
      */
     @ExcelProperty(index = 17, value = "教学点")
     private String teachingPoint;
+
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    @ExcelProperty(value = "备注", index = 18)
+    private String remark;
 }

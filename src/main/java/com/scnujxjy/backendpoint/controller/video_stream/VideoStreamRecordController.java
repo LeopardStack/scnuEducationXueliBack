@@ -23,6 +23,7 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ChannelSetRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
@@ -39,6 +40,7 @@ import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -365,26 +367,39 @@ public class VideoStreamRecordController {
      */
     @GetMapping("/get_teacher_link")
     public SaResult getTutorLink(@RequestParam("id") Long id) {
+        String loginIdAsString = StpUtil.getLoginIdAsString();
         try {
-            CourseSchedulePO courseSchedulePO = courseScheduleService.getBaseMapper().selectById(id);
-            String onlinePlatform = courseSchedulePO.getOnlinePlatform();
-            VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordService.getBaseMapper().selectById(onlinePlatform);
-            String channelId = videoStreamRecordPO.getChannelId();
+            CourseScheduleVO courseScheduleVO = courseScheduleService.detailById(id);
 
-            LiveSonChannelInfoListResponse roleInfo = videoStreamUtils.getRoleInfo(channelId);
-            // 获取这个唯一助教的账号
-            String account = roleInfo.getSonChannelInfos().get(0).getAccount();
-            String loginId = StpUtil.getLoginIdAsString();
-            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
-                    .eq(TeacherInformationPO::getTeacherUsername, loginId));
-            boolean b = videoStreamUtils.generateTutor(channelId, teacherInformationPO.getName(), "123456");
-            if (b) {
-                log.info("生成助教成功!");
-                String s = videoStreamUtils.generateTutorSSOLink(channelId, account);
-                log.info("助教的单点登录链接为 " + s);
-                return SaResult.ok(s);
+
+
+            if(StringUtils.isBlank(courseScheduleVO.getOnlinePlatform())){
+                return SaResult.error("巡视直播间失败，直播间未生成").setCode(2001);
             }
-            return SaResult.error("生成助教直播单点登录链接失败").setCode(2000);
+            VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailById(Long.valueOf(courseScheduleVO.getOnlinePlatform()));
+            SaResult tutorChannelUrl = singleLivingService.getTutorChannelUrl(videoStreamRecordVO.getChannelId(), loginIdAsString);
+            // 假设 tutorChannelUrl 中有一个方法 getData() 返回 URL 字符串
+            String url = tutorChannelUrl.getData().toString();
+
+            // 使用正则表达式匹配 URL 中的 channelId
+            Pattern pattern = Pattern.compile("channelId=([\\d\\w]+)");
+            Matcher matcher = pattern.matcher(url);
+
+            String tutorUrl = null;
+            if (matcher.find()) {
+                String accountId = matcher.group(1); // 提取 channelId
+                try {
+                    tutorUrl = videoStreamUtils.generateTutorSSOLink(videoStreamRecordVO.getChannelId(), accountId);
+                } catch (Exception e) {
+                    log.error("获取助教链接失败 " + e.toString());
+                    return SaResult.error("获取助教链接失败 " + loginIdAsString).setCode(2001);
+                }
+
+                // 使用 channelId
+            } else {
+                // URL 中没有找到 channelId
+            }
+            return SaResult.data(tutorUrl).setCode(201);
         } catch (Exception e) {
             log.error("获取助教链接失败 " + e.toString());
             return SaResult.error("获取直播链接失败").setCode(2000);
@@ -443,6 +458,7 @@ public class VideoStreamRecordController {
      * @return 添加后的频道信息
      */
     @PostMapping("/set_living_args")
+    @SaCheckPermission("设置回放")
     public SaResult createLivingRoom(@RequestBody ChannelSetRO channelSetRO) {
         if (channelSetRO == null) {
             return SaResult.error("创建直播间失败").setCode(2000);

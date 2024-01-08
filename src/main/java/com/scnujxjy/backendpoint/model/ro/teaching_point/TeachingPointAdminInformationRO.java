@@ -38,5 +38,9 @@ public class TeachingPointAdminInformationRO {
      */
     private String name;
 
+    /**
+     * 身份
+     */
+    private String identity;
 
 }

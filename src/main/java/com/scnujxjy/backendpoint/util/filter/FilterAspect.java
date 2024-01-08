@@ -52,22 +52,8 @@ public class FilterAspect {
             } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 courseScheduleFilterROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-                String loginIdAsString = StpUtil.getLoginIdAsString().replace("M", "").replace("m", "");
-                List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOs = teachingPointAdminInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                        .eq(TeachingPointAdminInformationPO::getIdCardNumber, loginIdAsString));
-                List<String> classNames = new ArrayList<>();
-                for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOs) {
-                    TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                            .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointAdminInformationPO.getTeachingPointId()));
-                    classNames.add(teachingPointInformationPO.getAlias());
-                }
 
-                // 使用 Stream API 进行去重
-                List<String> distinctClassNames = classNames.stream()
-                        .distinct()
-                        .collect(Collectors.toList());
-
-                courseScheduleFilterROPageRO.getEntity().setClassNames(distinctClassNames);
+                courseScheduleFilterROPageRO.getEntity().setClassSet(new ArrayList<>(scnuXueliTools.getTeachingPointClassNameSet()));
 
             }
 

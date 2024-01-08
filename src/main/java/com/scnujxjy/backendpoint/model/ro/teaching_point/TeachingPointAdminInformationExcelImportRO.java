@@ -22,4 +22,7 @@ public class TeachingPointAdminInformationExcelImportRO {
 
     @ExcelProperty(index = 3, value = "所属教学点")
     private String teachingPointName;
+
+    @ExcelProperty(index = 4, value = "身份")
+    private String identity;
 }

@@ -104,4 +104,19 @@ public class PaymentInfoVO implements Serializable {
      */
     private String grade;
 
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    private String remark;
+
+    /**
+     * 学院
+     */
+    private String collegeName;
+
+    /**
+     * 教学点
+     */
+    private String teachingPointName;
+
 }

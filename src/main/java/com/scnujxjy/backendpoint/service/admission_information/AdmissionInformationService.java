@@ -24,6 +24,7 @@ import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.GlobalConfigMapper;
@@ -143,11 +144,15 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             // 采用超级管理员的筛选器 在里面添加一个条件 即该二级学院管理员的学院
             admissionInformationROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
-        } else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
+        }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+            // 采用超级管理员的筛选器 在里面添加一个条件 即该教学点教务员所属教学点的信息
+            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+            admissionInformationROPageRO.getEntity().setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
+        }
+        else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
             // 查询继续教育管理员权限范围内的教学计划
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
-
-        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
         }
         return null;
@@ -270,11 +275,15 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             // 采用超级管理员的筛选器 在里面添加一个条件 即该二级学院管理员的学院
             admissionInformationRO.setCollege(userBelongCollege.getCollegeName());
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
-        } else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
+        }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+            // 采用超级管理员的筛选器 在里面添加一个条件 即该教学点教务员所属教学点的信息
+            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+            admissionInformationRO.setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
+        }
+        else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
             // 查询继续教育管理员权限范围内的教学计划
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
-
-        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
         }
         return null;
@@ -301,9 +310,22 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
                 if (send) {
                     return true;
                 }
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) ||
+                    roleList.contains(CAIWUBU_ADMIN.getRoleName()) ||
+                    roleList.contains(ADMISSION_ADMIN.getRoleName())
+            ) {
                 // 继续教育学院管理员
                 PageRO<AdmissionInformationRO> pageVO = new PageRO<>();
+                pageVO.setEntity(admissionInformationRO);
+                boolean send = messageSender.sendExportMsg(pageVO, managerFilter, userId);
+                if (send) {
+                    return true;
+                }
+            }
+            else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 继续教育学院管理员
+                PageRO<AdmissionInformationRO> pageVO = new PageRO<>();
+                admissionInformationRO.setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
                 pageVO.setEntity(admissionInformationRO);
                 boolean send = messageSender.sendExportMsg(pageVO, managerFilter, userId);
                 if (send) {

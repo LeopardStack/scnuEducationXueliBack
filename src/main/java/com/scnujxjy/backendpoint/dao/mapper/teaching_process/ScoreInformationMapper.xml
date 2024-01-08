@@ -65,7 +65,65 @@
         <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
             AND ci.class_name LIKE
             <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
+                CONCAT('%', #{className}, '%')
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="commonFiltersForTeachingPoint">
+        <if test='entity.id != null'>
+            AND pi.id = #{entity.id}
+        </if>
+        <if test='entity.studentId != null'>
+            AND pi.student_id = #{entity.studentId}
+        </if>
+        <if test='entity.grade != null'>
+            AND pi.grade = #{entity.grade}
+        </if>
+        <if test='entity.college != null'>
+            AND pi.college = #{entity.college}
+        </if>
+        <if test='entity.majorName != null'>
+            AND pi.major_name = #{entity.majorName}
+        </if>
+        <if test='entity.status != null'>
+            AND pi.final_score = #{entity.status}
+        </if>
+        <if test='entity.semester != null'>
+            AND pi.semester = #{entity.semester}
+        </if>
+        <if test='entity.courseName != null'>
+            AND pi.course_name = #{entity.courseName}
+        </if>
+        <if test='entity.courseCode != null'>
+            AND pi.course_code = #{entity.courseCode}
+        </if>
+        <if test='entity.className != null'>
+            AND ci.class_name LIKE CONCAT(#{entity.className}, '%')
+        </if>
+        <if test='entity.level != null'>
+            AND ci.level LIKE CONCAT(#{entity.level}, '%')
+        </if>
+        <if test='entity.courseType != null'>
+            AND pi.course_type = #{entity.courseType}
+        </if>
+        <if test='entity.assessmentType != null'>
+            AND pi.assessment_type = #{entity.assessmentType}
+        </if>
+
+        <!-- Add conditions for graduationDate and graduation_info -->
+        <if test='entity.graduationDate != null'>
+            AND gi.id IS NOT NULL
+            <!-- Ensure the year and month of graduation_date matches with entity.graduationDate -->
+            AND YEAR(gi.graduation_date) = YEAR(#{entity.graduationDate})
+            AND MONTH(gi.graduation_date) = MONTH(#{entity.graduationDate})
+            <!-- Ensure graduation_number is not null -->
+            AND gi.graduation_number IS NOT NULL
+        </if>
+        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
+            AND ci.class_name LIKE
+            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
+                CONCAT('%', #{className}, '%')
             </foreach>
         </if>
     </sql>
@@ -144,13 +202,50 @@
         SELECT pi.*, ci.class_name, ci.study_form, ci.level, pi2.name
         <include refid="commonJoin"/>
         WHERE 1=1
-        <include refid="commonFilters"/>
+        <include refid="commonFiltersForTeachingPoint"/>
         LIMIT #{l}, #{pageSize}
     </select>
 
     <select id="getTeachingPointStudentGradeInfoByFilterCount"
             resultType="Long">
         SELECT count(*)
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFiltersForTeachingPoint"/>
+    </select>
+    <select id="getDistinctGrades" resultType="java.lang.String">
+        SELECT DISTINCT pi.grade
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY pi.grade DESC
+    </select>
+    <select id="getDistinctMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.major_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctLevels" resultType="java.lang.String">
+        SELECT DISTINCT ci.level
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctStudyForms" resultType="java.lang.String">
+        SELECT DISTINCT ci.study_form
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctClassNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.class_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctCourseNames" resultType="java.lang.String">
+        SELECT DISTINCT pi.course_name
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>

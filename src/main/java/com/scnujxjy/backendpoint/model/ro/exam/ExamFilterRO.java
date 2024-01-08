@@ -53,6 +53,11 @@ public class ExamFilterRO {
     private List<String> classNames;
 
     /**
+     * 班级名称（用于教学点）
+     */
+    private List<String> classSet;
+
+    /**
      * 学期
      */
     private String  teachingSemester;

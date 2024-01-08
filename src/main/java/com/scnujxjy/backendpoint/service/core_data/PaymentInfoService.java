@@ -230,4 +230,24 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
 
         filter.exportPaymentInfoData(pageRO, userId, platformMessagePO);
     }
+
+    /**
+     * 获取新生的缴费信息
+     * @param paymentInfoFilterROPageRO
+     * @param filter
+     * @return
+     */
+    public FilterDataVO allPageQueryNewStudentPayInfoFilter(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO, AbstractFilter filter) {
+        return filter.filterNewStudentPayInfo(paymentInfoFilterROPageRO);
+    }
+
+    /**
+     * 获取新生缴费数据的筛选参数
+     * @param paymentInfoFilterRO
+     * @param filter
+     * @return
+     */
+    public PaymentInformationSelectArgs getNewStudentPaymentInfoArgs(PaymentInfoFilterRO paymentInfoFilterRO, AbstractFilter filter) {
+        return filter.getNewStudentPaymentInfoArgs(paymentInfoFilterRO);
+    }
 }

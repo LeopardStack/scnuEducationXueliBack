@@ -262,6 +262,7 @@ public class CollegeAdminFilter extends AbstractFilter {
         Future<List<String>> distinctClassNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctClassNames(filter));
         Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctTeachingPoints(filter));
         Future<List<String>> distinctAcademicYearsFuture = executor.submit(() -> paymentInfoMapper.getDistinctAcademicYears(filter));
+        Future<List<String>> distinctRemarksFuture = executor.submit(() -> paymentInfoMapper.getDistinctRemarks(filter));
 
         try {
             paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
@@ -270,6 +271,7 @@ public class CollegeAdminFilter extends AbstractFilter {
             paymentInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
             paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
             paymentInformationSelectArgs.setAcademicYears(distinctAcademicYearsFuture.get());
+            paymentInformationSelectArgs.setRemarks(distinctRemarksFuture.get());
 
         } catch (Exception e) {
             // Handle exceptions like InterruptedException or ExecutionException
@@ -381,30 +383,17 @@ public class CollegeAdminFilter extends AbstractFilter {
     @Override
     public CourseInformationSelectArgs filterCourseInformationSelectArgs() {
         CourseInformationSelectArgs courseInformationSelectArgs = new CourseInformationSelectArgs();
+        CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
 
-        String loginId = (String) StpUtil.getLoginId();
-        if (StrUtil.isBlank(loginId)) {
-            return null;
-        }
-        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
-        if (Objects.isNull(platformUserPO)) {
-            return null;
-        }
-        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationMapper.selectById(platformUserPO.getUserId());
-        if (Objects.isNull(collegeAdminInformationPO)) {
-            return null;
-        }
-        CollegeInformationPO collegeInformationPO = collegeInformationMapper.selectById(collegeAdminInformationPO.getCollegeId());
-        if (Objects.isNull(collegeInformationPO)) {
-            return null;
-        }
+        CourseInformationRO courseInformationRO = new CourseInformationRO();
+        courseInformationRO.setCollege(userBelongCollege.getCollegeName());
 
-        List<String> grades = courseInformationMapper.selectDistinctGrades(collegeInformationPO.getCollegeName(), null);
-        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(collegeInformationPO.getCollegeName(), null);
-        List<String> levels = courseInformationMapper.selectDistinctLevels(collegeInformationPO.getCollegeName(), null);
-        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(collegeInformationPO.getCollegeName(), null);
-        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(collegeInformationPO.getCollegeName(), null);
-        List<String> classNames = courseInformationMapper.selectDistinctClassNames(collegeInformationPO.getCollegeName(), null);
+        List<String> grades = courseInformationMapper.selectDistinctGrades(courseInformationRO);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(courseInformationRO);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(courseInformationRO);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(courseInformationRO);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(courseInformationRO);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(courseInformationRO);
         courseInformationSelectArgs.setGrades(grades);
         courseInformationSelectArgs.setMajorNames(majorNames);
         courseInformationSelectArgs.setLevels(levels);
@@ -1496,6 +1485,63 @@ public class CollegeAdminFilter extends AbstractFilter {
             int insert1 = platformMessageMapper.insert(platformMessagePO);
             log.info("用户下载消息插入结果 " + insert1);
         }
+    }
+
+
+    /**
+     * 获取新生缴费数据筛选参数
+     * @param filter
+     * @return
+     */
+    public PaymentInformationSelectArgs getNewStudentPaymentInfoArgs(PaymentInfoFilterRO filter) {
+        PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
+        CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+        filter.setCollege(userBelongCollege.getCollegeName());
+        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 代表你有5个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentStudyForms(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentCollegeNames(filter));
+
+        try {
+            paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            paymentInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return paymentInformationSelectArgs;
+    }
+
+    /**
+     * 获取新生的缴费信息
+     * @param paymentInfoFilterROPageRO
+     * @return
+     */
+    public FilterDataVO filterNewStudentPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        FilterDataVO<PaymentInfoVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+        paymentInfoFilterROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
+        log.info("用户缴费筛选参数" + paymentInfoFilterROPageRO);
+        List<PaymentInfoVO> paymentInfoVOList = paymentInfoMapper.getNewStudentPayInfoByFilter(
+                paymentInfoFilterROPageRO.getEntity(),
+                paymentInfoFilterROPageRO.getPageSize(),
+                (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
+        );
+        long countStudentPayInfoByFilter = paymentInfoMapper.getCountNewStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        studentStatusVOFilterDataVO.setData(paymentInfoVOList);
+
+        return studentStatusVOFilterDataVO;
     }
 }
 

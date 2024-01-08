@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
@@ -13,17 +14,16 @@ import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.formula.functions.T;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @SpringBootTest
 @Slf4j
@@ -108,16 +108,28 @@ public class Test1 {
      */
     @Test
     public void test3(){
-        String mainTeacher = "王忠";
-        String tutorName = "崔涛";
+        String mainTeacher = "黄玮琳";
+        String tutorName = "叶思琪";
         TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getName, mainTeacher));
         TeacherInformationPO tutor = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getName, tutorName));
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(new LambdaQueryWrapper<CourseSchedulePO>()
                 .eq(CourseSchedulePO::getTeacherUsername, teacherInformationPO.getTeacherUsername()));
-        if(!courseSchedulePOS.isEmpty() && teacherInformationPO != null && tutor != null){
+        if (!courseSchedulePOS.isEmpty() && teacherInformationPO != null && tutor != null) {
+            // Extracting batchIndex from each courseSchedulePO and creating a Set
+            Set<Long> batchIndices = courseSchedulePOS.stream()
+                    .map(CourseSchedulePO::getBatchIndex) // Replace CourseSchedulePO with the actual class name if it's different
+                    .collect(Collectors.toSet());
 
+            // Iterating over the set of batchIndices and assigning values
+            for (Long batchIndex : batchIndices) {
+                TeachingAssistantsCourseSchedulePO teachingAssistantsCourseSchedulePO = new TeachingAssistantsCourseSchedulePO();
+                teachingAssistantsCourseSchedulePO.setUsername(tutor.getTeacherUsername());
+                teachingAssistantsCourseSchedulePO.setBatchId(batchIndex); // Assuming setBatchId accepts the batchIndex
+                teachingAssistantsCourseScheduleMapper.insert(teachingAssistantsCourseSchedulePO);
+            }
         }
+
     }
 }

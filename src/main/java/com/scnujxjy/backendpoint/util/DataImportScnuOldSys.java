@@ -239,6 +239,77 @@ public class DataImportScnuOldSys {
     }
 
     /**
+     * 获取学生学费信息
+     * @return
+     */
+    public static ArrayList<HashMap<String, String>> getStudentFeesAll(){
+        // 获取开始时间
+        long startTime = System.nanoTime();
+
+        // 获取总数
+        SCNUXLJYDatabase scnuxljyDatabase1 = new SCNUXLJYDatabase();
+        String query = "SELECT COUNT(*) FROM CWPAY_VIEW";
+        int total = (int) scnuxljyDatabase1.getValue(query);
+
+        // 线程数量和每个线程处理的数据数量
+        int threadCount = 30;
+        int sizePerThread = total % threadCount > 0 ? (int)total / threadCount + 1 : (int)total / threadCount;
+
+        ArrayList<MyThread> threads = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            // 每个线程处理的数据范围
+            int from = i * sizePerThread + 1;
+            int to = (i + 1) * sizePerThread;
+            // 避免最后一个线程的数据范围超出总数
+            if (to > total) {
+                to = total;
+            }
+
+            // 创建SQL查询语句
+            String sql = "SELECT * FROM CWPAY_VIEW ROWS " + from + " TO " + to;
+            MyThread thread = new MyThread(sql);
+            threads.add(thread);
+        }
+
+        // 启动所有线程
+        for (MyThread thread : threads) {
+            thread.start();
+        }
+
+        // 等待所有线程完成
+        for (MyThread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 此时所有线程已经完成，可以从每个线程中获取数据
+        ArrayList<HashMap<String, String>> allData = new ArrayList<>();
+        for (MyThread thread : threads) {
+            allData.addAll(thread.getData());
+        }
+        log.info("旧系统总获取学费数据：" + allData.size());
+        if(!allData.isEmpty()) {
+            log.info("旧系统获取的学费数据第一条 " + String.valueOf(allData.get(0)));
+        }
+
+        // 获取结束时间
+        long endTime = System.nanoTime();
+
+        // 计算运行时间
+        long duration = endTime - startTime;
+
+        // 转换为秒并打印
+        double durationInSeconds = duration / 1_000_000_000.0;
+        log.info("SQL运行时间：" + durationInSeconds + " 秒");
+
+        return allData;
+    }
+
+    /**
      * 获取学生的学籍异动信息
      * @return
      */
@@ -747,6 +818,233 @@ public class DataImportScnuOldSys {
         log.info("旧系统总获取学籍异动数据：" + allData.size());
         if(!allData.isEmpty()) {
             log.info("旧系统获取的学籍异动数据第一条 " + String.valueOf(allData.get(0)));
+        }
+
+        // 获取结束时间
+        long endTime = System.nanoTime();
+
+        // 计算运行时间
+        long duration = endTime - startTime;
+
+        // 转换为秒并打印
+        double durationInSeconds = duration / 1_000_000_000.0;
+        log.info("SQL运行时间：" + durationInSeconds + " 秒");
+
+        return allData;
+    }
+
+    /**
+     * 获取指定学生的毕业照片
+     * @return
+     */
+
+    public static ArrayList<HashMap<String, String>> getStudentGraduationPhotos(String sql1, String batch){
+        // 获取开始时间
+        long startTime = System.nanoTime();
+
+        // 获取总数
+        SCNUXLJYDatabase scnuxljyDatabase1 = new SCNUXLJYDatabase();
+        String query = sql1.replace("*", "COUNT(*)");
+        int total = (int) scnuxljyDatabase1.getValue(query);
+
+        // 线程数量和每个线程处理的数据数量
+        int threadCount = 10;
+        int sizePerThread = total % threadCount > 0 ? (int)total / threadCount + 1 : (int)total / threadCount;
+
+        ArrayList<MyThread> threads = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            // 每个线程处理的数据范围
+            int from = i * sizePerThread + 1;
+            int to = (i + 1) * sizePerThread;
+            // 避免最后一个线程的数据范围超出总数
+            if (to > total) {
+                to = total;
+            }
+
+            // 创建SQL查询语句
+            String sql = sql1 +" ROWS " + from + " TO " + to;
+            MyThread thread = new MyThread(sql);
+            MyThread.functionSelect = 3;
+            MyThread.batch = batch;
+            threads.add(thread);
+        }
+
+        // 启动所有线程
+        for (MyThread thread : threads) {
+            thread.start();
+        }
+
+        // 等待所有线程完成
+        for (MyThread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 此时所有线程已经完成，可以从每个线程中获取数据
+        ArrayList<HashMap<String, String>> allData = new ArrayList<>();
+        for (MyThread thread : threads) {
+            allData.addAll(thread.getData());
+        }
+        log.info("旧系统总获取学生数据：" + allData.size());
+        if(!allData.isEmpty()) {
+            log.info("旧系统获取的学生录取数据第一条 " + String.valueOf(allData.get(0)));
+        }
+
+        // 获取结束时间
+        long endTime = System.nanoTime();
+
+        // 计算运行时间
+        long duration = endTime - startTime;
+
+        // 转换为秒并打印
+        double durationInSeconds = duration / 1_000_000_000.0;
+        log.info("SQL运行时间：" + durationInSeconds + " 秒");
+
+        return allData;
+    }
+
+
+    /**
+     * 获取指定的学生信息 不需要照片信息
+     * @return
+     */
+
+    public static ArrayList<HashMap<String, String>> getCertainStudent(String sql1){
+        // 获取开始时间
+        long startTime = System.nanoTime();
+
+        // 获取总数
+        SCNUXLJYDatabase scnuxljyDatabase1 = new SCNUXLJYDatabase();
+        String query = sql1.replace("*", "COUNT(*)");
+        int total = (int) scnuxljyDatabase1.getValue(query);
+
+        // 线程数量和每个线程处理的数据数量
+        int threadCount = 10;
+        int sizePerThread = total % threadCount > 0 ? (int)total / threadCount + 1 : (int)total / threadCount;
+
+        ArrayList<MyThread> threads = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            // 每个线程处理的数据范围
+            int from = i * sizePerThread + 1;
+            int to = (i + 1) * sizePerThread;
+            // 避免最后一个线程的数据范围超出总数
+            if (to > total) {
+                to = total;
+            }
+
+            // 创建SQL查询语句
+            String sql = sql1 +" ROWS " + from + " TO " + to;
+            MyThread thread = new MyThread(sql);
+            MyThread.functionSelect = 5;
+            threads.add(thread);
+        }
+
+        // 启动所有线程
+        for (MyThread thread : threads) {
+            thread.start();
+        }
+
+        // 等待所有线程完成
+        for (MyThread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 此时所有线程已经完成，可以从每个线程中获取数据
+        ArrayList<HashMap<String, String>> allData = new ArrayList<>();
+        for (MyThread thread : threads) {
+            allData.addAll(thread.getData());
+        }
+        log.info("旧系统总获取学生数据：" + allData.size());
+        if(!allData.isEmpty()) {
+            log.info("旧系统获取的学生录取数据第一条 " + String.valueOf(allData.get(0)));
+        }
+
+        // 获取结束时间
+        long endTime = System.nanoTime();
+
+        // 计算运行时间
+        long duration = endTime - startTime;
+
+        // 转换为秒并打印
+        double durationInSeconds = duration / 1_000_000_000.0;
+        log.info("SQL运行时间：" + durationInSeconds + " 秒");
+
+        return allData;
+    }
+
+
+    /**
+     * 获取指定学生的毕业照片
+     * @return
+     */
+
+    public static ArrayList<HashMap<String, String>> getStudentPhotosByDIYSql(String sql1,
+                                                                              String batch,
+                                                                              String type){
+
+        // 获取开始时间
+        long startTime = System.nanoTime();
+
+        // 获取总数
+        SCNUXLJYDatabase scnuxljyDatabase1 = new SCNUXLJYDatabase();
+        String query = sql1.replace("*", "COUNT(*)");
+        int total = (int) scnuxljyDatabase1.getValue(query);
+
+        // 线程数量和每个线程处理的数据数量
+        int threadCount = 10;
+        int sizePerThread = total % threadCount > 0 ? (int)total / threadCount + 1 : (int)total / threadCount;
+
+        ArrayList<MyThread> threads = new ArrayList<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            // 每个线程处理的数据范围
+            int from = i * sizePerThread + 1;
+            int to = (i + 1) * sizePerThread;
+            // 避免最后一个线程的数据范围超出总数
+            if (to > total) {
+                to = total;
+            }
+
+            // 创建SQL查询语句
+            String sql = sql1 +" ROWS " + from + " TO " + to;
+            MyThread thread = new MyThread(sql);
+            MyThread.functionSelect = 6;
+            MyThread.batch = batch;
+            MyThread.type = type;
+            threads.add(thread);
+        }
+
+        // 启动所有线程
+        for (MyThread thread : threads) {
+            thread.start();
+        }
+
+        // 等待所有线程完成
+        for (MyThread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 此时所有线程已经完成，可以从每个线程中获取数据
+        ArrayList<HashMap<String, String>> allData = new ArrayList<>();
+        for (MyThread thread : threads) {
+            allData.addAll(thread.getData());
+        }
+        log.info("旧系统总获取学生数据：" + allData.size());
+        if(!allData.isEmpty()) {
+            log.info("旧系统获取的学生录取数据第一条 " + String.valueOf(allData.get(0)));
         }
 
         // 获取结束时间

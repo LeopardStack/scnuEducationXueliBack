@@ -40,6 +40,14 @@
             </foreach>
         </if>
 
+        <if test='entity.classSet != null and entity.classSet.size() > 0'>
+            AND ci.class_name LIKE
+            <foreach item="className" collection="entity.classSet" open="(" separator=","
+                     close=")">
+                CONCAT('%', #{className}, '%')
+            </foreach>
+        </if>
+
         <if test='entity.courseNames != null and !entity.courseNames.isEmpty()'>
             AND c.course_name IN
             <foreach item="name" collection="entity.courseNames" open="(" separator="," close=")">
@@ -76,7 +84,7 @@
         <if test='filter.classNameSet != null and !filter.classNameSet.isEmpty()'>
             AND ci.class_name LIKE
             <foreach item="className" collection="filter.classNameSet" open="(" separator="," close=")">
-                #{className}
+                CONCAT('%', #{className}, '%')
             </foreach>
         </if>
 
@@ -236,7 +244,49 @@
         <include refid="commonFiltersForExam"></include>
         ORDER BY c.grade DESC, ci.college, ci.major_name, ci.level, ci.study_form, c.course_code
     </select>
-
+    <select id="selectDistinctGrades" resultType="java.lang.String">
+        SELECT DISTINCT c.grade
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY c.grade DESC
+    </select>
+    <select id="selectDistinctMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT c.major_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectDistinctLevels" resultType="java.lang.String">
+        SELECT DISTINCT c.level
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectDistinctCourseNames" resultType="java.lang.String">
+        SELECT DISTINCT c.course_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectDistinctStudyForms" resultType="java.lang.String">
+        SELECT DISTINCT c.study_form
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectDistinctClassNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.class_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectDistinctCollegeNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.college
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
 
 
 </mapper>

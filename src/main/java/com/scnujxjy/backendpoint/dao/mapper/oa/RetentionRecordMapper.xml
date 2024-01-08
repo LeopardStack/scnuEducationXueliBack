@@ -30,4 +30,51 @@
         id, serial_number, id_number, exam_registration_number, student_number, name, old_class_identifier, old_grade, old_study_form, old_major_name, new_class_identifier, new_grade, new_study_form, new_major_name, retention_start_date, approval_user_id, reason, approval_date, approval_history_id
     </sql>
 
+    <sql id="commonJoin">
+        FROM retention_record rr
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND rr.id = #{entity.id}</if>
+        <if test='entity.oldGrade != null'>AND rr.old_grade = #{entity.oldGrade}</if>
+        <if test='entity.newGrade != null'>AND rr.new_grade = #{entity.newGrade}</if>
+        <if test='entity.examRegistrationNumber != null'>AND rr.exam_registration_number = #{entity.examRegistrationNumber}</if>
+        <if test='entity.idNumber != null'>AND rr.id_number = #{entity.idNumber}</if>
+        <if test='entity.studentNumber != null'>AND rr.student_number = #{entity.studentNumber}</if>
+        <if test='entity.studentName != null'>AND rr.name = #{entity.studentName}</if>
+
+        <if test='entity.approvalStartDate != null'>AND rr.approval_date >= #{entity.approvalStartDate}</if>
+        <if test='entity.approvalEndDate != null'>AND #{entity.approvalEndDate} >= rr.approval_date</if>
+
+    </sql>
+
+    <select id="getRetentionInfos" resultType="com.scnujxjy.backendpoint.model.vo.oa.RetentionRecordVO">
+        select *
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY rr.old_grade DESC, rr.approval_date DESC
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+    <select id="getRetentionInfosCount" resultType="java.lang.Long">
+        select COUNT(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctOldGrades" resultType="java.lang.String">
+        select distinct old_grade
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY old_grade DESC
+    </select>
+    <select id="getDistinctNewGrades" resultType="java.lang.String">
+        select distinct new_grade
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY new_grade DESC
+    </select>
+
 </mapper>

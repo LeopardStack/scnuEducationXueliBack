@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.core_data;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -46,4 +47,9 @@ public class PaymentInformationSelectArgs implements Serializable {
      * 学年
      */
     private List<String> academicYears;
+
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    private List<String> remarks;
 }

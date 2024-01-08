@@ -91,6 +91,8 @@ public class StudentStatusDataImport {
             executorService.execute(() -> {
                 try {
                     while (true) {
+                        log.info("Thread ID: " + Thread.currentThread().getId() + " - Queue size: " + queue.size());
+
                         HashMap<String, String> hashMap = queue.take();
                         if(hashMap.containsKey("END")){
                             break;
@@ -373,13 +375,8 @@ public class StudentStatusDataImport {
                             eq(StudentStatusPO::getIdNumber, studentStatusPO.getIdNumber()));
                     if(update > 0){
                         String key1 = studentStatusPO.getGrade() + " 更新学籍数据";
-                        synchronized (this){
-                            if(!updateCountMap.containsKey(key1)){
-                                updateCountMap.put(key1, 1L);
-                            }else{
-                                updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                            }
-                        }
+                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                     }
                 }
 
@@ -388,13 +385,15 @@ public class StudentStatusDataImport {
                 int insert = studentStatusMapper.insert(studentStatusPO);
                 if(insert > 0){
                     String key1 = studentStatusPO.getGrade() + " 新增学籍数据";
-                    synchronized (this){
-                        if(!updateCountMap.containsKey(key1)){
-                            updateCountMap.put(key1, 1L);
-                        }else{
-                            updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                        }
-                    }
+//                    synchronized (this){
+//                        if(!updateCountMap.containsKey(key1)){
+//                            updateCountMap.put(key1, 1L);
+//                        }else{
+//                            updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
+//                        }
+//                    }
+                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                 }
             }
 
@@ -412,13 +411,7 @@ public class StudentStatusDataImport {
                             eq(PersonalInfoPO::getIdNumber, personalInfoPO.getIdNumber()));
                     if(update > 0){
                         String key1 = personalInfoPO.getGrade() + " 更新学生个人信息数据";
-                        synchronized (this){
-                            if(!updateCountMap.containsKey(key1)){
-                                updateCountMap.put(key1, 1L);
-                            }else{
-                                updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                            }
-                        }
+                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
                     }
                 }
@@ -428,13 +421,8 @@ public class StudentStatusDataImport {
                 int insert = personalInfoMapper.insert(personalInfoPO);
                 if(insert > 0){
                     String key1 = studentStatusPO.getGrade() + " 新增学生个人信息数据";
-                    synchronized (this){
-                        if(!updateCountMap.containsKey(key1)){
-                            updateCountMap.put(key1, 1L);
-                        }else{
-                            updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                        }
-                    }
+                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                 }
             }
 
@@ -452,13 +440,8 @@ public class StudentStatusDataImport {
                             eq(OriginalEducationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
                     if(update > 0){
                         String key1 = originalEducationInfoPO.getGrade() + " 更新学生原学历数据";
-                        synchronized (this){
-                            if(!updateCountMap.containsKey(key1)){
-                                updateCountMap.put(key1, 1L);
-                            }else{
-                                updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                            }
-                        }
+                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                     }
                 }
 
@@ -467,13 +450,8 @@ public class StudentStatusDataImport {
                 int insert = originalEducationInfoMapper.insert(originalEducationInfoPO);
                 if(insert > 0){
                     String key1 = originalEducationInfoPO.getGrade() + " 新增学生原学历数据";
-                    synchronized (this){
-                        if(!updateCountMap.containsKey(key1)){
-                            updateCountMap.put(key1, 1L);
-                        }else{
-                            updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                        }
-                    }
+                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                 }
             }
 
@@ -482,7 +460,10 @@ public class StudentStatusDataImport {
             String bypic = studentData.get("BYPIC");
             if((graduateDateString != null && !graduateDateString.equals("NULL")) || bypic != null){
                 Date graduateDate = null;
-                graduateDate = dateFormat5.parse(graduateDateString);
+                if(graduateDateString != null && !graduateDateString.equals("NULL")
+                        && !graduateDateString.isEmpty()){
+                    graduateDate = dateFormat5.parse(graduateDateString);
+                }
                 graduationInfoPO.setGraduationDate(graduateDate);
 
                 graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
@@ -502,13 +483,8 @@ public class StudentStatusDataImport {
                                 eq(GraduationInfoPO::getIdNumber, graduationInfoPO.getIdNumber()));
                         if(update > 0){
                             String key1 = graduationInfoPO.getGrade() + " 更新学生毕业数据";
-                            synchronized (this){
-                                if(!updateCountMap.containsKey(key1)){
-                                    updateCountMap.put(key1, 1L);
-                                }else{
-                                    updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                                }
-                            }
+                            updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                         }
                     }
 
@@ -517,28 +493,31 @@ public class StudentStatusDataImport {
                     int insert = graduationInfoMapper.insert(graduationInfoPO);
                     if(insert > 0){
                         String key1 = graduationInfoPO.getGrade() + " 新增学生毕业数据";
-                        synchronized (this){
-                            if(!updateCountMap.containsKey(key1)){
-                                updateCountMap.put(key1, 1L);
-                            }else{
-                                updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
-                            }
-                        }
+                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
                     }
                 }
 
             }
 
         } catch (Exception e) {
-            setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
-                    dateFormat3, dateFormat6, e.toString());
-            synchronized(this) {
+            try {
+                setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
+                        dateFormat3, dateFormat6, e.toString());
+
+            }catch (Exception e1){
+                log.info("异常捕获时报错 " + e1);
+            }
+            synchronized(lock) {
                 errorList.add(errorData);
                 failed_insert += 1;
             }
         }
         return -1;
     }
+
+    // 专用的锁对象 控制访问 errorList 部分的代码
+    private final Object lock = new Object();
 
     public void setErrorDataToExcel(ErrorStudentStatusExportExcel errorData, HashMap<String, String> studentData,
                                     SimpleDateFormat dateFormat5,

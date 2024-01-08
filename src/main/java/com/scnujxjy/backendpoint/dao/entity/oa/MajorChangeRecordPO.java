@@ -123,5 +123,10 @@ public class MajorChangeRecordPO implements Serializable {
      */
     private String remark;
 
+    /**
+     * 层次
+     */
+    private String level;
+
 
 }

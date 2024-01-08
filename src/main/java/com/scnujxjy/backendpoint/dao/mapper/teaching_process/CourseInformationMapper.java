@@ -184,157 +184,26 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
     long getCountByFilterAndPageForExam(@Param("entity") ExamFilterRO filter);
 
 
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.grade",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "ORDER BY c.grade DESC", // 从高到低排序
-            "</script>"
-    })
-    List<String> selectDistinctGrades(String college, Set<String> classNameSet);
+    List<String> selectDistinctGrades(@Param("filter") CourseInformationRO filter);
 
 
     // 获取专业名称的筛选参数
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.major_name",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctMajorNames(String college, Set<String> classNameSet);
+    List<String> selectDistinctMajorNames(@Param("filter") CourseInformationRO filter);
 
     // 获取层次的筛选参数
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.level",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctLevels(String college, Set<String> classNameSet);
+    List<String> selectDistinctLevels(@Param("filter") CourseInformationRO filter);
 
-    // 获取层次的筛选参数
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.level",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctLevels(String college);
-
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.course_name",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctCourseNames(String college, Set<String> classNameSet);
+    List<String> selectDistinctCourseNames(@Param("filter") CourseInformationRO filter);
 
 
-    @Select({
-            "<script>",
-            "SELECT DISTINCT c.study_form",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctStudyForms(String college, Set<String> classNameSet);
+    List<String> selectDistinctStudyForms(@Param("filter") CourseInformationRO filter);
 
     // 获取班级名称的筛选参数
-    @Select({
-            "<script>",
-            "SELECT DISTINCT ci.class_name",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "<if test='college != null and college != \"\"'>",
-            "AND ci.college = #{college}",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctClassNames(String college, Set<String> classNameSet);
+    List<String> selectDistinctClassNames(@Param("filter") CourseInformationRO filter);
 
 
     // 获取学院名称的筛选参数
-    @Select({
-            "<script>",
-            "SELECT DISTINCT ci.college",
-            "FROM course_information c",
-            "JOIN class_information ci ON c.admin_class = ci.class_identifier",
-            "WHERE 1=1",
-            "<if test = 'classNameSet != null and classNameSet.size() != 0'>",
-            "AND ci.class_name LIKE",
-            "<foreach collection='classNameSet' item = 'className' open='(' close=')' separator=','>",
-            "#{className}",
-            "</foreach>",
-            "</if>",
-            "</script>"
-    })
-    List<String> selectDistinctCollegeNames(Set<String> classNameSet);
+    List<String> selectDistinctCollegeNames(@Param("filter") CourseInformationRO filter);
 
 
     /**

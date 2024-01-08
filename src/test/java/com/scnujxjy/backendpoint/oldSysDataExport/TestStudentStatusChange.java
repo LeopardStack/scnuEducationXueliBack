@@ -42,5 +42,6 @@ public class TestStudentStatusChange {
     @Test
     public void test2() throws InterruptedException {
         oldDataSynchronize.synchronizeStudentStatusChangeData(true);
+
     }
 }

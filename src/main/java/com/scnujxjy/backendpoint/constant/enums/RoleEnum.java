@@ -9,6 +9,7 @@ public enum RoleEnum {
     TEACHER(2, "教师"),
     SECOND_COLLEGE_ADMIN(6, "二级学院管理员"),
     CAIWUBU_ADMIN(5, "财务部管理员"),
+    ADMISSION_ADMIN(4, "招生部管理员"),
     TEACHING_POINT_ADMIN(7, "教学点管理员"),
     SUPER_ADMIN(8, "超级管理员"),
 

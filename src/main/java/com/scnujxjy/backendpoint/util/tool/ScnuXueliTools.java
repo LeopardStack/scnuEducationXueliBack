@@ -1,14 +1,23 @@
 package com.scnujxjy.backendpoint.util.tool;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.linuxense.javadbf.DBFDataType;
+import com.linuxense.javadbf.DBFField;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
+import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +26,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author hp
@@ -36,6 +43,77 @@ public class ScnuXueliTools {
     @Resource
     private CollegeInformationMapper collegeInformationMapper;
 
+    @Resource
+    private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
+
+    @Resource
+    private TeachingPointInformationMapper teachingPointInformationMapper;
+
+    /**
+     * 根据loginId获取教学点班级信息
+     *
+     * @return
+     */
+    public Set<String> getTeachingPointClassNameSet() {
+        // 通过username查询userId，再查询对应教学点
+        String loginId = StpUtil.getLoginIdAsString();
+        if (StrUtil.isBlank(loginId)) {
+            throw new BusinessException("获取用户id失败");
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            throw new BusinessException("获取用户信息失败");
+        }
+        Long userId = platformUserPO.getUserId();
+        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
+        Set<String> classNameSet = new HashSet<>();
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(Wrappers.<TeachingPointAdminInformationPO>lambdaQuery()
+                .eq(TeachingPointAdminInformationPO::getUserId, userId));
+        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
+            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(Wrappers.<TeachingPointInformationPO>lambdaQuery()
+                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
+            String alias = teachingPointInformationPO.getAlias();
+            classNameSet.add(alias);
+        }
+        if (CollUtil.isEmpty(classNameSet)) {
+            throw new BusinessException("查询班级集合为空，查询失败");
+        }
+        return classNameSet;
+    }
+
+    public TeachingPointInformationPO getUserBelongTeachingPoint(){
+        try{
+            String loginId = (String) StpUtil.getLoginId();
+            if (StrUtil.isBlank(loginId)) {
+                return null;
+            }
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+            if (Objects.isNull(platformUserPO)) {
+                return null;
+            }
+            // 创建查询包装器实例
+            LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+            // 设置查询条件
+            queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+            // 执行查询
+            TeachingPointAdminInformationPO teachingPointAdminInformationPO = teachingPointAdminInformationMapper.selectOne(queryWrapper);
+
+            if (Objects.isNull(teachingPointAdminInformationPO)) {
+                return null;
+            }
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.
+                    selectById(teachingPointAdminInformationPO.getTeachingPointId());
+            if (Objects.isNull(teachingPointInformationPO)) {
+                return null;
+            }
+            return teachingPointInformationPO;
+        }catch (Exception e){
+            log.error("获取用户所属教学点信息失败 " + e.toString());
+        }
+        return null;
+    }
 
     public CollegeInformationPO getUserBelongCollege(){
         try{
@@ -158,6 +236,14 @@ public class ScnuXueliTools {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static DBFField createField(String name, DBFDataType type, int length) {
+        DBFField field = new DBFField();
+        field.setName(name);
+        field.setType(type);
+        field.setLength(length);
+        return field;
     }
 
 }

@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.service.InterBase;
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.MajorChangeRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
@@ -14,6 +15,7 @@ import com.scnujxjy.backendpoint.dao.mapper.oa.*;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
+import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeRecordRO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.SCNUXLJYDatabase;
 import io.minio.UploadObjectArgs;
@@ -97,9 +99,9 @@ public class OldDataSynchronize {
         boolean success = minioService.uploadStreamToMinio(inputStream, fileName.endsWith(".txt") ? fileName : fileName + ".txt", diyBucketName);
 
         if (success) {
-            log.info("Successfully uploaded to Minio.");
+            log.info("同步日志已成功上传 Minio 服务器");
         } else {
-            log.error("Failed to upload to Minio.");
+            log.error("同步日志未成功上传 Minio 服务器");
         }
 
         // Close the stream
@@ -429,7 +431,14 @@ public class OldDataSynchronize {
      */
     public void synchronizeStudentStatusChangeData(boolean updateAny) throws InterruptedException {
         StudentStatusChangeDataImport studentStatusChangeDataImport = new StudentStatusChangeDataImport();
-        studentStatusChangeDataImport.setUpdateAny(updateAny);
+        if(updateAny){
+            // 如果这个标志打开 意味着全体更新
+            int delete = dropoutRecordMapper.delete(null);
+            int delete1 = majorChangeRecordMapper.deleteDiy(new MajorChangeRecordRO().setRemark("新生转专业"));
+            int delete2 = resumptionRecordMapper.delete(null);
+            int delete3 = retentionRecordMapper.delete(null);
+            int delete4 = suspensionRecordMapper.delete(null);
+        }
 
         ArrayList<HashMap<String, String>> studentStatusChangeData = getStudentStatusChangeData();
         studentStatusChangeDataImport.insertLogsList.add("旧系统学籍异动数据总数 " + studentStatusChangeData.size());
@@ -439,8 +448,11 @@ public class OldDataSynchronize {
         Integer resumptionRecordCount = resumptionRecordMapper.selectCount(null);
         Integer retentionRecordCount = retentionRecordMapper.selectCount(null);
         Integer suspensionRecordCount = suspensionRecordMapper.selectCount(null);
-        Integer integer = dropoutRecordCount + majorChangeRecordCount + resumptionRecordCount + retentionRecordCount +
+        Integer integer = dropoutRecordCount + resumptionRecordCount + retentionRecordCount +
                 suspensionRecordCount;
+        if(updateAny && integer == 0){
+            log.info("已全部删除，并开始同步");
+        }
 
         SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
         String query = "select count(*) from classdata c1,classdata c2,stuchangedata , " +
@@ -448,7 +460,7 @@ public class OldDataSynchronize {
                 "and (oldbshi=c1.bshi) and (newbshi=c2.bshi) and (stuchangedata.xhao=studentdata.xhao) ";
         Object value = scnuxljyDatabase.getValue(query);
 
-        studentStatusChangeDataImport.insertLogsList.add("新系统中导入的学籍异动总数为 " + integer);
+        studentStatusChangeDataImport.insertLogsList.add("同步前新系统中导入的学籍异动总数为 " + integer);
         studentStatusChangeDataImport.insertLogsList.add("旧系统中的学籍异动总数为 " + value);
 
 
@@ -477,6 +489,16 @@ public class OldDataSynchronize {
         studentStatusChangeDataImport.insertLogsList.add("各个学籍异动数据的总数为 " + studentStatusChangeDataImport.getApplyCount());
         log.info("各个学籍异动数据的总数为\n " + studentStatusChangeDataImport.getApplyCount());
         log.info("各个学籍异动插入的数据条数为\n " + studentStatusChangeDataImport.getApplyImportCount());
+
+        dropoutRecordCount = dropoutRecordMapper.selectCount(null);
+        majorChangeRecordCount = majorChangeRecordMapper.selectCount(null);
+        resumptionRecordCount = resumptionRecordMapper.selectCount(null);
+        retentionRecordCount = retentionRecordMapper.selectCount(null);
+        suspensionRecordCount = suspensionRecordMapper.selectCount(null);
+        integer = dropoutRecordCount + majorChangeRecordCount + resumptionRecordCount + retentionRecordCount +
+                suspensionRecordCount;
+        studentStatusChangeDataImport.insertLogsList.add("同步后新系统中导入的学籍异动总数为 " + integer);
+        studentStatusChangeDataImport.insertLogsList.add("旧系统中的学籍异动总数为 " + value);
         exportListToTxtAndUploadToMinio(studentStatusChangeDataImport.insertLogsList,
                 errorFileName, "datasynchronize");
     }
@@ -522,15 +544,150 @@ public class OldDataSynchronize {
             String relativePath = "data_import_error_excel/paymentInformationData/";
             String errorFileName = relativePath + currentDateTime + "_" + "导入缴费数据结果总览.txt";
             String errorFileName1 = relativePath + currentDateTime + "_" + "导入缴费数据结果总览日志.txt";
+            String errorFileName2 = relativePath + currentDateTime + "_" + "导入缴费数据失败结果集.xlsx";
             paymentInformationDataImport.insertLogsList.add(year + "年插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
             paymentInformationDataImport.insertLogsList.add(year + "年插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
-
+            exportErrorListToExcelAndUploadToMinio(paymentInformationDataImport.errorList, ErrorPaymentInfoData.class,
+                    errorFileName2, "datasynchronize");
             exportMapToTxtAndUploadToMinio(paymentInformationDataImport.updateCountMap, errorFileName1,
                     "datasynchronize");
             exportListToTxtAndUploadToMinio(paymentInformationDataImport.insertLogsList,
                     errorFileName, "datasynchronize");
         }catch (Exception e){
-            log.error(year + "年校验同步缴费数据失败 ", e.toString());
+            log.error(year + "年校验同步缴费数据失败 " + e);
+        }
+    }
+
+    /**
+     * 同步旧系统与新系统的缴费数据 区间年份作为输入
+     */
+    public void synchronizePaymentInfoDataByInterval(boolean updateAny, int startYear, int endYear, List<String> specialYears) {
+        try {
+            PaymentInformationDataImport paymentInformationDataImport = new PaymentInformationDataImport();
+            paymentInformationDataImport.setSpecialYears(specialYears);
+            paymentInformationDataImport.setUpdateAny(updateAny);
+
+            for(int i = startYear; i >= endYear; i--){
+                ArrayList<HashMap<String, String>> studentFees = getStudentFees(String.valueOf(i));
+                paymentInformationDataImport.insertLogsList.add(i + "年旧系统缴费总数 " + studentFees.size());
+
+                Integer integer = paymentInfoMapper.selectCount(null);
+                SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+                Object value = scnuxljyDatabase.getValue("select count(*) from CWPAY_VIEW");
+                paymentInformationDataImport.insertLogsList.add("新系统中导入的总缴费记录数 " + integer);
+                paymentInformationDataImport.insertLogsList.add("旧系统中的总缴费记录数 " + value);
+
+                for (HashMap<String, String> hashMap : studentFees) {
+
+                    paymentInformationDataImport.queue.put(hashMap); // Put the object in the queue
+                }
+            }
+
+            for(String year : specialYears){
+                ArrayList<HashMap<String, String>> studentFees = getStudentFees(year);
+                paymentInformationDataImport.insertLogsList.add(year + "年旧系统缴费总数 " + studentFees.size());
+
+                Integer integer = paymentInfoMapper.selectCount(null);
+                SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+                Object value = scnuxljyDatabase.getValue("select count(*) from CWPAY_VIEW");
+                paymentInformationDataImport.insertLogsList.add("新系统中导入的总缴费记录数 " + integer);
+                paymentInformationDataImport.insertLogsList.add("旧系统中的总缴费记录数 " + value);
+
+                for (HashMap<String, String> hashMap : studentFees) {
+
+                    paymentInformationDataImport.queue.put(hashMap); // Put the object in the queue
+                }
+            }
+
+
+            // 传递毒药对象
+            for (int i = 0; i < CONSUMER_COUNT; i++) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                hashMap.put("END", "TRUE");
+                paymentInformationDataImport.queue.put(hashMap);
+            }
+
+            paymentInformationDataImport.latch.await();
+
+            if (paymentInformationDataImport.executorService != null) {
+                paymentInformationDataImport.executorService.shutdown();
+            }
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String currentDateTime = LocalDateTime.now().format(formatter);
+            String relativePath = "data_import_error_excel/paymentInformationData/";
+            String errorFileName = relativePath + currentDateTime + "_" + "导入缴费数据结果总览.txt";
+            String errorFileName1 = relativePath + currentDateTime + "_" + "导入缴费数据结果总览日志.txt";
+            String errorFileName2 = relativePath + currentDateTime + "_" + "导入缴费数据失败结果集.xlsx";
+            paymentInformationDataImport.insertLogsList.add(startYear + " 年 - " + endYear + " 年插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
+            paymentInformationDataImport.insertLogsList.add(startYear + " 年 - " + endYear + "年插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
+
+            exportMapToTxtAndUploadToMinio(paymentInformationDataImport.updateCountMap, errorFileName1,
+                    "datasynchronize");
+            exportListToTxtAndUploadToMinio(paymentInformationDataImport.insertLogsList,
+                    errorFileName, "datasynchronize");
+            exportErrorListToExcelAndUploadToMinio(paymentInformationDataImport.errorList, ErrorPaymentInfoData.class,
+                    errorFileName2, "datasynchronize");
+        }catch (Exception e){
+            log.error(startYear + " 年 - " + endYear + "年校验同步缴费数据失败 " + e);
+        }
+    }
+
+
+    /**
+     * 同步旧系统与新系统的缴费数据 区间年份作为输入
+     */
+    public void synchronizePaymentInfoDataAll(boolean updateAny, List<String> specialYears) {
+        try {
+            PaymentInformationDataImport paymentInformationDataImport = new PaymentInformationDataImport();
+            paymentInformationDataImport.setSpecialYears(specialYears);
+            paymentInformationDataImport.setUpdateAny(updateAny);
+
+            ArrayList<HashMap<String, String>> studentFees = getStudentFeesAll();
+            paymentInformationDataImport.insertLogsList.add("旧系统缴费总数 " + studentFees.size());
+
+            Integer integer = paymentInfoMapper.selectCount(null);
+            SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
+            Object value = scnuxljyDatabase.getValue("select count(*) from CWPAY_VIEW");
+            paymentInformationDataImport.insertLogsList.add("新系统中导入的总缴费记录数 " + integer);
+            paymentInformationDataImport.insertLogsList.add("旧系统中的总缴费记录数 " + value);
+
+            for (HashMap<String, String> hashMap : studentFees) {
+
+                paymentInformationDataImport.queue.put(hashMap); // Put the object in the queue
+            }
+
+
+            // 传递毒药对象
+            for (int i = 0; i < CONSUMER_COUNT; i++) {
+                HashMap<String, String> hashMap = new HashMap<>();
+                hashMap.put("END", "TRUE");
+                paymentInformationDataImport.queue.put(hashMap);
+            }
+
+            paymentInformationDataImport.latch.await();
+
+            if (paymentInformationDataImport.executorService != null) {
+                paymentInformationDataImport.executorService.shutdown();
+            }
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String currentDateTime = LocalDateTime.now().format(formatter);
+            String relativePath = "data_import_error_excel/paymentInformationData/";
+            String errorFileName = relativePath + currentDateTime + "_" + "导入缴费数据结果总览.txt";
+            String errorFileName1 = relativePath + currentDateTime + "_" + "导入缴费数据结果总览日志.txt";
+            String errorFileName2 = relativePath + currentDateTime + "_" + "导入缴费数据失败结果集.xlsx";
+            paymentInformationDataImport.insertLogsList.add("插入成功的缴费数据数量为 " + paymentInformationDataImport.getSuccess_insert());
+            paymentInformationDataImport.insertLogsList.add("插入失败的缴费数据数量为 " + paymentInformationDataImport.getFailed_insert());
+
+            exportMapToTxtAndUploadToMinio(paymentInformationDataImport.updateCountMap, errorFileName1,
+                    "datasynchronize");
+            exportListToTxtAndUploadToMinio(paymentInformationDataImport.insertLogsList,
+                    errorFileName, "datasynchronize");
+            exportErrorListToExcelAndUploadToMinio(paymentInformationDataImport.errorList, ErrorPaymentInfoData.class,
+                    errorFileName2, "datasynchronize");
+        }catch (Exception e){
+            log.error("校验同步缴费数据失败 " + e);
         }
     }
 

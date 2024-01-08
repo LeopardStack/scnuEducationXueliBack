@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointAdminInfor
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointAdminInformationImportError;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.Bean;
 
@@ -60,8 +61,20 @@ public class TeachingPointAdminInformationListener implements ReadListener<Teach
             throw new IllegalArgumentException("获取教学点信息失败 " + data);
         }
 
-                String idCardNumber = teachingPointAdminInformationPO.getIdCardNumber();
-                String userName = "M" + idCardNumber;
+            boolean ident = true; // 标志该教学点教务员是手机号码识别 还是身份证号码标志
+            String idCardNumber = teachingPointAdminInformationPO.getIdCardNumber();
+            String userName = "";
+                if(StringUtils.isBlank(idCardNumber) || idCardNumber.equals("#")){
+                    // 如果没有提供身份证 则只能使用手机号码作为用户名
+                    userName = "M" + teachingPointAdminInformationPO.getPhone();
+                    ident = false;
+                    if(StringUtils.isBlank(teachingPointInformationPO.getPhone())){
+                        throw new IllegalArgumentException("该教学点身份证号码、手机号码均未提供");
+                    }
+                }else{
+                    userName = "M" + idCardNumber;
+                }
+
                 PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>().eq(PlatformUserPO::getUsername, userName));
                 if(platformUserPO != null){
                     // 账号已经存在了
@@ -79,14 +92,24 @@ public class TeachingPointAdminInformationListener implements ReadListener<Teach
                 }
 
                 // 校验该用户是否存在了
-                TeachingPointAdminInformationPO teachingPointAdminInformationPO1 = teachingPointAdminInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
-                        .eq(TeachingPointAdminInformationPO::getIdCardNumber, data.getIdCardNumber()));
+            TeachingPointAdminInformationPO teachingPointAdminInformationPO1 = null;
+                if(ident){
+                    teachingPointAdminInformationPO1 = teachingPointAdminInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                            .eq(TeachingPointAdminInformationPO::getIdCardNumber, data.getIdCardNumber()));
+                }else{
+                    teachingPointAdminInformationPO1 = teachingPointAdminInformationMapper.selectOne(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                            .eq(TeachingPointAdminInformationPO::getPhone, data.getPhone()));
+                }
+
                 if(teachingPointAdminInformationPO1 != null){
                     // 已经存在 无需创建
                     throw new IllegalArgumentException("该教务员已经存在 " + data.getName() + " 教学点为 " + data.getTeachingPointName());
 
                 }
-
+                if(teachingPointAdminInformationPO.getIdCardNumber().equals("#")){
+                    teachingPointAdminInformationPO.setIdCardNumber(teachingPointAdminInformationPO.getIdCardNumber() +
+                            platformUserPO.getUserId());
+                }
                 teachingPointAdminInformationPO.setUserId(String.valueOf(platformUserPO.getUserId()));
                 teachingPointAdminInformationPO.setTeachingPointId(teachingPointInformationPO.getTeachingPointId());
                 int i = teachingPointAdminInformationMapper.insert(teachingPointAdminInformationPO);

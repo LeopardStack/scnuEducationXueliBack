@@ -1,5 +1,7 @@
 package com.scnujxjy.backendpoint.model.ro.core_data;
 
+import com.alibaba.excel.annotation.ExcelProperty;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,12 +45,16 @@ public class PaymentInfoFilterRO {
 
     /**
      * 缴费开始时间：用于筛选查询
+     * 使用@JsonFormat注解指定日期时间的格式
      */
+    @JsonFormat(pattern="yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date paymentBeginDate;
 
     /**
      * 缴费结束时间：用于筛选查询
+     * 使用@JsonFormat注解指定日期时间的格式
      */
+    @JsonFormat(pattern="yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date paymentEndDate;
 
     /**
@@ -111,6 +117,7 @@ public class PaymentInfoFilterRO {
      */
     private String teachingPoint;
 
+
     /**
      * 年级
      */
@@ -120,5 +127,10 @@ public class PaymentInfoFilterRO {
      * 班级集合
      */
     private Set<String> classNameSet;
+
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    private String remark;
 
 }

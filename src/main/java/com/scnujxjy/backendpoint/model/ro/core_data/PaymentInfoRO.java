@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro.core_data;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -84,5 +85,10 @@ public class PaymentInfoRO {
      * 缴费方式
      */
     private String paymentMethod;
+
+    /**
+     * 备注，用来展示这笔钱来自 退学、休学、转学
+     */
+    private String remark;
 
 }

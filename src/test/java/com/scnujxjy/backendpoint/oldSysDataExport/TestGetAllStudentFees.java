@@ -2,9 +2,12 @@ package com.scnujxjy.backendpoint.oldSysDataExport;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.annotation.ExcelProperty;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.model.vo.oa.MajorChangeRecordExcelVO;
+import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,15 +17,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.annotation.Resource;
+import java.io.File;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.TimeZone;
+import java.util.*;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentFees;
 
@@ -39,6 +41,9 @@ class ErrorPaymentInfoData extends PaymentInfoPO {
 public class TestGetAllStudentFees {
     @Autowired(required = false)
     private PaymentInfoMapper paymentInfoMapper;
+
+    @Resource
+    private OldDataSynchronize oldDataSynchronize;
 
     public void insertStudentFeesByGrade(int grade, ArrayList<ErrorPaymentInfoData> errorList){
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
@@ -146,7 +151,43 @@ public class TestGetAllStudentFees {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String currentDateTime = LocalDateTime.now().format(formatter);
         String relativePath = "data_import_error_excel/studentfees/";
-        String errorFileName = relativePath + currentDateTime + "_" + allGrades + "导入成绩数据失败的部分数据.xlsx";
-        EasyExcel.write(errorFileName, ErrorPaymentInfoData.class).sheet("Error Data").doWrite(errorList);
+        String errorFileName = relativePath + currentDateTime + "_" + allGrades + "导入缴费数据失败的部分数据.xlsx";
+
+        // 创建目录
+        File directory = new File(relativePath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        // 使用EasyExcel写入数据
+        try {
+            EasyExcel.write(errorFileName, ErrorPaymentInfoData.class).sheet("Error Data").doWrite(errorList);
+            System.out.println("Excel写入成功，路径：" + errorFileName);
+        } catch (Exception e) {
+            log.error("写入Excel时出现异常", e);
+        }
+
+
+    }
+
+
+    /**
+     * 采用多线程同步旧系统中的财务数据
+     */
+    @Test
+    public void test2(){
+        paymentInfoMapper.truncateTable();
+        log.info("清除了所有的缴费数据 目前缴费数据库中的数据量为 " + paymentInfoMapper.selectCount(null));
+        oldDataSynchronize.synchronizePaymentInfoDataByInterval(
+                true, 2023, 2001,
+                new ArrayList<>(Arrays.asList("休学", "退学", "转学")));
+    }
+
+    @Test
+    public void test3(){
+        paymentInfoMapper.truncateTable();
+
+        oldDataSynchronize.synchronizePaymentInfoDataAll(true,
+                new ArrayList<>(Arrays.asList("休学", "退学", "转学")));
     }
 }

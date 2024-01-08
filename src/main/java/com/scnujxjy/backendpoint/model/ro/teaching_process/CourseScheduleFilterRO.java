@@ -128,6 +128,11 @@ public class CourseScheduleFilterRO implements Serializable {
     List<String> classNames;
 
     /**
+     * 行政班（用于教学点）
+     */
+    List<String> classSet;
+
+    /**
      * 课程名称集合
      */
     List<String> courseNames;

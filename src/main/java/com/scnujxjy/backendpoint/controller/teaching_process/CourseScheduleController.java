@@ -333,6 +333,7 @@ public class CourseScheduleController {
      * @return 删除数量
      */
     @DeleteMapping("/delete")
+    @SaCheckPermission("删除排课表记录")
     SaResult deleteById(Long id) {
         // 参数校验
         if (Objects.isNull(id)) {
@@ -417,6 +418,22 @@ public class CourseScheduleController {
                 if (Objects.isNull(filterDataVO)) {
                     throw dataNotFoundError();
                 }
+            }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 查询继续教育管理员权限范围内的考试信息
+                FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.filterCoursesInformationExams(courseScheduleFilterROPageRO, teachingPointFilter);
+
+                // 创建并返回分页信息
+                filterDataVO = new PageVO<>(scheduleCoursesFilterDataVO.getData());
+                filterDataVO.setTotal(scheduleCoursesFilterDataVO.getTotal());
+                filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
+                filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
+                filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
+                        / courseScheduleFilterROPageRO.getPageSize()));
+
+                // 数据校验
+                if (Objects.isNull(filterDataVO)) {
+                    throw dataNotFoundError();
+                }
             }
 
         }
@@ -472,6 +489,8 @@ public class CourseScheduleController {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, collegeAdminFilter);
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, managerFilter);
+            }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, teachingPointFilter);
             }
         }
 
@@ -577,7 +596,7 @@ public class CourseScheduleController {
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(managerFilter);
+                scheduleCourseInformationSelectArgs = courseScheduleService.getSelectScheduleCourseInformationArgs(teachingPointFilter);
             }
         }
 
@@ -609,31 +628,6 @@ public class CourseScheduleController {
             return SaResult.error("用户角色信息缺失 ，获取排课表课程信息失败 " + StpUtil.getLoginId()).setCode(2000);
         } else {
             try {
-//                if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
-//                    // 查询二级学院管理员权限范围内的排课表课程信息
-//                    FilterDataVO schedulesFilterDataVO = courseScheduleService.getScheduleCourses(courseScheduleFilterROPageRO, collegeAdminFilter);
-//
-//                    // 创建并返回分页信息
-//                    filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
-//                    filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
-//                    filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
-//                    filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
-//                    filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
-//                            / courseScheduleFilterROPageRO.getPageSize()));
-//
-//                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
-//                    // 查询继续教育管理员权限范围内的排课表课程信息
-//                    FilterDataVO schedulesFilterDataVO = courseScheduleService.getScheduleCourses(courseScheduleFilterROPageRO, managerFilter);
-//
-//                    // 创建并返回分页信息
-//                    filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
-//                    filterDataVO.setTotal(schedulesFilterDataVO.getTotal());
-//                    filterDataVO.setCurrent(courseScheduleFilterROPageRO.getPageNumber());
-//                    filterDataVO.setSize(courseScheduleFilterROPageRO.getPageSize());
-//                    filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
-//                            / courseScheduleFilterROPageRO.getPageSize()));
-//
-//                }
                 FilterDataVO schedulesFilterDataVO = courseScheduleService.getScheduleCourses(courseScheduleFilterROPageRO, managerFilter);
 
                 // 创建并返回分页信息

@@ -118,7 +118,7 @@ public class ResumptionRecordPO implements Serializable {
     /**
      * 办理日期
      */
-    private String handleDate;
+    private String approvalDate;
 
     /**
      * 办理人

@@ -111,7 +111,10 @@ public class DataUpdate {
     @Value("${spring.rabbitmq.queue1}")
     private String queue1;
 
-    @Scheduled(cron = "0 19 23 * * ?", zone="Asia/Shanghai")
+    /**
+     * 暂时关闭掉服务器端的旧系统数据同步
+     */
+//    @Scheduled(cron = "0 19 23 * * ?", zone="Asia/Shanghai")
     public void executeAt1AM1520() {
         if (!oldDataSynchronizeStatus) {
             // 如果配置为 false，直接返回

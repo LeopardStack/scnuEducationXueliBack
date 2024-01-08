@@ -19,7 +19,7 @@
         <if test='entity.classNames != null and entity.classNames.size() > 0'>
             AND ci.class_name LIKE
             <foreach item="className" collection="entity.classNames" open="(" separator="," close=")">
-                #{className}
+                CONCAT('%', #{className}, '%')
             </foreach>
         </if>
 

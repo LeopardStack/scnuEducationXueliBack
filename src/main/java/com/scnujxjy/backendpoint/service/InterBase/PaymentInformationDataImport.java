@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ import static com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize.CON
 @AllArgsConstructor
 @NoArgsConstructor
 class ErrorPaymentInfoData extends PaymentInfoPO {
-    @ExcelProperty(value = "导入失败原因", index = 13)
+    @ExcelProperty(value = "导入失败原因", index = 14)
     private String errorReason;
 }
 
@@ -42,6 +43,8 @@ public class PaymentInformationDataImport {
 
     // 记录每年的更新记录数
     public Map<String, Long> updateCountMap = new ConcurrentHashMap<>();
+
+    public List<String> specialYears;
 
 
     // 存储插入日志
@@ -78,6 +81,9 @@ public class PaymentInformationDataImport {
             executorService.execute(() -> {
                 try {
                     while (true) {
+//                        log.info("Thread ID: " + Thread.currentThread().getId() + " - Queue size: " + queue.size());
+
+
                         HashMap<String, String> hashMap = queue.take();
                         if (hashMap.containsKey("END")) {
                             break;
@@ -112,7 +118,7 @@ public class PaymentInformationDataImport {
 
             String feeDateString = studentData.get("RQ");
             Date feeDate = null;
-            if(feeDateString != null){
+            if(!StringUtils.isBlank(feeDateString)){
                 try {
                     feeDate = dateFormat1.parse(feeDateString);
                 } catch (ParseException e) {
@@ -155,24 +161,18 @@ public class PaymentInformationDataImport {
             paymentInfo.setAmount(Double.parseDouble(fee));
             paymentInfo.setPaymentMethod("学年");
             paymentInfo.setIsPaid("是");
-            synchronized(this) {
-                PaymentInfoPO paymentInfoPO = paymentInfoMapper.selectOne(new LambdaQueryWrapper<PaymentInfoPO>()
-                        .eq(PaymentInfoPO::getGrade, paymentInfo.getGrade())
-                        .eq(PaymentInfoPO::getPaymentDate, paymentInfo.getPaymentDate())
-                        .eq(PaymentInfoPO::getIdCardNumber, paymentInfo.getIdCardNumber())
-                        .eq(PaymentInfoPO::getClassIdentifier, paymentInfo.getClassIdentifier())
-                );
-                if(paymentInfoPO != null){
-                    if(updateAny){
-                        int i = paymentInfoMapper.updateById(paymentInfoPO);
-                        success_insert += 1;
-                    }
-                }else{
-                    paymentInfoMapper.insert(paymentInfo);
-                    success_insert += 1;
-                }
-
+            if(specialYears.contains(paymentInfo.getGrade())){
+                paymentInfo.setRemark(paymentInfo.getGrade());
+            }else{
+                paymentInfo.setRemark("普通");
             }
+
+
+            paymentInfoMapper.insert(paymentInfo);
+            synchronized(this) {
+                success_insert += 1;
+            }
+
             return 1;
         } catch (Exception e) {
             log.error(e.toString());

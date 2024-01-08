@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class TeachingPointAdminInformationImportError extends TeachingPointAdminInformationExcelImportRO{
-    @ExcelProperty(index = 4, value = "导入失败原因")
+    @ExcelProperty(index = 5, value = "导入失败原因")
     private String errorMsg;
 }

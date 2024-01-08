@@ -285,9 +285,12 @@
             <version>1.20</version> <!-- 或者更高版本 -->
         </dependency>
 
-
-
-
+<!--        生成 dbf 文件 -->
+        <dependency>
+            <groupId>com.linuxense</groupId>
+            <artifactId>javadbf</artifactId>
+            <version>1.7.0</version>
+        </dependency>
 
     </dependencies>
 

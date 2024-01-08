@@ -41,7 +41,7 @@ public class Test1 {
      */
     @Test
     public void test1(){
-        String excelPath = "D:\\MyProject\\xueliJYPlatform2Update20231009\\xueliBackEnd\\src\\main\\resources\\data\\教学点教务员导入\\教学点教务员信息导入.xlsx";
+        String excelPath = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\教学点信息导入\\教学点教务员信息导入.xlsx";
         TeachingPointAdminInformationListener listener = new TeachingPointAdminInformationListener(teachingPointInformationMapper, teachingPointAdminInformationMapper,
                 platformUserMapper);
         EasyExcel.read(excelPath, TeachingPointAdminInformationExcelImportRO.class, listener).sheet().headRowNumber(1).doRead();

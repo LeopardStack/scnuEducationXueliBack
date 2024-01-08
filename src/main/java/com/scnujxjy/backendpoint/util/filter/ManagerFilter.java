@@ -155,14 +155,15 @@ public class ManagerFilter extends AbstractFilter {
             return null;
         }
 
+        CourseInformationRO courseInformationRO = new CourseInformationRO();
 
-        List<String> grades = courseInformationMapper.selectDistinctGrades(null, null);
-        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(null, null);
-        List<String> levels = courseInformationMapper.selectDistinctLevels(null, null);
-        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(null, null);
-        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(null, null);
-        List<String> classNames = courseInformationMapper.selectDistinctClassNames(null, null);
-        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames(null);
+        List<String> grades = courseInformationMapper.selectDistinctGrades(courseInformationRO);
+        List<String> majorNames = courseInformationMapper.selectDistinctMajorNames(courseInformationRO);
+        List<String> levels = courseInformationMapper.selectDistinctLevels(courseInformationRO);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(courseInformationRO);
+        List<String> studyForms = courseInformationMapper.selectDistinctStudyForms(courseInformationRO);
+        List<String> classNames = courseInformationMapper.selectDistinctClassNames(courseInformationRO);
+        List<String> collegeNames = courseInformationMapper.selectDistinctCollegeNames(courseInformationRO);
         courseInformationSelectArgs.setGrades(grades);
         courseInformationSelectArgs.setMajorNames(majorNames);
         courseInformationSelectArgs.setLevels(levels);
@@ -242,6 +243,7 @@ public class ManagerFilter extends AbstractFilter {
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
         StudentStatusMapper studentStatusMapper1 = ctx.getBean(StudentStatusMapper.class);
         MinioService minioService = ctx.getBean(MinioService.class);
+        PlatformUserService platformUserService1 = ctx.getBean(PlatformUserService.class);
         PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
         DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
 
@@ -322,7 +324,7 @@ public class ManagerFilter extends AbstractFilter {
             Long generatedId = downloadMessagePO.getId();
             PlatformMessagePO platformMessagePO = new PlatformMessagePO();
             platformMessagePO.setCreatedAt(generateData);
-            platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
+            platformMessagePO.setUserId(String.valueOf(platformUserService1.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
             platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
@@ -377,6 +379,27 @@ public class ManagerFilter extends AbstractFilter {
                 (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
         );
         long countStudentPayInfoByFilter = paymentInfoMapper.getCountStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity());
+//        long countStudentPayInfoByFilter = 100L;
+        studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        studentStatusVOFilterDataVO.setData(paymentInfoVOList);
+
+        return studentStatusVOFilterDataVO;
+    }
+
+    /**
+     * 获取新生的缴费信息
+     * @param paymentInfoFilterROPageRO
+     * @return
+     */
+    public FilterDataVO filterNewStudentPayInfo(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        FilterDataVO<PaymentInfoVO> studentStatusVOFilterDataVO = new FilterDataVO<>();
+        log.info("用户缴费筛选参数" + paymentInfoFilterROPageRO);
+        List<PaymentInfoVO> paymentInfoVOList = paymentInfoMapper.getNewStudentPayInfoByFilter(
+                paymentInfoFilterROPageRO.getEntity(),
+                paymentInfoFilterROPageRO.getPageSize(),
+                (paymentInfoFilterROPageRO.getPageNumber() - 1) * paymentInfoFilterROPageRO.getPageSize()
+        );
+        long countStudentPayInfoByFilter = paymentInfoMapper.getCountNewStudentPayInfoByFilter(paymentInfoFilterROPageRO.getEntity());
 //        long countStudentPayInfoByFilter = 100L;
         studentStatusVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
         studentStatusVOFilterDataVO.setData(paymentInfoVOList);
@@ -456,6 +479,7 @@ public class ManagerFilter extends AbstractFilter {
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
         ScoreInformationMapper scoreInformationMapper1 = ctx.getBean(ScoreInformationMapper.class);
         MinioService minioService = ctx.getBean(MinioService.class);
+        PlatformUserService platformUserService1 = ctx.getBean(PlatformUserService.class);
         PlatformMessageMapper platformMessageMapper = ctx.getBean(PlatformMessageMapper.class);
         DownloadMessageMapper downloadMessageMapper = ctx.getBean(DownloadMessageMapper.class);
 
@@ -533,7 +557,7 @@ public class ManagerFilter extends AbstractFilter {
             Long generatedId = downloadMessagePO.getId();
             PlatformMessagePO platformMessagePO = new PlatformMessagePO();
             platformMessagePO.setCreatedAt(generateData);
-            platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
+            platformMessagePO.setUserId(String.valueOf(platformUserService1.getUserIdByUsername(username)));
             platformMessagePO.setIsRead(false);
             platformMessagePO.setRelatedMessageId(generatedId);
             platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
@@ -554,7 +578,7 @@ public class ManagerFilter extends AbstractFilter {
         PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
         PaymentInfoFilterRO filter = new PaymentInfoFilterRO();
 
-        ExecutorService executor = Executors.newFixedThreadPool(7); // 8 代表你有8个查询
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
 
         Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctGrades(filter));
         Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctLevels(filter));
@@ -563,6 +587,7 @@ public class ManagerFilter extends AbstractFilter {
         Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctTeachingPoints(filter));
         Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctCollegeNames(filter));
         Future<List<String>> distinctAcademicYearsFuture = executor.submit(() -> paymentInfoMapper.getDistinctAcademicYears(filter));
+        Future<List<String>> distinctRemarksFuture = executor.submit(() -> paymentInfoMapper.getDistinctRemarks(filter));
 
         try {
             paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
@@ -572,6 +597,41 @@ public class ManagerFilter extends AbstractFilter {
             paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
             paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
             paymentInformationSelectArgs.setAcademicYears(distinctAcademicYearsFuture.get());
+            paymentInformationSelectArgs.setRemarks(distinctRemarksFuture.get());
+
+        } catch (Exception e) {
+            // Handle exceptions like InterruptedException or ExecutionException
+            e.printStackTrace();
+        } finally {
+            executor.shutdown(); // Always remember to shutdown the executor after usage
+        }
+
+        return paymentInformationSelectArgs;
+    }
+
+
+    /**
+     * 获取新生缴费数据筛选参数
+     * @param filter
+     * @return
+     */
+    public PaymentInformationSelectArgs getNewStudentPaymentInfoArgs(PaymentInfoFilterRO filter) {
+        PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
+
+        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 代表你有5个查询
+
+        Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentGrades(filter));
+        Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentLevels(filter));
+        Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentStudyForms(filter));
+        Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentCollegeNames(filter));
+
+        try {
+            paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
+            paymentInformationSelectArgs.setLevels(distinctLevelsFuture.get());
+            paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
+            paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
 
         } catch (Exception e) {
             // Handle exceptions like InterruptedException or ExecutionException

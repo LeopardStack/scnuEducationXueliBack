@@ -328,7 +328,10 @@ public class StudentStatusController {
                     if (Objects.isNull(filterDataVO)) {
                         throw dataNotFoundError();
                     }
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO studentStatusFilterDataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, managerFilter);
 
@@ -452,7 +455,10 @@ public class StudentStatusController {
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, collegeAdminFilter);
-                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                        || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                ) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, managerFilter);
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, teachingPointFilter);

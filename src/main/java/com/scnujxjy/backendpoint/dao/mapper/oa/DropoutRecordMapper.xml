@@ -25,4 +25,46 @@
         id, serial_number, exam_registration_number, id_number, student_number, name, old_study_form, old_grade, old_major_name, old_class_identifier, approval_user_id, reason, approval_date, approval_history_id
     </sql>
 
+    <sql id="commonJoin">
+        FROM dropout_record dr
+        JOIN class_information ci ON
+        dr.old_class_identifier=ci.class_identifier
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND dr.id = #{entity.id}</if>
+        <if test='entity.grade != null'>AND dr.old_grade = #{entity.grade}</if>
+        <if test='entity.examRegistrationNumber != null'>AND dr.exam_registration_number = #{entity.examRegistrationNumber}</if>
+        <if test='entity.idNumber != null'>AND dr.id_number = #{entity.idNumber}</if>
+        <if test='entity.studentNumber != null'>AND dr.student_number = #{entity.studentNumber}</if>
+        <if test='entity.studentName != null'>AND dr.name = #{entity.studentName}</if>
+
+        <if test='entity.approvalStartDate != null'>AND dr.approval_date >= #{entity.approvalStartDate}</if>
+        <if test='entity.approvalEndDate != null'>AND #{entity.approvalEndDate} >= dr.approval_date</if>
+
+    </sql>
+
+    <select id="getDropoutInfos" resultType="com.scnujxjy.backendpoint.model.vo.oa.DropoutRecordWithClassInfoVO">
+        select dr.*, ci.grade, ci.class_name, ci.study_form, ci.level,
+               ci.study_period, ci.college
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY dr.approval_date DESC
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+    <select id="getDropoutInfosCount" resultType="java.lang.Long">
+        SELECT count(*)
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctGrades" resultType="java.lang.String">
+        select distinct old_grade
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters"/>
+        ORDER BY old_grade DESC
+    </select>
+
 </mapper>
