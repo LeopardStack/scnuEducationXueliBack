@@ -867,6 +867,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             }
 
             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
+            //开始和结束时间应该是该排课的，而不是直播记录表的。
+            String teachingTime = schedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
+            String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));//获取14:30, 2:00
+            String courseEndTime = teachingTime.substring(teachingTime.indexOf("—") + 1);//获取17:00, 5:00
+
+            String datePattern = "yyyy-MM-dd";
+            SimpleDateFormat sdf1 = new SimpleDateFormat(datePattern);
+            String pattern = "yyyy-MM-dd HH:mm";
+            SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+
+            videoStreamRecordPO.setStartTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate())+" "+courseStartTime));
+            videoStreamRecordPO.setEndTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate())+" "+courseEndTime));
+
             SaResult channelCardPush = getStudentViewLog(videoStreamRecordPO);
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
             if (viewLogResponseList.size() == 0) {
@@ -874,7 +887,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 saResult.setMsg("该排课时间段内没有学生观看数据，请联系管理员");
                 return saResult;
             }
-
+            log.info("学生观看数据获取成功"+viewLogResponseList);
             //将观看数据根据param1字段聚合后playDuration相加，再去重。
             Map<String, List<ViewLogResponse>> groupByParam1 = viewLogResponseList.stream()
                     .collect(Collectors.groupingBy(ViewLogResponse::getParam1));
@@ -905,7 +918,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
-                attendanceVOList.add(attendanceVO);
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), schedulePO.getGrade());
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
@@ -916,9 +928,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
+                attendanceVOList.add(attendanceVO);
             }
             Collections.sort(attendanceVOList, Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
-
+            log.info("获取所有观看的学生数据并降序排序完成"+attendanceVOList);
 
             //拿到直播间所有学生白名单数据whiteLists
             List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
@@ -958,9 +971,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
-                attendanceVOList.add(attendanceVO);
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), schedulePO.getGrade());
-
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
                     QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -970,15 +981,17 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
+                attendanceVOList.add(attendanceVO);
             }
-
+            log.info("获取所有未观看的学生数据完成"+noAttendList);
+            log.info("获取{}该堂课的学生数据完成",courseId);
             downloadExportFile(response, attendanceVOList);
             saResult.setCode(ResultCode.SUCCESS.getCode());
             saResult.setMsg(ResultCode.SUCCESS.getMessage());
             return saResult;
 
         } catch (Exception e) {
-            log.error("调用导出考勤表接口失败，异常信息为" + e);
+            log.error("调用导出考勤表接口失败，该堂排课表id为:{}",courseId, e);
         }
 
         saResult.setCode(ResultCode.FAIL.getCode());
