@@ -64,4 +64,13 @@ public class DropoutRecordService extends ServiceImpl<DropoutRecordMapper, Dropo
 
         return dropoutSelectArgs;
     }
+
+    /**
+     * 获取单个退学信息
+     * @param dropoutRecordROPageRO
+     * @return
+     */
+    public List<DropoutRecordWithClassInfoVO> getSingleDropoutInfos(DropoutRecordRO dropoutRecordROPageRO) {
+        return getBaseMapper().getSingleDropoutInfos(dropoutRecordROPageRO);
+    }
 }

@@ -746,4 +746,31 @@
         WHERE 1 = 1
         AND cs.batch_index = #{batch_index}
     </select>
+    <select id="selectAllCoursesInformationWithoutPage"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO">
+        SELECT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        course_name, teacher_username, ci.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_assistant_username FROM course_schedule cs
+        LEFT JOIN class_information ci
+        ON cs.grade = ci.grade
+        AND cs.major_name = ci.major_name
+        AND cs.`level` = ci.`level`
+        AND cs.study_form = ci.study_form
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="selectAllCourseScheduleInformationWithoutPage"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleDetailVO">
+        SELECT cs.grade, cs.major_name, cs.level, cs.study_form, cs.admin_class,
+        course_name, teacher_username, ci.college, cs.main_teacher_name, cs.tutor_name,
+        cs.teaching_date, cs.teaching_time, cs.online_platform,
+        cs.teaching_assistant_username FROM course_schedule cs
+        LEFT JOIN class_information ci
+        ON cs.grade = ci.grade
+        AND cs.major_name = ci.major_name
+        AND cs.`level` = ci.`level`
+        AND cs.study_form = ci.study_form
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
 </mapper>

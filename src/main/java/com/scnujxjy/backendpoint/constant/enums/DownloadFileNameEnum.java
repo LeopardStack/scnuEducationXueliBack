@@ -10,6 +10,8 @@ public enum DownloadFileNameEnum {
     EXAM_TEACHERS_EXPORT_FILE("考试信息导出"),
     EXAM_STUDENTS_EXPORT_FILE("机考名单信息导出"),
     ADMISSION_STUDENTS_EXPORT_FILE("新生录取信息导出"),
+    ADMISSION_STUDENTS_PAY_EXPORT_FILE("新生缴费信息导出"),
+    ADMISSION_STUDENTS_NOT_PAY_EXPORT_FILE("新生未缴费信息导出"),
     STUDENT_FEES_EXPORT_FILE("缴费信息导出");
 
 

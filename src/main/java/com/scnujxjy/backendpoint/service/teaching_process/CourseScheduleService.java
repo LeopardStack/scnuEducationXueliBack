@@ -1052,7 +1052,7 @@ public class CourseScheduleService extends ServiceImpl<CourseScheduleMapper, Cou
             Date date = Date.from(instant);
 
             UserUploadsPO userUploadsPO = new UserUploadsPO();
-            userUploadsPO.setUserId(String.valueOf(userId));
+            userUploadsPO.setUserName(String.valueOf(userId));
             userUploadsPO.setUploadTime(date);
             userUploadsPO.setUploadType(UploadType.COURSE_SCHEDULE_LIST.getUpload_type());
             userUploadsPO.setFileUrl(uploadFileUrl);

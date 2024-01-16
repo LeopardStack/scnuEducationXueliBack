@@ -25,7 +25,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("user_upload")
+@TableName("user_uploads")
 public class UserUploadsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,7 +39,7 @@ public class UserUploadsPO implements Serializable {
     /**
      * 上传文件的用户名
      */
-    private String userId;
+    private String userName;
 
     /**
      * 用户上传的 Minio 地址

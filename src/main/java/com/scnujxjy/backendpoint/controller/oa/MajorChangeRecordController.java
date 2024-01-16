@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -107,6 +108,32 @@ public class MajorChangeRecordController {
 
         // Return data
         return SaResult.ok().setData(bytes).set("fileName", fileName);
+    }
+
+
+    /**
+     * 分页查询学生转专业审核信息
+     *
+     * @param majorChangeRecordROPageRO 学生转专业审核分页查询参数
+     * @return 学生转专业分页信息
+     */
+    @PostMapping("/single_query_info")
+    public SaResult pageQuerySingleMajorChangeInformation(@RequestBody MajorChangeRecordRO majorChangeRecordROPageRO) {
+        // 参数校验
+        if (Objects.isNull(majorChangeRecordROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(majorChangeRecordROPageRO)) {
+            majorChangeRecordROPageRO = new MajorChangeRecordRO();
+        }
+        // 查询数据
+        List<MajorChangeRecordVO> admissionInformationVOPageVO = majorChangeRecordService.getSingleMajorChangeInfos(majorChangeRecordROPageRO);
+//        // 校验数据
+        if (Objects.isNull(admissionInformationVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(admissionInformationVOPageVO).setCode(200);
     }
 
 }

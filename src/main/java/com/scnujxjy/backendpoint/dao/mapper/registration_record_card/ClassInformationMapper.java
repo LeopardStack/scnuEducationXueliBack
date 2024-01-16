@@ -5,8 +5,10 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ClassInformationDownloadVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -165,4 +167,6 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
     List<String> getDistinctTeachingPoints(@Param("entity") ClassInformationFilterRO entity);
 
     List<ClassInformationDownloadVO> downloadClassInformationDataByManager0(@Param("entity") ClassInformationFilterRO entity);
+
+    List<StudentStatusChangeClassInfoVO> getStudentStatusChangeClassInfoByFilter(@Param("entity") ClassInformationRO classInformationRO);
 }

@@ -7,18 +7,23 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.linuxense.javadbf.DBFDataType;
 import com.linuxense.javadbf.DBFField;
+import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.index.qual.SameLen;
@@ -42,12 +47,30 @@ public class ScnuXueliTools {
 
     @Resource
     private CollegeInformationMapper collegeInformationMapper;
+    @Resource
+    private PlatformUserService platformUserService;
+    @Resource
+    private PlatformMessageMapper platformMessageMapper;
 
     @Resource
     private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
 
     @Resource
     private TeachingPointInformationMapper teachingPointInformationMapper;
+
+    public PlatformMessagePO generateMessage(String username) {
+        PlatformMessagePO platformMessagePO = new PlatformMessagePO();
+        Date generateData = new Date();
+        platformMessagePO.setCreatedAt(generateData);
+        platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
+        platformMessagePO.setRelatedMessageId(null);
+        platformMessagePO.setIsRead(false);
+        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
+        int insert1 = platformMessageMapper.insert(platformMessagePO);
+        log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
+        return platformMessagePO;
+    }
+
 
     /**
      * 根据loginId获取教学点班级信息

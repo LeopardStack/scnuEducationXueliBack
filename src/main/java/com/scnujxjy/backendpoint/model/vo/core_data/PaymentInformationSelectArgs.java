@@ -52,4 +52,9 @@ public class PaymentInformationSelectArgs implements Serializable {
      * 备注，用来展示这笔钱来自 退学、休学、转学
      */
     private List<String> remarks;
+
+    /**
+     * 专业名称信息
+     */
+    private List<String> majorNames;
 }

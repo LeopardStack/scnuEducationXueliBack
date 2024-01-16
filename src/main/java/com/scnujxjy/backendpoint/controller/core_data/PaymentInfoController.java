@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
@@ -20,6 +21,7 @@ import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,8 @@ public class PaymentInfoController {
 
     @Resource
     private StudentStatusService studentStatusService;
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Resource
     private CollegeAdminFilter collegeAdminFilter;
@@ -104,6 +108,7 @@ public class PaymentInfoController {
     @PostMapping("/page")
     public SaResult pageQueryPaymentInfo(@RequestBody PageRO<PaymentInfoRO> paymentInfoROPageRO) {
         // 参数校验
+
         if (Objects.isNull(paymentInfoROPageRO)) {
             throw dataMissError();
         }
@@ -461,11 +466,106 @@ public class PaymentInfoController {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
                 if (send) {
-                    return SaResult.ok("导出学籍数据成功");
+                    return SaResult.ok("导出缴费数据成功");
                 }
             }
         }
-        return SaResult.error("导出学籍数据失败！");
+        return SaResult.error("导出缴费数据失败！");
+    }
+
+    /**
+     * 导出新生缴费数据
+     * @return 缴费数据
+     */
+    @PostMapping("/batch_export_new_student_payment_data")
+    public SaResult batchExportNewStudentPaymentData(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        String userId = (String) StpUtil.getLoginId();
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 二级学院管理员
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoFilterROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
+
+                    paymentInfoService.exportNewStudentFeeData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生缴费数据成功，请在消息中查看");
+                }
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                    || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSION_ADMIN.getRoleName())
+            ) {
+                // 继续教育学院管理员
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoService.exportNewStudentFeeData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生缴费数据成功，请在消息中查看");
+                }
+            }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 继续教育学院管理员
+                paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoService.exportNewStudentFeeData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生缴费数据成功，请在消息中查看");
+                }
+            }
+        }
+        return SaResult.error("导出新生缴费数据失败！");
+    }
+
+    /**
+     * 导出新生未缴费数据
+     * @return 缴费数据
+     */
+    @PostMapping("/batch_export_new_student_not_pay_data")
+    public SaResult batchExportNewStudentNotPayData(@RequestBody PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+
+        // 获取访问者 ID
+        String userId = (String) StpUtil.getLoginId();
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+                // 二级学院管理员
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoFilterROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
+                    paymentInfoService.exportNewStudentNotPayData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生未缴费数据成功，请在消息中查看");
+                }
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                    || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSION_ADMIN.getRoleName())
+            ) {
+                // 继续教育学院管理员
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoService.exportNewStudentNotPayData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生未缴费数据成功，请在消息中查看");
+                }
+            }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 继续教育学院管理员
+                paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null){
+                    paymentInfoService.exportNewStudentNotPayData(paymentInfoFilterROPageRO.getEntity(),
+                            platformMessagePO, StpUtil.getLoginIdAsString());
+                    return SaResult.ok("导出新生未缴费数据成功，请在消息中查看");
+                }
+            }
+        }
+        return SaResult.error("导出新生缴费数据失败！");
     }
 }
 

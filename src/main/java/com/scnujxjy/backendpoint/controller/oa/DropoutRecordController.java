@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -81,6 +82,32 @@ public class DropoutRecordController {
         }
         // 返回数据
         return SaResult.data(dropoutSelectArgs).setCode(200);
+    }
+
+
+    /**
+     * 查询单个学生退学审核信息
+     *
+     * @param dropoutRecordROPageRO 学生退学审核分页查询参数
+     * @return 学生退学信息
+     */
+    @PostMapping("/single_drop_info_query")
+    public SaResult pageQueryDropoutInformation(@RequestBody DropoutRecordRO dropoutRecordROPageRO) {
+        // 参数校验
+        if (Objects.isNull(dropoutRecordROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(dropoutRecordROPageRO)) {
+            dropoutRecordROPageRO = new DropoutRecordRO();
+        }
+        // 查询数据
+        List<DropoutRecordWithClassInfoVO> dropoutRecordVOPageVO = dropoutRecordService.getSingleDropoutInfos(dropoutRecordROPageRO);
+//        // 校验数据
+        if (Objects.isNull(dropoutRecordVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(dropoutRecordVOPageVO).setCode(200);
     }
 }
 

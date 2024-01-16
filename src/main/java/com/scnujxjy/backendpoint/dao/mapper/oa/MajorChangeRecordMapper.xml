@@ -90,5 +90,12 @@
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
+    <select id="getSingleMajorChangeInfos"
+            resultType="com.scnujxjy.backendpoint.model.vo.oa.MajorChangeRecordVO">
+        select *
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
 
 </mapper>

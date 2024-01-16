@@ -3,6 +3,8 @@ package com.scnujxjy.backendpoint.dao.mapper.core_data;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
+import com.scnujxjy.backendpoint.model.vo.core_data.NewStudentNotPayExcelVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.NewStudentPaymentInfoExcelVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoAllVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
 import org.apache.ibatis.annotations.Param;
@@ -282,6 +284,13 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
     List<String> getDistinctAcademicYears(@Param("entity") PaymentInfoFilterRO entity);
 
     /**
+     * 专业名称选择
+     * @param filter
+     * @return
+     */
+    List<String> getDistinctMajorNames(@Param("entity")PaymentInfoFilterRO filter);
+
+    /**
      * 批量下载缴费数据
      *
      * @param entity
@@ -297,6 +306,8 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
     List<PaymentInfoVO> getNewStudentPayInfoByFilter(@Param("entity") PaymentInfoFilterRO entity,
                                                      @Param("pageSize") Long pageSize, @Param("l") long l);
 
+    List<NewStudentPaymentInfoExcelVO> exportNewStudentPayInfoByFilter(@Param("entity") PaymentInfoFilterRO entity);
+
     long getCountNewStudentPayInfoByFilter(@Param("entity")PaymentInfoFilterRO entity);
 
     List<String> getDistinctNewStudentGrades(@Param("entity")PaymentInfoFilterRO filter);
@@ -308,4 +319,10 @@ public interface PaymentInfoMapper extends BaseMapper<PaymentInfoPO> {
     List<String> getDistinctNewStudentTeachingPoints(@Param("entity")PaymentInfoFilterRO filter);
 
     List<String> getDistinctNewStudentCollegeNames(@Param("entity")PaymentInfoFilterRO filter);
+
+    List<NewStudentNotPayExcelVO> exportNewStudentNotPayInfoByFilter(@Param("entity")PaymentInfoFilterRO entity);
+
+    List<String> getDistinctNewStudentMajorNames(@Param("entity")PaymentInfoFilterRO filter);
+
+
 }

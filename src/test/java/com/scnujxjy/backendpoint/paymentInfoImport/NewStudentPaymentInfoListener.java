@@ -74,6 +74,7 @@ public class NewStudentPaymentInfoListener extends AnalysisEventListener<Payment
             paymentInfoPO.setAmount(Double.parseDouble(paymentInfoImportRO.getAmount()));
             paymentInfoPO.setIsPaid("是");
             paymentInfoPO.setPaymentMethod("学年");
+            paymentInfoPO.setPaymentCategory("学费");
             paymentInfoPO.setGrade(grade);
             // 区分转学、退学、休学产生的费用
             paymentInfoPO.setRemark("普通");

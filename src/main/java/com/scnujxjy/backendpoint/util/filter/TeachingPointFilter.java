@@ -266,14 +266,17 @@ public class TeachingPointFilter extends AbstractFilter {
         PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
         PaymentInfoFilterRO filter = new PaymentInfoFilterRO();
         filter.setClassNameSet(getTeachingPointClassNameSet());
-        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 代表你有8个查询
+        ExecutorService executor = Executors.newFixedThreadPool(9); // 9 代表你有9个查询
+
         Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctGrades(filter));
         Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctLevels(filter));
         Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctStudyForms(filter));
         Future<List<String>> distinctClassNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctClassNames(filter));
         Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctTeachingPoints(filter));
+        Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctCollegeNames(filter));
         Future<List<String>> distinctAcademicYearsFuture = executor.submit(() -> paymentInfoMapper.getDistinctAcademicYears(filter));
         Future<List<String>> distinctRemarksFuture = executor.submit(() -> paymentInfoMapper.getDistinctRemarks(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctMajorNames(filter));
 
         try {
             paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
@@ -281,8 +284,10 @@ public class TeachingPointFilter extends AbstractFilter {
             paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
             paymentInformationSelectArgs.setClassNames(distinctClassNamesFuture.get());
             paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
+            paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
             paymentInformationSelectArgs.setAcademicYears(distinctAcademicYearsFuture.get());
             paymentInformationSelectArgs.setRemarks(distinctRemarksFuture.get());
+            paymentInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
 
         } catch (Exception e) {
             // Handle exceptions like InterruptedException or ExecutionException
@@ -681,13 +686,14 @@ public class TeachingPointFilter extends AbstractFilter {
         PaymentInformationSelectArgs paymentInformationSelectArgs = new PaymentInformationSelectArgs();
         TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
         filter.setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
-        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 代表你有5个查询
+        ExecutorService executor = Executors.newFixedThreadPool(6); // 6 代表你有6个查询
 
         Future<List<String>> distinctGradesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentGrades(filter));
         Future<List<String>> distinctLevelsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentLevels(filter));
         Future<List<String>> distinctStudyFormsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentStudyForms(filter));
         Future<List<String>> distinctTeachingPointsFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentTeachingPoints(filter));
         Future<List<String>> distinctCollegeNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentCollegeNames(filter));
+        Future<List<String>> distinctMajorNamesFuture = executor.submit(() -> paymentInfoMapper.getDistinctNewStudentMajorNames(filter));
 
         try {
             paymentInformationSelectArgs.setGrades(distinctGradesFuture.get());
@@ -695,6 +701,7 @@ public class TeachingPointFilter extends AbstractFilter {
             paymentInformationSelectArgs.setStudyForms(distinctStudyFormsFuture.get());
             paymentInformationSelectArgs.setTeachingPoints(distinctTeachingPointsFuture.get());
             paymentInformationSelectArgs.setCollegeNames(distinctCollegeNamesFuture.get());
+            paymentInformationSelectArgs.setMajorNames(distinctMajorNamesFuture.get());
 
         } catch (Exception e) {
             // Handle exceptions like InterruptedException or ExecutionException

@@ -97,5 +97,14 @@ public class SuspensionRecordController {
         SuspensionWithResumptionVO resumptionInfo = suspensionRecordService.getResumptionInfo(suspensionRecordRO);
         return SaResult.ok().setData(resumptionInfo);
     }
+
+    /**
+     * 根据学生的身份证号码 或者学号 来查询学生的休学、复学信息
+     */
+    @PostMapping("/get_single_resumption_info")
+    public SaResult getSingleResumptionInfo(@RequestBody SuspensionRecordRO suspensionRecordRO){
+        SuspensionWithResumptionVO resumptionInfo = suspensionRecordService.getSingleResumptionInfo(suspensionRecordRO);
+        return SaResult.ok().setData(resumptionInfo);
+    }
 }
 

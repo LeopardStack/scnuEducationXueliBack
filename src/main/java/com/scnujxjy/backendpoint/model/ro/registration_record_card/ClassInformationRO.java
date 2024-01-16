@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -139,4 +140,6 @@ public class ClassInformationRO {
      * course_schedule中的批次 id
      */
     private Long batchIndex;
+
+    private List<String> classNames;
 }

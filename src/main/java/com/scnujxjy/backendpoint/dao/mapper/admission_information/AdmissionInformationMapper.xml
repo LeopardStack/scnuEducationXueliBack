@@ -4,7 +4,7 @@
     <sql id="commonJoin">
         FROM admission_information ai
         LEFT JOIN personal_info pi ON ai.grade = pi.grade and ai.id_card_number=pi.id_number
-        LEFT JOIN major_information mi ON mi.admission_major_code=ai.major_code
+        LEFT JOIN major_information mi ON mi.admission_major_code=ai.major_code AND mi.grade=ai.grade
         LEFT JOIN college_information ci ON mi.college_id=ci.college_id
         LEFT JOIN teaching_point_information tpi ON tpi.teaching_point_id=mi.teaching_point_id
     </sql>
@@ -19,11 +19,11 @@
         <if test='entity.studyForm != null'>AND ai.study_form = #{entity.studyForm}</if>
         <if test='entity.level != null'>AND ai.level = #{entity.level}</if>
         <if test='entity.name != null'>AND ai.name = #{entity.name}</if>
+        <if test='entity.majorCode != null'>AND ai.major_code = #{entity.majorCode}</if>
         <if test='entity.admissionNumber != null'>AND ai.admission_number = #{entity.admissionNumber}</if>
         <if test='entity.isConfirmed != null'>AND ai.is_confirmed = #{entity.isConfirmed}</if>
 
         <if test='entity.idCardNumber != null'>AND ai.id_card_number = #{entity.idCardNumber}</if>
-
     </sql>
 
     <select id="getAdmissionInformationByAllRoles"

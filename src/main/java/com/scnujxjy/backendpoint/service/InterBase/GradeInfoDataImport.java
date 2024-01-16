@@ -216,48 +216,53 @@ public class GradeInfoDataImport {
                 scoreInformationPO.setRemarks(studentData.get("BZ"));
             }
 
-            synchronized(this) {
-                // 插入之前检查目前的这个实例变量是否已经和数据库中那一条记录是否是摸一样  如果是则不需要插入
-                int ident1 = scoreInformationMapper.countByAttributesExceptId(scoreInformationPO);
-                if(ident1 == 1){
-                    if(update){
-                        // 强制更新
-                        int i = scoreInformationMapper.updateBySelectedAttributes(scoreInformationPO);
-                        if(i == 1){
-                            return 0;
-                        }else if(i == 0){
-                            throw new RuntimeException("发现了一条除成绩部分其他都相同的记录，但是更新失败了 ");
-                        }
-                        else{
-                            throw new RuntimeException("更新成绩失败，更新了多条（大于1） ");
-                        }
-                    }
-                    return 0;
-                }else if(ident1 == 0){
-                    // 没有相同的，查看除了成绩和备注备份是否相同，如果相同则覆盖，不相同则添加一条成绩记录
-                    int ident2 = scoreInformationMapper.countBySelectedAttributes(scoreInformationPO);
-                    if(ident2 == 1){
-                        int i = scoreInformationMapper.updateBySelectedAttributes(scoreInformationPO);
-                        if(i == 1){
-                            return 0;
-                        }else if(i == 0){
-                            throw new RuntimeException("发现了一条除成绩部分其他都相同的记录，但是更新失败了 ");
-                        }
-                        else{
-                            throw new RuntimeException("更新成绩失败，更新了多条（大于1） ");
-                        }
-                    }else if(ident2 == 0){
-                        synchronized(this) {
-                            scoreInformationMapper.insert(scoreInformationPO);
-                            success_insert += 1;
-                        }
-                    }else{
-                        throw new RuntimeException("数据库中存在多条一模一样的成绩记录，除成绩和备注备份其他都一模一样 ");
-                    }
-                }else{
-                    throw new RuntimeException("数据库中存在多条一模一样的成绩记录 ");
-                }
+            int insert = scoreInformationMapper.insert(scoreInformationPO);
+            if(insert <= 0){
+                throw new IllegalArgumentException("数据库插入失败 " + insert);
             }
+            // 暂时注释 不做重复数据判断 否则速度太慢
+//            synchronized(this) {
+//                // 插入之前检查目前的这个实例变量是否已经和数据库中那一条记录是否是摸一样  如果是则不需要插入
+//                int ident1 = scoreInformationMapper.countByAttributesExceptId(scoreInformationPO);
+//                if(ident1 == 1){
+//                    if(update){
+//                        // 强制更新
+//                        int i = scoreInformationMapper.updateBySelectedAttributes(scoreInformationPO);
+//                        if(i == 1){
+//                            return 0;
+//                        }else if(i == 0){
+//                            throw new RuntimeException("发现了一条除成绩部分其他都相同的记录，但是更新失败了 ");
+//                        }
+//                        else{
+//                            throw new RuntimeException("更新成绩失败，更新了多条（大于1） ");
+//                        }
+//                    }
+//                    return 0;
+//                }else if(ident1 == 0){
+//                    // 没有相同的，查看除了成绩和备注备份是否相同，如果相同则覆盖，不相同则添加一条成绩记录
+//                    int ident2 = scoreInformationMapper.countBySelectedAttributes(scoreInformationPO);
+//                    if(ident2 == 1){
+//                        int i = scoreInformationMapper.updateBySelectedAttributes(scoreInformationPO);
+//                        if(i == 1){
+//                            return 0;
+//                        }else if(i == 0){
+//                            throw new RuntimeException("发现了一条除成绩部分其他都相同的记录，但是更新失败了 ");
+//                        }
+//                        else{
+//                            throw new RuntimeException("更新成绩失败，更新了多条（大于1） ");
+//                        }
+//                    }else if(ident2 == 0){
+//                        synchronized(this) {
+//                            scoreInformationMapper.insert(scoreInformationPO);
+//                            success_insert += 1;
+//                        }
+//                    }else{
+//                        throw new RuntimeException("数据库中存在多条一模一样的成绩记录，除成绩和备注备份其他都一模一样 ");
+//                    }
+//                }else{
+//                    throw new RuntimeException("数据库中存在多条一模一样的成绩记录 ");
+//                }
+//            }
             return 0;
         } catch (Exception e) {
             errorData.setId((long) failed_insert);

@@ -986,7 +986,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         return saResult;
     }
 
-    private SaResult getStudentViewLog(VideoStreamRecordPO videoStreamRecordPO) throws IOException, NoSuchAlgorithmException {
+    public SaResult getStudentViewLog(VideoStreamRecordPO videoStreamRecordPO) throws IOException, NoSuchAlgorithmException {
         //学生的学号、姓名、班别、观看时长
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         Date exportStartTime = minusSubtractOneHour(videoStreamRecordPO.getStartTime());

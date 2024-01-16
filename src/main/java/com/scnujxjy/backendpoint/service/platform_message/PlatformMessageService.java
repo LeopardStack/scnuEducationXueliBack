@@ -50,12 +50,12 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
 
     public PlatformMessageVO getUserMsg(String msgType) {
         PlatformMessageVO platformMessageVO = new PlatformMessageVO();
-        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
+        Long userName = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
 
 
         // 获取与用户相关的所有PlatformMessagePO
         List<PlatformMessagePO> platformMessagePOS = baseMapper.selectList(
-                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userId));
+                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userName));
 
         if (msgType.equals(MessageEnum.DOWNLOAD_MSG.getMessageName())) {
             List<Long> relatedMessageIds = platformMessagePOS.stream()
@@ -98,7 +98,7 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
         } else if (msgType.equals(MessageEnum.UPLOAD_MSG.getMessageName())) {
             // 处理上传消息
             List<UserUploadsPO> userUploadsPOS = userUploadsMapper.selectList(new LambdaQueryWrapper<UserUploadsPO>()
-                    .eq(UserUploadsPO::getUserId, userId));
+                    .eq(UserUploadsPO::getUserName, userName));
             // 按照时间顺序 新的时间在前面
             List<UserUploadsPO> sortedList = userUploadsPOS.stream()
                     .sorted(Comparator.comparing(UserUploadsPO::getUploadTime).reversed())
@@ -118,7 +118,7 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
 
             // 使用Page对象执行分页查询
             Page<UserUploadsPO> resultPage = userUploadsMapper.selectPage(page, new LambdaQueryWrapper<UserUploadsPO>()
-                    .eq(UserUploadsPO::getUserId, platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))
+                    .eq(UserUploadsPO::getUserName, platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))
                     .orderByDesc(UserUploadsPO::getUploadTime)  // 按上传时间降序排序
             );
 

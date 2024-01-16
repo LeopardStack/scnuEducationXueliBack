@@ -181,7 +181,7 @@ public class MessageReceiver {
                 String userId = message.getString("userId");
                 log.info("拿到班级数据筛选条件 ");
 
-                PlatformMessagePO platformMessagePO = generateMessage(userId);
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 // 处理pageRO
                 classInformationService.generateBatchClassInformationData(pageRO, filter, userId, platformMessagePO);
 
@@ -194,7 +194,7 @@ public class MessageReceiver {
                 });
                 String userId = message.getString("userId");
                 log.info("拿到缴费数据筛选条件 ");
-                PlatformMessagePO platformMessagePO = generateMessage(userId);
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 // 处理pageRO
                 paymentInfoService.generateBatchPaymentData(pageRO, filter, userId, platformMessagePO);
 
@@ -246,8 +246,8 @@ public class MessageReceiver {
                 AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
                 });
                 String userId = message.getString("userId");
-                log.info("拿到缴费数据筛选条件 ");
-                PlatformMessagePO platformMessagePO = generateMessage(userId);
+                log.info("拿到新生数据导出筛选条件 ");
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 // 处理pageRO
                 admissionInformationService.generateBatchAdmissionData(pageRO, filter, userId, platformMessagePO);
 
@@ -265,19 +265,6 @@ public class MessageReceiver {
                 log.error("确认消息时出现异常: ", ioException);
             }
         }
-    }
-
-    private PlatformMessagePO generateMessage(String username) {
-        PlatformMessagePO platformMessagePO = new PlatformMessagePO();
-        Date generateData = new Date();
-        platformMessagePO.setCreatedAt(generateData);
-        platformMessagePO.setUserId(String.valueOf(platformUserService.getUserIdByUsername(username)));
-        platformMessagePO.setRelatedMessageId(null);
-        platformMessagePO.setIsRead(false);
-        platformMessagePO.setMessageType(MessageEnum.DOWNLOAD_MSG.getMessageName());
-        int insert1 = platformMessageMapper.insert(platformMessagePO);
-        log.info("接收到用户下载消息，正在处理下载内容... " + insert1);
-        return platformMessagePO;
     }
 
 

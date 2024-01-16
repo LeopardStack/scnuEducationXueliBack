@@ -1,90 +1,117 @@
-package com.scnujxjy.backendpoint.paymentInfoImport;
+package com.scnujxjy.backendpoint.util.excelListener;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.TeacherInformationTest.TeacherInformationErrorRecord;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoImportRO;
+import com.scnujxjy.backendpoint.model.vo.core_data.NewStudentPaymentInfoOldSystemVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoOldSystemVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Bean;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Data
-public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImportRO> {
-    public int dataCount = 0;
+public class NewStudentPaymentInfoConvertToOldSystemListener extends AnalysisEventListener<PaymentInfoImportRO> {
+    private AtomicInteger dataCount = new AtomicInteger(0);
 
-    private PaymentInfoMapper paymentInfoMapper;
+    private AdmissionInformationMapper admissionInformationMapper;
 
-    private StudentStatusMapper studentStatusMapper;
 
-    private List<PaymentInfoImportErrorRecord> errorRecords = new ArrayList<>();
-    private List<PaymentInfoOldSystemVO> validRecords = new ArrayList<>();
+    private List<PaymentInfoImportErrorRecord> errorRecords = Collections.synchronizedList(new ArrayList<>());
+    private List<NewStudentPaymentInfoOldSystemVO> validRecords = new CopyOnWriteArrayList<>();
 
     private final String outputDirectory; // 结果文件存储目录
     private final String originalFileName; // 原始文件名
 
-    public PaymentInfoListener(PaymentInfoMapper paymentInfoMapper, StudentStatusMapper studentStatusMapper,
+    private ExecutorService executorService = Executors.newFixedThreadPool(100); // 根据需要调整线程池大小
+    private List<Future<NewStudentPaymentInfoOldSystemVO>> futures = new ArrayList<>();
+
+
+    public NewStudentPaymentInfoConvertToOldSystemListener(AdmissionInformationMapper admissionInformationMapper,
                                String outputDirectory,
                                String originalFileName){
-        this.paymentInfoMapper = paymentInfoMapper;
-        this.studentStatusMapper = studentStatusMapper;
+        this.admissionInformationMapper = admissionInformationMapper;
         this.outputDirectory = outputDirectory;
         this.originalFileName = originalFileName;
     }
 
+    public int getCurrentDataCount() {
+        return dataCount.get();
+    }
 
 
     @Override
     public void invoke(PaymentInfoImportRO data, AnalysisContext context) {
+        futures.add(executorService.submit(() -> processRecord(data)));
+    }
+
+    private NewStudentPaymentInfoOldSystemVO processRecord(PaymentInfoImportRO data) throws Exception {
         try {
 //            log.info("获取一条缴费记录 " + data);
             String idNumber = data.getIdNumber();
             String grade = data.getGrade().replace("级", "");
             data.setGrade(grade);
 
-            StudentStatusPO studentStatusPO = studentStatusMapper.selectOne(new LambdaQueryWrapper<StudentStatusPO>()
-                    .eq(StudentStatusPO::getGrade, grade)
-                    .eq(StudentStatusPO::getIdNumber, idNumber)
+            AdmissionInformationPO admissionInformationPO = admissionInformationMapper.selectOne(new LambdaQueryWrapper<AdmissionInformationPO>()
+                    .eq(AdmissionInformationPO::getGrade, grade)
+                    .eq(AdmissionInformationPO::getIdCardNumber, idNumber)
             );
-            if(studentStatusPO == null){
-                // 没学号
-                PaymentInfoOldSystemVO paymentInfoOldSystemVO = new PaymentInfoOldSystemVO();
-                BeanUtils.copyProperties(data, paymentInfoOldSystemVO);
-                validRecords.add(paymentInfoOldSystemVO);
+            if(admissionInformationPO == null){
+                // 没录取信息
                 throw new IllegalArgumentException("通过年级和身份证号码未找到学生 ");
             }
-            PaymentInfoOldSystemVO paymentInfoOldSystemVO = new PaymentInfoOldSystemVO();
-            BeanUtils.copyProperties(data, paymentInfoOldSystemVO);
-            paymentInfoOldSystemVO.setStudentNumber(studentStatusPO.getStudentNumber());
-//            log.info("导入旧系统的数据 " + paymentInfoOldSystemVO);
-            validRecords.add(paymentInfoOldSystemVO);
+            NewStudentPaymentInfoOldSystemVO newStudentPaymentInfoOldSystemVO = new NewStudentPaymentInfoOldSystemVO();
+            newStudentPaymentInfoOldSystemVO.setShortAdmissionNumber(admissionInformationPO.getShortStudentNumber());
+            newStudentPaymentInfoOldSystemVO.setIdNumber(data.getIdNumber());
+            newStudentPaymentInfoOldSystemVO.setName(data.getName());
+            newStudentPaymentInfoOldSystemVO.setCollege(data.getCollege());
+            newStudentPaymentInfoOldSystemVO.setMajorName(data.getMajorName());
+            newStudentPaymentInfoOldSystemVO.setGrade(grade);
+            newStudentPaymentInfoOldSystemVO.setLevel(data.getLevel());
+            newStudentPaymentInfoOldSystemVO.setClassName(data.getClassName());
+            newStudentPaymentInfoOldSystemVO.setAmount(data.getAmount());
+            newStudentPaymentInfoOldSystemVO.setPayDate(data.getPayDate());
+            newStudentPaymentInfoOldSystemVO.setPayType(data.getPayType());
+            return newStudentPaymentInfoOldSystemVO;
         }catch (Exception e){
             PaymentInfoImportErrorRecord paymentInfoImportErrorRecord = new PaymentInfoImportErrorRecord();
             BeanUtils.copyProperties(data, paymentInfoImportErrorRecord);
             paymentInfoImportErrorRecord.setResult(e.toString());
             errorRecords.add(paymentInfoImportErrorRecord);
         }
-        dataCount += 1;
+        dataCount.incrementAndGet();
+        return null;
     }
 
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
+        for (Future<NewStudentPaymentInfoOldSystemVO> future : futures) {
+            try {
+                NewStudentPaymentInfoOldSystemVO result = future.get();
+                if (result != null) {
+                    validRecords.add(result);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("Error processing record", e);
+            }
+        }
+        executorService.shutdown();
         log.info("总共读入了 " + dataCount + " 条数据");
 
         if (!errorRecords.isEmpty()) {
@@ -92,7 +119,7 @@ public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImport
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
             String currentDateTime = LocalDateTime.now().format(formatter);
             String relativePath = "data_import_error_excel/paymentInformation";
-            String errorFileName = currentDateTime + "_errorImportPaymentInformation.xlsx";
+            String errorFileName = currentDateTime + "_errorNewStudentImportPaymentInformation.xlsx";
 
             // 创建目录
             File directory = new File(relativePath);
@@ -121,7 +148,7 @@ public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImport
         return fileNameWithoutExtension + "_结果.xlsx";
     }
 
-    private void saveToExcelFile(List<PaymentInfoOldSystemVO> data, String directory, String fileName) {
+    private void saveToExcelFile(List<NewStudentPaymentInfoOldSystemVO> data, String directory, String fileName) {
         File directoryFile = new File(directory);
         if (!directoryFile.exists()) {
             boolean dirsCreated = directoryFile.mkdirs();
@@ -132,7 +159,6 @@ public class PaymentInfoListener extends AnalysisEventListener<PaymentInfoImport
         }
 
         String filePath = directory + "/" + fileName;
-        EasyExcel.write(filePath, PaymentInfoOldSystemVO.class).sheet("Sheet1").doWrite(data);
+        EasyExcel.write(filePath, NewStudentPaymentInfoOldSystemVO.class).sheet("Sheet1").doWrite(data);
     }
-
 }

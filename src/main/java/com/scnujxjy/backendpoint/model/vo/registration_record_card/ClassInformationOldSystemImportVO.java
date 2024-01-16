@@ -71,4 +71,7 @@ public class ClassInformationOldSystemImportVO implements Serializable {
 
     @ExcelProperty(index=17, value = "院系代码")
     private String collegeCode;
+
+    @ExcelProperty(index=18, value = "班级人数")
+    private int classStudentCount;
 }

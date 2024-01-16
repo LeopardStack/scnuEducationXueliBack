@@ -15,6 +15,15 @@
         LEFT JOIN teaching_point_information ti ON ti.teaching_point_id = mi.teaching_point_id
     </sql>
 
+    <sql id="commonJoinForNewStudentNotPay">
+        FROM admission_information ai
+        LEFT JOIN personal_info pi1 ON ai.grade = pi1.grade and ai.id_card_number=pi1.id_number
+        LEFT JOIN payment_info pi ON ai.grade = pi.grade AND ai.admission_number = pi.admission_number
+        LEFT JOIN major_information mi ON mi.grade = ai.grade AND mi.admission_major_code = ai.major_code
+        LEFT JOIN college_information ci ON ci.college_id = mi.college_id
+        LEFT JOIN teaching_point_information ti ON ti.teaching_point_id = mi.teaching_point_id
+    </sql>
+
     <sql id="commonFilters">
         <if test='entity.id != null'>
             AND pi.id = #{entity.id}
@@ -27,6 +36,9 @@
         </if>
         <if test='entity.name != null'>
             AND pi.name = #{entity.name}
+        </if>
+        <if test='entity.remark != null'>
+            AND pi.remark = #{entity.remark}
         </if>
         <if test='entity.idCardNumber != null'>
             AND pi.id_card_number = #{entity.idCardNumber}
@@ -145,7 +157,7 @@
     </select>
 
     <select id="getStudentPayInfoByFilter" resultType="com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO">
-        SELECT pi.*, ci.class_name, ss.college, ss.grade, ss.study_form, ss.level
+        SELECT pi.*, ci.class_name, ss.college, ss.grade, ss.study_form, ss.level, ss.major_name
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>
@@ -214,12 +226,12 @@
 
     <select id="getNewStudentPayInfoByFilter"
             resultType="com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO">
-        SELECT pi.*, ti.teaching_point_name, ci.college_name, ai.grade, ai.study_form, ai.level
+        SELECT pi.*, ti.teaching_point_name, ci.college_name, ai.grade, ai.study_form, ai.level, ai.major_name
         <include refid="commonJoinForNewStudent"/>
         WHERE 1=1
         <include refid="commonFiltersForNewStudent"/>
         ORDER BY
-        pi.payment_date DESC
+        pi.payment_date DESC, pi.id ASC
         LIMIT #{l}, #{pageSize}
     </select>
     <select id="getCountNewStudentPayInfoByFilter" resultType="java.lang.Long">
@@ -258,5 +270,34 @@
         <include refid="commonJoinForNewStudent"/>
         WHERE 1=1
         <include refid="commonFiltersForNewStudent"/>
+    </select>
+    <select id="exportNewStudentPayInfoByFilter"
+            resultType="com.scnujxjy.backendpoint.model.vo.core_data.NewStudentPaymentInfoExcelVO">
+        SELECT pi.*, ti.teaching_point_name, ci.college_name, ai.grade, ai.study_form, ai.level, ai.major_name
+        <include refid="commonJoinForNewStudent"/>
+        WHERE 1=1
+        <include refid="commonFiltersForNewStudent"/>
+    </select>
+
+    <select id="exportNewStudentNotPayInfoByFilter"
+            resultType="com.scnujxjy.backendpoint.model.vo.core_data.NewStudentNotPayExcelVO">
+        SELECT ai.*, ti.teaching_point_name, ci.college_name, mi.tuition, mi.payment_type, mi.admission_type,
+        pi1.phone_number, pi1.address as student_address
+        <include refid="commonJoinForNewStudentNotPay"/>
+        WHERE pi.id IS NULL
+        <include refid="commonFiltersForNewStudent"/>
+    </select>
+    <select id="getDistinctNewStudentMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT mi.major_name
+        <include refid="commonJoinForNewStudent"/>
+        WHERE 1=1
+        <include refid="commonFiltersForNewStudent"/>
+    </select>
+    <select id="getDistinctMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT ss.major_name
+
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
     </select>
 </mapper>

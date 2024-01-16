@@ -129,4 +129,13 @@ public class  MajorChangeRecordService extends ServiceImpl<MajorChangeRecordMapp
         // 写入 DBF 文件
         return DbfWriterUtil.writeDbfToByteArray(fields, records);
     }
+
+    /**
+     * 获取单个学生的转专业信息
+     * @param majorChangeRecordROPageRO
+     * @return
+     */
+    public List<MajorChangeRecordVO> getSingleMajorChangeInfos(MajorChangeRecordRO majorChangeRecordROPageRO) {
+        return getBaseMapper().getSingleMajorChangeInfos(majorChangeRecordROPageRO);
+    }
 }

@@ -103,5 +103,12 @@
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
+    <select id="getStudentStatusChangeClassInfoByFilter"
+            resultType="com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO">
+        SELECT ci.class_identifier as value, ci.class_name as label
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
 
 </mapper>

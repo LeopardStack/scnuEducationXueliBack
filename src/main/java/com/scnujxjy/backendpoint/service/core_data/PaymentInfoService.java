@@ -1,44 +1,53 @@
 package com.scnujxjy.backendpoint.service.core_data;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
+import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.inverter.core_data.PaymentInfoInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
-import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInformationSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.core_data.*;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
-import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
-import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -53,6 +62,15 @@ import java.util.Objects;
 public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentInfoPO> implements IService<PaymentInfoPO> {
     @Resource
     private PaymentInfoInverter paymentInfoInverter;
+
+    @Resource
+    private MinioService minioService;
+
+    @Resource
+    private PlatformMessageService platformMessageService;
+
+    @Resource
+    private DownloadMessageMapper downloadMessageMapper;
 
     private RestTemplate restTemplate;
     @Bean
@@ -199,7 +217,7 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
      * @return
      */
     public FilterDataVO allPageQueryPayInfoFilter(PageRO<PaymentInfoFilterRO> paymentInfoFilterROPageRO,
-                                                  AbstractFilter filter) {
+                                                  @NotNull AbstractFilter filter) {
         return filter.filterPayInfo(paymentInfoFilterROPageRO);
     }
 
@@ -249,5 +267,140 @@ public class PaymentInfoService extends ServiceImpl<PaymentInfoMapper, PaymentIn
      */
     public PaymentInformationSelectArgs getNewStudentPaymentInfoArgs(PaymentInfoFilterRO paymentInfoFilterRO, AbstractFilter filter) {
         return filter.getNewStudentPaymentInfoArgs(paymentInfoFilterRO);
+    }
+
+    /**
+     * 批量导出新生缴费数据
+     * @param entity
+     * @param platformMessagePO
+     */
+    @Async
+    public void exportNewStudentFeeData(PaymentInfoFilterRO entity, PlatformMessagePO platformMessagePO, String loginId) {
+        List<NewStudentPaymentInfoExcelVO> paymentInfoVOS = getBaseMapper().exportNewStudentPayInfoByFilter(entity);
+        log.info("导出了 " + paymentInfoVOS.size() + " 条新生缴费数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < paymentInfoVOS.size(); i++) {
+            paymentInfoVOS.get(i).setIndex(i + 1);
+        }
+
+        // 获取所有带有@ExcelProperty注解的字段
+        List<String> includeColumnFiledNames = Arrays.stream(NewStudentPaymentInfoExcelVO.class.getDeclaredFields())
+                .filter(field -> field.getAnnotation(ExcelProperty.class) != null)
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, NewStudentPaymentInfoExcelVO.class)
+                .includeColumnFiledNames(includeColumnFiledNames)  // 只导出带有@ExcelProperty注解的字段
+                .sheet("新生缴费数据")
+                .doWrite(paymentInfoVOS);
+
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + loginId +
+                "_" + currentDateTime + "_新生缴费数据.xlsx";
+
+        // 上传到 Minio
+        boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if (b) {
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.ADMISSION_STUDENTS_PAY_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+            log.info("下载新生缴费数据、下载文件消息插入 " + insert);
+
+            // 获取自增ID
+            platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
+            platformMessageService.getBaseMapper().update(platformMessagePO, new LambdaQueryWrapper<PlatformMessagePO>().
+                    eq(PlatformMessagePO::getId, platformMessagePO.getId()));
+
+            log.info("下载新生缴费信息数据完成 " + insert);
+        }
+    }
+
+    /**
+     * 导出未缴费的新生数据
+     * @param entity
+     * @param platformMessagePO
+     */
+    public void exportNewStudentNotPayData(PaymentInfoFilterRO entity, PlatformMessagePO platformMessagePO, String loginId) {
+        List<NewStudentNotPayExcelVO> paymentInfoVOS = getBaseMapper().exportNewStudentNotPayInfoByFilter(entity);
+        log.info("导出了 " + paymentInfoVOS.size() + " 条新生未缴费数据");
+
+        // 为每个StudentStatusAllVO对象设置序号
+        for (int i = 0; i < paymentInfoVOS.size(); i++) {
+            paymentInfoVOS.get(i).setIndex(i + 1);
+        }
+
+        // 获取所有带有@ExcelProperty注解的字段
+        List<String> includeColumnFiledNames = Arrays.stream(NewStudentNotPayExcelVO.class.getDeclaredFields())
+                .filter(field -> field.getAnnotation(ExcelProperty.class) != null)
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        // 使用 ByteArrayOutputStream 将数据写入到流中
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, NewStudentNotPayExcelVO.class)
+                .includeColumnFiledNames(includeColumnFiledNames)  // 只导出带有@ExcelProperty注解的字段
+                .sheet("新生未缴费数据")
+                .doWrite(paymentInfoVOS);
+
+        // 将流转换为 ByteArrayInputStream
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // 获取文件大小
+        int fileSize = outputStream.size();
+        // 获取桶名和子目录
+        String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
+        String subDirectory = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getSubDirectory();
+
+        // 使用当前日期和时间作为文件名的一部分
+        Date generateData = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+        String currentDateTime = sdf.format(generateData);
+
+        // 构建文件名
+        String fileName = subDirectory + "/" + loginId +
+                "_" + currentDateTime + "_新生未缴费数据.xlsx";
+
+        // 上传到 Minio
+        boolean b = minioService.uploadStreamToMinio(inputStream, fileName, bucketName);
+
+        // 如果上传成功了 则修改数据库中的用户下载消息
+        if (b) {
+            DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+            downloadMessagePO.setCreatedAt(generateData);
+            downloadMessagePO.setFileName(DownloadFileNameEnum.ADMISSION_STUDENTS_NOT_PAY_EXPORT_FILE.getFilename());
+            downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+            downloadMessagePO.setFileSize((long) fileSize);
+            int insert = downloadMessageMapper.insert(downloadMessagePO);
+            log.info("下载新生未缴费数据、下载文件消息插入 " + insert);
+
+            // 获取自增ID
+            platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
+            platformMessageService.getBaseMapper().update(platformMessagePO, new LambdaQueryWrapper<PlatformMessagePO>().
+                    eq(PlatformMessagePO::getId, platformMessagePO.getId()));
+
+            log.info("下载新生未缴费数据完成 " + insert);
+        }
     }
 }

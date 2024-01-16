@@ -10,6 +10,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformat
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.util.MessageSender;
@@ -322,6 +323,32 @@ public class ClassInformationController {
         return SaResult.data(classInformationVOS);
     }
 
+
+
+    /**
+     * 查询学籍异动所需班级信息
+     *
+     * @param classInformationRO 班级信息分页查询参数
+     * @return 班级信息分页查询结果
+     */
+    @PostMapping("/get_student_status_change_class_info")
+    public SaResult pageQueryStudentStatusChangeClassInformation(@RequestBody ClassInformationRO classInformationRO) {
+        // 校验信息
+        if (Objects.isNull(classInformationRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(classInformationRO)) {
+            classInformationRO = new ClassInformationRO();
+        }
+        // 分页查询
+        List<StudentStatusChangeClassInfoVO> classInformationVOPage = classInformationService.pageQueryStudentStatusChangeClassInformation(classInformationRO);
+        // 数据校验
+        if (Objects.isNull(classInformationVOPage)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(classInformationVOPage);
+    }
 
 }
 

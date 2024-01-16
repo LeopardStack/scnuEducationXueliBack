@@ -19,6 +19,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformat
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import lombok.extern.slf4j.Slf4j;
@@ -230,5 +231,9 @@ public class ClassInformationService extends ServiceImpl<ClassInformationMapper,
                     }
                 });
         return classInformationVOS;
+    }
+
+    public List<StudentStatusChangeClassInfoVO> pageQueryStudentStatusChangeClassInformation(ClassInformationRO classInformationRO) {
+        return getBaseMapper().getStudentStatusChangeClassInfoByFilter(classInformationRO);
     }
 }

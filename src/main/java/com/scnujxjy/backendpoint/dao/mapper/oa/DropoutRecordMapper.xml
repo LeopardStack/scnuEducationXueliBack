@@ -66,5 +66,13 @@
         <include refid="commonFilters"/>
         ORDER BY old_grade DESC
     </select>
+    <select id="getSingleDropoutInfos"
+            resultType="com.scnujxjy.backendpoint.model.vo.oa.DropoutRecordWithClassInfoVO">
+        select dr.*, ci.grade, ci.class_name, ci.study_form, ci.level,
+        ci.study_period, ci.college
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
 
 </mapper>

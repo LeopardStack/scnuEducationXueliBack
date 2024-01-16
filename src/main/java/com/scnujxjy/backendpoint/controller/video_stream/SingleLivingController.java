@@ -59,7 +59,7 @@ public class SingleLivingController {
 
     //导出考勤表接口
     @PostMapping("/edit/exportStudentSituation")
-    public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+    public SaResult exportStudentSituation(@RequestParam String courseId, HttpServletResponse response) {
         // 校验参数
         if (StrUtil.isBlank(courseId)) {
             throw dataMissError();

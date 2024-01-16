@@ -54,12 +54,12 @@ public class PlatformMessageTests {
         List<UserUploadsPO> userUploadsPOS = userUploadsMapper.selectList(null);
         if (CollUtil.isNotEmpty(userUploadsPOS)) {
             userUploadsPOS.forEach(userUploadsPO -> {
-                if (Objects.nonNull(userUploadsPO.getUserId())) {
-                    Long userId = platformUserService.getUserIdByUsername(userUploadsPO.getUserId());
+                if (Objects.nonNull(userUploadsPO.getUserName())) {
+                    Long userId = platformUserService.getUserIdByUsername(userUploadsPO.getUserName());
                     if (Objects.nonNull(userId)) {
                         userUploadsMapper.update(null, Wrappers.<UserUploadsPO>lambdaUpdate()
                                 .eq(UserUploadsPO::getId, userUploadsPO.getId())
-                                .set(UserUploadsPO::getUserId, String.valueOf(userId)));
+                                .set(UserUploadsPO::getUserName, String.valueOf(userId)));
                     }
                 }
             });

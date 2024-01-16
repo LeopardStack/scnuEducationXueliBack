@@ -51,7 +51,7 @@ public class AdmissionInformationOldSystemImportVO implements Serializable {
     private String graduationSchool;
 
     @ExcelProperty(value = "原毕业日期", index = 10)
-    private Date graduationDate;
+    private String graduationDate;
 
     @ExcelProperty(value = "联系电话", index = 11)
     private String studentPhoneNumber;
@@ -60,7 +60,7 @@ public class AdmissionInformationOldSystemImportVO implements Serializable {
     private String idCardNumber;
 
     @ExcelProperty(value = "出生日期", index = 13)
-    private Date birthDate;
+    private String birthDate;
 
     @ExcelProperty(value = "通信地址", index = 14)
     private String studentAddress;

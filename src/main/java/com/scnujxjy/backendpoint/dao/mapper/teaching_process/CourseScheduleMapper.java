@@ -10,10 +10,7 @@ import com.scnujxjy.backendpoint.model.bo.teaching_process.ScheduleCoursesInform
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.ScheduleCourseInformationVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.SchedulesVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCourseScheduleVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCoursesVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -650,4 +647,9 @@ public interface CourseScheduleMapper extends BaseMapper<CourseSchedulePO> {
     @Select("SELECT distinct online_platform FROM course_schedule WHERE main_teacher_name = #{mainTeacherName} and main_teacher_id = #{mainTeacherId} ")
     List<String> selectByNameAndWorkNumber(String mainTeacherName, String mainTeacherId);
 
+    List<ScheduleCourseInformationVO> selectAllCoursesInformationWithoutPage(@Param("courseScheduleFilterROPageRO")
+                                                                             CourseScheduleFilterRO courseScheduleFilterROPageRO);
+
+    List<CourseScheduleDetailVO> selectAllCourseScheduleInformationWithoutPage(@Param("courseScheduleFilterROPageRO")
+                                                                               CourseScheduleFilterRO courseScheduleFilterROPageRO);
 }
