@@ -68,6 +68,18 @@ public class SingleLivingController {
         return singleLivingService.exportStudentSituation(courseId,response);
     }
 
+
+
+    @PostMapping("/edit/exportAllStudentSituation")
+    public void exportAllStudentSituation(@RequestParam String[] courseId, HttpServletResponse response) {
+        // 校验参数
+        if (courseId.length==0) {
+            throw dataMissError();
+        }
+        singleLivingService.exportAllCourseSituation(courseId,response);
+        return;
+    }
+
     /**
      * 设置直播间是否回放
      *

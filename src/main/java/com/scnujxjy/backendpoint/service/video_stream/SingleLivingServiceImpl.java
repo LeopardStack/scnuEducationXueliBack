@@ -915,6 +915,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             List<AttendanceVO> attendanceVOList = new ArrayList<>();
             for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                 AttendanceVO attendanceVO = new AttendanceVO();
+                attendanceVO.setGrade(schedulePO.getGrade());
+                attendanceVO.setLevel(schedulePO.getLevel());
+                attendanceVO.setMajorName(schedulePO.getMajorName());
+                attendanceVO.setStudyForm(schedulePO.getStudyForm());
+                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
@@ -968,6 +973,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : noAttendList) {
                 AttendanceVO attendanceVO = new AttendanceVO();
+                attendanceVO.setGrade(schedulePO.getGrade());
+                attendanceVO.setLevel(schedulePO.getLevel());
+                attendanceVO.setMajorName(schedulePO.getMajorName());
+                attendanceVO.setStudyForm(schedulePO.getStudyForm());
+                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
@@ -998,6 +1009,161 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
+    @Override
+    public void exportAllCourseSituation(String[] courseId, HttpServletResponse response){
+
+        try {
+            List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
+            for (String id : courseId) {
+                //获取该排课表的频道直播间id
+                CourseSchedulePO schedulePO = courseScheduleMapper.selectById(id);
+                if (StrUtil.isBlank(schedulePO.getOnlinePlatform())) {
+                    log.error("该排课表还未创建直播间");
+                    return;
+                }
+
+                VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
+                //开始和结束时间应该是该排课的，而不是直播记录表的。
+                String teachingTime = schedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
+                String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));//获取14:30, 2:00
+                String courseEndTime = teachingTime.substring(teachingTime.indexOf("—") + 1);//获取17:00, 5:00
+
+                String datePattern = "yyyy-MM-dd";
+                SimpleDateFormat sdf1 = new SimpleDateFormat(datePattern);
+                String pattern = "yyyy-MM-dd HH:mm";
+                SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+
+                videoStreamRecordPO.setStartTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseStartTime));
+                videoStreamRecordPO.setEndTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseEndTime));
+
+                SaResult channelCardPush = getStudentViewLog(videoStreamRecordPO);
+                List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
+                if (viewLogResponseList.size() == 0) {
+                    log.error("该排课时间段内没有学生观看数据，请联系管理员");
+                    return;
+                }
+
+                log.info("学生观看数据获取成功" + viewLogResponseList);
+                //将观看数据根据param1字段聚合后playDuration相加，再去重。
+                Map<String, List<ViewLogResponse>> groupByParam1 = viewLogResponseList.stream()
+                        .collect(Collectors.groupingBy(ViewLogResponse::getParam1));
+
+                // 对每个学生分组做操作，有的学生一场课多次进入，观看时长需要累加
+                Map<String, Integer> viewResult = new HashMap<>();
+                for (Map.Entry<String, List<ViewLogResponse>> entry : groupByParam1.entrySet()) {
+                    int totalPlayDuration = entry.getValue().stream()
+                            .mapToInt(ViewLogResponse::getPlayDuration)
+                            .sum();
+                    viewResult.put(entry.getKey(), totalPlayDuration);
+                }
+                //这样就获取到了每个学生的观看时长数据viewResult。key是身份证号，value是时长
+
+                //去重后的观众观看数据，同时对观看时长更新下
+                List<ViewLogResponse> distinctViewLogResponse = groupByParam1.values()
+                        .stream()
+                        .map(subList -> subList.get(0))
+                        .collect(Collectors.toList());
+                for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
+                    viewLogResponse.setPlayDuration(viewResult.get(viewLogResponse.getParam1()));
+                }
+
+                //考勤导出attendanceVOList,拥有出勤的所有学生数据
+                List<AttendanceVO> attendanceVOList = new ArrayList<>();
+                for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
+                    AttendanceVO attendanceVO = new AttendanceVO();
+                    attendanceVO.setGrade(schedulePO.getGrade());
+                    attendanceVO.setLevel(schedulePO.getLevel());
+                    attendanceVO.setMajorName(schedulePO.getMajorName());
+                    attendanceVO.setStudyForm(schedulePO.getStudyForm());
+                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+
+                    attendanceVO.setName(viewLogResponse.getParam2());
+                    attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
+                    attendanceVO.setAttendance("是");
+                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), schedulePO.getGrade());
+                    if (studentStatusVO != null) {
+                        attendanceVO.setCode(studentStatusVO.getStudentNumber());
+                        QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
+                        queryWrapper.eq("class_identifier", studentStatusVO.getClassIdentifier());
+                        List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
+                        if (classInformationPOS.size() != 0) {
+                            attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                        }
+                    }
+                    attendanceVOList.add(attendanceVO);
+                }
+                Collections.sort(attendanceVOList, Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
+                log.info("获取所有观看的学生数据并降序排序完成" + attendanceVOList);
+
+                //拿到直播间所有学生白名单数据whiteLists
+                List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
+                for (int i = 1; i < 10; i++) {
+                    LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+                    liveChannelWhiteListRequest.setChannelId(videoStreamRecordPO.getChannelId())
+                            .setRank(1)
+                            .setCurrentPage(i)
+                            .setPageSize(1000);
+                    LiveChannelWhiteListResponse liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+                    if (liveChannelWhiteListResponse.getContents().size() != 0) {
+                        List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+                        whiteLists.addAll(contents);
+                    } else {
+                        break;
+                    }
+                }
+
+                List<LiveChannelWhiteListResponse.ChannelWhiteList> noAttendList = new ArrayList<>();
+                for (LiveChannelWhiteListResponse.ChannelWhiteList channel : whiteLists) {
+                    boolean found = false;
+                    for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
+                        // 假设有一个名为id的属性用于比较
+                        if (channel.getPhone().equals(viewLogResponse.getParam1())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        noAttendList.add(channel);
+                    }
+                }
+                //这样就拿到了没有出勤的学生数据noAttendList
+
+                for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : noAttendList) {
+                    AttendanceVO attendanceVO = new AttendanceVO();
+                    attendanceVO.setGrade(schedulePO.getGrade());
+                    attendanceVO.setLevel(schedulePO.getLevel());
+                    attendanceVO.setMajorName(schedulePO.getMajorName());
+                    attendanceVO.setStudyForm(schedulePO.getStudyForm());
+                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+
+                    attendanceVO.setName(channelWhiteList.getName());
+                    attendanceVO.setPlayDuration("0");
+                    attendanceVO.setAttendance("否");
+                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), schedulePO.getGrade());
+                    if (studentStatusVO != null) {
+                        attendanceVO.setCode(studentStatusVO.getStudentNumber());
+                        QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
+                        queryWrapper.eq("class_identifier", studentStatusVO.getClassIdentifier());
+                        List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
+                        if (classInformationPOS.size() != 0) {
+                            attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                        }
+                    }
+                    attendanceVOList.add(attendanceVO);
+                }
+
+                exportAttendanceVOList.addAll(attendanceVOList);
+            }
+
+            downloadExportFile(response, exportAttendanceVOList);
+
+        }catch (Exception e){
+            e.printStackTrace();
+            log.error("");
+        }
+
+    }
+
 
     public SaResult getStudentViewLog(VideoStreamRecordPO videoStreamRecordPO) throws IOException, NoSuchAlgorithmException {
         //学生的学号、姓名、班别、观看时长

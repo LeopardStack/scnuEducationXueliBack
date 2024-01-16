@@ -44,6 +44,8 @@ public interface SingleLivingService {
 
     SaResult exportStudentSituation(String courseId, HttpServletResponse response);
 
+    void exportAllCourseSituation(String[] courseId, HttpServletResponse response);
+
     List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
     SaResult getChannelCardPush(ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException;
