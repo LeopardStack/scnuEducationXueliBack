@@ -27,6 +27,9 @@ public class TestNewStudentMajorChange {
     @Resource
     private MajorChangeRecordMapper majorChangeRecordMapper;
 
+    /**
+     * 新生转专业数据同步
+     */
     @Test
     public void test1(){
         String remark = "新生转专业";
@@ -40,9 +43,9 @@ public class TestNewStudentMajorChange {
         HashMap<String, Integer> majorChangeCountByYear = new HashMap<>();
 
 
-        for(int insertGrade = 2023; insertGrade >= 2010; insertGrade--){
+        for(int insertGrade = 2024; insertGrade >= 2010; insertGrade--){
             String grade = String.valueOf(insertGrade-1);
-            if(insertGrade == 2023){
+            if(insertGrade == 2024){
                 grade = "-1";
             }
             ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(Integer.parseInt(grade));
@@ -102,7 +105,7 @@ public class TestNewStudentMajorChange {
                             .eq(MajorChangeRecordPO::getRemark, "新生转专业")
                     );
                     if(i > 0){
-                        log.error("该新生转专业记录已经存在了 ");
+                        log.error("该新生转专业记录已经存在了 " + majorChangeRecordPO);
                     }else{
                         int insert = majorChangeRecordMapper.insert(majorChangeRecordPO);
                         if(insert > 0){

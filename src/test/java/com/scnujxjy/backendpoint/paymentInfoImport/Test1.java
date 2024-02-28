@@ -38,8 +38,8 @@ public class Test1 {
      */
     @Test
     public void test1() {
-        String directoryPath = "src/main/resources/data/缴费信息导入/老生";
-        String outputDirectoryPath = "src/main/resources/data/缴费信息结果";
+        String directoryPath = "src/main/resources/data/缴费信息结果/旧生收费";
+        String outputDirectoryPath = "src/main/resources/data/缴费信息结果/旧生收费/结果";
         File directory = new File(directoryPath);
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".xlsx"));
 

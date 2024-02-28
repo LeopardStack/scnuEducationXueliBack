@@ -130,7 +130,7 @@ public class StudentStatusChangeDataImport {
                             .eq(MajorChangeRecordPO::getSerialNumber, index)
                     );
                     if(i > 0){
-                        log.info("已重复，不必导入");
+                        log.info("已重复，不必导入 " + hashMap);
                     }else{
                         int insert = majorChangeRecordMapper.insert(majorChangeRecordPO);
                         if(insert <= 0){

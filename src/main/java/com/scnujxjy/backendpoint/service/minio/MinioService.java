@@ -1,24 +1,37 @@
 package com.scnujxjy.backendpoint.service.minio;
 
+import com.scnujxjy.backendpoint.model.bo.es.FileDocumentBO;
+import com.scnujxjy.backendpoint.service.es.ElasticsearchService;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.http.Method;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +41,9 @@ public class MinioService {
 
     private final MinioClient minioClient;
     private final String bucketName;
+
+    @Resource
+    private ElasticsearchService elasticsearchService;
 
     @Autowired
     public MinioService(MinioClient minioClient, @Value("${minio.bucketName}") String bucketName) {
@@ -600,6 +616,44 @@ public class MinioService {
         }
     }
 
+    public long getEpochMilliFromTemporalAccessor(TemporalAccessor temporal) {
+        long seconds = temporal.getLong(ChronoField.INSTANT_SECONDS);
+        long nano = temporal.getLong(ChronoField.NANO_OF_SECOND);
+        return seconds * 1000 + nano / 1_000_000;
+    }
+    public void processFilesFromBucket(String bucketName, String creator) throws Exception {
+        Iterable<Result<Item>> items = minioClient.listObjects(ListObjectsArgs.builder().bucket(bucketName).build());
+        for (Result<Item> itemResult : items) {
+            Item item = itemResult.get();
+            String fileName = item.objectName();
+            String fileExtension = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf(".") + 1) : "unknown";
+
+            // 构造 Minio 文件的 URL
+            String fileUrl = bucketName + "/" + fileName;
+
+            try (InputStream stream = minioClient.getObject(GetObjectArgs.builder().bucket(bucketName).object(fileName).build())) {
+                long modifyTime = getEpochMilliFromTemporalAccessor(item.lastModified());
+
+
+                FileDocumentBO fileDocument = FileDocumentBO.builder()
+                        .id(fileUrl) // 或者使用其他逻辑生成唯一 ID
+                        .fileName(fileName)
+                        .type(fileExtension)
+                        .createBy(creator) // 你可能需要从其他地方获取这个值
+                        .createTime(System.currentTimeMillis())
+                        .minioURL(fileUrl) // 使用构造的 Minio URL
+                        .modifyTime(modifyTime) // 使用获取的修改时间
+                        .build();
+
+                elasticsearchService.indexFile(fileDocument, stream);
+            }
+        }
+    }
+
+
+
+
 
     // 其他 Minio 操作方法可以在这里添加
+
 }

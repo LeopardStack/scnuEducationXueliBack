@@ -9,7 +9,7 @@ run:
 spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
+    time-zone: Asia/Shanghai   # 不设置成这个 会有夏令时的影响 导致时间不对
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 
@@ -47,12 +47,21 @@ spring:
   ## mysql
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://124.71.34.208:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
+    url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: scnu_xueli_admin
+    password: SCNUXueli2024@
     hikari:
       maximum-pool-size: 1000 # 设置最大连接数为1000
       idleTimeout: 300000  # set to 5 minutes for example
+
+  elasticsearch:
+    uris: 124.71.34.208
+    port: 9200
+    username: elastic
+    password: elastic
+    scheme: http
+    index_name: es_xueli_index
+    pipelineName: es_xueli_pipeline
 
 #配置日志
 mybatis-plus:
@@ -60,12 +69,15 @@ mybatis-plus:
   type-aliases-package: com.scnujxjy.backendpoint.dao.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
-#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 # 设置日志输出
 logging:
-  config: src/main/resources/logback.xml
+#  config: src/main/resources/logback.xml
+  config: logback.xml
+  level:
+    org.apache.ibatis: DEBUG
+    com.scnujxjy.backendpoint.dao.mapper: DEBUG
 
 
 minio:
@@ -78,7 +90,7 @@ minio:
 
 sa-token:
   # token名称 (同时也是cookie名称)
-  token-name: fxl_token
+  token-name: xl_token
   # token有效期，单位s 默认30天, -1代表永不过期
   timeout: 3000
   # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
@@ -92,7 +104,24 @@ sa-token:
   # 是否输出操作日志
   is-log: false
 
+# 开启 springboot exporter 能够被普罗米修斯监控到
+management:
+  server:
+    port: 10024 # 管理端口
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus" # 只在管理端口上暴露 Prometheus 端点
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
 wechat:
   request-url: https://api.weixin.qq.com/sns/jscode2session
   app-secret: 0ec180d59b9b076454e09a4fa4eff865
   app-id: wxf06ee34ae8ba2687
+# 敏感信息进行加密的秘钥
+info:
+  secret_key: 97b4464a57277c90d1a84827a3380d48
+  init_vector: bf78261356848f05bd2ca5262d5f82dd

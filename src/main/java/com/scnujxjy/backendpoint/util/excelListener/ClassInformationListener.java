@@ -60,7 +60,8 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
     private int countOfClassOpen = 0;
     private int countOfClassNotOpen = 0;
 
-    private Map<String, List<String>> collegeClassNames = new HashMap<>();
+    private Map<String, List<String>> collegeClassNames = new HashMap<>(); // 记录 不同学院 不同层次 不同专业名称 是否 有相同的班级
+    private Map<String, List<String>> collegeClassNamesForClassNumber = new HashMap<>(); // 记录 不同学院 的班级个数
 
     private int allCount = 0; // 开班人数
     private int classNotOpenAllCount = 0; // 不开班人数
@@ -125,8 +126,13 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
                 classInformationOldSystemImportVO.setCollege(collegeName);
 
                 // 设置班名时 同一个学院的班 需要递增 除了校内班 因为校内班只有一个
-                if (!collegeClassNames.containsKey(collegeName)) {
-                    collegeClassNames.put(collegeName, new ArrayList<>());
+                // 准确的说 应该是 同一个学院 同一个学习形式 同一个专业
+                String key = collegeName + "_" + majorInformationPO.getMajorName() + "_" + majorInformationPO.getLevel();
+                if (!collegeClassNames.containsKey(key)) {
+                    collegeClassNames.put(key, new ArrayList<>());
+                }
+                if(!collegeClassNamesForClassNumber.containsKey(collegeName)){
+                    collegeClassNamesForClassNumber.put(collegeName, new ArrayList<>());
                 }
                 String alternativeClassName = teachingPointInformationPO.getAlias();
 
@@ -147,6 +153,8 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
                 int numClasses;
                 allCount += studentCount;
 
+
+
                 if (studentCount <= 50) {
                     // 如果总学生数不超过 50，至少设一个班
                     numClasses = 1;
@@ -157,13 +165,15 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
                     // 如果剩余的学生数不超过 50，按正常比例创建班级
                     numClasses = studentCount / 150;
                 }
+                // 2024 级不分班 就按照教学点来
+                numClasses = 1;
 
                 for(int i = 0; i < numClasses; i++){
                     ClassInformationOldSystemImportVO temp = new ClassInformationOldSystemImportVO();
                     BeanUtils.copyProperties(classInformationOldSystemImportVO, temp);
-                    String finalClassName = checkClassName(alternativeClassName, temp.getCollege());
+                    String finalClassName = checkClassName(alternativeClassName, key, collegeName);
                     temp.setClassName(finalClassName);
-                    int index = collegeClassNames.get(collegeName).indexOf(finalClassName);
+                    int index = collegeClassNamesForClassNumber.get(collegeName).lastIndexOf(finalClassName);
                     String classNumber = String.format("%02d", (index + 1));
                     temp.setClassNumber(classNumber);
 
@@ -221,7 +231,7 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
         throw new IllegalArgumentException("异常的层次 " + level);
     }
 
-    public String checkClassName(String alternativeClassName, String collegeNameKey){
+    public String checkClassName(String alternativeClassName, String collegeNameKey, String collegeName){
         List<String> classNames = collegeClassNames.get(collegeNameKey);
         String resultClassName = alternativeClassName;
         boolean contains = classNames.contains(resultClassName);
@@ -236,6 +246,7 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
             contains = classNames.contains(resultClassName);
         }
         collegeClassNames.get(collegeNameKey).add(resultClassName);
+        collegeClassNamesForClassNumber.get(collegeName).add(resultClassName);
         return resultClassName;
     }
 
@@ -263,7 +274,7 @@ public class ClassInformationListener extends AnalysisEventListener<ClassInforma
 
             String currentDateTime = LocalDateTime.now().format(formatter);
             String relativePath = "data_import_error_excel/旧系统导入所需数据";
-            String errorFileName = "2024" + "_开班数据.xlsx";
+            String errorFileName = "2024" + "_不分班开班数据.xlsx";
 
             // 检查目录是否存在，不存在则创建
             File directory = new File(relativePath);

@@ -420,6 +420,7 @@ public class DataImportScnuOldSys {
                 sql = "SELECT * FROM luqudata" +" ROWS " + from + " TO " + to;
             }
             MyThread thread = new MyThread(sql);
+            MyThread.functionSelect = 0;
             threads.add(thread);
         }
 

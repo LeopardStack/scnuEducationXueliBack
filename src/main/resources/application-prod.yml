@@ -48,6 +48,15 @@ spring:
       leakDetectionThreshold: 60000  # set to 60 seconds for example
       idleTimeout: 300000  # set to 5 minutes for example
 
+  elasticsearch:
+    uris: 113.108.140.170
+    port: 9200
+    username: elastic
+    password: elastic
+    scheme: http
+    index_name: es_xueli_index
+    pipelineName: es_xueli_pipeline
+
 #配置日志
 mybatis-plus:
   mapper-locations: classpath*:mappers/**/*xml

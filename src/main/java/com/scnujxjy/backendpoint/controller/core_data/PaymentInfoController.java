@@ -461,12 +461,32 @@ public class PaymentInfoController {
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null) {
+                    paymentInfoFilterROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
+                    boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出缴费数据成功");
+                    }
+                }
 
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+                } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                    || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSION_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
                 if (send) {
                     return SaResult.ok("导出缴费数据成功");
+                }
+            }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                // 教学点管理员
+                paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getAlias());
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+                if(platformMessagePO != null) {
+                    boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
+                    if (send) {
+                        return SaResult.ok("导出缴费数据成功");
+                    }
                 }
             }
         }
@@ -508,7 +528,7 @@ public class PaymentInfoController {
                     return SaResult.ok("导出新生缴费数据成功，请在消息中查看");
                 }
             }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-                // 继续教育学院管理员
+                // 教学点管理员
                 paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 if(platformMessagePO != null){

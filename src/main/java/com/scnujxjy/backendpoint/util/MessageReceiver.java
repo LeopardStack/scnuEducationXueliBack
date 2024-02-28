@@ -193,7 +193,7 @@ public class MessageReceiver {
                 AbstractFilter filter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
                 });
                 String userId = message.getString("userId");
-                log.info("拿到缴费数据筛选条件 ");
+                log.info("拿到缴费数据筛选条件 " + pageRO);
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 // 处理pageRO
                 paymentInfoService.generateBatchPaymentData(pageRO, filter, userId, platformMessagePO);

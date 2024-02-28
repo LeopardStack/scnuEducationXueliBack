@@ -31,7 +31,7 @@ public class MyThread extends Thread{
     public void run() {
         try {
             long startTime1 = System.nanoTime();
-            log.info(query + " " + Thread.currentThread().getName());
+//            log.info(query + " " + Thread.currentThread().getName());
             if(functionSelect == 0) {
                 dataDIY = scnuxljyDatabase.getDataDIY(query);
             }
@@ -62,7 +62,7 @@ public class MyThread extends Thread{
 
             }
 
-            log.info(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
+//            log.info(Thread.currentThread().getName() + " 记录总条目 " + dataDIY.size() + "\n" + dataDIY.get(0));
 
             // 获取结束时间
             long endTime1 = System.nanoTime();
@@ -71,7 +71,7 @@ public class MyThread extends Thread{
 
             // 转换为秒并打印
             double durationInSeconds1 = duration1 / 1_000_000_000.0;
-            log.info(Thread.currentThread().getName() + " 数据处理时间：" + durationInSeconds1 + " 秒");
+//            log.info(Thread.currentThread().getName() + " 数据处理时间：" + durationInSeconds1 + " 秒");
         }catch (Exception e){
             logger.error(e.toString());
         }finally {

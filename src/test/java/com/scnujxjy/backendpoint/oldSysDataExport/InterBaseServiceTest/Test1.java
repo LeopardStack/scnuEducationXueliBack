@@ -59,7 +59,7 @@ public class Test1 {
     @Test
     public void test0_1(){
         // 测试两个系统之间的差异
-        oldDataSynchronize.calculateStatistics();
+        oldDataSynchronize.calculateStatistics(true);
     }
 
     @Test
@@ -1120,6 +1120,6 @@ public class Test1 {
 
         log.info("新旧系统校验同步结束");
         log.info("开始记录校验同步之后的新旧系统的数据差异");
-        oldDataSynchronize.calculateStatistics();
+        oldDataSynchronize.calculateStatistics(false);
     }
 }

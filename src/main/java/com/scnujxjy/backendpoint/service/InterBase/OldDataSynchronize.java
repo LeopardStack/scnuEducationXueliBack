@@ -17,6 +17,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMa
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.ScoreInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeRecordRO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.util.DataImportScnuOldSys;
 import com.scnujxjy.backendpoint.util.SCNUXLJYDatabase;
 import io.minio.UploadObjectArgs;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 
@@ -39,7 +41,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 800;
+    public static final int CONSUMER_COUNT = 400;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -246,7 +248,7 @@ public class OldDataSynchronize {
                     int delete4 = originalEducationInfoMapper.delete(new LambdaQueryWrapper<OriginalEducationInfoPO>().
                             eq(OriginalEducationInfoPO::getGrade, i + ""));
                     if(delete1 > 0){
-                        log.info("已删除所有学籍数据 " + i);
+                        log.info("已删除所有学籍数据 " + i + " 年的记录 " + delete1);
                     }
                 }
 
@@ -434,7 +436,8 @@ public class OldDataSynchronize {
         if(updateAny){
             // 如果这个标志打开 意味着全体更新
             int delete = dropoutRecordMapper.delete(null);
-            int delete1 = majorChangeRecordMapper.deleteDiy(new MajorChangeRecordRO().setRemark("新生转专业"));
+            int delete1 = majorChangeRecordMapper.delete(new LambdaQueryWrapper<MajorChangeRecordPO>()
+                    .ne(MajorChangeRecordPO::getRemark, "新生转专业"));
             int delete2 = resumptionRecordMapper.delete(null);
             int delete3 = retentionRecordMapper.delete(null);
             int delete4 = suspensionRecordMapper.delete(null);
@@ -776,7 +779,7 @@ public class OldDataSynchronize {
      * 统计新旧系统 学籍信息、成绩信息、教学计划、班级信息、成绩信息的异同
      * @return
      */
-    public ArrayList<String> calculateStatistics(){
+    public ArrayList<String> calculateStatistics(boolean ident){
         log.info("开始校验新旧两个系统的核心数据差异");
         ArrayList<String> dataCheckLogs = new ArrayList<>();
 
@@ -791,7 +794,11 @@ public class OldDataSynchronize {
         String className = this.getClass().getSimpleName();
 
         String formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统学籍数据的校验");
-        dataCheckLogs.add(formattedMsg);
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
 
         int startYear = 2023;
         int endYear = 2010;
@@ -809,48 +816,85 @@ public class OldDataSynchronize {
                 allEqual = false;
                 formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年旧系统学历教育生数量 " + value_xl + " 新系统学历教育生数量 " +
                         integer + ((int)value_xl == integer ? "  一致" : "  不同"));
-                dataCheckLogs.add(formattedMsg);
+                if(ident){
+                    log.info(formattedMsg);
+                }else{
+                    dataCheckLogs.add(formattedMsg);
+                }
+
             }
 
         }
 
         if(allEqual){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的学籍数据完全相等");
-            dataCheckLogs.add(formattedMsg);
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
         }
 
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统班级信息对比");
-        dataCheckLogs.add(formattedMsg);
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
 
         Integer new_class_count = classInformationMapper.selectCount(null);
         int old_class_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM classdata where bshi not like'WP%';");
         if(new_class_count != old_class_count){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 不同");
-            dataCheckLogs.add(formattedMsg);
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
         }else{
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育班级数量 " + new_class_count + " 旧系统学历教育班级数量 " + old_class_count + " 相同");
-            dataCheckLogs.add(formattedMsg);
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
         }
 
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统缴费数据对比");
-        dataCheckLogs.add(formattedMsg);
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
 
         for(int payYear = 2023; payYear >= 2000; payYear--){
             Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
             int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
             if(new_pay_count != old_pay_count){
                 formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 不同");
-                dataCheckLogs.add(formattedMsg);
+                if(ident){
+                    log.info(formattedMsg);
+                }else{
+                    dataCheckLogs.add(formattedMsg);
+                }
             }else{
                 formattedMsg = String.format(payYear +"年 [%s] [%s.%s] %s", timeStamp, className, methodName, "新系统学历教育缴费数据 " + new_pay_count + " 旧系统学历教育缴费数据 " + old_pay_count + " 相同");
-                dataCheckLogs.add(formattedMsg);
+                if(ident){
+                    log.info(formattedMsg);
+                }else{
+                    dataCheckLogs.add(formattedMsg);
+                }
             }
         }
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统教学计划对比");
-        dataCheckLogs.add(formattedMsg);
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
 
         startYear = 2023;
         endYear = 2015;
@@ -868,20 +912,32 @@ public class OldDataSynchronize {
                 formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i +
                         " 年，新系统学历教育教学计划数量 " + new_teachingPlans_count1 + " 旧系统学历教育教学计划数量 " +
                         old_teachingPlans_count1 + " 两者不同");
-                dataCheckLogs.add(formattedMsg);
+                if(ident){
+                    log.info(formattedMsg);
+                }else{
+                    dataCheckLogs.add(formattedMsg);
+                }
             }
         }
         if(allEqual){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的教学计划完全相等");
-            dataCheckLogs.add(formattedMsg);
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
         }
 
 
         formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统成绩数量对比");
-        dataCheckLogs.add(formattedMsg);
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
 
         startYear = 2023;
-        endYear = 2020;
+        endYear = 2015;
         allEqual = true;
         for(int i = startYear; i >= endYear; i--){
             Integer new_gradeInformation_count = scoreInformationMapper.selectCount(new LambdaQueryWrapper<ScoreInformationPO>().
@@ -889,24 +945,148 @@ public class OldDataSynchronize {
 
             int old_gradeInformation_count = (int) scnuxljyDatabase.getValue(
                     "select count(*) from RESULT_VIEW_FULL where nj='" + i + "' and bshi not LIKE 'WP%';");
-            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年，新系统学历教育成绩数量 " + new_gradeInformation_count + " 旧系统学历教育教学计划数量 " +
+            formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, i + " 年，新系统学历教育成绩数量 " + new_gradeInformation_count + " 旧系统学历教育成绩数量 " +
                     old_gradeInformation_count + (new_gradeInformation_count != old_gradeInformation_count ? " 两者不同" :
                     " 两者相同"));
-            dataCheckLogs.add(formattedMsg);
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
             if(new_gradeInformation_count != old_gradeInformation_count){
                 allEqual = false;
             }
         }
         if(allEqual){
             formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统 " + startYear + " 年到 " + endYear + " 年的成绩数据完全相等");
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
+        }
+
+        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统学籍异动数量对比");
+        if(ident){
+            log.info(formattedMsg);
+        }else{
             dataCheckLogs.add(formattedMsg);
         }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        String currentDateTime = LocalDateTime.now().format(formatter);
-        String relativePath = "data_import_error_excel/statistics/";
-        String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
-        exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
-        log.info("校验新旧两个系统的核心数据差异完毕，已写入 Minio 日志");
+        DataImportScnuOldSys dataImportScnuOldSys = new DataImportScnuOldSys();
+        ArrayList<HashMap<String, String>> studentStatusData = dataImportScnuOldSys.getStudentStatusChangeData();
+        formattedMsg = String.format("旧系统中总学籍异动数量 %s", studentStatusData.size());
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+        // 使用流来统计 name 属性值为 "复学" 的记录数量
+        long count = studentStatusData.stream()
+                .filter(map -> "复学".equals(map.get("CTYPE")))
+                .count();
+
+        formattedMsg = String.format("旧系统中 '复学' 的学籍异动数量: %s\n" +
+                "新系统中 复学 的学籍异动数据 %s", count, resumptionRecordMapper.selectCount(null));
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+
+        long count2 = studentStatusData.stream()
+                .filter(map -> "转学".equals(map.get("CTYPE")))
+                .count();
+
+        formattedMsg = String.format("旧系统中 转专业 的学籍异动数量: %s\n" +
+                "新系统中 转专业 的学籍异动数据 %s", count2,
+                majorChangeRecordMapper.selectCount(new LambdaQueryWrapper<MajorChangeRecordPO>()
+                        .ne(MajorChangeRecordPO::getRemark, "新生转专业")));
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+
+        long count3 = studentStatusData.stream()
+                .filter(map -> "休学".equals(map.get("CTYPE")))
+                .count();
+
+        formattedMsg = String.format("旧系统中 休学 的学籍异动数量: %s\n" +
+                "新系统中 休学 的学籍异动数据 %s", count3, suspensionRecordMapper.selectCount(null));
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+
+        long count4 = studentStatusData.stream()
+                .filter(map -> "退学".equals(map.get("CTYPE")))
+                .count();
+
+        formattedMsg = String.format("旧系统中 退学 的学籍异动数量: %s\n" +
+                "新系统中 退学 的学籍异动数据 %s", count4, dropoutRecordMapper.selectCount(null));
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+
+        long count5 = studentStatusData.stream()
+                .filter(map -> "留级".equals(map.get("CTYPE")))
+                .count();
+
+        formattedMsg = String.format("旧系统中 留级 的学籍异动数量: %s\n" +
+                "新系统中 留级 的学籍异动数据 %s", count5, retentionRecordMapper.selectCount(null));
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+
+        formattedMsg = String.format("[%s] [%s.%s] %s", timeStamp, className, methodName, "新旧系统新生转专业数量对比");
+        if(ident){
+            log.info(formattedMsg);
+        }else{
+            dataCheckLogs.add(formattedMsg);
+        }
+        for(int insertGrade = 2024; insertGrade >= 2010; insertGrade--){
+            String grade = String.valueOf(insertGrade-1);
+            if(insertGrade == 2024){
+                grade = "-1";
+            }
+            ArrayList<HashMap<String, String>> studentLuqus = getStudentLuqus(Integer.parseInt(grade));
+
+            // 使用 stream 过滤 CHANGEZYMC 为 null 的数据
+            ArrayList<HashMap<String, String>> filteredList = studentLuqus.stream()
+                    .filter(map -> (map.get("CHANGEZYMC") != null && !map.get("CHANGEZYMC").equalsIgnoreCase("NULL")) ||
+                            (map.get("CHANGETIME") != null && !map.get("CHANGETIME").equalsIgnoreCase("NULL")) ||
+                            (map.get("CHANGEXXXS") != null && !map.get("CHANGEXXXS").equalsIgnoreCase("NULL")))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            formattedMsg = String.format(insertGrade + "年，旧系统中 新生转专业 的学籍异动数量: %s\n" +
+                    "新系统中 新生转专业 的学籍异动数据 %s", filteredList.size(), majorChangeRecordMapper.
+                    selectCount(new LambdaQueryWrapper<MajorChangeRecordPO>()
+                            .eq(MajorChangeRecordPO::getRemark, "新生转专业")
+                            .eq(MajorChangeRecordPO::getOldGrade, "" + insertGrade)
+                    ));
+            if(ident){
+                log.info(formattedMsg);
+            }else{
+                dataCheckLogs.add(formattedMsg);
+            }
+        }
+
+
+
+        if(ident){
+            log.info("校验新旧两个系统的核心数据差异完毕");
+        }else{
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+            String currentDateTime = LocalDateTime.now().format(formatter);
+            String relativePath = "data_import_error_excel/statistics/";
+            String errorFileName = relativePath + currentDateTime + "_" + "新旧系统数据同步总览.txt";
+            exportListToTxtAndUploadToMinio(dataCheckLogs, errorFileName, "datasynchronize");
+            log.info("校验新旧两个系统的核心数据差异完毕，已写入 Minio 日志");
+        }
         return dataCheckLogs;
     }
 
@@ -1089,7 +1269,7 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
-        ArrayList<String> checkLogs = calculateStatistics();
+        ArrayList<String> checkLogs = calculateStatistics(false);
         dataCheckLogs.addAll(checkLogs);
 
 
@@ -1101,7 +1281,7 @@ public class OldDataSynchronize {
 
         log.info("新旧系统校验同步结束");
         log.info("开始记录校验同步之后的新旧系统的数据差异");
-        calculateStatistics();
+        calculateStatistics(false);
 
     }
 
