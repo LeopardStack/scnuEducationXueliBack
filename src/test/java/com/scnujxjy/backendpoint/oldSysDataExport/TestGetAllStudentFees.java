@@ -183,6 +183,9 @@ public class TestGetAllStudentFees {
                 new ArrayList<>(Arrays.asList("休学", "退学", "转学")));
     }
 
+    /**
+     * 获取所有数据 筛选出 休学、退学、复学的
+     */
     @Test
     public void test3(){
         paymentInfoMapper.truncateTable();

@@ -127,6 +127,7 @@ public class StudentStatusChangeDataImport {
                     // 检测重复导入
                     Integer i = majorChangeRecordMapper.selectCount(new LambdaQueryWrapper<MajorChangeRecordPO>()
                             .eq(MajorChangeRecordPO::getCurrentYear, idnum.substring(0, 4))
+                            .eq(MajorChangeRecordPO::getIdNumber, majorChangeRecordPO.getIdNumber())
                             .eq(MajorChangeRecordPO::getSerialNumber, index)
                     );
                     if(i > 0){

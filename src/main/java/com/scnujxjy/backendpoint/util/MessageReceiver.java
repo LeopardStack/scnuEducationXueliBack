@@ -7,6 +7,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
@@ -18,6 +21,7 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.bo.cdn_file_manage.FileCommuBO;
 import com.scnujxjy.backendpoint.model.bo.teaching_process.CourseScheduleStudentExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
@@ -49,6 +53,7 @@ import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -56,6 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
@@ -65,6 +71,9 @@ public class MessageReceiver {
 
     @Value("${minio.importBucketName}")
     private String importBucketName;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Resource
     private StudentStatusService studentStatusService;
@@ -429,6 +438,45 @@ public class MessageReceiver {
                 channel.basicNack(msg.getMessageProperties().getDeliveryTag(), false, false);
             } catch (IOException ioException) {
                 log.error("确认系统消息时出现异常: ", ioException);
+            }
+        }
+    }
+
+
+    /**
+     * 处理 CDN 的响应消息
+     * @param msg
+     * @param channel
+     * @param message
+     */
+    @RabbitListener(queuesToDeclare = @Queue("${spring.rabbitmq.cdn_queue2}"), ackMode = "MANUAL")
+    public void processCDNMsg(String msg, Channel channel, Message message) {
+        try {
+            log.info("接收到消息 " + msg);
+            // 使用 Jackson ObjectMapper 解析 JSON
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(msg);
+
+            // 从 JSON 中提取并转换 protocolInfo
+            String protocolInfoJson = jsonNode.get("protocolInfo").asText();
+            FileCommuBO fileCommuBO = mapper.readValue(protocolInfoJson, FileCommuBO.class);
+            String ipAddr = jsonNode.get("ipAddr").asText();
+
+            log.info("收到 IP 地址为 " + ipAddr + " 的CDN 服务的反馈信息 " + fileCommuBO);
+            redisTemplate.opsForValue().set("FileCommuBO:" + fileCommuBO.getSerialNumber(), fileCommuBO, 1, TimeUnit.MINUTES);
+
+            // 手动确认消息
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+        }catch (JsonProcessingException e) {
+            log.error("JSON 解析错误: ", e);
+            // ... 错误处理 ...
+        }  catch (Exception e) {
+            log.error("处理消息时出现异常: ", e);
+            try {
+                // 根据需要，拒绝消息并选择是否重新入队
+                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+            } catch (IOException ioException) {
+                log.error("确认消息时出现异常: ", ioException);
             }
         }
     }

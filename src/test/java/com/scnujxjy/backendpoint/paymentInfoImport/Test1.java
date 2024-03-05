@@ -80,7 +80,7 @@ public class Test1 {
 //                .eq(PaymentInfoPO::getGrade, "2024"));
 //        log.info("删除了 2024级的缴费数据 " + delete);
 
-        String newStudentFee = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\缴费信息导入\\2024级新生\\成教新生收费20240115.xlsx";
+        String newStudentFee = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\缴费信息导入\\2024级新生\\成教新生收费20240303.xlsx";
 
         NewStudentPaymentInfoListener listener = new NewStudentPaymentInfoListener(paymentInfoMapper,
                 admissionInformationMapper);
@@ -96,7 +96,7 @@ public class Test1 {
      */
     @Test
     public void test3(){
-        String directoryPath = "src/main/resources/data/缴费信息导入/2024级新生";
+        String directoryPath = "src/main/resources/data/缴费信息导入/2024级新生/temp";
         String outputDirectoryPath = "src/main/resources/data/缴费信息结果/2024级新生";
         File directory = new File(directoryPath);
         File[] files = directory.listFiles((dir, name) -> name.endsWith(".xlsx"));

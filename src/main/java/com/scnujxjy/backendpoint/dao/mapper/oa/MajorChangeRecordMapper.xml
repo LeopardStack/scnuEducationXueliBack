@@ -54,6 +54,13 @@
         <include refid="commonFilters" />
     </delete>
 
+    <delete id="deleteNe">
+        DELETE
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <if test='entity.remark != null'>AND mcr.remark != #{entity.remark}</if>
+    </delete>
+
     <select id="getMajorChangeInfos" resultType="com.scnujxjy.backendpoint.model.vo.oa.MajorChangeRecordVO">
         select *
         <include refid="commonJoin" />

@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.util;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.scnujxjy.backendpoint.model.bo.cdn_file_manage.FileCommuBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 
 @Component
@@ -34,6 +37,12 @@ public class MessageSender {
 
     @Value("${spring.rabbitmq.queue6}")
     private String queue6;
+
+    @Value("${spring.rabbitmq.cdn_queue1}")
+    private String cdn_queue1;
+
+    @Value("${spring.rabbitmq.cdn_queue2}")
+    private String cdn_queue2;
 
 //    @Value("${spring.rabbitmq.queue5}")
 //    private String queue5;
@@ -178,6 +187,60 @@ public class MessageSender {
         } catch (AmqpException e) {
             log.error("Error sending message: " + e.getMessage());
             return false;
+        }
+    }
+
+
+    /**
+     * CDN 操作方需要发送 操作消息
+     * @param fileCommuBO
+     * @return
+     */
+    public boolean send(FileCommuBO fileCommuBO){
+        try {
+            // 创建一个包含数据和类型信息的JSON对象
+            JSONObject message = new JSONObject();
+            message.put("protocolInfo", JSON.toJSONString(fileCommuBO));
+            message.put("ipAddr", JSON.toJSONString(getLocalIpAddress()));
+
+            this.rabbitTemplate.convertAndSend(cdn_queue1, message.toJSONString());
+            log.info("成功发送操作消息 ");
+            return true;
+        } catch (AmqpException e) {
+            log.error("Error sending message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * CDN 服务方发送响应消息 操作方负责监听即可
+     * @param fileCommuBO
+     * @return
+     */
+    public boolean sendAnc(FileCommuBO fileCommuBO){
+        try {
+            // 创建一个包含数据和类型信息的JSON对象
+            JSONObject message = new JSONObject();
+            message.put("protocolInfo", JSON.toJSONString(fileCommuBO));
+            message.put("ipAddr", JSON.toJSONString(getLocalIpAddress()));
+
+            this.rabbitTemplate.convertAndSend(cdn_queue2, message.toJSONString());
+            log.info("成功发送应答消息 ");
+            return true;
+        } catch (AmqpException e) {
+            log.error("Error sending message: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    private static String getLocalIpAddress() {
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            return inetAddress.getHostAddress();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            return "Unable to find IP address";
         }
     }
 

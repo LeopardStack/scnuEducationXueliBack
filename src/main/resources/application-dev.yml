@@ -34,6 +34,10 @@ spring:
     queue4: data_export2_dev
     queue5: data_system_msg_dev
     queue6: data_upload_dev
+    # 这个队列是用来发送操作消息给 CDN 服务
+    cdn_queue1: cdn_file_operation1_alice
+    # 这个队列是用来监听 CDN 服务发送过来的响应消息的
+    cdn_queue2: cdn_file_operation1_blob
 
   servlet:
     multipart:

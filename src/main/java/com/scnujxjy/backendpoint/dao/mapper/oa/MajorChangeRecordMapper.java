@@ -32,6 +32,7 @@ public interface MajorChangeRecordMapper extends BaseMapper<MajorChangeRecordPO>
     List<MajorChangeRecordVO> getMajorChangeInfosForGenerateDBF(@Param("entity")MajorChangeDBFInfoRO majorChangeDBFInfoRO);
 
     int deleteDiy(@Param("entity")MajorChangeRecordRO entity);
+    int deleteNe(@Param("entity")MajorChangeRecordRO entity);
 
     List<MajorChangeRecordVO> getSingleMajorChangeInfos(@Param("entity")MajorChangeRecordRO entity);
 }

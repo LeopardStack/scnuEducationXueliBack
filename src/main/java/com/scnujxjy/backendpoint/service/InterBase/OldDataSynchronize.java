@@ -41,13 +41,16 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 400;
+    public static final int CONSUMER_COUNT = 200;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
 
     @Resource
     private GraduationInfoMapper graduationInfoMapper;
+
+    @Resource
+    private ScoreInformationMapper scoreInformationMapper;
 
     @Resource
     private PersonalInfoMapper personalInfoMapper;
@@ -63,9 +66,6 @@ public class OldDataSynchronize {
 
     @Resource
     private PaymentInfoMapper paymentInfoMapper;
-
-    @Resource
-    private ScoreInformationMapper scoreInformationMapper;
 
     @Resource
     private DropoutRecordMapper dropoutRecordMapper;
@@ -436,8 +436,9 @@ public class OldDataSynchronize {
         if(updateAny){
             // 如果这个标志打开 意味着全体更新
             int delete = dropoutRecordMapper.delete(null);
-            int delete1 = majorChangeRecordMapper.delete(new LambdaQueryWrapper<MajorChangeRecordPO>()
-                    .ne(MajorChangeRecordPO::getRemark, "新生转专业"));
+            MajorChangeRecordRO majorChangeRecordRO = new MajorChangeRecordRO();
+            majorChangeRecordRO.setRemark("新生转专业");
+            int delete1 = majorChangeRecordMapper.deleteNe(majorChangeRecordRO);
             int delete2 = resumptionRecordMapper.delete(null);
             int delete3 = retentionRecordMapper.delete(null);
             int delete4 = suspensionRecordMapper.delete(null);
@@ -447,7 +448,8 @@ public class OldDataSynchronize {
         studentStatusChangeDataImport.insertLogsList.add("旧系统学籍异动数据总数 " + studentStatusChangeData.size());
 
         Integer dropoutRecordCount = dropoutRecordMapper.selectCount(null);
-        Integer majorChangeRecordCount = majorChangeRecordMapper.selectCount(null);
+        Integer majorChangeRecordCount = majorChangeRecordMapper.selectCount(new LambdaQueryWrapper<MajorChangeRecordPO>()
+                .ne(MajorChangeRecordPO::getRemark, "新生转专业"));
         Integer resumptionRecordCount = resumptionRecordMapper.selectCount(null);
         Integer retentionRecordCount = retentionRecordMapper.selectCount(null);
         Integer suspensionRecordCount = suspensionRecordMapper.selectCount(null);
@@ -719,6 +721,12 @@ public class OldDataSynchronize {
                 gradeInfoDataImport.insertLogs.add(i + "年新系统中导入的成绩记录数 " + integer);
                 gradeInfoDataImport.insertLogs.add(i + "年旧系统中的学历教育生成绩记录总数 " + value);
                 gradeInfoDataImport.insertLogs.add(i + "年旧系统中的非学历教育成绩记录总数 " + value_fwp);
+
+                if(update){
+                    int delete = scoreInformationMapper.delete(new LambdaQueryWrapper<ScoreInformationPO>()
+                            .eq(ScoreInformationPO::getGrade, "" + i));
+                    log.info("已删除 " + i + " 年的成绩数据，记录数为 " + delete);
+                }
 
                 if(value_xl == integer){
                     // 相等
