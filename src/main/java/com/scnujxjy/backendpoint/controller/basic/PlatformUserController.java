@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
@@ -27,6 +28,7 @@ import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.annotations.CheckIPWhiteList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -64,6 +66,9 @@ public class PlatformUserController {
 
     @Resource
     private AdmissionInformationService admissionInformationService;
+
+    @Resource
+    private StudentStatusService studentStatusService;
 
     @Resource
     protected RedisTemplate<String, Object> redisTemplate;
@@ -242,8 +247,13 @@ public class PlatformUserController {
             String systemArg = SystemEnum.NOW_NEW_STUDENT_GRADE.getSystemArg();
             AdmissionInformationPO admissionInformationPO = admissionInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<AdmissionInformationPO>()
                     .eq(AdmissionInformationPO::getGrade, systemArg).eq(AdmissionInformationPO::getIdCardNumber, userName));
+            // 不仅仅是新生信息是否有它 还需要看他是否有学籍 即学号
+            Integer i = studentStatusService.getBaseMapper().selectCount(new LambdaQueryWrapper<StudentStatusPO>()
+                    .eq(StudentStatusPO::getGrade, systemArg)
+                    .eq(StudentStatusPO::getIdNumber, userName)
+            );
 
-            if(admissionInformationPO != null){
+            if(admissionInformationPO != null && i == 0){
                 isNewStudent = true;
                 // 进一步判断是否需要将公告的 URL 给他
                 if(admissionInformationPO.getIsConfirmed().equals(0)){
