@@ -4,8 +4,6 @@ import cn.dev33.satoken.util.SaResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scnujxjy.backendpoint.util.annotations.CheckIPWhiteList;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
