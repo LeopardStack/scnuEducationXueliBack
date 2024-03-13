@@ -1,0 +1,131 @@
+server:
+  port: 40001
+
+run:
+  schedule: false  # 设置为 true 以启动定时任务，设置为 false 则不运行
+  oldDataSynchronizeStatus: false  # 开启旧系统同步
+  checkLivingStatusScan: false  # 开启直播状态
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai   # 不设置成这个 会有夏令时的影响 导致时间不对
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+  redis:
+    host: 116.205.190.9
+    port: 6379
+    password: 12345A
+  # rabbitmq
+  rabbitmq:
+    host: 139.159.132.31
+    port: 5672
+    username: rabbitmq
+    password: password
+    queue1: data_synchronize_test
+    queue2: test1_test
+    queue3: data_export_test
+    queue4: data_export2_test
+    queue5: data_synchronize_test_timeout_test
+    queue6: data_upload_test
+    # 这个队列是用来发送操作消息给 CDN 服务
+    cdn_queue1: cdn_file_operation1_alice
+    # 这个队列是用来监听 CDN 服务发送过来的响应消息的
+    cdn_queue2: cdn_file_operation1_blob
+
+  data:
+    mongodb:
+      username: scnuAdmin
+      password: scnu2023
+      authentication-database: scnuXueli
+      database: scnuXueli
+      host: 139.159.132.31
+      port: 27017
+      auto-index-creation: true
+
+  servlet:
+    multipart:
+      maxFileSize: 10GB
+      maxRequestSize: 10GB
+  ## mysql
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: leopard
+    password: Leopard2024@
+    hikari:
+      maximum-pool-size: 1000 # 设置最大连接数为1000
+      idleTimeout: 300000  # set to 5 minutes for example
+
+  elasticsearch:
+    uris: 124.71.34.208
+    port: 9200
+    username: elastic
+    password: elastic
+    scheme: http
+    index_name: es_xueli_index
+    pipelineName: es_xueli_pipeline
+
+#配置日志
+mybatis-plus:
+  mapper-locations: classpath*:mappers/**/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.dao.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 设置日志输出
+logging:
+  config: src/main/resources/logback.xml
+  #  config: logback.xml
+  level:
+    org.apache.ibatis: DEBUG
+    com.scnujxjy.backendpoint.dao.mapper: DEBUG
+
+
+minio:
+  url: http://124.71.34.208:9000/
+  accessKey: VDS3UEAF87MJSYJ192VE
+  secretKey: 2SX0MDnVJ+IklCXDYrgBtDMAICNQAinm2qJUkPsp
+  bucketName: xuelistudentpictures
+  courseCoverDir: xueli-course-resources
+  importBucketName: dataimport
+
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: xl_token
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 3000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false
+
+# 开启 springboot exporter 能够被普罗米修斯监控到
+management:
+  server:
+    port: 10024 # 管理端口
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus" # 只在管理端口上暴露 Prometheus 端点
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+wechat:
+  request-url: https://api.weixin.qq.com/sns/jscode2session
+  app-secret: 0ec180d59b9b076454e09a4fa4eff865
+  app-id: wxf06ee34ae8ba2687
+# 敏感信息进行加密的秘钥
+info:
+  secret_key: 97b4464a57277c90d1a84827a3380d48
+  init_vector: bf78261356848f05bd2ca5262d5f82dd

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO">
+        <id column="id" property="id" />
+        <result column="grade" property="grade" />
+        <result column="course_name" property="courseName" />
+        <result column="course_type" property="courseType" />
+        <result column="course_description" property="courseDescription" />
+        <result column="course_cover_url" property="courseCoverUrl" />
+        <result column="default_main_teacher_id" property="defaultMainTeacherId" />
+        <result column="course_identifier" property="courseIdentifier" />
+        <result column="valid" property="valid" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, grade, course_name, course_type, course_description, course_cover_url, default_main_teacher_id, course_identifier, valid, created_time, updated_time
+    </sql>
+
+</mapper>

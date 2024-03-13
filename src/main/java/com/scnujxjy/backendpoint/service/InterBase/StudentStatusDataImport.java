@@ -404,7 +404,7 @@ public class StudentStatusDataImport {
             if(personalInfoPOS.size() > 1){
                 throw new RuntimeException("同一个年级，同一个学生存在多条个人信息记录");
             }else if(personalInfoPOS.size() == 1){
-                if(updateAny){
+                if(updateAny && updatePersonalInfo){
                     // 条件更新
                     int update = personalInfoMapper.update(personalInfoPO, new LambdaQueryWrapper<PersonalInfoPO>().
                             eq(PersonalInfoPO::getGrade, personalInfoPO.getGrade()).
@@ -418,11 +418,13 @@ public class StudentStatusDataImport {
 
             }else{
                 // 没有找到任何记录 直接插入
-                int insert = personalInfoMapper.insert(personalInfoPO);
-                if(insert > 0){
-                    String key1 = studentStatusPO.getGrade() + " 新增学生个人信息数据";
-                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+                if(updatePersonalInfo) {
+                    int insert = personalInfoMapper.insert(personalInfoPO);
+                    if (insert > 0) {
+                        String key1 = studentStatusPO.getGrade() + " 新增学生个人信息数据";
+                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
+                    }
                 }
             }
 
@@ -526,7 +528,7 @@ public class StudentStatusDataImport {
                                     SimpleDateFormat dateFormat3,
                                     SimpleDateFormat dateFormat6,
                                     String errorMsg
-                                    ){
+    ){
         errorData.setId((long) failed_insert);
         errorData.setStudentNumber(studentData.get("XHAO"));
         errorData.setGrade(studentData.get("NJ"));
@@ -570,7 +572,14 @@ public class StudentStatusDataImport {
     // 强行更新标志，即无论数据数量是否一致，覆盖库中的数据进行强制更新
     private static boolean updateAny = true;
 
+    // 是否更新个人信息
+    private static boolean updatePersonalInfo = true;
+
     public void setUpdateAny(boolean updateAnySet){
         updateAny = updateAnySet;
+    }
+
+    public void setUpdatePersonalInfo(boolean updatePersonalInfo){
+        updatePersonalInfo = updatePersonalInfo;
     }
 }

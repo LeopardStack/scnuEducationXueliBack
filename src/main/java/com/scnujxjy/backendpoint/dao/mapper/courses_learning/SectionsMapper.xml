@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO">
+        <id column="id" property="id" />
+        <result column="course_id" property="courseId" />
+        <result column="parent_section_id" property="parentSectionId" />
+        <result column="section_name" property="sectionName" />
+        <result column="order" property="order" />
+        <result column="content_type" property="contentType" />
+        <result column="content_id" property="contentId" />
+        <result column="deadline" property="deadline" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, course_id, parent_section_id, section_name, order, content_type, content_id, deadline, created_time, updated_time
+    </sql>
+
+</mapper>

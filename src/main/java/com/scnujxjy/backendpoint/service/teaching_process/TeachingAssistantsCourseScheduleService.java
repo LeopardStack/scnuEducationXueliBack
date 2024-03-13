@@ -1,10 +1,8 @@
 package com.scnujxjy.backendpoint.service.teaching_process;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.RetakeStudentsPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.RetakeStudentsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 
 /**

@@ -192,9 +192,11 @@ public class OldDataSynchronize {
     }
 
 
-    public void synchronizeStudentStatusData(int startYear, int endYear, boolean updateAny) throws InterruptedException {
+    public void synchronizeStudentStatusData(int startYear, int endYear, boolean updateAny, boolean personalUpdate) throws InterruptedException {
         StudentStatusDataImport studentStatusDataImport = new StudentStatusDataImport();
-
+        if(!personalUpdate){
+            studentStatusDataImport.setUpdatePersonalInfo(personalUpdate);
+        }
         studentStatusDataImport.setUpdateAny(updateAny);
 
         StringBuilder allGrades = new StringBuilder();
@@ -808,7 +810,7 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
-        int startYear = 2023;
+        int startYear = 2024;
         int endYear = 2010;
         boolean allEqual = true;
         SCNUXLJYDatabase scnuxljyDatabase = new SCNUXLJYDatabase();
@@ -877,7 +879,7 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
-        for(int payYear = 2023; payYear >= 2000; payYear--){
+        for(int payYear = 2024; payYear >= 2000; payYear--){
             Integer new_pay_count = paymentInfoMapper.selectCount(new LambdaQueryWrapper<PaymentInfoPO>().eq(PaymentInfoPO::getGrade, "" + payYear));
             int old_pay_count = (int) scnuxljyDatabase.getValue("SELECT count(*) FROM CWPAY_VIEW WHERE NJ='" + payYear + "'");
             if(new_pay_count != old_pay_count){
@@ -904,7 +906,7 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
-        startYear = 2023;
+        startYear = 2024;
         endYear = 2015;
         allEqual = true;
         for(int i = startYear; i >= endYear; i--){
@@ -944,7 +946,7 @@ public class OldDataSynchronize {
             dataCheckLogs.add(formattedMsg);
         }
 
-        startYear = 2023;
+        startYear = 2024;
         endYear = 2015;
         allEqual = true;
         for(int i = startYear; i >= endYear; i--){
@@ -1142,7 +1144,7 @@ public class OldDataSynchronize {
                     if(studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
                             eq(StudentStatusPO::getGrade, i + "")) == 0){
                         // 成功清除脏数据，同步旧系统最新的数据
-                        synchronizeStudentStatusData(i, i, true);
+                        synchronizeStudentStatusData(i, i, true, true);
                     }
 
                 }catch (Exception e){

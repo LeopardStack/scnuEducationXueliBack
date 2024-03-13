@@ -103,7 +103,7 @@ public class Test1 {
                         if (studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
                                 eq(StudentStatusPO::getGrade, i + "")) == 0) {
                             // 成功清除脏数据，同步旧系统最新的数据
-                            oldDataSynchronize.synchronizeStudentStatusData(i, i, true);
+                            oldDataSynchronize.synchronizeStudentStatusData(i, i, true, true);
                         }
 
                     } catch (Exception e) {
@@ -399,7 +399,7 @@ public class Test1 {
     @Test
     public void test1(){
         try {
-            oldDataSynchronize.synchronizeStudentStatusData(2023, 2023, true);
+            oldDataSynchronize.synchronizeStudentStatusData(2023, 2023, true, true);
         }catch (Exception e){
             log.error("同步学籍数据错误 " + e.toString());
         }
@@ -716,7 +716,7 @@ public class Test1 {
                     if(studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
                             eq(StudentStatusPO::getGrade, i + "")) == 0){
                         // 成功清除脏数据，同步旧系统最新的数据
-                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true);
+                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true, true);
                     }
 
                 }catch (Exception e){
@@ -901,7 +901,7 @@ public class Test1 {
                     if(studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
                             eq(StudentStatusPO::getGrade, i + "")) == 0){
                         // 成功清除脏数据，同步旧系统最新的数据
-                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true);
+                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true, true);
                     }
 
                 }catch (Exception e){
@@ -970,7 +970,7 @@ public class Test1 {
                     if(studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>().
                             eq(StudentStatusPO::getGrade, i + "")) == 0){
                         // 成功清除脏数据，同步旧系统最新的数据
-                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true);
+                        oldDataSynchronize.synchronizeStudentStatusData(i, i, true, true);
                     }
 
                 }catch (Exception e){

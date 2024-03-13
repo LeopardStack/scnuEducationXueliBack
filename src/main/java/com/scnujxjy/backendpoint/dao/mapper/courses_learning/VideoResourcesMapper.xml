@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.VideoResourcesMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.VideoResourcesPO">
+        <id column="id" property="id" />
+        <result column="section_id" property="sectionId" />
+        <result column="video_name" property="videoName" />
+        <result column="minio_video_url" property="minioVideoUrl" />
+        <result column="cdn_video_url" property="cdnVideoUrl" />
+        <result column="valid" property="valid" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, section_id, video_name, minio_video_url, cdn_video_url, valid, created_time, updated_time
+    </sql>
+
+</mapper>

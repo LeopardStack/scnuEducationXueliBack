@@ -1,22 +1,22 @@
-package com.scnujxjy.backendpoint.dao.entity.teaching_process;
+package com.scnujxjy.backendpoint.dao.entity.courses_learning;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.Accessors;
 
 /**
  * <p>
- * 课程资料区表
+ * 
  * </p>
  *
  * @author 谢辉龙
- * @since 2023-12-07
+ * @since 2024-03-05
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -29,41 +29,24 @@ public class CourseMaterialsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 自增主键
-     */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 批次ID
-     */
-    private String batchId;
+    private Long courseId;
 
-    /**
-     * 资料标题
-     */
-    private String title;
+    private String fileName;
 
-    /**
-     * 资料描述
-     */
-    private String description;
+    private String fileDescription;
 
-    /**
-     * 文件路径
-     */
-    private String filePath;
+    private Long uploaderId;
 
-    /**
-     * 上传时间
-     */
-    private Date uploadTime;
+    private Long fileSize;
 
-    /**
-     * 上传者用户ID
-     */
-    private Long uploadedBy;
+    private String minioStorageUrl;
+
+    private Date createdTime;
+
+    private Date updatedTime;
 
 
 }

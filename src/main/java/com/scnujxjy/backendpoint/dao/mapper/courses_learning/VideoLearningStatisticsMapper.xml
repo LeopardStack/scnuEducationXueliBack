@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.VideoLearningStatisticsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.VideoLearningStatisticsPO">
+        <id column="id" property="id" />
+        <result column="course_id" property="courseId" />
+        <result column="section_id" property="sectionId" />
+        <result column="learning_duration" property="learningDuration" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, course_id, section_id, learning_duration, created_time, updated_time
+    </sql>
+
+</mapper>

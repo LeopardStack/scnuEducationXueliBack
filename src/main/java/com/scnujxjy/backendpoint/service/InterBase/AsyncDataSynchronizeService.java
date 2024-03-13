@@ -219,7 +219,7 @@ public class AsyncDataSynchronizeService {
         // TODO: 实现学籍信息同步逻辑
         try {
             oldDataSynchronize.synchronizeStudentStatusData(Integer.parseInt(oldDataFilterRO.getEndYear()),
-                    Integer.parseInt(oldDataFilterRO.getStartYear()), true);
+                    Integer.parseInt(oldDataFilterRO.getStartYear()), true, true);
         }catch (Exception e){
             log.error("同步学籍数据错误 " + e.toString());
             return "学籍同步失败";
