@@ -24,7 +24,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("live_scheduling")
+@TableName("courses_learning")
 public class CoursesLearningPO implements Serializable {
 
     private static final long serialVersionUID = 1L;

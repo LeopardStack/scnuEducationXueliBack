@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.dao.mapper.courses_learning;
 
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveSchedulingPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author 谢辉龙
  * @since 2024-03-05
  */
-public interface LiveSchedulingMapper extends BaseMapper<LiveSchedulingPO> {
+public interface LiveResourceMapper extends BaseMapper<LiveResourcesPO> {
 
 }

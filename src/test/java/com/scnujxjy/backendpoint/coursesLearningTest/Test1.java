@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.coursesLearningTest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
@@ -10,6 +11,7 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
@@ -43,6 +45,9 @@ public class Test1 {
     private CoursesLearningMapper coursesLearningMapper;
 
     @Resource
+    private LiveResourceMapper liveResourceMapper;
+
+    @Resource
     private ScnuXueliTools scnuXueliTools;
 
     @Resource
@@ -53,6 +58,21 @@ public class Test1 {
 
     @Resource
     private VideoStreamRecordsMapper videoStreamRecordsMapper;
+
+    /**
+     * 清除掉新课程学习的数据
+     */
+    @Test
+    public void test0(){
+        coursesLearningMapper.truncateTable();
+        sectionsMapper.truncateTable();
+        coursesClassMappingMapper.truncateTable();
+        if(coursesLearningMapper.selectCount(null) == 0 &&
+        sectionsMapper.selectCount(null) == 0 &&
+        coursesClassMappingMapper.selectCount(null) == 0){
+            log.info("课程学习核心数据已全部删除");
+        }
+    }
 
     @Test
     public void test1(){
@@ -67,6 +87,9 @@ public class Test1 {
         // 用一个 HashMap 来记录同一批次的 即同一个直播间的
         HashMap<Long, CoursesLearningPO> courseSchedulePOHashMap = new HashMap<>();
 
+        HashMap<CourseSchedulePO, String> errorMsg = new HashMap<>();
+
+        int index = 1;
         for(CourseSchedulePO courseSchedulePO: courseSchedulePOS){
             String grade = courseSchedulePO.getGrade();
             String adminClass = courseSchedulePO.getAdminClass();
@@ -104,29 +127,38 @@ public class Test1 {
                             ;
                     // 通过年级 、主讲老师 课程名称 来匹配一个桶 即一门课 （可能存在跨课程）
                     CoursesLearningPO coursesLearningPO1 = courseSchedulePOHashMap.get(courseSchedulePO.getBatchIndex());
+
+
                     if(coursesLearningPO1 != null){
                         // 什么也不需要做 找到了 这个 课程 直接把直播上课插入
+                        coursesLearningPO = coursesLearningPO1;
                     }else{
+
+
                         int insert = coursesLearningMapper.insert(coursesLearningPO);
                         if(insert < 0){
                             log.error("插入失败 " + coursesLearningPO + " 插入结果 " + insert);
+                            errorMsg.put(courseSchedulePO, "插入失败 " + coursesLearningPO + " 插入结果 " + insert);
                         }
+
+                        courseSchedulePOHashMap.put(courseSchedulePO.getBatchIndex(), coursesLearningPO);
                     }
 
                     // 插入章节 在插入之前 先查看这堂课是否存在 即时间是否一致，如果一致 说明 需要添加新的班级进来
                     ScnuTimeInterval timeInterval = scnuXueliTools.getTimeInterval(courseSchedulePO.getTeachingDate(), courseSchedulePO.getTeachingTime());
 
                     SectionsPO sectionsPO = new SectionsPO()
-                            .setCourseId(coursesLearningPO.getId())
+                            .setCourseId(coursesLearningPO1.getId())
                             .setMainTeacherUsername(courseSchedulePO.getTeacherUsername())
                             .setContentType(LIVING.getContentType())
                             .setStartTime(timeInterval.getStart())
-                            .setStartTime(timeInterval.getEnd())
+                            .setDeadline(timeInterval.getEnd())
                             .setValid("Y")
                             ;
                     SectionsPO sectionsPO1 = sectionsMapper.selectOne(new LambdaQueryWrapper<SectionsPO>()
                             .eq(SectionsPO::getStartTime, sectionsPO.getStartTime())
                             .eq(SectionsPO::getDeadline, sectionsPO.getDeadline())
+                            .eq(SectionsPO::getCourseId, sectionsPO.getCourseId())
                     );
                     if(sectionsPO1 != null){
                         // 添加班级进班级映射表
@@ -137,20 +169,38 @@ public class Test1 {
                         if (onlinePlatform == null || !onlinePlatform.matches("\\d+")) {
                             // onlinePlatform 是空或者非纯数字
                             // 在这里处理非数字和空值的逻辑
+                            int insert = sectionsMapper.insert(sectionsPO);
+                            if(insert < 0){
+                                log.error("插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                                errorMsg.put(courseSchedulePO, "插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                            }
                         } else {
                             // onlinePlatform 是纯数字
                             // 在这里处理纯数字的逻辑
                             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
                                     .eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform())));
+                            sectionsPO.setContentId(videoStreamRecordPO.getId());
 
+                            int insert = sectionsMapper.insert(sectionsPO);
+                            if(insert < 0){
+                                log.error("插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                                errorMsg.put(courseSchedulePO, "插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                            }
+                           // 用新的直播资源表存储直播信息
+                            LiveResourcesPO liveResourcesPO = new LiveResourcesPO()
+                                    .setCourseId(coursesLearningPO.getId())
+                                    .setSectionId(sectionsPO.getId())
+                                    .setChannelId(videoStreamRecordPO.getChannelId())
+                                    ;
+                            int insert1 = liveResourceMapper.insert(liveResourcesPO);
+                            errorMsg.put(courseSchedulePO, "插入直播资源失败 " + sectionsPO + "\n"
+                                    + coursesLearningPO + "\n" + liveResourcesPO + " 插入结果 " + insert1);
                         }
 
-
-                        int insert = sectionsMapper.insert(sectionsPO);
-                        if(insert < 0){
-                            log.error("插入节点失败 " + sectionsPO + "\n"
-                                    + coursesLearningPO + " 插入结果 " + insert);
-                        }
                     }
 
                     /**
@@ -174,21 +224,70 @@ public class Test1 {
                                 log.error("插入班级映射关系失败 " + classInformationPO1 + "\n" +
                                         "插入节点失败 " + sectionsPO + "\n"
                                         + coursesLearningPO + " 插入结果 " + insert);
+                                errorMsg.put(courseSchedulePO, "插入班级映射关系失败 " + classInformationPO1 + "\n" +
+                                        "插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
                             }
                         }
                     }catch (Exception e){
                         log.error("获取班级信息错误 " + e);
+                        errorMsg.put(courseSchedulePO, "获取班级信息错误 " + e);
                     }
 
 
 
                 }catch (Exception e){
                     log.info("该班级找不到课程信息 " + classInformationPO + " \n课程为 " + courseName + e);
+                    errorMsg.put(courseSchedulePO, "该班级找不到课程信息 " + classInformationPO + " \n课程为 " + courseName + e);
                 }
             }catch (Exception e){
                 log.info("该排课记录找不到班级信息 " + courseSchedulePO + e);
+                errorMsg.put(courseSchedulePO, "该排课记录找不到班级信息 " + courseSchedulePO + e);
             }
 
+            log.info(index + "   " + courseSchedulePO);
+            index += 1;
+
         }
+
+        log.info("\n排课表总记录数为 "  + i + " 2023级的排课表记录数为 " + i1);
+        if(errorMsg.keySet().isEmpty()){
+            log.info("排课表所有记录全部插入成功");
+        }else{
+            log.info("排课表记录更新到新的课程学习数据库出现了部分错误 \n" + errorMsg);
+        }
+    }
+
+    /**
+     * 对每个课程的章节按 startTime 排序
+     */
+    @Test
+    public void testSetSectionsSequence() {
+        List<CoursesLearningPO> courses = coursesLearningMapper.selectList(null);
+
+        for (CoursesLearningPO course : courses) {
+            // 获取课程对应的所有章节
+            List<SectionsPO> sections = sectionsMapper.selectList(
+                    new LambdaQueryWrapper<SectionsPO>()
+                            .eq(SectionsPO::getCourseId, course.getId())
+                            .orderByAsc(SectionsPO::getStartTime)
+            );
+
+            // 更新 sequence
+            for (int i = 0; i < sections.size(); i++) {
+                SectionsPO section = sections.get(i);
+                section.setSequence(i + 1); // 设置序列号，从1开始
+                sectionsMapper.updateById(section);
+            }
+        }
+    }
+
+
+    /**
+     * 模拟旧的排课表 来查询 每门课的排课情况
+     */
+    @Test
+    public void test3(){
+
     }
 }

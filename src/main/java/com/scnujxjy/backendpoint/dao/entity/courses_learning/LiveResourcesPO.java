@@ -25,7 +25,7 @@ import lombok.experimental.Accessors;
 @Builder
 @Accessors(chain = true)
 @TableName("live_resources")
-public class LiveSchedulingPO implements Serializable {
+public class LiveResourcesPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -36,7 +36,7 @@ public class LiveSchedulingPO implements Serializable {
 
     private Long sectionId;
 
-    private Long channelId;
+    private String channelId;
 
 
     private String valid;

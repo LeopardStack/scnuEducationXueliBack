@@ -38,7 +38,7 @@ public class SectionsPO implements Serializable {
 
     private String sectionName;
 
-    private Integer order;
+    private Integer sequence;
 
     private String contentType;
 
