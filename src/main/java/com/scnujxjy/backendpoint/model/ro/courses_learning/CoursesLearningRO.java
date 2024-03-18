@@ -7,12 +7,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.Date;
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
 public class CoursesLearningRO {
+    @ApiModelProperty(value = "课程主键ID", example = "1")
+    private Long id;
+
     @ApiModelProperty(value = "年级", example = "2023")
     String grade;
 
@@ -21,6 +27,9 @@ public class CoursesLearningRO {
 
     @ApiModelProperty(value = "教学点", example = "广州达德教学点")
     String teachingPointName;
+
+    @ApiModelProperty(value = "班级名称集合 存在一个教学点管理多个不同简称的班级", example = "广州达德")
+    List<String> classNameSet;
 
     @ApiModelProperty(value = "专业", example = "计算机科学与技术")
     String majorName;
@@ -34,6 +43,15 @@ public class CoursesLearningRO {
     @ApiModelProperty(value = "课程名称", example = "数据结构")
     String courseName;
 
+    @ApiModelProperty(value = "课程类型", example = "直播")
+    String courseType;
+
     @ApiModelProperty(value = "主讲老师姓名", example = "张三")
     String mainTeacherName;
+
+    @ApiModelProperty(value = "上课时间 Start", example = "2024 03 15 00:00:00")
+    Date courseStartTime;
+
+    @ApiModelProperty(value = "上课时间 End", example = "2024 04 15 00:00:00")
+    Date courseEndTime;
 }

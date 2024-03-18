@@ -22,4 +22,80 @@
         id, grade, course_name, course_type, course_description, course_cover_url, default_main_teacher_id, course_identifier, valid, created_time, updated_time
     </sql>
 
+
+
+    <sql id="commonJoin">
+        FROM
+        courses_learning cl
+        LEFT JOIN
+        sections ss ON cl.id = ss.course_id
+        LEFT JOIN
+        courses_class_mapping ccm ON cl.id = ccm.course_id
+        LEFT JOIN
+        class_information ci ON ccm.class_identifier = ci.class_identifier
+        LEFT JOIN
+        teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND cl.id = #{entity.id}</if>
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
+        <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
+        <if test='entity.courseName != null'>AND cl.course_name = #{entity.courseName}</if>
+        <if test='entity.courseType != null'>AND cl.course_type = #{entity.courseType}</if>
+        <if test='entity.mainTeacherName != null'>AND ti.name = #{entity.mainTeacherName}</if>
+
+        <if test='entity.courseStartTime != null'>AND ss.start_time >= #{entity.courseStartTime}</if>
+        <if test='entity.courseEndTime != null'>AND #{entity.courseEndTime} >= ss.start_time</if>
+    </sql>
+
+
+    <!--    获取不同角色输入下的课程学习信息  -->
+    <select id="selectCourseLearningData"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
+        SELECT
+        cl.id,
+        ci.grade,
+        cl.course_name,
+        cl.course_type,
+        cl.course_description,
+        cl.course_cover_url,
+        cl.default_main_teacher_username,
+        cl.course_identifier,
+        cl.valid,
+        cl.created_time,
+        cl.updated_time,
+        ti.name AS default_main_teacher_name,
+        GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
+        MIN(ss.start_time) AS recent_course_schedule_time   -- 添加这行来获取最小的 start_time
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+        GROUP BY
+        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
+        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
+        cl.valid, cl.created_time, cl.updated_time, ti.name
+        ORDER BY
+        cl.created_time DESC
+        LIMIT
+        #{pageNumber}, #{pageSize}
+    </select>
+    <select id="getCourseSectionsData"
+            resultType="com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO">
+        SELECT cl.id,
+               cl.grade, cl.course_name, cl.course_type, cl.course_description, cl.course_cover_url,
+               cl.default_main_teacher_username, cl.course_identifier, cl.valid, cl.created_time,
+               cl.updated_time, ss.parent_section_id, ss.section_name, ss.sequence, ss.content_type,
+               ss.main_teacher_username, ss.deadline, ss.start_time, ss.valid AS section_valid,
+               ccm.class_identifier, ci.grade AS class_grade, ci.class_name, ci.study_form,
+               ci.level, ci.study_period, ci.college, ci.major_name, ci.major_code, ci.tuition,
+               ti.name
+        <include refid="commonJoin" />
+    </select>
+
+
 </mapper>

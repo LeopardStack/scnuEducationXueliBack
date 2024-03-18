@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.dao.mapper.courses_learning;
 
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssistantsPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Update;
 
@@ -10,10 +10,10 @@ import org.apache.ibatis.annotations.Update;
  * </p>
  *
  * @author 谢辉龙
- * @since 2024-03-05
+ * @since 2024-03-15
  */
-public interface LiveResourceMapper extends BaseMapper<LiveResourcesPO> {
+public interface CourseAssistantsMapper extends BaseMapper<CourseAssistantsPO> {
 
-    @Update("TRUNCATE TABLE live_resources")
+    @Update("TRUNCATE TABLE course_assistants")
     void truncateTable();
 }

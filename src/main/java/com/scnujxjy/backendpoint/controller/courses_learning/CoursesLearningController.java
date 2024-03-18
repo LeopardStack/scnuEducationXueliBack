@@ -5,6 +5,7 @@ import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 // 引入Swagger 2的注解
@@ -33,31 +34,60 @@ public class CoursesLearningController {
     private CoursesLearningService coursesLearningService;
 
     /**
-     * 分页查询排课表信息
+     * 分页查询课程信息
      *
-     * @param courseScheduleROPageRO 分页参数
-     * @return 排课表分页信息
+     * @param coursesLearningROPageRO 分页参数
+     * @return 课程分页信息
      */
     @PostMapping("/page_query_courses_info")
     @ApiOperation(value = "分页查询课程信息", notes = "根据分页参数查询课程信息. 示例请求体: { 'grade': '2023', 'college': '计算机学院', ... }")
     public SaResult pageQueryCoursesInfo(
             @ApiParam(value = "分页查询参数", required = true)
-            @RequestBody PageRO<CoursesLearningRO> courseScheduleROPageRO) {
+            @RequestBody PageRO<CoursesLearningRO> coursesLearningROPageRO) {
         // 校验参数
-        if (Objects.isNull(courseScheduleROPageRO)) {
+        if (Objects.isNull(coursesLearningROPageRO)) {
             throw dataMissError();
         }
-        if (Objects.isNull(courseScheduleROPageRO.getEntity())) {
-            courseScheduleROPageRO.setEntity(new CoursesLearningRO());
+        if (Objects.isNull(coursesLearningROPageRO.getEntity())) {
+            coursesLearningROPageRO.setEntity(new CoursesLearningRO());
         }
         // 查询数据
-        PageVO<CourseScheduleVO> courseScheduleVOPageVO = coursesLearningService.pageQueryCoursesInfo(courseScheduleROPageRO);
+        PageVO<CourseLearningVO> courseLearningVOPageVO = coursesLearningService.pageQueryCoursesInfo(coursesLearningROPageRO);
         // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
+        if (Objects.isNull(courseLearningVOPageVO)) {
             throw dataNotFoundError();
         }
         // 返回数据
-        return SaResult.data(courseScheduleVOPageVO);
+        return SaResult.data(courseLearningVOPageVO);
+    }
+
+
+    /**
+     * 分页查询课程信息
+     *
+     * @param coursesLearningROPageRO 分页参数
+     * @return 课程分页信息
+     */
+    @PostMapping("/page_query_courses_info1")
+    @ApiOperation(value = "分页查询课程信息", notes = "根据分页参数查询课程信息. 示例请求体: { 'grade': '2023', 'college': '计算机学院', ... }")
+    public SaResult pageQueryCoursesInfo1(
+            @ApiParam(value = "分页查询参数", required = true)
+            @RequestBody PageRO<CoursesLearningRO> coursesLearningROPageRO) {
+        // 校验参数
+        if (Objects.isNull(coursesLearningROPageRO)) {
+            throw dataMissError();
+        }
+        if (Objects.isNull(coursesLearningROPageRO.getEntity())) {
+            coursesLearningROPageRO.setEntity(new CoursesLearningRO());
+        }
+        // 查询数据
+        PageVO<CourseLearningVO> courseLearningVOPageVO = coursesLearningService.pageQueryCoursesInfo1(coursesLearningROPageRO);
+        // 数据校验
+        if (Objects.isNull(courseLearningVOPageVO)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(courseLearningVOPageVO);
     }
 }
 

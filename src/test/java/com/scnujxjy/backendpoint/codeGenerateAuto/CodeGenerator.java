@@ -50,20 +50,20 @@ public class CodeGenerator {
 
         // 数据源配置
         DataSourceConfig dsc = new DataSourceConfig();
-        dsc.setUrl("jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC");
+        dsc.setUrl("jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC");
         dsc.setDriverName("com.mysql.cj.jdbc.Driver");
-        dsc.setUsername("root");
-        dsc.setPassword("xhl2023@");
+        dsc.setUsername("leopard");
+        dsc.setPassword("Leopard2024@");
         mpg.setDataSource(dsc);
         // fee_item_management,shared_materials,major_information,dropout_record,
         // major_change_record,resumption_record,retention_record,suspension_record
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.teaching_process");
-        pc.setEntity("dao.entity.teaching_process");
-        pc.setController("controller.teaching_process");
-        pc.setXml("dao.mapper.teaching_process");
+        pc.setMapper("dao.mapper.courses_learning");
+        pc.setEntity("dao.entity.courses_learning");
+        pc.setController("controller.courses_learning");
+        pc.setXml("dao.mapper.courses_learning");
         mpg.setPackageInfo(pc);
 
         // 策略配置

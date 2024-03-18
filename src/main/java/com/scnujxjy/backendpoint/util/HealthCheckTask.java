@@ -13,7 +13,9 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMappe
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +65,10 @@ public class HealthCheckTask {
 
     @Resource
     private ScnuXueliTools scnuXueliTools;
+
+    @Resource
+    private CoursesLearningService coursesLearningService;
+
     @Resource
     private TutorInformationMapper tutorInformationMapper;
 
@@ -278,6 +284,27 @@ public class HealthCheckTask {
             }
         }
 
+    }
+
+
+    /**
+     * 预热课程数据 便于查询和搜索
+     */
+    @PostConstruct
+    public void init() {
+        refreshCourseSectionsInRedis();
+    }
+
+    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
+    public void refreshCourseSectionsInRedis() {
+        try {
+            log.info("开始执行课程信息预热");
+            List<CourseRecordBO> courseSections = coursesLearningService.getCourseSections(null);
+            log.info("预热完毕，共获取 " + courseSections.size() + " 条数据");
+            redisTemplate.opsForValue().set("courseSections", courseSections); // 将数据存储在 Redis 中
+        } catch (Exception e) {
+            log.error("Error updating course sections in Redis", e);
+        }
     }
 
 

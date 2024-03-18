@@ -1,26 +1,23 @@
 package com.scnujxjy.backendpoint.coursesLearningTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.*;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.*;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.util.StringUtils;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
@@ -48,6 +45,12 @@ public class Test1 {
     private LiveResourceMapper liveResourceMapper;
 
     @Resource
+    private CourseAssistantsMapper courseAssistantsMapper;
+
+    @Resource
+    private TeachingAssistantsCourseScheduleMapper teachingAssistantsCourseScheduleMapper;
+
+    @Resource
     private ScnuXueliTools scnuXueliTools;
 
     @Resource
@@ -67,11 +70,16 @@ public class Test1 {
         coursesLearningMapper.truncateTable();
         sectionsMapper.truncateTable();
         coursesClassMappingMapper.truncateTable();
+        liveResourceMapper.truncateTable();
+        courseAssistantsMapper.truncateTable();
         if(coursesLearningMapper.selectCount(null) == 0 &&
         sectionsMapper.selectCount(null) == 0 &&
-        coursesClassMappingMapper.selectCount(null) == 0){
+        coursesClassMappingMapper.selectCount(null) == 0 &&
+                liveResourceMapper.selectCount(null) == 0 &&
+                courseAssistantsMapper.selectCount(null) == 0){
             log.info("课程学习核心数据已全部删除");
         }
+
     }
 
     @Test
@@ -181,7 +189,7 @@ public class Test1 {
                             // 在这里处理纯数字的逻辑
                             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectOne(new LambdaQueryWrapper<VideoStreamRecordPO>()
                                     .eq(VideoStreamRecordPO::getId, Long.parseLong(courseSchedulePO.getOnlinePlatform())));
-                            sectionsPO.setContentId(videoStreamRecordPO.getId());
+
 
                             int insert = sectionsMapper.insert(sectionsPO);
                             if(insert < 0){
@@ -196,9 +204,21 @@ public class Test1 {
                                     .setSectionId(sectionsPO.getId())
                                     .setChannelId(videoStreamRecordPO.getChannelId())
                                     ;
-                            int insert1 = liveResourceMapper.insert(liveResourcesPO);
-                            errorMsg.put(courseSchedulePO, "插入直播资源失败 " + sectionsPO + "\n"
-                                    + coursesLearningPO + "\n" + liveResourcesPO + " 插入结果 " + insert1);
+                            LiveResourcesPO liveResourcesPO1 = liveResourceMapper.selectOne(new LambdaQueryWrapper<LiveResourcesPO>()
+                                    .eq(LiveResourcesPO::getCourseId, coursesLearningPO.getId())
+                                    .eq(LiveResourcesPO::getChannelId, videoStreamRecordPO.getChannelId())
+                            );
+                            if(liveResourcesPO1 == null){
+                                int insert1 = liveResourceMapper.insert(liveResourcesPO);
+                                errorMsg.put(courseSchedulePO, "插入直播资源失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + "\n" + liveResourcesPO + " 插入结果 " + insert1);
+
+                            }else{
+                                liveResourcesPO = liveResourcesPO1;
+                            }
+
+                            sectionsPO.setContentId(liveResourcesPO.getId());
+                            int i2 = sectionsMapper.updateById(sectionsPO);
                         }
 
                     }
@@ -232,6 +252,41 @@ public class Test1 {
                     }catch (Exception e){
                         log.error("获取班级信息错误 " + e);
                         errorMsg.put(courseSchedulePO, "获取班级信息错误 " + e);
+                    }
+
+
+                    // 更新课程助教信息
+                    Long batchIndex = courseSchedulePO.getBatchIndex();
+                    List<TeachingAssistantsCourseSchedulePO> teachingAssistantsCourseSchedulePOS = teachingAssistantsCourseScheduleMapper.
+                            selectList(new LambdaQueryWrapper<TeachingAssistantsCourseSchedulePO>().eq(
+                                    TeachingAssistantsCourseSchedulePO::getBatchId, batchIndex
+                            ));
+                    for(TeachingAssistantsCourseSchedulePO teachingAssistantsCourseSchedulePO: teachingAssistantsCourseSchedulePOS){
+                        String username = teachingAssistantsCourseSchedulePO.getUsername();
+                        CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO()
+                                .setCourseId(coursesLearningPO.getId())
+                                .setUsername(username)
+                                ;
+
+                        CourseAssistantsPO courseAssistantsPO1 = courseAssistantsMapper.selectOne(new LambdaQueryWrapper<CourseAssistantsPO>()
+                                .eq(CourseAssistantsPO::getCourseId, coursesLearningPO.getId())
+                                .eq(CourseAssistantsPO::getUsername, username)
+                        );
+
+                        // 一门课里已存在的助教 不重复插入
+                        if(courseAssistantsPO1 == null){
+                            int insert = courseAssistantsMapper.insert(courseAssistantsPO);
+                            if(insert < 0){
+                                log.error("插入助教信息失败 " + teachingAssistantsCourseSchedulePO + "\n" +
+                                        "插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                                errorMsg.put(courseSchedulePO, "插入助教信息失败 " + teachingAssistantsCourseSchedulePO + "\n" +
+                                        "插入节点失败 " + sectionsPO + "\n"
+                                        + coursesLearningPO + " 插入结果 " + insert);
+                            }
+                        }
+
+
                     }
 
 
@@ -277,6 +332,9 @@ public class Test1 {
             for (int i = 0; i < sections.size(); i++) {
                 SectionsPO section = sections.get(i);
                 section.setSequence(i + 1); // 设置序列号，从1开始
+                if(StringUtils.isBlank(section.getSectionName())){
+                    section.setSectionName("第 " + (i+1) + " 次课");
+                }
                 sectionsMapper.updateById(section);
             }
         }
