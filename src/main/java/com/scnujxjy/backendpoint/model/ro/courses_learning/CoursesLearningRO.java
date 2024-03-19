@@ -49,6 +49,9 @@ public class CoursesLearningRO {
     @ApiModelProperty(value = "主讲老师姓名", example = "张三")
     String mainTeacherName;
 
+    @ApiModelProperty(value = "主讲老师用户名", example = "T20071030")
+    private String defaultMainTeacherUsername;
+
     @ApiModelProperty(value = "上课时间 Start", example = "2024 03 15 00:00:00")
     Date courseStartTime;
 

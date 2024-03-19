@@ -92,6 +92,7 @@ minio:
   courseCoverDir: xueli-course-resources
   importBucketName: dataimport
 
+
 sa-token:
   # token名称 (同时也是cookie名称)
   token-name: xl_token
