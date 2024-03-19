@@ -7,6 +7,7 @@ import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseCoverChangeRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationManagerZeroVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import org.apache.ibatis.annotations.Delete;
@@ -434,4 +435,8 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
 
 
     List<ExamDataBO> selectAllExamData(@Param("entity") ExamFilterRO entity);
+
+    List<CourseClassInfoVO> getCourseClassInfo(@Param("filter") CourseInformationRO courseInformationRO);
+
+    List<CourseClassInfoVO> selectClassByCourseCreateCondition(@Param("filter") CourseInformationRO courseInformationRO);
 }

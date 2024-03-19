@@ -23,6 +23,8 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseCreateArgsVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
@@ -55,6 +57,9 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
 
     @Resource
     private ClassInformationMapper classInformationMapper;
+
+    @Resource
+    private CourseInformationMapper courseInformationMapper;
 
     /**
      * 根据id查询课程信息
@@ -244,5 +249,39 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
 
     public byte[] downloadTeachingPlans(PageRO<CourseInformationRO> courseInformationROPageRO, AbstractFilter filter) {
         return filter.downloadTeachingPlans(courseInformationROPageRO);
+    }
+
+    /**
+     * 获取课程创建所需参数
+     * 比如年级的筛选参数、课程名称的筛选参数
+     * @param courseInformationRO
+     * @return
+     */
+    public CourseCreateArgsVO getTeachingPlansArgs(CourseInformationRO courseInformationRO) {
+
+        List<String> grades = courseInformationMapper.selectDistinctGrades(courseInformationRO);
+        List<String> courseNames = courseInformationMapper.selectDistinctCourseNames(courseInformationRO);
+
+        CourseCreateArgsVO courseCreateArgsVO = new CourseCreateArgsVO();
+        courseCreateArgsVO.setGrades(grades);
+        courseCreateArgsVO.setCourseNames(courseNames);
+
+        return courseCreateArgsVO;
+    }
+
+    /**
+     * courseNameSet GradeSet
+     * @param courseInformationRO
+     * @return
+     */
+    public Set<CourseClassInfoVO> getClassInfosByCoursesInfo(CourseInformationRO courseInformationRO) {
+        Set<CourseClassInfoVO> courseClassInfoVOS = new HashSet<>();
+        for(String grade: courseInformationRO.getGrades()){
+            for(String courseName: courseInformationRO.getCourseNames()){
+                List<CourseClassInfoVO> courseClassInfoVOS1 =  getBaseMapper().selectClassByCourseCreateCondition(new CourseInformationRO().setGrade(grade).setCourseName(courseName));
+                courseClassInfoVOS.addAll(courseClassInfoVOS1);
+            }
+        }
+        return courseClassInfoVOS;
     }
 }

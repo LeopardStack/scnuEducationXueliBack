@@ -10,6 +10,8 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseCreateArgsVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
@@ -26,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.*;
@@ -371,5 +374,53 @@ public class CourseInformationController {
         // 返回数据
         return SaResult.data(bytes);
     }
+
+    /**
+     * 根据不同筛选参数来查询教学计划信息 包含班级信息
+     *
+     * @return 教学计划
+     */
+    @GetMapping("/get_course_infos")
+    public SaResult getTeachingPlansArgs(@RequestBody CourseInformationRO courseInformationRO) {
+        List<String> roleList = StpUtil.getRoleList();
+        log.info("登录角色 " + roleList);
+
+        CourseCreateArgsVO courseCreateArgsVO = null;
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            courseCreateArgsVO = courseInformationService.getTeachingPlansArgs(courseInformationRO);
+        }
+        if (Objects.isNull(courseCreateArgsVO)) {
+            throw dataNotFoundError();
+        }
+        // 转换并返回
+        return SaResult.data(courseCreateArgsVO);
+    }
+
+
+    /**
+     * 根据不同的角色 来根据课程信息来锁定班级信息
+     *
+     * @return 班级信息
+     */
+    @GetMapping("/get_class_info_by_course_info")
+    public SaResult getClassInfosByCoursesInfo(@RequestBody CourseInformationRO courseInformationRO) {
+        List<String> roleList = StpUtil.getRoleList();
+        log.info("登录角色 " + roleList);
+
+        Set<CourseClassInfoVO> courseClassInfoVOS = null;
+        if (roleList.isEmpty()) {
+            throw dataNotFoundError();
+        } else {
+            courseClassInfoVOS = courseInformationService.getClassInfosByCoursesInfo(courseInformationRO);
+        }
+        if (Objects.isNull(courseClassInfoVOS)) {
+            throw dataNotFoundError();
+        }
+        // 转换并返回
+        return SaResult.data(courseClassInfoVOS);
+    }
+
 }
 

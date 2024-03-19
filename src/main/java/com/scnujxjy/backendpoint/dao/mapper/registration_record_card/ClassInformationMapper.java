@@ -7,6 +7,7 @@ import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.vo.core_data.PaymentInfoVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ClassInformationDownloadVO;
@@ -169,4 +170,5 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
     List<ClassInformationDownloadVO> downloadClassInformationDataByManager0(@Param("entity") ClassInformationFilterRO entity);
 
     List<StudentStatusChangeClassInfoVO> getStudentStatusChangeClassInfoByFilter(@Param("entity") ClassInformationRO classInformationRO);
+
 }
