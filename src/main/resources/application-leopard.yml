@@ -59,7 +59,7 @@ spring:
       idleTimeout: 300000  # set to 5 minutes for example
 
   elasticsearch:
-    uris: 124.71.34.208
+    uris: 124.71.34.208:9200
     port: 9200
     username: elastic
     password: elastic
