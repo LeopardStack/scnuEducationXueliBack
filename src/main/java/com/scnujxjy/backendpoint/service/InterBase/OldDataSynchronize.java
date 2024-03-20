@@ -398,6 +398,12 @@ public class OldDataSynchronize {
         classInformationDataImport.insertLogs.add("新系统中的非学历教育班级记录数 " + value_fwp);
 
 
+        if(updateAny){
+            // 清掉班级信息
+            int delete = classInformationMapper.delete(null);
+            log.info("删除了 新系统 " + delete + " 个班级");
+        }
+
         for (HashMap<String, String> hashMap : teachingPlans) {
 
             classInformationDataImport.queue.put(hashMap); // Put the object in the queue
@@ -428,6 +434,7 @@ public class OldDataSynchronize {
                 "datasynchronize");
         exportListToTxtAndUploadToMinio(classInformationDataImport.insertLogs,
                 errorFileName, "datasynchronize");
+
     }
 
     /**

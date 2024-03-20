@@ -73,7 +73,7 @@ public class Test1 {
     @Test
     public void test5(){
         try {
-            for(int grade = 2023; grade >= 2021; grade--){
+            for(int grade = 2024; grade >= 2020; grade--){
                 int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
                         .eq(PaymentInfoPO::getGrade, "" + grade));
                 log.info("删除 " + grade + " 的缴费数据 " + delete);
@@ -85,7 +85,7 @@ public class Test1 {
 //                log.info("删除 " + grade + " 的缴费数据 " + delete);
 //            }
             oldDataSynchronize.synchronizePaymentInfoDataByInterval(
-                    true, 2023, 2021,
+                    true, 2024, 2020,
                     new ArrayList<>());
         }catch (Exception e){
             log.info("同步成教缴费数据失败 " + e);
@@ -152,6 +152,31 @@ public class Test1 {
             oldDataSynchronize.synchronizeGradeInformationData(2023, 2021, true);
         }catch (Exception e){
             log.info("同步新旧系统成绩数据失败 " + e.toString());
+        }
+    }
+
+
+    /**
+     * 同步班级数据
+     */
+    @Test
+    public void test10(){
+        try {
+            oldDataSynchronize.synchronizeClassInformationData(true);
+        }catch (Exception e){
+            log.info("同步新旧系统班级数据失败 " + e.toString());
+        }
+    }
+
+    /**
+     * 同步教学计划数据
+     */
+    @Test
+    public void test11(){
+        try {
+            oldDataSynchronize.synchronizeTeachingPlansData(true, true);
+        }catch (Exception e){
+            log.info("同步新旧系统教学计划数据失败 " + e.toString());
         }
     }
 }

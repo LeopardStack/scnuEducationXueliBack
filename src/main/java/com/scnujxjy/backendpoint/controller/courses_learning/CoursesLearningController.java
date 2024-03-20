@@ -97,7 +97,7 @@ public class CoursesLearningController {
      * @param coursesLearningROPageRO
      * @return
      */
-    @PostMapping("/page_query_courses_info")
+    @PostMapping("/create_course")
     @ApiOperation(value = "创建课程学习中的一门课")
     public SaResult createCourse(
             @ApiParam(value = "课程创建参数", required = true)
