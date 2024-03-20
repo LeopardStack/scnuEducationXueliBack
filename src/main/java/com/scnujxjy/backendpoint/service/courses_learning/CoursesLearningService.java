@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,7 +65,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     @Resource
     private MinioService minioService;
 
-    @Value("minio.courseCoverDir")
+    @Value("${minio.courseCoverDir}")
     private String minioCourseCoverDir;
 
     @Resource
@@ -266,6 +267,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CoursesLearningPO coursesLearningPO = new CoursesLearningPO();
             coursesLearningPO.setCourseName(convertListToString(courseLearningCreateRO.getCourseNames()));
             coursesLearningPO.setCourseType(courseLearningCreateRO.getCourseType());
+            // 获取当前年份
+            int currentYear = LocalDate.now().getYear();
+            coursesLearningPO.setGrade(String.valueOf(currentYear));
             coursesLearningPO.setCourseDescription(courseLearningCreateRO.getCourseDescription());
 
             if (!isValidCourseType(courseLearningCreateRO.getCourseType())) {
@@ -306,8 +310,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
 
 
-            String uniqueFileName = generateUniqueFileName(coursesLearningPO, courseLearningCreateRO.getCourseCover().getName());
-            try (InputStream inputStream = Files.newInputStream(courseLearningCreateRO.getCourseCover().toPath())) {
+            String uniqueFileName = generateUniqueFileName(coursesLearningPO, courseLearningCreateRO.getCourseCover().getOriginalFilename());
+            try (InputStream inputStream = courseLearningCreateRO.getCourseCover().getInputStream()) {
                 boolean uploadSuccess = minioService.uploadStreamToMinio(inputStream, uniqueFileName, minioCourseCoverDir);
                 if (uploadSuccess) {
                     coursesLearningPO.setCourseCoverUrl(minioCourseCoverDir + "/" + uniqueFileName);
@@ -331,9 +335,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toList());
 
             // 批量插入 CourseAssistantsPOS
-            boolean assistantInsert = courseAssistantsService.saveBatch(courseAssistantsPOS);
-            if (!assistantInsert) {
-                throw new RuntimeException("批量插入助教失败");
+            if(courseAssistantsPOS.size() != 0) {
+                boolean assistantInsert = courseAssistantsService.saveBatch(courseAssistantsPOS);
+                if (!assistantInsert) {
+                    throw new RuntimeException("批量插入助教失败");
+                }
             }
             courseLearningCreateRO.getClassIdentifier().stream()
                     .filter(this::isValidClassName)
@@ -341,9 +347,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toList());
 
             // 如果该门课程的类型是直播 或者 混合类型 则需要创建一个直播间给它
-            if(coursesLearningPO.getCourseType().equals(CourseContentType.MIX) || coursesLearningPO.getCourseType().equals(CourseContentType.LIVING)){
+            if(coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType()) ||
+                    coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType())){
             // 获取当前时间
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now().plusHours(1);
 
             // 在当前时间基础上加两个小时
             LocalDateTime twoHoursLater = now.plusHours(2);
@@ -374,7 +381,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
 
         }catch (Exception e){
-            log.info("创建课程失败 " + e);
+            log.info(StpUtil.getLoginIdAsString() +  " 创建课程失败 " + e);
             return false;
         }
 

@@ -24,7 +24,7 @@
     <appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
 <!--        <destination>113.108.140.170:4560</destination>-->
 <!--        开发测试环境 下 使用 这个端口 来接收 日志 存放到 logstash 从而传送到 elasticsearch -->
-        <destination>113.108.140.170:4561</destination>
+        <destination>139.159.132.31:4560</destination>
         <encoder charset="UTF-8" class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
 
@@ -35,21 +35,21 @@
     </root>
 
     <!-- MyBatis SQL 日志设置 -->
-    <logger name="org.mybatis" level="INFO">
-<!--    <logger name="org.mybatis" level="DEBUG">-->
+<!--    <logger name="org.mybatis" level="INFO">-->
+    <logger name="org.mybatis" level="DEBUG">
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>
 <!--记录具体的 Mapper SQL 语句，您也需要将 Mapper 的日志级别设置为 DEBUG-->
-<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">-->
-    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">
+    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">
+<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">-->
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>
 
 
-    <!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">-->
-    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">
+        <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">
+<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">-->
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>

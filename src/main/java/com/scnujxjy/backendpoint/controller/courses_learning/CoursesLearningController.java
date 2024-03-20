@@ -12,10 +12,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 // 引入Swagger 2的注解
 import io.swagger.annotations.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -95,6 +92,7 @@ public class CoursesLearningController {
 
     /**
      * 创建课程 此时可以没有任何信息 比如 直播、点播 的 Section
+     * 可以同时支持 文件和表单参数的上传
      * @param coursesLearningROPageRO
      * @return
      */
@@ -102,8 +100,8 @@ public class CoursesLearningController {
     @ApiOperation(value = "创建课程学习中的一门课")
     public SaResult createCourse(
             @ApiParam(value = "课程创建参数", required = true)
-            @RequestBody CourseLearningCreateRO coursesLearningROPageRO) {
-        // 校验参数
+            @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
+        // 校验参数 traceId
         if (Objects.isNull(coursesLearningROPageRO)) {
             throw dataMissError();
         }
