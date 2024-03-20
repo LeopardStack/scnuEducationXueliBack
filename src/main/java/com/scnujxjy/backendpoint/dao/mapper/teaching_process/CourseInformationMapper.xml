@@ -61,16 +61,22 @@
 
     <sql id="commonFilters">
         <if test='filter.grade != null'>AND c.grade = #{filter.grade}</if>
+        <if test='filter.courseNameSet != null and !filter.courseNameSet.isEmpty()'>
+            AND ci.course_name IN
+            <foreach item="courseName" collection="filter.courseNameSet" open="(" separator="," close=")">
+                #{courseName}
+            </foreach>
+        </if>
         <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
         <if test='filter.majorName != null'>AND c.major_name = #{filter.majorName}</if>
         <if test='filter.level != null'>AND c.level = #{filter.level}</if>
         <if test='filter.studyForm != null'>AND c.study_form = #{filter.studyForm}</if>
         <if test='filter.adminClass != null'>AND c.admin_class = #{filter.adminClass}</if>
         <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
-        <if test='filter.courseNameSet != null and !filter.courseNameSet.isEmpty()'>
-            AND ci.course_name IN
-            <foreach item="courseName" collection="filter.courseNameSet" open="(" separator="," close=")">
-                #{className}
+        <if test='filter.grades != null and !filter.grades.isEmpty()'>
+            AND ci.grade IN
+            <foreach item="grade" collection="filter.grades" open="(" separator="," close=")">
+                #{grade}
             </foreach>
         </if>
         <if test='filter.studyHours != null'>AND c.study_hours = #{filter.studyHours}</if>
@@ -283,6 +289,22 @@
     </select>
     <select id="selectDistinctCollegeNames" resultType="java.lang.String">
         SELECT DISTINCT ci.college
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+
+    <select id="getCourseClassInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO">
+        SELECT *
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+
+    <select id="selectClassByCourseCreateCondition"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO">
+        SELECT *
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>

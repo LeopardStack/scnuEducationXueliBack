@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,6 +34,11 @@ public class CourseInformationRO {
      * 年级
      */
     private String grade;
+
+    /**
+     * 年级集合 用来筛选教学计划
+     */
+    private Set<String> grades;
 
     /**
      * 学院名称
