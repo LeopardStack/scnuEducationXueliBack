@@ -14,7 +14,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
-import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;

@@ -2,8 +2,6 @@ package com.scnujxjy.backendpoint.service.courses_learning;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.CourseContentType;
@@ -12,23 +10,18 @@ import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseAssistantsMapper;
-import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
-import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
@@ -40,10 +33,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -348,6 +341,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toList());
 
             // 如果该门课程的类型是直播 或者 混合类型 则需要创建一个直播间给它
+            if(coursesLearningPO.getCourseType().equals(CourseContentType.MIX) || coursesLearningPO.getCourseType().equals(CourseContentType.LIVING)){
             // 获取当前时间
             LocalDateTime now = LocalDateTime.now();
 
@@ -377,6 +371,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     log.info("创建频道成功");
                 }
             }
+            }
+
         }catch (Exception e){
             log.info("创建课程失败 " + e);
             return false;
@@ -385,6 +381,15 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
 
         return true;
+    }
+
+    @Async
+    protected void importWhiteStudents(List<Object> students){
+        // 跑导入白名单的逻辑就好了
+
+        // 间隔性扫描  我们存在学籍异动的学生  比如说 这个学生 它转专业了
+        // 扫描 每个直播间 所对应的课程的班级映射 里面的所有学生 + 重修的学生 是否与保利威白名单的学生一致
+        // OA 转专业这个事件的时候 它就会去找这个学生所在的所有课程 （每门课程只有一个直播间）
     }
 
 

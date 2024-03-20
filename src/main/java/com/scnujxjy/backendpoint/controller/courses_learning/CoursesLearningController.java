@@ -148,7 +148,7 @@ public class CoursesLearningController {
      * @param courseId
      * @return
      */
-    @PostMapping("/delete_course")
+    @PostMapping("/set_course_valid")
     @ApiOperation(value = "删除课程学习中的一门课")
     @SaCheckPermission("课程学习.设置课程是否有效")
     public SaResult setCourseInvalid(

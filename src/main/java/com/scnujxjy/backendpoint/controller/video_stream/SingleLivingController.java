@@ -8,7 +8,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
-import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

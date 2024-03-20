@@ -26,7 +26,7 @@ import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
-import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
@@ -39,7 +39,6 @@ import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
-import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -225,6 +224,7 @@ public class VideoStreamRecordController {
                     false, "N");
             log.info("保利威创建直播间" + channel);
             if (channel.getCode().equals(200)) {
+                // 将频道的 ID 与 courseID 绑定在一起 存储到 LivingResources
                 ChannelResponseData channelResponseData = channel.getData();
                 VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
                 videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());

@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.service;
+package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;

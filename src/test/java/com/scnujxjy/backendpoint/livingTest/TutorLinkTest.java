@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.livingTest;
 
-import com.scnujxjy.backendpoint.service.SingleLivingService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
