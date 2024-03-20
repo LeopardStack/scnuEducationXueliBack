@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Slf4j
-public class LiveSchedulingService extends ServiceImpl<LiveResourceMapper, LiveResourcesPO>
+public class LiveResourceService extends ServiceImpl<LiveResourceMapper, LiveResourcesPO>
         implements IService<LiveResourcesPO> {
 
 }

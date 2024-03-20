@@ -1,17 +1,22 @@
 package com.scnujxjy.backendpoint.service.courses_learning;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.CourseContentType;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssistantsPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
-import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseAssistantsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
@@ -23,10 +28,14 @@ import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
+import com.scnujxjy.backendpoint.service.SingleLivingService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
+import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
+import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,6 +82,24 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     @Resource
     private CourseAssistantsService courseAssistantsService;
+
+    @Resource
+    private SectionsService sectionsService;
+
+    @Resource
+    private VideoStreamUtils videoStreamUtils;
+
+    @Resource
+    private SingleLivingSetting singleLivingSetting;
+
+    @Resource
+    private SingleLivingService singleLivingService;
+
+    @Resource
+    private VideoResourcesService videoResourcesService;
+
+    @Resource
+    private LiveResourceService liveResourceService;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -240,7 +268,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @param courseLearningCreateRO
      * @return
      */
-    public PageVO<CourseLearningVO> createCourse(CourseLearningCreateRO courseLearningCreateRO) {
+    public boolean createCourse(CourseLearningCreateRO courseLearningCreateRO) {
         try {
             CoursesLearningPO coursesLearningPO = new CoursesLearningPO();
             coursesLearningPO.setCourseName(convertListToString(courseLearningCreateRO.getCourseNames()));
@@ -319,11 +347,44 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .map(s -> new CoursesClassMappingPO().setCourseId(courseId).setClassIdentifier(s))
                     .collect(Collectors.toList());
 
+            // 如果该门课程的类型是直播 或者 混合类型 则需要创建一个直播间给它
+            // 获取当前时间
+            LocalDateTime now = LocalDateTime.now();
+
+            // 在当前时间基础上加两个小时
+            LocalDateTime twoHoursLater = now.plusHours(2);
+
+            // 将LocalDateTime转换为Date
+            Date startDate = java.sql.Timestamp.valueOf(now);
+            Date endDate = java.sql.Timestamp.valueOf(twoHoursLater);
+
+            ApiResponse channel = singleLivingSetting.createChannel(
+                    coursesLearningPO.getCourseName(),
+                    startDate,
+                    endDate,
+                    true,
+                    "N"
+            );
+
+            if (channel.getCode().equals(200)) {
+                ChannelResponseData channelResponseData = channel.getData();
+                VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
+                videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
+
+                ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo("" + channelResponseData.getChannelId());
+                log.info("频道信息包括 " + channelInfoByChannelId1);
+                if (channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()) {
+                    log.info("创建频道成功");
+                }
+            }
         }catch (Exception e){
             log.info("创建课程失败 " + e);
+            return false;
         }
 
-        return null;
+
+
+        return true;
     }
 
 
@@ -390,4 +451,97 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         return false;
     }
 
+
+    /**
+     * 删除课程 包含删除该课程的信息 、Section、助教信息、每一个 Section 对应的资源信息
+     *
+     * @param courseId
+     * @return
+     */
+    public boolean deleteCourse(Long courseId) {
+        try {
+            if (getBaseMapper().selectCount(new LambdaQueryWrapper<CoursesLearningPO>()
+                    .eq(CoursesLearningPO::getId, courseId)) == 0) {
+                // 没有这门课 说明已经被删除了
+                return true;
+            }
+            // 先删除 Section
+            List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                    .eq(SectionsPO::getCourseId, courseId));
+            // 使用一个直播的标志 来标识该门课是否有直播间 有的话需要调用保利威来删除直播间
+            boolean hasLivingRoom = false;
+
+            for (SectionsPO sectionsPO : sectionsPOS) {
+                if (sectionsPO.getContentType().equals(CourseContentType.NODE)) {
+                    // 父节点 无意义 直接删除
+                } else if (sectionsPO.getContentType().equals(CourseContentType.LIVING)) {
+                    hasLivingRoom = true;
+                    // 开启直播间标志 让其统一删除这门课的所有直播间资源
+                } else if (sectionsPO.getContentType().equals(CourseContentType.VIDEO)) {
+                    if (sectionsPO.getContentId() != null) {
+                        // contentID 不为空 则说明指向了点播视频 资源
+                        // 一个 Section 最多对应一个视频
+                        int delete = videoResourcesService.getBaseMapper().delete(new LambdaQueryWrapper<VideoResourcesPO>()
+                                .eq(VideoResourcesPO::getSectionId, sectionsPO.getId()));
+                    }
+                    // 为空 说明没有分配视频资源
+                } else if (sectionsPO.getContentType().equals(CourseContentType.OFF_LINE)) {
+                    // 线下 说明存储了一些 其他资料 附件 这个暂时没做
+                }
+                int i = sectionsService.getBaseMapper().deleteById(sectionsPO.getId());
+            }
+
+            // 统一删除直播间资源
+            if (hasLivingRoom) {
+                List<LiveResourcesPO> liveResourcesPOS = liveResourceService.getBaseMapper().selectList(new LambdaQueryWrapper<LiveResourcesPO>()
+                        .eq(LiveResourcesPO::getCourseId, courseId));
+                for (LiveResourcesPO liveResourcesPO : liveResourcesPOS) {
+                    String channelId = liveResourcesPO.getChannelId();
+                    try {
+                        SaResult saResult = singleLivingService.deleteChannel(channelId);
+                        if (!saResult.getCode().equals(ResultCode.SUCCESS.getCode())) {
+                            log.error("删除保利威直播间失败 " + saResult.getMsg());
+                        }
+                    } catch (Exception e) {
+                        log.info("删除直播间失败 " + e);
+                    }
+                    // 清除直播资源映射记录
+                    int i = liveResourceService.getBaseMapper().deleteById(liveResourcesPO.getId());
+                }
+            }
+
+            // 删除助教信息
+            int delete = courseAssistantsService.getBaseMapper().delete(new LambdaQueryWrapper<CourseAssistantsPO>()
+                    .eq(CourseAssistantsPO::getCourseId, courseId));
+
+            // 删除课程本身
+            int i = getBaseMapper().deleteById(courseId);
+
+            return true;
+        }catch (Exception e){
+            log.error("删除课程失败 " + e);
+            return false;
+        }
+    }
+
+
+    /**
+     * 设置这门课是否有效
+     * @param courseId
+     * @return
+     */
+    public boolean setCourseInvalid(Long courseId) {
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
+                .eq(CoursesLearningPO::getId, courseId));
+        if(coursesLearningPO.getValid().equals("Y")){
+            coursesLearningPO.setValid("N");
+        }else{
+            coursesLearningPO.setValid("Y");
+        }
+        int i = getBaseMapper().updateById(coursesLearningPO);
+        if(i > 0){
+            return true;
+        }
+        return false;
+    }
 }

@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.courses_learning;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
@@ -108,13 +109,63 @@ public class CoursesLearningController {
         }
 
         // 查询数据
-        PageVO<CourseLearningVO> courseLearningVOPageVO = coursesLearningService.createCourse(coursesLearningROPageRO);
+        boolean createCourse = coursesLearningService.createCourse(coursesLearningROPageRO);
         // 数据校验
-        if (Objects.isNull(courseLearningVOPageVO)) {
-            throw dataNotFoundError();
+        if(createCourse){
+            return SaResult.ok("创建课程成功");
         }
         // 返回数据
-        return SaResult.data(courseLearningVOPageVO);
+        return SaResult.error("创建课程失败");
+    }
+
+    /**
+     * 根据课程 ID 删除这门课
+     * @param courseId
+     * @return
+     */
+    @PostMapping("/delete_course")
+    @ApiOperation(value = "删除课程学习中的一门课")
+    @SaCheckPermission("课程学习.删除课程")
+    public SaResult deleteCourse(
+            @ApiParam(value = "课程删除参数", required = true)
+            Long courseId) {
+        // 校验参数
+        if (Objects.isNull(courseId)) {
+            throw dataMissError();
+        }
+
+        // 查询数据
+        boolean delete = coursesLearningService.deleteCourse(courseId);
+        if(delete){
+            return SaResult.ok("删除成功");
+        }
+        // 返回数据
+        return SaResult.error("删除失败 ");
+    }
+
+    /**
+     * 根据课程 ID 设置这门课是否有效
+     * @param courseId
+     * @return
+     */
+    @PostMapping("/delete_course")
+    @ApiOperation(value = "删除课程学习中的一门课")
+    @SaCheckPermission("课程学习.设置课程是否有效")
+    public SaResult setCourseInvalid(
+            @ApiParam(value = "课程删除参数", required = true)
+            Long courseId) {
+        // 校验参数
+        if (Objects.isNull(courseId)) {
+            throw dataMissError();
+        }
+
+        // 查询数据
+        boolean delete = coursesLearningService.setCourseInvalid(courseId);
+        if(delete){
+            return SaResult.ok("设置成功");
+        }
+        // 返回数据
+        return SaResult.error("设置失败 ");
     }
 }
 

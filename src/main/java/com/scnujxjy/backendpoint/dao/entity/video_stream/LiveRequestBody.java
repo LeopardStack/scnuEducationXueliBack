@@ -1,8 +1,16 @@
 package com.scnujxjy.backendpoint.dao.entity.video_stream;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 public class LiveRequestBody {
 
     /** 直播名称，最大长度100 */
