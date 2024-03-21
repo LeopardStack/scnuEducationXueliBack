@@ -4,8 +4,10 @@ import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
@@ -37,4 +39,8 @@ public interface CoursesLearningMapper extends BaseMapper<CoursesLearningPO> {
 
     List<CourseRecordBO> getCourseSectionsData();
 
+    List<CourseLearningStudentInfoVO> selectCourseStudentsInfo(@Param("entity") CourseStudentSearchRO entity,
+                                                               @Param("pageNumber") Long pageNumber, @Param("pageSize") Long pageSize);
+
+    Long selectCountCourseStudentsInfo(@Param("entity") CourseStudentSearchRO entity);
 }

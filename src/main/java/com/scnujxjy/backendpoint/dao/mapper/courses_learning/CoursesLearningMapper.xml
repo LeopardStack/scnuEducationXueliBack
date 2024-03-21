@@ -99,4 +99,51 @@
     </select>
 
 
+    <sql id="courseStudentInfoFilter">
+        <if test='entity.courseId != null'>AND cl.id = #{entity.courseId}</if>
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
+        <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
+        <if test='entity.teachingPointName != null'>AND tpi.teaching_point_name = #{entity.teachingPointName}</if>
+        <if test='entity.className != null'>AND ci.class_name = #{entity.className}</if>
+        <if test='entity.idNumber != null'>AND cl.id_number = #{entity.idNumber}</if>
+        <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber}</if>
+
+        <if test='entity.name != null'>AND pi.name >= #{entity.name}</if>
+    </sql>
+
+
+    <select id="selectCourseStudentsInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">
+        SELECT cl.id, ss.grade, ci.college, ci.major_name, ci.study_form, ci.`level`, tpi.teaching_point_name,
+               ci.class_name, ss.id_number, ss.student_number, pi.`name`
+        FROM courses_learning cl
+                 INNER JOIN courses_class_mapping ccm ON cl.id=ccm.course_id
+                 INNER JOIN class_information ci ON ccm.class_identifier=ci.class_identifier
+                 INNER JOIN student_status ss ON ss.class_identifier=ci.class_identifier
+                 INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
+                 INNER JOIN teaching_point_information tpi ON ci.class_name=tpi.alias
+        <include refid="courseStudentInfoFilter" />
+        ORDER BY
+        ss.grade DESC, ci.college, ci.major_name, ci.study_form, ci.`level`, ci.class_name
+        LIMIT
+        #{pageNumber}, #{pageSize}
+    </select>
+
+
+    <select id="selectCountCourseStudentsInfo"
+            resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM courses_learning cl
+        INNER JOIN courses_class_mapping ccm ON cl.id=ccm.course_id
+        INNER JOIN class_information ci ON ccm.class_identifier=ci.class_identifier
+        INNER JOIN student_status ss ON ss.class_identifier=ci.class_identifier
+        INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
+        INNER JOIN teaching_point_information tpi ON ci.class_name=tpi.alias
+        <include refid="courseStudentInfoFilter" />
+    </select>
+
+
 </mapper>
