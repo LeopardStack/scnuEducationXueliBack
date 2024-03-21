@@ -70,10 +70,11 @@
         cl.updated_time,
         ti.name AS default_main_teacher_name,
         GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
-        MIN(ss.start_time) AS recent_course_schedule_time   -- 添加这行来获取最小的 start_time
+        MIN(ss.start_time) AS recent_course_schedule_time   -- 获取最接近当前时间的未来 start_time
         <include refid="commonJoin" />
         WHERE
         1=1
+        AND ss.start_time > NOW()  -- 确保 start_time 在当前时间之后
         <include refid="commonFilters" />
         GROUP BY
         cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
