@@ -1,7 +1,11 @@
 package com.scnujxjy.backendpoint.model.vo.video_stream;
 
 import com.alibaba.excel.annotation.ExcelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -12,6 +16,10 @@ import lombok.Data;
  * @since 2023-08-14
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 public class StudentWhiteListVO {
 
 private static final String describe = "白名单导入模板\n" +

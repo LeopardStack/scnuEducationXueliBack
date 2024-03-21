@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.courses_learning;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.CourseContentType;
@@ -15,12 +16,19 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelIn
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
+import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -30,6 +38,11 @@ import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import com.scnujxjy.backendpoint.util.video_stream.SingleLivingSetting;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.common.v1.exception.PloyvSdkException;
+import net.polyv.live.v1.constant.LiveConstant;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
+import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
+import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,7 +52,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -81,6 +93,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     private SectionsService sectionsService;
 
     @Resource
+    private StudentStatusService studentStatusService;
+
+    @Resource
     private VideoStreamUtils videoStreamUtils;
 
     @Resource
@@ -91,6 +106,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     @Resource
     private VideoResourcesService videoResourcesService;
+
+    @Resource
+    private CoursesClassMappingService coursesClassMappingService;
 
     @Resource
     private LiveResourceService liveResourceService;
@@ -341,14 +359,31 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     throw new RuntimeException("批量插入助教失败");
                 }
             }
-            courseLearningCreateRO.getClassIdentifier().stream()
+            List<CoursesClassMappingPO> coursesClassMappingPOList = courseLearningCreateRO.getClassIdentifier().stream()
                     .filter(this::isValidClassName)
                     .map(s -> new CoursesClassMappingPO().setCourseId(courseId).setClassIdentifier(s))
                     .collect(Collectors.toList());
+            if(coursesClassMappingPOList.size() != 0){
+                boolean assistantInsert = coursesClassMappingService.saveBatch(coursesClassMappingPOList);
+                if (!assistantInsert) {
+                    throw new RuntimeException("批量插入课程班级映射失败");
+                }
+            }
+
+            List<StudentWhiteListInfoBO> studentWhiteListInfoBOList = new ArrayList<>();
+            for(CoursesClassMappingPO coursesClassMappingPO: coursesClassMappingPOList){
+                List<StudentWhiteListInfoBO> studentWhiteListInfoBOList1 =
+                        studentStatusService.getBaseMapper().selectLivingWhiteList(
+                                new StudentStatusFilterRO().setClassIdentifier(
+                                        coursesClassMappingPO.getClassIdentifier()));
+                studentWhiteListInfoBOList.addAll(studentWhiteListInfoBOList1);
+            }
 
             // 如果该门课程的类型是直播 或者 混合类型 则需要创建一个直播间给它
             if(coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType()) ||
                     coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType())){
+
+
             // 获取当前时间
             LocalDateTime now = LocalDateTime.now().plusHours(1);
 
@@ -376,6 +411,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 log.info("频道信息包括 " + channelInfoByChannelId1);
                 if (channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()) {
                     log.info("创建频道成功");
+                    String channelId = videoStreamRecordPO.getChannelId();
+
+                    LiveResourcesPO liveResourcesPO = new LiveResourcesPO().setCourseId(courseId)
+                            .setChannelId(channelId).setValid("Y");
+                    int insert1 = liveResourceService.getBaseMapper().insert(liveResourcesPO);
+                    if(insert1 <= 0){
+                        throw new RuntimeException("保存直播资源失败 " + insert1);
+                    }
+
+                    importWhiteStudents(studentWhiteListInfoBOList, channelId);
                 }
             }
             }
@@ -391,12 +436,67 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     }
 
     @Async
-    protected void importWhiteStudents(List<Object> students){
+    protected void importWhiteStudents(List<StudentWhiteListInfoBO> students, String channelId){
         // 跑导入白名单的逻辑就好了
+        ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
+        channelInfoRequest.setChannelId(channelId);
+        channelInfoRequest.setStudentWhiteList(new ArrayList<>());
+        for(StudentWhiteListInfoBO studentWhiteListInfoBO: students){
+            channelInfoRequest.getStudentWhiteList().
+                    add(new StudentWhiteListVO()
+                            .setCode(studentWhiteListInfoBO.getIdNumber())
+                            .setName(studentWhiteListInfoBO.getName())
+                    );
+        }
+        SaResult saResult1 = singleLivingService.addChannelWhiteStudentByFile(channelInfoRequest);
 
+        SaResult saResult2 = new SaResult();
+        LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
+        Boolean liveUpdateChannelAuthResponse;
+        try {
+            LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.
+                    AuthSetting().setAuthType(
+                    LiveConstant.AuthType.PHONE.getDesc())
+                    .setRank(1)
+                    .setEnabled("Y")
+                    .setAuthTips("请输入你的身份证号码");
+
+            LiveChannelSettingRequest.AuthSetting authSetting2 = new LiveChannelSettingRequest.AuthSetting().setAuthType(
+                            LiveConstant.AuthType.DIRECT.getDesc())
+                    .setRank(2)
+                    .setEnabled("Y")
+                    .setDirectKey(RandomUtil.randomString(8));
+
+            List<LiveChannelSettingRequest.AuthSetting> authSettings = new ArrayList<>();
+            authSettings.add(authSetting);
+            authSettings.add(authSetting2);
+
+            liveUpdateChannelAuthRequest.setChannelId(channelId)
+                    .setAuthSettings(authSettings);
+            liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(
+                    liveUpdateChannelAuthRequest);
+            //如果返回结果不为空并且为true，说明修改成功
+            if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
+                saResult2.setMsg(ResultCode.SUCCESS.getMessage());
+                saResult2.setCode(ResultCode.SUCCESS.getCode());
+            }
+        } catch (PloyvSdkException e) {
+            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
+            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("设置频道的白名单接口调用异常", e);
+        }
+        saResult2.setMsg(ResultCode.FAIL.getMessage());
+        saResult2.setCode(ResultCode.FAIL.getCode());
+
+        if (saResult2.getCode() == 200) {
+            log.info("设置白名单观看条件成功");
+        }
+        log.info("导入白名单结果 " + saResult1.getCode() + " " + saResult1.getMsg());
         // 间隔性扫描  我们存在学籍异动的学生  比如说 这个学生 它转专业了
         // 扫描 每个直播间 所对应的课程的班级映射 里面的所有学生 + 重修的学生 是否与保利威白名单的学生一致
         // OA 转专业这个事件的时候 它就会去找这个学生所在的所有课程 （每门课程只有一个直播间）
+//        SaResult saResult = singleLivingSetting.addChannelWhiteStudent(channelId, students);
     }
 
 
@@ -503,8 +603,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 int i = sectionsService.getBaseMapper().deleteById(sectionsPO.getId());
             }
 
+            Integer livingRoomCount = liveResourceService.getBaseMapper().selectCount(new LambdaQueryWrapper<LiveResourcesPO>()
+                    .eq(LiveResourcesPO::getCourseId, courseId));
+
             // 统一删除直播间资源
-            if (hasLivingRoom) {
+            if (hasLivingRoom || livingRoomCount > 0) {
                 List<LiveResourcesPO> liveResourcesPOS = liveResourceService.getBaseMapper().selectList(new LambdaQueryWrapper<LiveResourcesPO>()
                         .eq(LiveResourcesPO::getCourseId, courseId));
                 for (LiveResourcesPO liveResourcesPO : liveResourcesPOS) {
@@ -525,6 +628,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             // 删除助教信息
             int delete = courseAssistantsService.getBaseMapper().delete(new LambdaQueryWrapper<CourseAssistantsPO>()
                     .eq(CourseAssistantsPO::getCourseId, courseId));
+
+            int delete1 = coursesClassMappingService.getBaseMapper().delete(new LambdaQueryWrapper<CoursesClassMappingPO>()
+                    .eq(CoursesClassMappingPO::getCourseId, courseId));
 
             // 删除课程本身
             int i = getBaseMapper().deleteById(courseId);
@@ -555,5 +661,29 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             return true;
         }
         return false;
+    }
+
+    public PageVO<CourseLearningStudentInfoVO> getCourseStudentsInfo(PageRO<CourseStudentSearchRO> courseStudentSearchROPageRO) {
+        List<String> roleList = StpUtil.getRoleList();
+        if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+            // 学历教育部
+
+        }else if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+            // 二级学院
+            CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+            courseStudentSearchROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
+        }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+
+        }
+
+        List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList =  getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
+                courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
+        PageVO pageVO = new PageVO<CourseLearningStudentInfoVO>();
+        pageVO.setRecords(courseLearningStudentInfoVOList);
+        pageVO.setSize(courseStudentSearchROPageRO.getPageSize());
+        pageVO.setCurrent(courseStudentSearchROPageRO.getPageNumber());
+        Long total = getBaseMapper().selectCountCourseStudentsInfo(courseStudentSearchROPageRO.getEntity());
+        pageVO.setTotal(total);
+        return pageVO;
     }
 }

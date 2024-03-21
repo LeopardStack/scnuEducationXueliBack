@@ -222,5 +222,12 @@
         WHERE 1=1
         <include refid="commonFiltersForTeachingPoint" />
     </select>
+    <select id="selectLivingWhiteList"
+            resultType="com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO">
+        SELECT *
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFiltersForTeachingPoint" />
+    </select>
 
 </mapper>

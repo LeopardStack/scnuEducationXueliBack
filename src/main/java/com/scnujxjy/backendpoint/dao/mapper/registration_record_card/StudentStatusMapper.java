@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.mapper.registration_record_card;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
+import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
@@ -518,5 +519,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<String> getDistinctStudyDurationsByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
 
     List<String> getDistinctAcademicStatussByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    List<StudentWhiteListInfoBO> selectLivingWhiteList(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
 }
 

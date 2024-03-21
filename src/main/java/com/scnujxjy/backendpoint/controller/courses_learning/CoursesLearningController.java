@@ -5,12 +5,15 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 // 引入Swagger 2的注解
+import com.scnujxjy.backendpoint.util.ResultCode;
 import io.swagger.annotations.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -164,6 +167,32 @@ public class CoursesLearningController {
         }
         // 返回数据
         return SaResult.error("设置失败 ");
+    }
+
+
+    /**
+     * 获取课程的学生群体
+     * @param courseStudentSearchROPageRO
+     * @return
+     */
+    @GetMapping("/get_course_students_info")
+    @ApiOperation(value = "查询一门课程中的学生群体信息")
+    public SaResult getCourseStudentsInfo(
+            @ApiParam(value = "课程学生查询参数", required = true)
+            @RequestBody PageRO<CourseStudentSearchRO> courseStudentSearchROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseStudentSearchROPageRO)) {
+            throw dataMissError();
+        }
+
+        if(Objects.isNull(courseStudentSearchROPageRO.getEntity())){
+            courseStudentSearchROPageRO.setEntity(new CourseStudentSearchRO());
+        }
+
+        // 查询数据
+        PageVO<CourseLearningStudentInfoVO> courseLearningStudentInfoVOPageVO = coursesLearningService.getCourseStudentsInfo(courseStudentSearchROPageRO);
+
+        return SaResult.data(courseLearningStudentInfoVOPageVO).setCode(200).setMsg("成功获取课程中的学生信息");
     }
 }
 

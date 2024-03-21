@@ -1,29 +1,46 @@
 package com.scnujxjy.backendpoint.util.video_stream;
 
+import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.RandomUtil;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
+import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
+import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
+import net.polyv.live.v1.constant.LiveConstant;
+import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import net.polyv.live.v1.entity.channel.playback.LiveChannelPlaybackEnabledInfoRequest;
+import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
+import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
+import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
+import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
+import org.apache.commons.io.FileUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -248,6 +265,127 @@ public class SingleLivingSetting {
         return false;
     }
 
+
+    public SaResult addExtraChannelWhiteStudent(String channelId, List<StudentWhiteListInfoBO> studentWhiteListInfoBOList) {
+        log.info("调用批量新增白名单接口，请求入参为:{}", studentWhiteListInfoBOList);
+        SaResult saResult = new SaResult();
+        Boolean liveCreateChannelWhiteListResponse;
+        List<StudentWhiteListVO> successList = new ArrayList<>();
+        List<StudentWhiteListVO> failList = new ArrayList<>();
+
+        // Convert StudentWhiteListInfoBO to StudentWhiteListVO
+        for (StudentWhiteListInfoBO infoBO : studentWhiteListInfoBOList) {
+            StudentWhiteListVO studentWhite = new StudentWhiteListVO();
+            studentWhite.setCode(infoBO.getIdNumber());
+            studentWhite.setName(infoBO.getName());
+            failList.add(studentWhite);
+        }
+
+        Iterator<StudentWhiteListVO> iterator = failList.iterator();
+        try {
+            while (iterator.hasNext()) {
+                LiveCreateChannelWhiteListRequest liveCreateChannelWhiteListRequest = new LiveCreateChannelWhiteListRequest();
+                StudentWhiteListVO studentWhite = iterator.next();
+                liveCreateChannelWhiteListRequest
+                        .setRank(1)
+                        .setChannelId(channelId)
+                        .setCode(studentWhite.getCode())
+                        .setName(studentWhite.getName());
+                liveCreateChannelWhiteListResponse = new LiveWebAuthServiceImpl().createChannelWhiteList(
+                        liveCreateChannelWhiteListRequest);
+                if (liveCreateChannelWhiteListResponse != null && liveCreateChannelWhiteListResponse) {
+                    successList.add(studentWhite);
+                    iterator.remove(); // 删除元素使用 iterator.remove()
+                }
+            }
+            if (failList.size() != 0) {
+                log.info("新增部分白名单成功" + successList);
+                saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
+                saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
+                saResult.setData(failList);
+                return saResult;
+            } else {
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg(ResultCode.SUCCESS.getMessage());
+                return saResult;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("添加白名单接口调用异常", e);
+        }
+        saResult.setCode(ResultCode.FAIL.getCode());
+        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setData(failList);
+        return saResult;
+    }
+
+
+    public SaResult addChannelWhiteStudent(String channelId, List<StudentWhiteListInfoBO> students) {
+        log.info("调用批量新增白名单接口，请求入参为: channelId={}, students={}", channelId, students);
+        SaResult saResult = new SaResult();
+
+        // 在内存中准备数据
+        List<StudentWhiteListVO> excelDataList = new ArrayList<>();
+        for (StudentWhiteListInfoBO student : students) {
+            StudentWhiteListVO vo = new StudentWhiteListVO();
+            vo.setCode(student.getIdNumber());
+            vo.setName(student.getName());
+            excelDataList.add(vo);
+        }
+
+        // 使用 EasyExcel 将数据写入到 ByteArrayOutputStream
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, StudentWhiteListVO.class).sheet("Sheet1").doWrite(excelDataList);
+
+        // 指定保存文件的路径
+        String saveDirPath = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\保利威白名单";
+        Path saveDir = Paths.get(saveDirPath);
+        if (!Files.exists(saveDir)) {
+            try {
+                Files.createDirectories(saveDir);
+            } catch (IOException e) {
+                log.error("创建保存目录失败", e);
+                saResult.setCode(ResultCode.FAIL.getCode());
+                saResult.setMsg("创建保存目录失败: " + e.getMessage());
+                return saResult;
+            }
+        }
+        String uniqueFileName = "whiteList-" + UUID.randomUUID().toString() + ".xlsx";
+        Path filePath = saveDir.resolve(uniqueFileName);
+
+        try {
+            // 将 ByteArrayOutputStream 的数据写入文件
+            Files.write(filePath, outputStream.toByteArray());
+
+            // 创建上传请求对象并上传文件
+            LiveUploadWhiteListRequest request = new LiveUploadWhiteListRequest();
+            request.setChannelId(channelId)
+                    .setRank(1)
+                    .setFile(filePath.toFile());
+            Boolean uploadResult = new LiveWebAuthServiceImpl().uploadWhiteList(request);
+
+            if (uploadResult) {
+                saResult.setCode(ResultCode.SUCCESS.getCode());
+                saResult.setMsg("上传白名单成功，文件路径：" + filePath.toString());
+            } else {
+                saResult.setCode(ResultCode.FAIL.getCode());
+                saResult.setMsg("上传白名单失败");
+            }
+        } catch (Exception e) {
+            log.error("创建或上传文件时发生错误", e);
+            saResult.setCode(ResultCode.FAIL.getCode());
+            saResult.setMsg("创建或上传文件时发生错误: " + e.getMessage());
+        } finally {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                log.error("关闭输出流时发生错误", e);
+            }
+        }
+
+        return saResult;
+    }
 
 
 
