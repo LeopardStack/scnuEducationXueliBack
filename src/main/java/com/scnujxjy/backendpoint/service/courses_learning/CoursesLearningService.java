@@ -62,7 +62,6 @@ import java.util.stream.Stream;
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 
 /**
- *
  * @author 谢辉龙
  * @since 2024-03-05
  */
@@ -77,7 +76,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     @Resource
     private MinioService minioService;
 
-    @Value("${minio.courseCoverDir}")
+    @Value("${minio.courseCoverDir:1}")
     private String minioCourseCoverDir;
 
     @Resource
@@ -118,14 +117,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     public PageVO<CourseLearningVO> pageQueryCoursesInfo(PageRO<CoursesLearningRO> courseScheduleROPageRO) {
         List<String> roleList = StpUtil.getRoleList();
-        if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
             // 学历教育部
 
-        }else if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
             // 二级学院
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseScheduleROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
-        }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
         }
         List<CourseRecordBO> courseSections = (List<CourseRecordBO>) redisTemplate.
@@ -137,14 +136,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     public PageVO<CourseLearningVO> pageQueryCoursesInfo1(PageRO<CoursesLearningRO> courseScheduleROPageRO) {
         List<String> roleList = StpUtil.getRoleList();
-        if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
             // 学历教育部
 
-        }else if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
             // 二级学院
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseScheduleROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
-        }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
         }
         List<CourseRecordBO> courseSections = (List<CourseRecordBO>) redisTemplate.opsForValue().get("courseSections1");
@@ -153,7 +152,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         return getCourseData(courseSections, courseScheduleROPageRO);
     }
 
-    private PageVO getCourseData(List<CourseRecordBO> courseSections, PageRO<CoursesLearningRO> courseScheduleROPageRO){
+    private PageVO getCourseData(List<CourseRecordBO> courseSections, PageRO<CoursesLearningRO> courseScheduleROPageRO) {
         if (courseSections == null) {
             // 可以选择从数据库加载数据，或者返回错误/空结果
             List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningData(courseScheduleROPageRO.getEntity(),
@@ -221,7 +220,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         // 分页
         long start = Math.max((courseScheduleROPageRO.getPageNumber() - 1) * courseScheduleROPageRO.getPageSize(), 0);
         long end = Math.min(start + courseScheduleROPageRO.getPageSize(), sortedList.size());
-        List<CourseLearningVO> pagedCourseLearningVOs = sortedList.subList((int)start, (int)end);
+        List<CourseLearningVO> pagedCourseLearningVOs = sortedList.subList((int) start, (int) end);
 
         // 构建分页响应
         PageVO<CourseLearningVO> pageVO = new PageVO<>();
@@ -234,7 +233,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     }
 
 
-    public List<CourseRecordBO> getCourseSections(PageRO<CoursesLearningRO> courseScheduleROPageRO){
+    public List<CourseRecordBO> getCourseSections(PageRO<CoursesLearningRO> courseScheduleROPageRO) {
         return getBaseMapper().getCourseSectionsData();
     }
 
@@ -242,41 +241,42 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         CourseLearningVO vo = new CourseLearningVO();
         if (!records.isEmpty()) {
             CourseRecordBO representative = records.get(0);
-                vo.setId(representative.getId());
-                vo.setGrade(representative.getGrade());
-                vo.setCourseName(representative.getCourseName());
-                vo.setCourseType(representative.getCourseType());
-                vo.setCourseDescription(representative.getCourseDescription());
-                vo.setCourseCoverUrl(representative.getCourseCoverUrl());
-                vo.setDefaultMainTeacherUsername(representative.getDefaultMainTeacherUsername());
-                vo.setDefaultMainTeacherName(representative.getName());
-                vo.setCourseIdentifier(representative.getCourseIdentifier());
-                vo.setValid(representative.getValid());
-                vo.setCreatedTime(representative.getCreatedTime());
-                vo.setUpdatedTime(representative.getUpdatedTime());
+            vo.setId(representative.getId());
+            vo.setGrade(representative.getGrade());
+            vo.setCourseName(representative.getCourseName());
+            vo.setCourseType(representative.getCourseType());
+            vo.setCourseDescription(representative.getCourseDescription());
+            vo.setCourseCoverUrl(representative.getCourseCoverUrl());
+            vo.setDefaultMainTeacherUsername(representative.getDefaultMainTeacherUsername());
+            vo.setDefaultMainTeacherName(representative.getName());
+            vo.setCourseIdentifier(representative.getCourseIdentifier());
+            vo.setValid(representative.getValid());
+            vo.setCreatedTime(representative.getCreatedTime());
+            vo.setUpdatedTime(representative.getUpdatedTime());
 
-                // 获取 classNames
-                Set<String> classNames = records.stream()
-                        .map(CourseRecordBO::getClassName)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toSet());
-                vo.setClassNames(String.join(", ", classNames));
+            // 获取 classNames
+            Set<String> classNames = records.stream()
+                    .map(CourseRecordBO::getClassName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setClassNames(String.join(", ", classNames));
 
-                // 获取最近的开始时间
-                Date recentStartTime = records.stream()
-                        .map(CourseRecordBO::getStartTime)
-                        .filter(Objects::nonNull)
-                        .min(Date::compareTo)
-                        .orElse(null);
-                vo.setRecentCourseScheduleTime(recentStartTime);
-            }
+            // 获取最近的开始时间
+            Date recentStartTime = records.stream()
+                    .map(CourseRecordBO::getStartTime)
+                    .filter(Objects::nonNull)
+                    .min(Date::compareTo)
+                    .orElse(null);
+            vo.setRecentCourseScheduleTime(recentStartTime);
+        }
 
-            return vo;
+        return vo;
 
     }
 
     /**
      * 创建 课程
+     *
      * @param courseLearningCreateRO
      * @return
      */
@@ -299,10 +299,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
              * 将班级做好映射 先校验 合法后 再存入数据库
              */
             List<CoursesClassMappingPO> coursesClassMappingPOS = new ArrayList<>();
-            for(String s: courseLearningCreateRO.getClassIdentifier()){
+            for (String s : courseLearningCreateRO.getClassIdentifier()) {
                 ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
                         .eq(ClassInformationPO::getClassIdentifier, s));
-                if(classInformationPO == null){
+                if (classInformationPO == null) {
                     throw new RuntimeException("传入的班级前缀找不到，非法前缀 ");
                 }
                 CoursesClassMappingPO classMappingPO = new CoursesClassMappingPO();
@@ -311,23 +311,27 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
             // 对传入的主讲教师 ID 做校验
             String defaultMainTeacherUsername = courseLearningCreateRO.getDefaultMainTeacherUsername();
-            if(!isValidUsername(defaultMainTeacherUsername)){
+            if (!isValidUsername(defaultMainTeacherUsername)) {
                 throw new RuntimeException("教师用户名为空 或者 数据库中找不到 " + defaultMainTeacherUsername);
             }
             coursesLearningPO.setDefaultMainTeacherUsername(defaultMainTeacherUsername);
 
             List<CourseAssistantsPO> courseAssistantsPOS = new ArrayList<>();
-            for(String s: courseLearningCreateRO.getAssistantUsername()){
-                if(!isValidUsername(s)){
+            for (String s : courseLearningCreateRO.getAssistantUsername()) {
+                if (!isValidUsername(s)) {
                     throw new RuntimeException("助教用户名为空 或者 数据库中找不到 " + s);
                 }
-                CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO()
-                        .setUsername(s)
-                        ;
+                CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO().setUsername(s);
                 courseAssistantsPOS.add(courseAssistantsPO);
             }
 
-
+            //
+            if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
+                throw new RuntimeException("课程文件不能为空");
+            }
+            if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
+                throw new RuntimeException("课程封面图名称不能为空");
+            }
             String uniqueFileName = generateUniqueFileName(coursesLearningPO, courseLearningCreateRO.getCourseCover().getOriginalFilename());
             try (InputStream inputStream = courseLearningCreateRO.getCourseCover().getInputStream()) {
                 boolean uploadSuccess = minioService.uploadStreamToMinio(inputStream, uniqueFileName, minioCourseCoverDir);
@@ -341,7 +345,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
 
             int insert = getBaseMapper().insert(coursesLearningPO);
-            if(insert <= 0){
+            if (insert <= 0) {
                 throw new RuntimeException("课程信息插入失败 " + insert);
             }
             Long courseId = coursesLearningPO.getId(); // 假设 getId() 方法能获取到自动生成的主键
@@ -353,7 +357,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toList());
 
             // 批量插入 CourseAssistantsPOS
-            if(courseAssistantsPOS.size() != 0) {
+            if (courseAssistantsPOS.size() != 0) {
                 boolean assistantInsert = courseAssistantsService.saveBatch(courseAssistantsPOS);
                 if (!assistantInsert) {
                     throw new RuntimeException("批量插入助教失败");
@@ -363,106 +367,105 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .filter(this::isValidClassName)
                     .map(s -> new CoursesClassMappingPO().setCourseId(courseId).setClassIdentifier(s))
                     .collect(Collectors.toList());
-            if(coursesClassMappingPOList.size() != 0){
+            if (coursesClassMappingPOList.size() != 0) {
                 boolean assistantInsert = coursesClassMappingService.saveBatch(coursesClassMappingPOList);
                 if (!assistantInsert) {
                     throw new RuntimeException("批量插入课程班级映射失败");
                 }
             }
 
-            List<StudentWhiteListInfoBO> studentWhiteListInfoBOList = new ArrayList<>();
-            for(CoursesClassMappingPO coursesClassMappingPO: coursesClassMappingPOList){
-                List<StudentWhiteListInfoBO> studentWhiteListInfoBOList1 =
-                        studentStatusService.getBaseMapper().selectLivingWhiteList(
-                                new StudentStatusFilterRO().setClassIdentifier(
-                                        coursesClassMappingPO.getClassIdentifier()));
-                studentWhiteListInfoBOList.addAll(studentWhiteListInfoBOList1);
-            }
-
             // 如果该门课程的类型是直播 或者 混合类型 则需要创建一个直播间给它
-            if(coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType()) ||
-                    coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType())){
+            if (coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType()) ||
+                    coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType())) {
 
+                //只有创建直播间的时候才需要查询学生信息。
+                List<StudentWhiteListInfoBO> studentWhiteListInfoBOList = new ArrayList<>();
+                for (CoursesClassMappingPO coursesClassMappingPO : coursesClassMappingPOList) {
+                    List<StudentWhiteListInfoBO> studentWhiteListInfoBOList1 =
+                            studentStatusService.getBaseMapper().selectLivingWhiteList(
+                                    new StudentStatusFilterRO().setClassIdentifier(
+                                            coursesClassMappingPO.getClassIdentifier()));
+                    studentWhiteListInfoBOList.addAll(studentWhiteListInfoBOList1);
+                }
 
-            // 获取当前时间
-            LocalDateTime now = LocalDateTime.now().plusHours(1);
+                // 获取当前时间
+                LocalDateTime now = LocalDateTime.now().plusHours(1);
 
-            // 在当前时间基础上加两个小时
-            LocalDateTime twoHoursLater = now.plusHours(2);
+                // 在当前时间基础上加两个小时
+                LocalDateTime twoHoursLater = now.plusHours(2);
 
-            // 将LocalDateTime转换为Date
-            Date startDate = java.sql.Timestamp.valueOf(now);
-            Date endDate = java.sql.Timestamp.valueOf(twoHoursLater);
+                // 将LocalDateTime转换为Date
+                Date startDate = java.sql.Timestamp.valueOf(now);
+                Date endDate = java.sql.Timestamp.valueOf(twoHoursLater);
 
-            ApiResponse channel = singleLivingSetting.createChannel(
-                    coursesLearningPO.getCourseName(),
-                    startDate,
-                    endDate,
-                    true,
-                    "N"
-            );
+                ApiResponse channel = singleLivingSetting.createChannel(
+                        coursesLearningPO.getCourseName(),
+                        startDate,
+                        endDate,
+                        true,
+                        "N"
+                );
 
-            if (channel.getCode().equals(200)) {
-                ChannelResponseData channelResponseData = channel.getData();
-                VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
-                videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
+                if (Integer.valueOf(200).equals(channel.getCode())) {
+                    ChannelResponseData channelResponseData = channel.getData();
+                    VideoStreamRecordPO videoStreamRecordPO = new VideoStreamRecordPO();
+                    videoStreamRecordPO.setChannelId("" + channelResponseData.getChannelId());
 
-                ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo("" + channelResponseData.getChannelId());
-                log.info("频道信息包括 " + channelInfoByChannelId1);
-                if (channelInfoByChannelId1.getCode().equals(200) && channelInfoByChannelId1.getSuccess()) {
-                    log.info("创建频道成功");
+//                    ChannelInfoResponse channelInfoByChannelId1 = videoStreamUtils.getChannelInfo("" + channelResponseData.getChannelId());
+//                    log.info("频道信息包括 " + channelInfoByChannelId1);
+//                    if (Integer.valueOf(200).equals(channelInfoByChannelId1.getCode()) && channelInfoByChannelId1.getSuccess()) {
                     String channelId = videoStreamRecordPO.getChannelId();
-
+                    log.info("创建频道成功"+channelId);
                     LiveResourcesPO liveResourcesPO = new LiveResourcesPO().setCourseId(courseId)
                             .setChannelId(channelId).setValid("Y");
                     int insert1 = liveResourceService.getBaseMapper().insert(liveResourcesPO);
-                    if(insert1 <= 0){
+                    if (insert1 <= 0) {
                         throw new RuntimeException("保存直播资源失败 " + insert1);
                     }
 
                     importWhiteStudents(studentWhiteListInfoBOList, channelId);
+//                    }
                 }
             }
-            }
 
-        }catch (Exception e){
-            log.info(StpUtil.getLoginIdAsString() +  " 创建课程失败 " + e);
+        } catch (Exception e) {
+            log.info(StpUtil.getLoginIdAsString() + " 创建课程失败 " + e);
             return false;
         }
-
 
 
         return true;
     }
 
     @Async
-    protected void importWhiteStudents(List<StudentWhiteListInfoBO> students, String channelId){
+    protected void importWhiteStudents(List<StudentWhiteListInfoBO> students, String channelId) {
         // 跑导入白名单的逻辑就好了
         ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
         channelInfoRequest.setChannelId(channelId);
         channelInfoRequest.setStudentWhiteList(new ArrayList<>());
-        for(StudentWhiteListInfoBO studentWhiteListInfoBO: students){
-            channelInfoRequest.getStudentWhiteList().
-                    add(new StudentWhiteListVO()
+        for (StudentWhiteListInfoBO studentWhiteListInfoBO : students) {
+            channelInfoRequest.getStudentWhiteList().add(new StudentWhiteListVO()
                             .setCode(studentWhiteListInfoBO.getIdNumber())
                             .setName(studentWhiteListInfoBO.getName())
                     );
         }
         SaResult saResult1 = singleLivingService.addChannelWhiteStudentByFile(channelInfoRequest);
+        if (!Integer.valueOf(200).equals(saResult1.getCode())){
+            log.info(channelId + "添加白名单失败");
+            throw new RuntimeException("添加频道白名单失败，请联系管理员");
+        }
 
-        SaResult saResult2 = new SaResult();
         LiveUpdateChannelAuthRequest liveUpdateChannelAuthRequest = new LiveUpdateChannelAuthRequest();
         Boolean liveUpdateChannelAuthResponse;
         try {
-            LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.
-                    AuthSetting().setAuthType(
-                    LiveConstant.AuthType.PHONE.getDesc())
+            LiveChannelSettingRequest.AuthSetting authSetting = new LiveChannelSettingRequest.AuthSetting().
+                    setAuthType(LiveConstant.AuthType.PHONE.getDesc())
                     .setRank(1)
                     .setEnabled("Y")
                     .setAuthTips("请输入你的身份证号码");
 
             LiveChannelSettingRequest.AuthSetting authSetting2 = new LiveChannelSettingRequest.AuthSetting().setAuthType(
-                            LiveConstant.AuthType.DIRECT.getDesc())
+                    LiveConstant.AuthType.DIRECT.getDesc())
                     .setRank(2)
                     .setEnabled("Y")
                     .setDirectKey(RandomUtil.randomString(8));
@@ -471,26 +474,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             authSettings.add(authSetting);
             authSettings.add(authSetting2);
 
-            liveUpdateChannelAuthRequest.setChannelId(channelId)
-                    .setAuthSettings(authSettings);
-            liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(
-                    liveUpdateChannelAuthRequest);
+            liveUpdateChannelAuthRequest.setChannelId(channelId).setAuthSettings(authSettings);
+            liveUpdateChannelAuthResponse = new LiveWebAuthServiceImpl().updateChannelAuth(liveUpdateChannelAuthRequest);
             //如果返回结果不为空并且为true，说明修改成功
             if (liveUpdateChannelAuthResponse != null && liveUpdateChannelAuthResponse) {
-                saResult2.setMsg(ResultCode.SUCCESS.getMessage());
-                saResult2.setCode(ResultCode.SUCCESS.getCode());
+                log.info(channelId+"设置白名单观看条件成功");
+            }else {
+                throw new RuntimeException("设置白名单观看条件失败");
             }
-        } catch (PloyvSdkException e) {
-            //参数校验不合格 或者 请求服务器端500错误，错误信息见PloyvSdkException.getMessage()
-            e.printStackTrace();
         } catch (Exception e) {
-            log.error("设置频道的白名单接口调用异常", e);
-        }
-        saResult2.setMsg(ResultCode.FAIL.getMessage());
-        saResult2.setCode(ResultCode.FAIL.getCode());
-
-        if (saResult2.getCode() == 200) {
-            log.info("设置白名单观看条件成功");
+            log.error("添加白名单与设置频道的白名单接口调用异常，异常信息为", e);
         }
         log.info("导入白名单结果 " + saResult1.getCode() + " " + saResult1.getMsg());
         // 间隔性扫描  我们存在学籍异动的学生  比如说 这个学生 它转专业了
@@ -509,6 +502,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     /**
      * 根据用户上传的课程封面图 来重命名课程封面在 Minio 中的存储值
+     *
      * @param coursesLearningPO
      * @param originalFileName
      * @return
@@ -522,6 +516,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     /**
      * 校验输入字符串是否是 课程学习常量类的字符串
+     *
      * @param courseType
      * @return
      */
@@ -534,13 +529,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         return false;
     }
 
-    private boolean isValidClassName(String className){
-        if(StringUtils.isBlank(className)){
+    private boolean isValidClassName(String className) {
+        if (StringUtils.isBlank(className)) {
             return false;
         }
         ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
                 .eq(ClassInformationPO::getClassIdentifier, className));
-        if(classInformationPO != null){
+        if (classInformationPO != null) {
             return true;
         }
         return false;
@@ -548,16 +543,17 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     /**
      * 对 前端传入的 教师用户名做校验
+     *
      * @param username
      * @return
      */
     private boolean isValidUsername(String username) {
-        if(StringUtils.isBlank(username)){
+        if (StringUtils.isBlank(username)) {
             return false;
         }
         TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getTeacherUsername, username));
-        if(teacherInformationPO != null){
+        if (teacherInformationPO != null) {
             return true;
         }
         return false;
@@ -636,7 +632,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             int i = getBaseMapper().deleteById(courseId);
 
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("删除课程失败 " + e);
             return false;
         }
@@ -645,19 +641,20 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     /**
      * 设置这门课是否有效
+     *
      * @param courseId
      * @return
      */
     public boolean setCourseInvalid(Long courseId) {
         CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
                 .eq(CoursesLearningPO::getId, courseId));
-        if(coursesLearningPO.getValid().equals("Y")){
+        if (coursesLearningPO.getValid().equals("Y")) {
             coursesLearningPO.setValid("N");
-        }else{
+        } else {
             coursesLearningPO.setValid("Y");
         }
         int i = getBaseMapper().updateById(coursesLearningPO);
-        if(i > 0){
+        if (i > 0) {
             return true;
         }
         return false;
@@ -665,18 +662,18 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     public PageVO<CourseLearningStudentInfoVO> getCourseStudentsInfo(PageRO<CourseStudentSearchRO> courseStudentSearchROPageRO) {
         List<String> roleList = StpUtil.getRoleList();
-        if(roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())){
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
             // 学历教育部
 
-        }else if(roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())){
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
             // 二级学院
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseStudentSearchROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
-        }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
         }
 
-        List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList =  getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
+        List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
                 courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
         PageVO pageVO = new PageVO<CourseLearningStudentInfoVO>();
         pageVO.setRecords(courseLearningStudentInfoVOList);

@@ -70,7 +70,7 @@ public class SingleLivingSetting {
         liveRequestBody.setTemplate("ppt");
         // 设置是否开启无延迟
         liveRequestBody.setPureRtcEnabled(pureRtcEnabled);
-
+//        liveRequestBody.setCategoryId(510209);//设置直播分类为学历教育。 510210是非学历培训，默认分类486269
         // 获取北京时间的时间戳
         long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
         String timestamp = String.valueOf(beijingTimestamp);
