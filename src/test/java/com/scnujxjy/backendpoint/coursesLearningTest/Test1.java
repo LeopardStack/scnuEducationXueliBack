@@ -239,14 +239,23 @@ public class Test1 {
                                     .setCourseId(coursesLearningPO.getId())
                                     .setClassIdentifier(classInformationPO1.getClassIdentifier())
                                     ;
-                            int insert = coursesClassMappingMapper.insert(coursesClassMappingPO);
-                            if(insert < 0){
-                                log.error("插入班级映射关系失败 " + classInformationPO1 + "\n" +
-                                        "插入节点失败 " + sectionsPO + "\n"
-                                        + coursesLearningPO + " 插入结果 " + insert);
-                                errorMsg.put(courseSchedulePO, "插入班级映射关系失败 " + classInformationPO1 + "\n" +
-                                        "插入节点失败 " + sectionsPO + "\n"
-                                        + coursesLearningPO + " 插入结果 " + insert);
+                            // 要判断是否有重复班级
+                            Integer classMappingCount = coursesClassMappingMapper.selectCount(new LambdaQueryWrapper<CoursesClassMappingPO>()
+                                    .eq(CoursesClassMappingPO::getCourseId, coursesClassMappingPO.getCourseId())
+                                    .eq(CoursesClassMappingPO::getClassIdentifier, coursesClassMappingPO.getClassIdentifier())
+                            );
+                            if(classMappingCount > 0){
+                                // 存在 则不需要反复插入了 针对同一门课里面的班级
+                            }else{
+                                int insert = coursesClassMappingMapper.insert(coursesClassMappingPO);
+                                if(insert < 0){
+                                    log.error("插入班级映射关系失败 " + classInformationPO1 + "\n" +
+                                            "插入节点失败 " + sectionsPO + "\n"
+                                            + coursesLearningPO + " 插入结果 " + insert);
+                                    errorMsg.put(courseSchedulePO, "插入班级映射关系失败 " + classInformationPO1 + "\n" +
+                                            "插入节点失败 " + sectionsPO + "\n"
+                                            + coursesLearningPO + " 插入结果 " + insert);
+                                }
                             }
                         }
                     }catch (Exception e){
