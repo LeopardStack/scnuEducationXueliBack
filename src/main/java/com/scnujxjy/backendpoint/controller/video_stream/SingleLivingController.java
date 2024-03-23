@@ -164,8 +164,14 @@ public class SingleLivingController {
     @PostMapping("/edit/deleteChannelWhiteStudent")
     public SaResult deleteChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数
-        if (StrUtil.isBlank(request.getChannelId()) || request.getDeleteCodeList().isEmpty()) {
-            throw dataMissError();
+        if (StrUtil.isBlank(request.getChannelId()) || StrUtil.isBlank(request.getIsClear())) {
+           return SaResult.error("频道id和是否清空字段不能为空");
+        }
+        if (request.getIsClear().equals("N") && request.getDeleteCodeList().isEmpty() ){
+            return SaResult.error("部分清空时，会员码不能为空");
+        }
+        if (!request.getIsClear().equals("Y") && !request.getIsClear().equals("N")){
+            return SaResult.error("是否全部清空字段只能传Y或者N");
         }
 
         return singleLivingService.deleteChannelWhiteStudent(request);

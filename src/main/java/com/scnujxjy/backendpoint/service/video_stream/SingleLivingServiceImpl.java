@@ -786,7 +786,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 liveDeleteChannelWhiteListRequest
                         .setRank(1)
                         .setChannelId(channelInfoRequest.getChannelId())
-                        .setIsClear("N")
+                        .setIsClear(channelInfoRequest.getIsClear())
                         .setCode(code);
                 liveDeleteChannelWhiteListResponse = new LiveWebAuthServiceImpl().deleteChannelWhiteList(
                         liveDeleteChannelWhiteListRequest);
@@ -813,7 +813,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             log.error("删除白名单接口调用异常", e);
         }
         saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setMsg("该直播间不含该会员码，无需删除");
         saResult.setData(failList);
         return saResult;
 
