@@ -42,7 +42,7 @@ public interface SingleLivingService {
 
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
-    SaResult exportStudentSituation(String courseId, HttpServletResponse response);
+    SaResult exportStudentSituation(Long courseId, HttpServletResponse response);
 
     void exportAllCourseSituation(String[] courseId, HttpServletResponse response);
 

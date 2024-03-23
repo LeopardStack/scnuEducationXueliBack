@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.video_stream;
 
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
@@ -59,9 +60,9 @@ public class SingleLivingController {
 
     //导出考勤表接口
     @PostMapping("/edit/exportStudentSituation")
-    public SaResult exportStudentSituation(@RequestParam String courseId, HttpServletResponse response) {
+    public SaResult exportStudentSituation(@RequestParam Long courseId, HttpServletResponse response) {
         // 校验参数
-        if (StrUtil.isBlank(courseId)) {
+        if (Objects.isNull(courseId)) {
             throw dataMissError();
         }
 
