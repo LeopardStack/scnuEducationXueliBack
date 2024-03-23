@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
@@ -302,28 +303,25 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult deleteChannel(String channelId) throws IOException, NoSuchAlgorithmException {
-        SaResult saResult = new SaResult();
-        LiveDeleteChannelRequest liveDeleteChannelRequest = new LiveDeleteChannelRequest();
-        Boolean liveDeleteChannelResponse;
+    public SaResult deleteChannel(String channelId) {
+        //先把直播间设为无效，再去保利威删除该直播间
         try {
+            UpdateWrapper<LiveResourcesPO> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.set("valid", "N")
+                    .eq("channel_id", channelId);
+            int update = liveResourceMapper.update(null, updateWrapper);
+
+            LiveDeleteChannelRequest liveDeleteChannelRequest = new LiveDeleteChannelRequest();
+            Boolean liveDeleteChannelResponse;
             liveDeleteChannelRequest.setChannelId(channelId);
             liveDeleteChannelResponse = new LiveChannelOperateServiceImpl().deleteChannel(liveDeleteChannelRequest);
             if (liveDeleteChannelResponse != null && liveDeleteChannelResponse) {
-                log.info("批量删除频道成功");
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                return saResult;
+                return SaResult.ok("删除频道直播间成功");
             }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
         } catch (Exception e) {
-            log.error("调用批量删除接口异常", e);
-            throw e;
+            log.error("调用删除直播间接口异常" + channelId, e);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
+        return SaResult.error("删除直播间异常，请联系管理员");
     }
 
     //    /**
