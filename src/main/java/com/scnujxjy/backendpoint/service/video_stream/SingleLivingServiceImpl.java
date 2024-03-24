@@ -108,6 +108,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Resource
     private LiveResourceMapper liveResourceMapper;
 
+
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
         SaResult saResult = new SaResult();
@@ -843,6 +844,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //            if (live ==null || StrUtil.isBlank(live.getChannelId())) {
 //                return SaResult.data("该排课还未创建直播间");
 //            }
+//            coursesLearningMapper.selectList()
+
             CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
             if (StrUtil.isBlank(schedulePO.getOnlinePlatform())) {
                 saResult.setCode(ResultCode.FAIL.getCode());
