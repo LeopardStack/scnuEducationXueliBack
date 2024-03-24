@@ -786,7 +786,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public SaResult createCourseSectionInfo(CourseSectionRO courseSectionRO) {
+        Long courseId = courseSectionRO.getCourseId();
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
+                .eq(CoursesLearningPO::getId, courseId));
+        if(coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType()) ||
+                coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType())){
 
+        }
 
         return createCourseSectionInfoRecurrent(courseSectionRO, null);
     }
