@@ -21,4 +21,28 @@
         id, course_id, parent_section_id, section_name, order, content_type, content_id, deadline, created_time, updated_time
     </sql>
 
+    <sql id="commonJoin">
+        FROM sections ss
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND ss.id = #{entity.id}</if>
+        <if test='entity.courseId != null'>AND ss.course_id = #{entity.courseId}</if>
+        <if test='entity.courseSectionParent == null'>AND ss.parent_section_id is NULL</if>
+        <if test='entity.courseSectionParent != null'>AND ss.parent_section_id = #{entity.courseSectionParent}</if>
+
+    </sql>
+
+
+    <select id="selectSectionsInfo"
+            resultType="com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO">
+        SELECT *
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+        ORDER BY
+        ss.sequence ASC
+    </select>
+
 </mapper>

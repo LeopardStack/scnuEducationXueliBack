@@ -47,4 +47,7 @@ public class CourseStudentSearchRO {
 
     @ApiModelProperty(value = "姓名", example = "张三")
     private String name;
+
+    @ApiModelProperty(value = "是否补修 Y/N Y 代表重修", example = "true")
+    private String isRetake;
 }

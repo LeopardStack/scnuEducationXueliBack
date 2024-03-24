@@ -1,5 +1,9 @@
 package com.scnujxjy.backendpoint.constant.enums;
 
+import lombok.Data;
+import lombok.Getter;
+
+@Getter
 public enum CourseContentType {
     LIVING("直播"),
     VIDEO("点播"),
