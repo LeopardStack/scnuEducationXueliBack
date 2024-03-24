@@ -18,6 +18,9 @@ import java.util.List;
 @Accessors(chain = true)
 public class CourseLearningCreateRO {
 
+    @ApiModelProperty(value = "课程ID", example = "1")
+    private Long courseId;
+
     /**
      * 注意 这里的课程名称 与 课程学习 表里面的课程名称不同 这里主要是为了 处理那些 课程名称相同 但是 底层资源一致的特殊情况
      * 比如 两门课的上课老师一致  也一起上课

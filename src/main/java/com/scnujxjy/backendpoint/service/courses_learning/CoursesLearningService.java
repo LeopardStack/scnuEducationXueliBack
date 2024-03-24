@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.dao.entity.courses_learning.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
@@ -21,12 +22,12 @@ import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseSectionRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.*;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
@@ -44,6 +45,7 @@ import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
 import org.apache.tika.utils.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -324,25 +326,28 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO().setUsername(s);
                 courseAssistantsPOS.add(courseAssistantsPO);
             }
-
-            //
-            if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
-                throw new RuntimeException("课程文件不能为空");
-            }
-            if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
-                throw new RuntimeException("课程封面图名称不能为空");
-            }
-            String uniqueFileName = generateUniqueFileName(coursesLearningPO, courseLearningCreateRO.getCourseCover().getOriginalFilename());
-            try (InputStream inputStream = courseLearningCreateRO.getCourseCover().getInputStream()) {
-                boolean uploadSuccess = minioService.uploadStreamToMinio(inputStream, uniqueFileName, minioCourseCoverDir);
-                if (uploadSuccess) {
-                    coursesLearningPO.setCourseCoverUrl(minioCourseCoverDir + "/" + uniqueFileName);
-                } else {
-                    throw new RuntimeException("将课程封面文件上传到 Minio 失败 " + uploadSuccess);
+            // 检测用户是否上传了 课程封面
+            if(courseLearningCreateRO.getCourseCover() != null){
+                if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
+                    throw new RuntimeException("课程文件不能为空");
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("将课程封面文件上传到 Minio 失败 " + "文件读取失败: " + e);
+                if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
+                    throw new RuntimeException("课程封面图名称不能为空");
+                }
+                String uniqueFileName = generateUniqueFileName(coursesLearningPO, courseLearningCreateRO.getCourseCover().getOriginalFilename());
+                try (InputStream inputStream = courseLearningCreateRO.getCourseCover().getInputStream()) {
+                    boolean uploadSuccess = minioService.uploadStreamToMinio(inputStream, uniqueFileName, minioCourseCoverDir);
+                    if (uploadSuccess) {
+                        coursesLearningPO.setCourseCoverUrl(minioCourseCoverDir + "/" + uniqueFileName);
+                    } else {
+                        throw new RuntimeException("将课程封面文件上传到 Minio 失败 " + uploadSuccess);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException("将课程封面文件上传到 Minio 失败 " + "文件读取失败: " + e);
+                }
             }
+
+
 
             int insert = getBaseMapper().insert(coursesLearningPO);
             if (insert <= 0) {
@@ -675,6 +680,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
         List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
                 courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
+
+
+
         PageVO pageVO = new PageVO<CourseLearningStudentInfoVO>();
         pageVO.setRecords(courseLearningStudentInfoVOList);
         pageVO.setSize(courseStudentSearchROPageRO.getPageSize());
@@ -682,5 +690,249 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         Long total = getBaseMapper().selectCountCourseStudentsInfo(courseStudentSearchROPageRO.getEntity());
         pageVO.setTotal(total);
         return pageVO;
+    }
+
+    /**
+     *
+     * 修改课程信息
+     * @param coursesLearningROPageRO
+     * @return
+     */
+    public SaResult updateCourse(CourseLearningCreateRO coursesLearningROPageRO) {
+        if(coursesLearningROPageRO.getCourseId() == null){
+            return SaResult.error(ResultCode.UPDATE_COURSE_FAIL1.getMessage()).
+                    setCode(ResultCode.UPDATE_COURSE_FAIL1.getCode());
+        }
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
+                .eq(CoursesLearningPO::getId, coursesLearningROPageRO.getCourseId()));
+        if(coursesLearningPO == null){
+            return SaResult.error(ResultCode.UPDATE_COURSE_FAIL2.getMessage()).
+                    setCode(ResultCode.UPDATE_COURSE_FAIL2.getCode());
+        }
+
+        // 待写
+
+        return SaResult.ok();
+    }
+
+    /**
+     * 获取课程章节信息
+     * @param courseSectionRO
+     * @return
+     */
+    public SaResult getCourseSectionInfo(CourseSectionRO courseSectionRO) {
+
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
+                .eq(CoursesLearningPO::getId, courseSectionRO.getCourseId()));
+        if(coursesLearningPO == null){
+            return SaResult.error(ResultCode.UPDATE_COURSE_FAIL2.getMessage()).
+                    setCode(ResultCode.UPDATE_COURSE_FAIL2.getCode());
+        }
+
+        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectSectionsInfo(courseSectionRO);
+
+        List<CourseSectionVO> courseSectionVOs = new ArrayList<>();
+
+        for(SectionsPO sectionsPO: sectionsPOS){
+            CourseSectionVO courseSectionVO = new CourseSectionVO();
+            courseSectionVO.setId(sectionsPO.getId());
+            courseSectionVO.setCourseId(sectionsPO.getCourseId());
+            courseSectionVO.setCourseSectionParent(sectionsPO.getParentSectionId());
+            courseSectionVO.setSequence(sectionsPO.getSequence());
+            courseSectionVO.setContentType(sectionsPO.getContentType());
+            courseSectionVO.setStartTime(sectionsPO.getStartTime());
+            courseSectionVO.setDeadLine(sectionsPO.getDeadline());
+            courseSectionVO.setValid(sectionsPO.getValid());
+
+            if(sectionsPO.getContentType().equals(CourseContentType.LIVING.getContentType())){
+                // 直播节点
+                LiveResourcesPO liveResourcesPO = liveResourceService.getBaseMapper().selectOne(new LambdaQueryWrapper<LiveResourcesPO>()
+                        .eq(LiveResourcesPO::getCourseId, sectionsPO.getCourseId())
+                        .eq(LiveResourcesPO::getSectionId, sectionsPO.getId())
+                );
+                LiveResourceVO liveResourceVO = new LiveResourceVO();
+                BeanUtils.copyProperties(liveResourcesPO, liveResourceVO);
+                courseSectionVO.setCourseSectionContentVO(liveResourceVO);
+
+            }else if(sectionsPO.getContentType().equals(CourseContentType.VIDEO.getContentType())){
+                // 直播节点
+                VideoResourcesPO videoResourcesPO = videoResourcesService.getBaseMapper().selectOne(new LambdaQueryWrapper<VideoResourcesPO>()
+                        .eq(VideoResourcesPO::getSectionId, sectionsPO.getId())
+                );
+                VideoResourceVO videoResourceVO = new VideoResourceVO();
+                BeanUtils.copyProperties(videoResourcesPO, videoResourceVO);
+                courseSectionVO.setCourseSectionContentVO(videoResourceVO);
+            }
+            // 目前只处理这两种节点内容
+
+            courseSectionVOs.add(courseSectionVO);
+        }
+
+        return SaResult.ok().setData(courseSectionVOs);
+    }
+
+    /**
+     * 修改章节信息
+     * @param courseSectionRO
+     * @return
+     */
+    public SaResult updateCourseSectionInfo(CourseSectionRO courseSectionRO) {
+        return null;
+    }
+
+    /**
+     * 创建课程章节信息  即为一门课第一次创建节点信息
+     * @param courseSectionRO
+     * @return
+     */
+    public SaResult createCourseSectionInfo(CourseSectionRO courseSectionRO) {
+
+
+        return createCourseSectionInfoRecurrent(courseSectionRO, null);
+    }
+
+    public SaResult createCourseSectionInfoRecurrent(CourseSectionRO courseSectionRO, CourseSectionRO parent) {
+
+
+        if(courseSectionRO.getCourseSectionChildren() != null && !courseSectionRO.getCourseSectionChildren().isEmpty()){
+            for(CourseSectionRO courseSectionRO1: courseSectionRO.getCourseSectionChildren()){
+                if(courseSectionRO1.getCourseSectionChildren() != null &&
+                        !courseSectionRO1.getCourseSectionChildren().isEmpty()){
+                    SaResult courseSectionInfoRecurrent = createCourseSectionInfoRecurrent(courseSectionRO1, courseSectionRO);
+                }
+
+                // 子节点深度最多三层
+                if(getBaseMapper().selectCount(new LambdaQueryWrapper<CoursesLearningPO>()
+                        .eq(CoursesLearningPO::getId, courseSectionRO1.getCourseId())) !=1 ){
+                    throw new RuntimeException("非法的课程 ID " + courseSectionRO.getCourseId());
+                }
+                SectionsPO sectionsPO = new SectionsPO()
+                        .setCourseId(courseSectionRO1.getCourseId())
+                        .setValid("Y")
+                        .setSectionName(courseSectionRO1.getSectionName())
+                        .setSequence(courseSectionRO1.getSequence())
+                        .setStartTime(courseSectionRO1.getStartTime())
+                        .setDeadline(courseSectionRO1.getDeadLine())
+                        .setContentType(getValidCourseType(courseSectionRO1.getContentType()))
+                        ;
+                // 对主讲老师的身份进行校验
+                TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getTeacherUsername, courseSectionRO1.getMainTeacherUsername()));
+                if(teacherInformationPO == null){
+                    throw new RuntimeException("传递过来的教师用户名不存在 " + teacherInformationPO);
+                }
+                sectionsPO.setMainTeacherUsername(courseSectionRO1.getMainTeacherUsername());
+                sectionsPO.setParentSectionId(parent != null ? parent.getCourseId() : null);
+
+                int insert = sectionsService.getBaseMapper().insert(sectionsPO);
+                if(insert <= 0){
+                    throw new RuntimeException("插入节点失败 " + insert);
+                }
+
+                // 如果是直播类型 则需要 插入直播资源映射
+                if(courseSectionRO1.getContentType().equals(CourseContentType.LIVING.getContentType())){
+
+
+                    LiveResourcesPO liveResourcesPO = new LiveResourcesPO()
+                            .setCourseId(courseSectionRO.getCourseId())
+                            .setSectionId(sectionsPO.getId())
+                            ;
+                }
+
+            }
+        }
+
+        return SaResult.ok("创建课程节点成功");
+    }
+
+    /**
+     * 校验输入字符串是否是 课程学习常量类的字符串
+     *
+     * @param courseType
+     * @return
+     */
+    public String getValidCourseType(String courseType) {
+        for (CourseContentType type : CourseContentType.values()) {
+            if (type.getContentType().equals(courseType)) {
+                return courseType;
+            }
+        }
+        throw new RuntimeException("错误的节点类型 " + courseType);
+    }
+
+    /**
+     * 删除 指定课程的指定节点信息 连同子节点 一并删除
+     * @param courseSectionRO
+     * @return
+     */
+    public SaResult deleteCourseSectionInfo(CourseSectionRO courseSectionRO) {
+        Long courseId = courseSectionRO.getCourseId();
+        Long id = courseSectionRO.getId();
+        // 获取该课程 指定节点的 节点
+        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseId)
+                .eq(SectionsPO::getId, id)
+        );
+        // 先删除这些节点 然后 递归删除这些节点的子节点
+        if(sectionsPOS.isEmpty()){
+            return SaResult.ok("该节点信息不存在 不需要删除");
+        }
+
+        int delete = sectionsService.getBaseMapper().delete(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseId)
+                .eq(SectionsPO::getId, id));
+        if(delete < 0){
+            return SaResult.error("删除节点信息失败");
+        }
+        for(SectionsPO sectionsPO: sectionsPOS){
+            // 删除这些节点有实际内容的 节点内容
+            Long contentId = sectionsPO.getContentId();
+            if(contentId != null){
+                if(sectionsPO.getContentType().equals(CourseContentType.LIVING.getContentType())){
+                    // 删除直播 资源映射 并非删除直播间
+                    int delete1 = liveResourceService.getBaseMapper().delete(new LambdaQueryWrapper<LiveResourcesPO>()
+                            .eq(LiveResourcesPO::getCourseId, sectionsPO.getCourseId())
+                            .eq(LiveResourcesPO::getSectionId, sectionsPO.getId())
+                    );
+                    if(delete1 < 0){
+                        return SaResult.error("删除节点的直播资源映射信息失败");
+                    }
+                }
+            }
+
+            SaResult saResult = deleteCourseSectionInfoRecurrent(sectionsPO);
+        }
+        return SaResult.ok("删除成功");
+    }
+
+    private SaResult deleteCourseSectionInfoRecurrent(SectionsPO sectionsPO){
+        Long courseId = sectionsPO.getCourseId();
+        Long id = sectionsPO.getId();
+        // 获取该课程 该节点的子节点
+        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseId)
+                .eq(SectionsPO::getParentSectionId, id)
+        );
+        int delete = sectionsService.getBaseMapper().delete(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseId)
+                .eq(SectionsPO::getParentSectionId, id));
+        if(delete < 0){
+            return SaResult.error("删除节点信息失败");
+        }
+        for(SectionsPO sectionsPO1: sectionsPOS){
+            if(sectionsPO1.getContentType().equals(CourseContentType.LIVING.getContentType())){
+                // 删除直播 资源映射 并非删除直播间
+                int delete1 = liveResourceService.getBaseMapper().delete(new LambdaQueryWrapper<LiveResourcesPO>()
+                        .eq(LiveResourcesPO::getCourseId, sectionsPO1.getCourseId())
+                        .eq(LiveResourcesPO::getSectionId, sectionsPO1.getId())
+                );
+                if(delete1 < 0){
+                    return SaResult.error("删除节点的直播资源映射信息失败");
+                }
+            }
+
+            SaResult saResult = deleteCourseSectionInfoRecurrent(sectionsPO1);
+        }
+        return SaResult.ok("删除成功");
     }
 }

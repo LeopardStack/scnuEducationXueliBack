@@ -19,6 +19,11 @@ public enum ResultCode {
     USER_LOGIN_FAIL1(20005, "用户角色信息存在多个，登录失败"),
     USER_LOGIN_FAIL2(20006, "用户角色信息缺失，登录失败"),
 
+    // 课程学习错误码
+    UPDATE_COURSE_FAIL1(20007, "课程ID 不存在"),
+    UPDATE_COURSE_FAIL2(20008, "课程ID 找不到对应的课程信息"),
+    UPDATE_COURSE_FAIL3(20009, "创建课程节点时 节点内容不合法"),
+
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
     ADD_NEW_ROLE_FAIL(30002, "添加新的角色信息失败"),
@@ -58,12 +63,12 @@ public enum ResultCode {
     String message;
 
     ResultCode(int code, String message) {
-        this.code = code;
+        this.code =  code;
         this.message = message;
     }
 
     public int getCode() {
-        return code;
+        return  code;
     }
 
     public String getMessage() {

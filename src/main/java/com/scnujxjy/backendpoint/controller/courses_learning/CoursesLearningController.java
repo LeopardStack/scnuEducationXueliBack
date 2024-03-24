@@ -2,11 +2,10 @@ package com.scnujxjy.backendpoint.controller.courses_learning;
 
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseLearningCreateRO;
-import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
-import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
@@ -14,6 +13,7 @@ import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -29,6 +29,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundErro
 @RestController
 @RequestMapping("/courses_learning")
 @Api(tags = "课程学习主接口") // Swagger 2的@Api注解
+@Slf4j
 public class CoursesLearningController {
 
     @Resource
@@ -119,6 +120,27 @@ public class CoursesLearningController {
         return SaResult.error("创建课程失败");
     }
 
+
+    /**
+     * 修改课程 主要是修改课程的主讲老师 上课时间 班级 助教老师
+     *
+     * @param coursesLearningROPageRO
+     * @return
+     */
+    @PostMapping("/update_course")
+    @ApiOperation(value = "修改课程学习中的一门课, 主要是修改课程的主讲老师 上课时间 班级 助教老师")
+    public SaResult updateCourse(
+            @ApiParam(value = "课程修改参数", required = true)
+            @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
+        // 校验参数 traceId
+        if (Objects.isNull(coursesLearningROPageRO)) {
+            throw dataMissError();
+        }
+
+        // 查询数据
+        return coursesLearningService.updateCourse(coursesLearningROPageRO);
+    }
+
     /**
      * 根据课程 ID 删除这门课
      *
@@ -196,6 +218,79 @@ public class CoursesLearningController {
         PageVO<CourseLearningStudentInfoVO> courseLearningStudentInfoVOPageVO = coursesLearningService.getCourseStudentsInfo(courseStudentSearchROPageRO);
 
         return SaResult.data(courseLearningStudentInfoVOPageVO).setCode(200).setMsg("成功获取课程中的学生信息");
+    }
+
+
+    /**
+     * 查询课程节点信息 比如 章节
+     *
+     * @param courseSectionRO
+     * @return
+     */
+    @PostMapping("/get_course_section")
+    @ApiOperation(value = "查询课程节点信息 比如 章节")
+    public SaResult getCourseSectionInfo(
+            @ApiParam(value = "课程修改参数", required = true)
+            @RequestBody CourseSectionRO courseSectionRO) {
+
+
+        // 查询数据
+        return coursesLearningService.getCourseSectionInfo(courseSectionRO);
+    }
+
+
+    /**
+     * 修改课程节点信息 比如 上传一个用户的视频 或者 修改直播节点的上下课时间 主讲老师信息等
+     *
+     * @param courseSectionRO
+     * @return
+     */
+    @PostMapping("/update_course_section")
+    @ApiOperation(value = "修改课程节点信息 比如 章节")
+    public SaResult updateCourseSectionInfo(
+            @ApiParam(value = "课程节点修改参数", required = true)
+            @RequestBody CourseSectionRO courseSectionRO) {
+
+
+        // 查询数据
+        return coursesLearningService.updateCourseSectionInfo(courseSectionRO);
+    }
+
+
+    /**
+     * 删除课程节点 连同资源一起删除 但是 课程本身的资源 并不会真的删除 比如 保利威的直播间
+     * 除非删除课程
+     *
+     * @param courseSectionRO
+     * @return
+     */
+    @PostMapping("/delete_course_section")
+    @ApiOperation(value = "删除课程节点信息 比如 章节")
+    public SaResult deleteCourseSectionInfo(
+            @ApiParam(value = "课程节点删除参数", required = true)
+            @RequestBody CourseSectionRO courseSectionRO) {
+
+
+        // 删除数据
+        return coursesLearningService.deleteCourseSectionInfo(courseSectionRO);
+    }
+
+    /**
+     * 创建课程章节信息 不涉及节点内容 比如该节点内容为一个视频、一个课件 等等
+     *
+     * @param courseSectionRO
+     * @return
+     */
+    @PostMapping("/create_course_section")
+    @ApiOperation(value = "创建课程节点信息 比如 章节")
+    public SaResult createCourseSectionInfo(
+            @ApiParam(value = "课程节点创建参数", required = true)
+            @RequestBody CourseSectionRO courseSectionRO) {
+
+        log.info(StpUtil.getLoginIdAsString() + " 前端参数 " + courseSectionRO);
+
+        // 查询数据
+        return coursesLearningService.createCourseSectionInfo(courseSectionRO);
     }
 }
 

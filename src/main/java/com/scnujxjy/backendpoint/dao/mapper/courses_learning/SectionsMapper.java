@@ -2,7 +2,11 @@ package com.scnujxjy.backendpoint.dao.mapper.courses_learning;
 
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseSectionRO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.List;
 
 /**
  * <p>
@@ -15,4 +19,6 @@ import org.apache.ibatis.annotations.Update;
 public interface SectionsMapper extends BaseMapper<SectionsPO> {
     @Update("TRUNCATE TABLE sections")
     void truncateTable();
+
+    List<SectionsPO> selectSectionsInfo(@Param("entity") CourseSectionRO courseSectionRO);
 }
