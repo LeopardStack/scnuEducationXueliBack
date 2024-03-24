@@ -146,6 +146,7 @@ public class SingleLivingSetting {
                 ChannelInfoData channelInfoData = new ChannelInfoData();
                 channelInfoData.setChannelId(channelID);
                 channelInfoData.setGlobalSettingEnabled("N");
+                //默认开启回放，需要再调接口关闭
                 channelInfoData.setPlaybackEnabled("Y");
                 channelInfoData.setType("list");
 //        channelInfoData.setVideoId("27b07c2dc999caefedb9d3e4fb685471_2");

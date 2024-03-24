@@ -422,8 +422,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         try {
             String response = PolyvHttpUtil.postFormBody(url, requestMap);  // assuming PolyvHttpUtil can be used here
             log.info("回放设置返回值 \n" + response);
-            playbackResponse = JSON.parseObject(response, new TypeReference<ChannelResponse>() {
-            });
+            playbackResponse = JSON.parseObject(response, ChannelResponse.class);
             saResult.setCode(playbackResponse.getCode());
             saResult.setMsg(playbackResponse.getMessage());
             saResult.setData(playbackResponse.getData());
