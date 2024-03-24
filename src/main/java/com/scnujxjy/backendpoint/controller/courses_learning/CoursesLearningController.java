@@ -10,11 +10,10 @@ import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
-// 引入Swagger 2的注解
-import com.scnujxjy.backendpoint.util.ResultCode;
-import io.swagger.annotations.*;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -96,6 +95,7 @@ public class CoursesLearningController {
     /**
      * 创建课程 此时可以没有任何信息 比如 直播、点播 的 Section
      * 可以同时支持 文件和表单参数的上传
+     *
      * @param coursesLearningROPageRO
      * @return
      */
@@ -112,7 +112,7 @@ public class CoursesLearningController {
         // 查询数据
         boolean createCourse = coursesLearningService.createCourse(coursesLearningROPageRO);
         // 数据校验
-        if(createCourse){
+        if (createCourse) {
             return SaResult.ok("创建课程成功");
         }
         // 返回数据
@@ -121,6 +121,7 @@ public class CoursesLearningController {
 
     /**
      * 根据课程 ID 删除这门课
+     *
      * @param courseId
      * @return
      */
@@ -129,7 +130,7 @@ public class CoursesLearningController {
     @SaCheckPermission("课程学习.删除课程")
     public SaResult deleteCourse(
             @ApiParam(value = "课程删除参数", required = true)
-            Long courseId) {
+                    Long courseId) {
         // 校验参数
         if (Objects.isNull(courseId)) {
             throw dataMissError();
@@ -137,7 +138,7 @@ public class CoursesLearningController {
 
         // 查询数据
         boolean delete = coursesLearningService.deleteCourse(courseId);
-        if(delete){
+        if (delete) {
             return SaResult.ok("删除成功");
         }
         // 返回数据
@@ -146,6 +147,7 @@ public class CoursesLearningController {
 
     /**
      * 根据课程 ID 设置这门课是否有效
+     *
      * @param courseId
      * @return
      */
@@ -154,7 +156,7 @@ public class CoursesLearningController {
     @SaCheckPermission("课程学习.设置课程是否有效")
     public SaResult setCourseInvalid(
             @ApiParam(value = "课程删除参数", required = true)
-            Long courseId) {
+                    Long courseId) {
         // 校验参数
         if (Objects.isNull(courseId)) {
             throw dataMissError();
@@ -162,7 +164,7 @@ public class CoursesLearningController {
 
         // 查询数据
         boolean delete = coursesLearningService.setCourseInvalid(courseId);
-        if(delete){
+        if (delete) {
             return SaResult.ok("设置成功");
         }
         // 返回数据
@@ -172,6 +174,7 @@ public class CoursesLearningController {
 
     /**
      * 获取课程的学生群体
+     *
      * @param courseStudentSearchROPageRO
      * @return
      */
@@ -185,7 +188,7 @@ public class CoursesLearningController {
             throw dataMissError();
         }
 
-        if(Objects.isNull(courseStudentSearchROPageRO.getEntity())){
+        if (Objects.isNull(courseStudentSearchROPageRO.getEntity())) {
             courseStudentSearchROPageRO.setEntity(new CourseStudentSearchRO());
         }
 

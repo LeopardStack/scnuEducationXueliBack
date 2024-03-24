@@ -70,11 +70,10 @@ public class SingleLivingSetting {
         liveRequestBody.setTemplate("ppt");
         // 设置是否开启无延迟
         liveRequestBody.setPureRtcEnabled(pureRtcEnabled);
-
+        liveRequestBody.setCategoryId(520488);//设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
         // 获取北京时间的时间戳
         long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
         String timestamp = String.valueOf(beijingTimestamp);
-
 
         // 密码都不设置 让 保利威自行设置
         liveRequestBody.setStartTime(startDate.getTime());
@@ -115,7 +114,6 @@ public class SingleLivingSetting {
 
         String body = JSON.toJSONString(bodyMap);
         url = PolyvHttpUtil.appendUrl(url, requestMap);
-        log.info("保利威创建直播间请求URL " + url);
         String response = PolyvHttpUtil.postJsonBody(url, body, null);
 
         ApiResponse channel = JSON.parseObject(response, ApiResponse.class);

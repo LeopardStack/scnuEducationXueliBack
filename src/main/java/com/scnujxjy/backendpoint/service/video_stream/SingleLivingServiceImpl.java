@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
@@ -21,16 +22,15 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiRespons
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
-import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
-import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
-import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
-import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoResponse;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
@@ -43,11 +43,10 @@ import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.constant.LiveConstant;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoRequest;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelInfoResponse;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
-import net.polyv.live.v1.entity.channel.playback.*;
+import net.polyv.live.v1.entity.channel.playback.LiveListChannelSessionInfoRequest;
+import net.polyv.live.v1.entity.channel.playback.LiveListChannelSessionInfoResponse;
 import net.polyv.live.v1.entity.web.auth.*;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
@@ -61,7 +60,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -100,6 +102,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Resource
     private ClassInformationMapper classInformationMapper;
 
+    @Resource
+    private CoursesLearningMapper coursesLearningMapper;
+
+    @Resource
+    private LiveResourceMapper liveResourceMapper;
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {
@@ -296,28 +303,25 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult deleteChannel(String channelId) throws IOException, NoSuchAlgorithmException {
-        SaResult saResult = new SaResult();
-        LiveDeleteChannelRequest liveDeleteChannelRequest = new LiveDeleteChannelRequest();
-        Boolean liveDeleteChannelResponse;
+    public SaResult deleteChannel(String channelId) {
+        //先把直播间设为无效，再去保利威删除该直播间
         try {
+            UpdateWrapper<LiveResourcesPO> updateWrapper = new UpdateWrapper<>();
+            updateWrapper.set("valid", "N")
+                    .eq("channel_id", channelId);
+            int update = liveResourceMapper.update(null, updateWrapper);
+
+            LiveDeleteChannelRequest liveDeleteChannelRequest = new LiveDeleteChannelRequest();
+            Boolean liveDeleteChannelResponse;
             liveDeleteChannelRequest.setChannelId(channelId);
             liveDeleteChannelResponse = new LiveChannelOperateServiceImpl().deleteChannel(liveDeleteChannelRequest);
             if (liveDeleteChannelResponse != null && liveDeleteChannelResponse) {
-                log.info("批量删除频道成功");
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                return saResult;
+                return SaResult.ok("删除频道直播间成功");
             }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
         } catch (Exception e) {
-            log.error("调用批量删除接口异常", e);
-            throw e;
+            log.error("调用删除直播间接口异常" + channelId, e);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
+        return SaResult.error("删除直播间异常，请联系管理员");
     }
 
     //    /**
@@ -436,31 +440,13 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult getTeacherChannelUrl(String channelId) {
-        SaResult saResult = new SaResult();
-        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
-        LiveChannelInfoRequest liveChannelInfoRequest = new LiveChannelInfoRequest();
-        LiveChannelInfoResponse liveChannelInfoResponse;
         try {
-            liveChannelInfoRequest.setChannelId(channelId);
-            liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
-            if (liveChannelInfoResponse != null) {
-                //to do something ......K4zqkS
-                log.debug("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                channelInfoResponse.setUrl("https://live.polyv.net/web-start/login?channelId=" + channelId);
-                channelInfoResponse.setPassword(liveChannelInfoResponse.getChannelPasswd());
-                saResult.setData(channelInfoResponse);
-                return saResult;
-            }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
+            String tutorSSOLink = videoStreamUtils.generateTeacherSSOLink(channelId);
+            return SaResult.data(tutorSSOLink);
         } catch (Exception e) {
-            log.error("调用教师单点登录链接接口异常", e);
+            log.error("讲师单点登录失败，频道id为" + channelId, e);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
+        return SaResult.error("开启直播失败，请联系管理员");
     }
 
     @Override
@@ -535,13 +521,22 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult createTutorChannel(String channelId, String userId) {
-        SaResult saResult = new SaResult();
+
         LiveCreateAccountRequest liveCreateAccountRequest = new LiveCreateAccountRequest();
         LiveCreateAccountResponse liveCreateAccountResponse;
-        ChannelInfoResponse channelInfoResponse = new ChannelInfoResponse();
-        PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
-
         try {
+            QueryWrapper<TutorInformation> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("channel_id", channelId);
+            queryWrapper.eq("user_id", userId);
+            List<TutorInformation> tutorInformations = tutorInformationMapper.selectList(queryWrapper);
+            if (tutorInformations.size() > 0) {
+                //说明该角色有助教，直接返回单点登录链接即可
+                String tutorSSOLink = videoStreamUtils.generateTutorSSOLink(channelId, tutorInformations.get(0).getAccount());
+                return SaResult.data(tutorSSOLink);
+            }
+
+            //说明该用户没有创建过助教。
+            PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
             liveCreateAccountRequest.setChannelId(channelId)
                     .setRole("Assistant")
                     .setActor("助教")
@@ -550,16 +545,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
             liveCreateAccountResponse = new LiveChannelOperateServiceImpl().createAccount(liveCreateAccountRequest);
-            if (liveCreateAccountResponse != null) {
-//                https://console.polyv.net/live/login.html?channelId=0024368180
-                log.info("创建助教角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
-                channelInfoResponse.setPassword(liveCreateAccountResponse.getPasswd());
-//                channelInfoResponse.setUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
-                channelInfoResponse.setAccount(liveCreateAccountResponse.getAccount());
 
+            if (liveCreateAccountResponse != null) {
+                log.info("创建助教角色成功 {}", JSON.toJSONString(liveCreateAccountResponse));
                 String tutorSSOLink = videoStreamUtils.generateTutorSSOLink(channelId, liveCreateAccountResponse.getAccount());
-                channelInfoResponse.setUrl(tutorSSOLink);
-                //返回助教信息，同时插入助教表
+
+                //同时插入助教表
                 TutorInformation tutorInformation = new TutorInformation();
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
                 tutorInformation.setTutorName(platformUserPO.getUsername());
@@ -567,23 +558,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
                 tutorInformation.setAccount(liveCreateAccountResponse.getAccount());
-
                 int insert = tutorInformationMapper.insert(tutorInformation);
-                if (insert > 0) {
-                    saResult.setCode(ResultCode.SUCCESS.getCode());
-                    saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                    saResult.setData(channelInfoResponse);
-                    return saResult;
-                }
+
+                return SaResult.data(tutorSSOLink);
             }
-        } catch (PloyvSdkException e) {
-            e.printStackTrace();
         } catch (Exception e) {
-            log.error("创建助教接口调用异常", e);
+            log.error("创建助教接口调用异常,入参为" + channelId + "" + userId, e);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
+        return SaResult.error("返回助教登录链接失败，请联系管理员");
     }
 
     //创建直播间时默认创建普通高级的助教老师
@@ -804,7 +786,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 liveDeleteChannelWhiteListRequest
                         .setRank(1)
                         .setChannelId(channelInfoRequest.getChannelId())
-                        .setIsClear("N")
+                        .setIsClear(channelInfoRequest.getIsClear())
                         .setCode(code);
                 liveDeleteChannelWhiteListResponse = new LiveWebAuthServiceImpl().deleteChannelWhiteList(
                         liveDeleteChannelWhiteListRequest);
@@ -831,7 +813,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             log.error("删除白名单接口调用异常", e);
         }
         saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
+        saResult.setMsg("该直播间不含该会员码，无需删除");
         saResult.setData(failList);
         return saResult;
 
@@ -852,18 +834,22 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult exportStudentSituation(String courseId, HttpServletResponse response) {
+    public SaResult exportStudentSituation(Long courseId, HttpServletResponse response) {
         log.info("传入的排课表id为" + courseId);
         SaResult saResult = new SaResult();
         try {
             //获取该排课表的频道直播间id
+
+//            LiveResourcesPO live = liveResourceMapper.query(courseId);
+//            if (live ==null || StrUtil.isBlank(live.getChannelId())) {
+//                return SaResult.data("该排课还未创建直播间");
+//            }
             CourseSchedulePO schedulePO = courseScheduleMapper.selectById(courseId);
             if (StrUtil.isBlank(schedulePO.getOnlinePlatform())) {
                 saResult.setCode(ResultCode.FAIL.getCode());
                 saResult.setMsg("该排课表还未创建直播间");
                 return saResult;
             }
-
             VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
             //开始和结束时间应该是该排课的，而不是直播记录表的。
             String teachingTime = schedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
@@ -875,8 +861,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             String pattern = "yyyy-MM-dd HH:mm";
             SimpleDateFormat sdf = new SimpleDateFormat(pattern);
 
-            videoStreamRecordPO.setStartTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate())+" "+courseStartTime));
-            videoStreamRecordPO.setEndTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate())+" "+courseEndTime));
+            videoStreamRecordPO.setStartTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseStartTime));
+            videoStreamRecordPO.setEndTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseEndTime));
 
             SaResult channelCardPush = getStudentViewLog(videoStreamRecordPO);
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
@@ -885,7 +871,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 saResult.setMsg("该排课时间段内没有学生观看数据，请联系管理员");
                 return saResult;
             }
-            log.info("学生观看数据获取成功"+viewLogResponseList);
+            log.info("学生观看数据获取成功" + viewLogResponseList);
             //将观看数据根据param1字段聚合后playDuration相加，再去重。
             Map<String, List<ViewLogResponse>> groupByParam1 = viewLogResponseList.stream()
                     .collect(Collectors.groupingBy(ViewLogResponse::getParam1));
@@ -917,7 +903,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setLevel(schedulePO.getLevel());
                 attendanceVO.setMajorName(schedulePO.getMajorName());
                 attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
@@ -934,7 +920,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVOList.add(attendanceVO);
             }
             Collections.sort(attendanceVOList, Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
-            log.info("获取所有观看的学生数据并降序排序完成"+attendanceVOList);
+            log.info("获取所有观看的学生数据并降序排序完成" + attendanceVOList);
 
             //拿到直播间所有学生白名单数据whiteLists
             List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
@@ -975,7 +961,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setLevel(schedulePO.getLevel());
                 attendanceVO.setMajorName(schedulePO.getMajorName());
                 attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
 
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
@@ -992,23 +978,24 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
                 attendanceVOList.add(attendanceVO);
             }
-            log.info("获取所有未观看的学生数据完成"+noAttendList);
-            log.info("获取{}该堂课的学生数据完成",courseId);
+            log.info("获取所有未观看的学生数据完成" + noAttendList);
+            log.info("获取{}该堂课的学生数据完成", courseId);
             downloadExportFile(response, attendanceVOList);
             saResult.setCode(ResultCode.SUCCESS.getCode());
             saResult.setMsg(ResultCode.SUCCESS.getMessage());
             return saResult;
 
         } catch (Exception e) {
-            log.error("调用导出考勤表接口失败，该堂排课表id为:{}",courseId, e);
+            log.error("调用导出考勤表接口失败，该堂排课表id为:{}", courseId, e);
         }
 
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
     }
+
     @Override
-    public void exportAllCourseSituation(String[] courseId, HttpServletResponse response){
+    public void exportAllCourseSituation(String[] courseId, HttpServletResponse response) {
 
         try {
             List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
@@ -1073,7 +1060,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setLevel(schedulePO.getLevel());
                     attendanceVO.setMajorName(schedulePO.getMajorName());
                     attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
 
                     attendanceVO.setName(viewLogResponse.getParam2());
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
@@ -1132,7 +1119,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setLevel(schedulePO.getLevel());
                     attendanceVO.setMajorName(schedulePO.getMajorName());
                     attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " "+ teachingTime);
+                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
 
                     attendanceVO.setName(channelWhiteList.getName());
                     attendanceVO.setPlayDuration("0");
@@ -1155,7 +1142,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             downloadExportFile(response, exportAttendanceVOList);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             log.error("");
         }
@@ -1342,7 +1329,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             return saResult;
         }
 
-        List<String> channelIdList= videoStreamRecordsMapper.selectChannelIds(videoIdList);
+        List<String> channelIdList = videoStreamRecordsMapper.selectChannelIds(videoIdList);
 
         try {
             Long totalTime = 0L;
@@ -1361,21 +1348,21 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         liveListChannelSessionInfoRequest);
                 if (liveListChannelSessionInfoResponse != null) {
                     List<LiveListChannelSessionInfoResponse.ChannelSessionInfo> contents = liveListChannelSessionInfoResponse.getContents();
-                    if (contents.size()==0){
+                    if (contents.size() == 0) {
                         continue;
                     }
-                    for (LiveListChannelSessionInfoResponse.ChannelSessionInfo channelSessionInfo:contents) {
+                    for (LiveListChannelSessionInfoResponse.ChannelSessionInfo channelSessionInfo : contents) {
                         long startTimeMillis = channelSessionInfo.getStartTime().getTime();
                         long endTimeMillis = channelSessionInfo.getEndTime().getTime();
-                        long timeDiffMillis =(endTimeMillis - startTimeMillis)/ 1000;
-                        totalTime+=timeDiffMillis;
+                        long timeDiffMillis = (endTimeMillis - startTimeMillis) / 1000;
+                        totalTime += timeDiffMillis;
                     }
                 }
             }
             //这样将所有直播间的所有场次时间都加起来。
             saResult.setCode(ResultCode.SUCCESS.getCode());
             saResult.setMsg(ResultCode.SUCCESS.getMessage());
-            saResult.setData(String.format("%.2f", totalTime/3600.0));//转化为小时
+            saResult.setData(String.format("%.2f", totalTime / 3600.0));//转化为小时
             return saResult;
 
         } catch (Exception e) {
@@ -1389,7 +1376,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     public static void main(String[] args) {
         Long totalTime = 86990L;
-        System.out.println(totalTime/3600.0);
+        System.out.println(totalTime / 3600.0);
     }
 
     @Override

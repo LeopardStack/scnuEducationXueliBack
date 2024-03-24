@@ -21,6 +21,8 @@ public class ChannelInfoRequest {
     private List<String> deleteCodeList;
     private List<StudentWhiteListVO> studentWhiteList;
     private String keyword;
+    //Y一键清空，N根据入参部分删除
+    private String isClear;
 
     //以下用于获取频道场次信息字段
     private Date startDate;//开始日期，格式yyyy-MM-dd HH:mm:ss
