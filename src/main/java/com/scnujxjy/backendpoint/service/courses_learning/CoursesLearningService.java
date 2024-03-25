@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.courses_learning;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.date.DateTime;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -773,11 +774,44 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     /**
      * 修改章节信息
+     *
+     * 目前不支持修改挂靠新的父节点 防止出现环
      * @param courseSectionRO
      * @return
      */
     public SaResult updateCourseSectionInfo(CourseSectionRO courseSectionRO) {
-        return null;
+        SectionsPO sectionsPO = sectionsService.getBaseMapper().selectById(courseSectionRO.getId());
+        // 如果老师发生了变化 修改老师
+        if(courseSectionRO.getMainTeacherUsername() != null && !sectionsPO.getMainTeacherUsername().equals(courseSectionRO.getMainTeacherUsername())){
+            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherUsername, courseSectionRO.getMainTeacherUsername()));
+            if(teacherInformationPO == null){
+                return SaResult.error("修改节点信息失败 该教师找不到 " + courseSectionRO.getMainTeacherUsername());
+            }
+            sectionsPO.setMainTeacherUsername(courseSectionRO.getMainTeacherUsername());
+        }
+        // 如果上课时间发生了变化 则修改上课时间 前提是 这个时间 没有到来 即比此刻要早
+        // 获取当前时间
+        Date now = new Date();
+
+        // 检查课程的开始时间和结束时间是否都在当前时间之后，以及结束时间是否在开始时间之后
+        Date newStartTime = courseSectionRO.getStartTime();
+        Date newDeadLine = courseSectionRO.getDeadLine();
+        if (newStartTime.after(now) &&
+                newDeadLine.after(now) &&
+                newDeadLine.after(newStartTime)) {
+
+            sectionsPO.setStartTime(newStartTime);
+            sectionsPO.setDeadline(newDeadLine);
+
+        } else {
+            return SaResult.error("上课时间 必须晚于当前时间");
+        }
+        int insert = sectionsService.getBaseMapper().updateById(sectionsPO);
+        if(insert <= 0){
+            SaResult.error("更新节点信息失败 插入数据库失败");
+        }
+        return SaResult.ok("成功修改节点信息");
     }
 
     /**
@@ -789,22 +823,24 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         Long courseId = courseSectionRO.getCourseId();
         CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
                 .eq(CoursesLearningPO::getId, courseId));
+        LiveResourcesPO liveResourcesPO = null;
         if(coursesLearningPO.getCourseType().equals(CourseContentType.LIVING.getContentType()) ||
                 coursesLearningPO.getCourseType().equals(CourseContentType.MIX.getContentType())){
-
+            // 如果这门课是一门直播或者混合模式的课程 那么就需要将课程的直播资源分配给指定的节点
+            liveResourcesPO = liveResourceService.getBaseMapper().selectLiveResource(courseId);
         }
 
-        return createCourseSectionInfoRecurrent(courseSectionRO, null);
+        return createCourseSectionInfoRecurrent(courseSectionRO, null, liveResourcesPO);
     }
 
-    public SaResult createCourseSectionInfoRecurrent(CourseSectionRO courseSectionRO, CourseSectionRO parent) {
+    public SaResult createCourseSectionInfoRecurrent(CourseSectionRO courseSectionRO, CourseSectionRO parent, LiveResourcesPO liveResourcesPO) {
 
 
         if(courseSectionRO.getCourseSectionChildren() != null && !courseSectionRO.getCourseSectionChildren().isEmpty()){
             for(CourseSectionRO courseSectionRO1: courseSectionRO.getCourseSectionChildren()){
                 if(courseSectionRO1.getCourseSectionChildren() != null &&
                         !courseSectionRO1.getCourseSectionChildren().isEmpty()){
-                    SaResult courseSectionInfoRecurrent = createCourseSectionInfoRecurrent(courseSectionRO1, courseSectionRO);
+                    SaResult courseSectionInfoRecurrent = createCourseSectionInfoRecurrent(courseSectionRO1, courseSectionRO, liveResourcesPO);
                 }
 
                 // 子节点深度最多三层
@@ -838,11 +874,17 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 // 如果是直播类型 则需要 插入直播资源映射
                 if(courseSectionRO1.getContentType().equals(CourseContentType.LIVING.getContentType())){
 
-
-                    LiveResourcesPO liveResourcesPO = new LiveResourcesPO()
+                    // 构造节点直播资源映射 当该节点为 直播时
+                    LiveResourcesPO liveResourcesPO1 = new LiveResourcesPO()
                             .setCourseId(courseSectionRO.getCourseId())
                             .setSectionId(sectionsPO.getId())
+                            .setValid("Y")
+                            .setChannelId(liveResourcesPO.getChannelId())
                             ;
+                    int insert1 = liveResourceService.getBaseMapper().insert(liveResourcesPO1);
+                    if(insert1 <= 0){
+                        throw new RuntimeException("插入直播节点 直播资源映射记录失败");
+                    }
                 }
 
             }

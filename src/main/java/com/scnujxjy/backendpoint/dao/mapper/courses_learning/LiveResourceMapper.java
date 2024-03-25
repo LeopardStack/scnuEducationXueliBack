@@ -20,4 +20,11 @@ public interface LiveResourceMapper extends BaseMapper<LiveResourcesPO> {
 
     @Select("select * from live_resources where course_id =#{courseId} limit 1")
     LiveResourcesPO query(Long courseId);
+
+    /**
+     * 根据课程 ID 以及 SectionID 为空 查找该门课的直播资源
+     * @param courseId
+     * @return
+     */
+    LiveResourcesPO selectLiveResource(Long courseId);
 }

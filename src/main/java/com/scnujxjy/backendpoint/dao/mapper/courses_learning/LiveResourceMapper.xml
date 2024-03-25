@@ -19,5 +19,10 @@
     <sql id="Base_Column_List">
         id, course_id, start_time, end_time, channel_id, main_teacher_id, valid, created_time, updated_time
     </sql>
+    <select id="selectLiveResource"
+            resultType="com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO">
+        select * from live_resources lr
+        WHERE lr.course_id = #{courseId}
+    </select>
 
 </mapper>
