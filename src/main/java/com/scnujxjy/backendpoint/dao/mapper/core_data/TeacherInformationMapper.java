@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.mapper.core_data;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.TeacherInformationSearchRO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -63,4 +64,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
      */
     @Update("UPDATE teacher_information SET teacher_username = #{teacherUsername} WHERE user_id = #{userId}")
     void updateTeacherUsernameByUserId(@Param("userId") int userId, @Param("teacherUsername") String teacherUsername);
+
+
+    List<TeacherInformationPO> selectTeacherInfo(@Param("entity") TeacherInformationSearchRO teacherInformationSearchRO);
 }

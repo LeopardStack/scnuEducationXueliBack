@@ -7,8 +7,10 @@ import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseSectionVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -291,6 +294,48 @@ public class CoursesLearningController {
 
         // 查询数据
         return coursesLearningService.createCourseSectionInfo(courseSectionRO);
+    }
+
+    /**
+     * 获取学生的课程信息
+     *
+     * @return 课程信息
+     */
+    @GetMapping("/get_student_course_info")
+    public SaResult getStudentCoursesInfo() {
+        String username = StpUtil.getLoginIdAsString();
+
+        List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getCourseInfo(username);
+        // 转换并返回
+        return SaResult.data(courseClassInfoVOS);
+    }
+
+    /**
+     * 获取教师的课程信息
+     *
+     * @return 课程信息
+     */
+    @GetMapping("/get_teacher_course_info")
+    public SaResult getTeacherCoursesInfo() {
+        String username = StpUtil.getLoginIdAsString();
+
+        List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getTeacherCoursesInfo(username);
+        // 转换并返回
+        return SaResult.data(courseClassInfoVOS);
+    }
+
+
+    /**
+     * 获取学生的指定的一门课的详细信息 即 节点信息
+     *
+     * @return 课程节点信息
+     */
+    @GetMapping("/get_student_section_info")
+    public SaResult getStudentCourseSectionsInfo(@RequestBody CourseSectionRO courseSectionRO) {
+
+        List<CourseSectionVO> courseSectionVOS =  coursesLearningService.getStudentCourseSectionsInfo(courseSectionRO);
+        // 转换并返回
+        return SaResult.data(courseSectionVOS);
     }
 }
 

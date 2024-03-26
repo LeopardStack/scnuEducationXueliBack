@@ -23,6 +23,13 @@
             </foreach>
         </if>
 
+        <if test="entity.classIdentifiers != null and !entity.classIdentifiers.isEmpty()">
+            AND ci.class_identifier IN
+            <foreach collection="entity.classIdentifiers" item="classIdentifier" open="(" separator="," close=")">
+                #{classIdentifier}
+            </foreach>
+        </if>
+
     </sql>
 
     <select id="getClassInfoByFilter" resultType="com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO">
@@ -106,6 +113,13 @@
     <select id="getStudentStatusChangeClassInfoByFilter"
             resultType="com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusChangeClassInfoVO">
         SELECT ci.class_identifier as value, ci.class_name as label
+        <include refid="commonJoin" />
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectClassInfoData"
+            resultType="com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO">
+        SELECT ci.*
         <include refid="commonJoin" />
         WHERE 1=1
         <include refid="commonFilters" />

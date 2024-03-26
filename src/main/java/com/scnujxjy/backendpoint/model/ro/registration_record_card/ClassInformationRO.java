@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -25,6 +26,11 @@ public class ClassInformationRO {
      * 班级标识
      */
     private String classIdentifier;
+
+    /**
+     * 班级标识
+     */
+    private Set<String> classIdentifiers;
 
     /**
      * 年级

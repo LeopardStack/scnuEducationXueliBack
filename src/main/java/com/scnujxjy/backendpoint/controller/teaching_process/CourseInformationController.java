@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseCreateArgsVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseInfoVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
@@ -71,6 +72,36 @@ public class MinioService {
             e.printStackTrace();
         }
         return returnList;
+    }
+
+    /**
+     * 根据文件的绝对路径（桶名/相对路径）删除 Minio 桶中的文件
+     * @param absoluteFilePath 文件在Minio中的绝对路径
+     */
+    public void deleteFileByAbsolutePath(String absoluteFilePath) {
+        try {
+            // 检查路径是否为空
+            if (!StringUtils.hasText(absoluteFilePath)) {
+                throw new IllegalArgumentException("Minio 入参文件路径不能为空");
+            }
+
+            // 分割绝对路径获取桶名和文件相对路径
+            String[] parts = absoluteFilePath.split("/", 2);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("错误的文件路径格式，文件应为 桶名/文件相对路径名 ");
+            }
+
+            String bucketNameToDelete = parts[0];
+            String relativeFilePath = parts[1];
+
+            // 删除指定的文件
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder().bucket(bucketNameToDelete).object(relativeFilePath).build()
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 可以根据需求处理异常，比如抛出自定义异常或记录日志
+        }
     }
 
     public String getBucketName() {

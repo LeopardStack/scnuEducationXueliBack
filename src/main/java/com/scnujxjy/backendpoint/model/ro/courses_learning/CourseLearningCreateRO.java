@@ -57,4 +57,7 @@ public class CourseLearningCreateRO {
 
     @ApiModelProperty(value = "课程封面", example = "https://xxxx.png")
     private MultipartFile courseCover;
+
+    @ApiModelProperty(value = "有效状态", example = "N")
+    private String valid;
 }

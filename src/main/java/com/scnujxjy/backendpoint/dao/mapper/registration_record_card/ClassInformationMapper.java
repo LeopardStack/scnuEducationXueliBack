@@ -171,4 +171,5 @@ public interface ClassInformationMapper extends BaseMapper<ClassInformationPO> {
 
     List<StudentStatusChangeClassInfoVO> getStudentStatusChangeClassInfoByFilter(@Param("entity") ClassInformationRO classInformationRO);
 
+    List<ClassInformationVO> selectClassInfoData(@Param("entity") ClassInformationRO classInformationRO);
 }

@@ -50,6 +50,13 @@
 
     <sql id="commonFilters">
         <if test='entity.id != null'>AND cl.id = #{entity.id}</if>
+        <!-- 检查 courseIds 集合是否不为空，并且包含元素 -->
+        <if test="entity.courseIds != null and !entity.courseIds.isEmpty()">
+            AND cl.id IN
+            <foreach collection="entity.courseIds" item="courseId" open="(" separator="," close=")">
+                #{courseId}
+            </foreach>
+        </if>
         <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
         <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
         <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
@@ -58,6 +65,7 @@
         <if test='entity.courseName != null'>AND cl.course_name = #{entity.courseName}</if>
         <if test='entity.courseType != null'>AND cl.course_type = #{entity.courseType}</if>
         <if test='entity.mainTeacherName != null'>AND ti.name = #{entity.mainTeacherName}</if>
+        <if test='entity.defaultMainTeacherUsername != null'>AND cl.default_main_teacher_username = #{entity.defaultMainTeacherUsername}</if>
 
         <if test='entity.courseStartTime != null'>AND ss.start_time >= #{entity.courseStartTime}</if>
         <if test='entity.courseEndTime != null'>AND #{entity.courseEndTime} >= ss.start_time</if>
@@ -66,7 +74,7 @@
 
     <!--    获取不同角色输入下的课程学习信息  -->
     <select id="selectCourseLearningData"
-            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
+                                  resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
         SELECT
         cl.id,
         ci.grade,
@@ -81,11 +89,13 @@
         cl.updated_time,
         ti.name AS default_main_teacher_name,
         GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
-        MIN(ss.start_time) AS recent_course_schedule_time   -- 获取最接近当前时间的未来 start_time
+        COALESCE(
+        MIN(CASE WHEN ss.start_time > NOW() THEN ss.start_time END),
+        MAX(CASE WHEN NOW() > ss.start_time  THEN ss.start_time END)
+        ) AS recent_course_schedule_time
         <include refid="commonJoin" />
         WHERE
         1=1
-        AND ss.start_time > NOW()  -- 确保 start_time 在当前时间之后
         <include refid="commonFilters" />
         GROUP BY
         cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
@@ -96,6 +106,8 @@
         LIMIT
         #{pageNumber}, #{pageSize}
     </select>
+
+
     <select id="getCourseSectionsData"
             resultType="com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO">
         SELECT cl.id,
@@ -157,6 +169,37 @@
         WHERE
         1=1
         <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseLearningDataWithoutPaging"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
+        SELECT
+        cl.id,
+        cl.grade,
+        cl.course_name,
+        cl.course_type,
+        cl.course_description,
+        cl.course_cover_url,
+        cl.default_main_teacher_username,
+        cl.course_identifier,
+        cl.valid,
+        cl.created_time,
+        cl.updated_time,
+        ti.name AS default_main_teacher_name,
+        GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
+        COALESCE(
+        MIN(CASE WHEN ss.start_time > NOW() THEN ss.start_time END),
+        MAX(CASE WHEN NOW() > ss.start_time  THEN ss.start_time END)
+        ) AS recent_course_schedule_time
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+        GROUP BY
+        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
+        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
+        cl.valid, cl.created_time, cl.updated_time, ti.name
+        ORDER BY
+        cl.created_time DESC
     </select>
 
 

@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -18,6 +19,12 @@ import java.util.List;
 public class CoursesLearningRO {
     @ApiModelProperty(value = "课程主键ID", example = "1")
     private Long id;
+
+    /**
+     * 用于重修学生查询课程
+     */
+    @ApiModelProperty(value = "课程主键ID集合", example = "1")
+    private Set<Long> courseIds;
 
     @ApiModelProperty(value = "年级", example = "2023")
     String grade;
