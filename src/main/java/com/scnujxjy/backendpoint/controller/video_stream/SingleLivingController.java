@@ -60,13 +60,13 @@ public class SingleLivingController {
 
     //导出考勤表接口
     @PostMapping("/edit/exportStudentSituation")
-    public SaResult exportStudentSituation(@RequestParam Long courseId, HttpServletResponse response) {
+    public SaResult exportStudentSituation(@RequestParam Long sectionId, HttpServletResponse response) {
         // 校验参数
-        if (Objects.isNull(courseId)) {
+        if (Objects.isNull(sectionId)) {
             throw dataMissError();
         }
 
-        return singleLivingService.exportStudentSituation(courseId,response);
+        return singleLivingService.exportStudentSituation(sectionId,response);
     }
 
 
