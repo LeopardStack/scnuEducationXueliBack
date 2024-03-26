@@ -7,11 +7,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.RetakeStudentsPO;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.RetakeStudentsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseRetakeRO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import com.scnujxjy.backendpoint.service.registration_record_card.PersonalInfoService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.ResultCode;
@@ -38,6 +40,9 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
     private StudentStatusService studentStatusService;
 
     @Resource
+    private PersonalInfoService personalInfoService;
+
+    @Resource
     private SingleLivingService singleLivingService;
 
     @Resource
@@ -51,6 +56,11 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
     public boolean addRetakeStudents(CourseRetakeRO courseRetakeRO) {
         StudentStatusPO studentStatusPO = studentStatusService.getBaseMapper().selectOne(new LambdaQueryWrapper<StudentStatusPO>()
                 .eq(StudentStatusPO::getStudentNumber, courseRetakeRO.getStudentNumber()));
+        PersonalInfoPO personalInfoPO = personalInfoService.getBaseMapper().selectOne(new LambdaQueryWrapper<PersonalInfoPO>()
+                .eq(PersonalInfoPO::getGrade, studentStatusPO.getGrade())
+                .eq(PersonalInfoPO::getIdNumber, studentStatusPO.getIdNumber())
+        );
+
         if(studentStatusPO != null){
             // 防止在籍的正常的学生被添加到重修名单
             List<CoursesClassMappingPO> coursesClassMappingPOS = coursesClassMappingService.getBaseMapper().selectList(new LambdaQueryWrapper<CoursesClassMappingPO>()
@@ -86,8 +96,8 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
                 ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
                 List<StudentWhiteListVO> studentWhiteListVOS = new ArrayList<>();
                 StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
-                        .setCode("")
-                        .setName("")
+                        .setCode(personalInfoPO.getIdNumber())
+                        .setName(personalInfoPO.getName())
                         ;
                 studentWhiteListVOS.add(studentWhiteListVO);
                 channelInfoRequest.setStudentWhiteList(studentWhiteListVOS);
@@ -130,13 +140,10 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
             }
             // 删除成功后 是需要删除白名单的
             ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
-            List<StudentWhiteListVO> studentWhiteListVOS = new ArrayList<>();
-            StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
-                    .setCode("")
-                    .setName("")
-                    ;
-            studentWhiteListVOS.add(studentWhiteListVO);
-            channelInfoRequest.setStudentWhiteList(studentWhiteListVOS);
+            List<String> deleteList = new ArrayList<>();
+            deleteList.add(studentStatusPO.getIdNumber());
+
+            channelInfoRequest.setDeleteCodeList(deleteList);
             SaResult saResult = singleLivingService.deleteChannelWhiteStudent(channelInfoRequest);
             if(!saResult.getCode().equals(ResultCode.PARTIALSUCCESS.getCode())){
                 log.error(StpUtil.getLoginIdAsString() + " 删除重修学生时删除白名单失败 " + saResult.getMsg());

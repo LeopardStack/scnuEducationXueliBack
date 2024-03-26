@@ -381,7 +381,7 @@ public class CourseInformationController {
      *
      * @return 教学计划
      */
-    @GetMapping("/get_course_infos")
+    @PostMapping("/get_course_infos")
     public SaResult getTeachingPlansArgs(@RequestBody CourseInformationRO courseInformationRO) {
         List<String> roleList = StpUtil.getRoleList();
         log.info("登录角色 " + roleList);
