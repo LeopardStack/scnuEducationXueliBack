@@ -405,7 +405,7 @@ public class CourseInformationController {
      *
      * @return 班级信息
      */
-    @GetMapping("/get_class_info_by_course_info")
+    @PostMapping("/get_class_info_by_course_info")
     public SaResult getClassInfosByCoursesInfo(@RequestBody CourseInformationRO courseInformationRO) {
         List<String> roleList = StpUtil.getRoleList();
         log.info("登录角色 " + roleList);

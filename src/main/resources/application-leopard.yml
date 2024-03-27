@@ -77,8 +77,8 @@ mybatis-plus:
 
 # 设置日志输出
 logging:
-#  config: src/main/resources/logback.xml
-  config: logback.xml
+  config: src/main/resources/logback.xml
+#  config: logback.xml
   level:
     org.apache.ibatis: DEBUG
     com.scnujxjy.backendpoint.dao.mapper: DEBUG

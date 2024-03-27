@@ -272,4 +272,6 @@ public interface ScoreInformationMapper extends BaseMapper<ScoreInformationPO> {
 
 
     List<ScoreInformationCommendation> scoreInformationAward(@Param("student_id") String studentId);
+
+    List<ScoreInformationDownloadVO> selectScoreInfoData(@Param("entity") ScoreInformationFilterRO entity);
 }

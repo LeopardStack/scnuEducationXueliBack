@@ -250,4 +250,11 @@
         WHERE 1=1
         <include refid="commonFilters"/>
     </select>
+    <select id="selectScoreInfoData"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationDownloadVO">
+        SELECT pi.*, ci.class_name, ci.study_form, ci.level, pi2.name, pi2.political_status, pi2.ethnicity
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
 </mapper>
