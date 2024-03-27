@@ -30,6 +30,7 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformat
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.core_data.TeacherSelectVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.*;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationDownloadVO;
@@ -1091,6 +1092,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     public SaResult createCourseSectionInfoRecurrent(CourseSectionRO courseSectionRO, CourseSectionRO parent, LiveResourcesPO liveResourcesPO) {
 
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectById(courseSectionRO.getCourseId());
+        if(coursesLearningPO == null){
+            return SaResult.error(ResultCode.UPDATE_COURSE_FAIL5.getMessage()).setCode(ResultCode.UPDATE_COURSE_FAIL5.getCode());
+        }
+
 
         if(courseSectionRO.getCourseSectionChildren() != null && !courseSectionRO.getCourseSectionChildren().isEmpty()){
             for(CourseSectionRO courseSectionRO1: courseSectionRO.getCourseSectionChildren()){
@@ -1144,10 +1150,84 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 }
 
             }
+        }else{
+            // 如果没有子节点 说明 就是 在已有课程上继续新增节点
+            // 子节点深度最多三层
+            if(getBaseMapper().selectCount(new LambdaQueryWrapper<CoursesLearningPO>()
+                    .eq(CoursesLearningPO::getId, courseSectionRO.getCourseId())) !=1 ){
+                throw new RuntimeException("非法的课程 ID " + courseSectionRO.getCourseId());
+            }
+            SectionsPO sectionsPO = new SectionsPO()
+                    .setCourseId(courseSectionRO.getCourseId())
+                    .setValid("Y")
+                    .setSectionName(courseSectionRO.getSectionName())
+                    .setSequence(courseSectionRO.getSequence())
+                    .setStartTime(courseSectionRO.getStartTime())
+                    .setDeadline(courseSectionRO.getDeadLine())
+                    .setContentType(getValidCourseType(courseSectionRO.getContentType()))
+                    ;
+            // 对主讲老师的身份进行校验
+            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherUsername, courseSectionRO.getMainTeacherUsername()));
+            if(teacherInformationPO == null){
+                throw new RuntimeException("传递过来的教师用户名不存在 " + teacherInformationPO);
+            }
+            sectionsPO.setMainTeacherUsername(courseSectionRO.getMainTeacherUsername());
+            sectionsPO.setParentSectionId(parent != null ? parent.getCourseId() : null);
+
+            int insert = sectionsService.getBaseMapper().insert(sectionsPO);
+            if(insert <= 0){
+                throw new RuntimeException("插入节点失败 " + insert);
+            }
+
+            // 如果是直播类型 则需要 插入直播资源映射
+            if(courseSectionRO.getContentType().equals(CourseContentType.LIVING.getContentType())){
+
+                // 构造节点直播资源映射 当该节点为 直播时
+                LiveResourcesPO liveResourcesPO1 = new LiveResourcesPO()
+                        .setCourseId(courseSectionRO.getCourseId())
+                        .setSectionId(sectionsPO.getId())
+                        .setValid("Y")
+                        .setChannelId(liveResourcesPO.getChannelId())
+                        ;
+                int insert1 = liveResourceService.getBaseMapper().insert(liveResourcesPO1);
+                if(insert1 <= 0){
+                    throw new RuntimeException("插入直播节点 直播资源映射记录失败");
+                }
+            }
         }
+
+        // 在插入后 对 一门课的 Section 进行一次排序 主要是直播课
+        updateSectionsSequence(coursesLearningPO.getId());
+
 
         return SaResult.ok("创建课程节点成功");
     }
+
+    private void updateSectionsSequence(Long courseId){
+        // 获取一门课的所有 Sections
+        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseId));
+
+        // 根据 startTime 排序
+        List<SectionsPO> sortedSectionsPOS = sectionsPOS.stream()
+                .sorted(Comparator.comparing(SectionsPO::getStartTime))
+                .collect(Collectors.toList());
+
+        // 更新 sequence，从 1 开始
+        int sequence = 1;
+        for (SectionsPO section : sortedSectionsPOS) {
+            section.setSequence(sequence++);
+        }
+
+        // 更新到数据库，这里假设 sectionsService 提供了批量更新的方法
+        // 请替换为你的实际批量更新方法
+        // 注意：MyBatis Plus 默认的 updateBatchById 方法可能对大量数据的批量更新不够高效
+        // 如果数据量很大，考虑分批更新或使用更高效的批量更新策略
+        sectionsService.updateBatchById(sortedSectionsPOS);
+    }
+
+
 
     /**
      * 校验输入字符串是否是 课程学习常量类的字符串
@@ -1206,6 +1286,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             SaResult saResult = deleteCourseSectionInfoRecurrent(sectionsPO);
         }
+
+        // 在插入后 对 一门课的 Section 进行一次排序 主要是直播课
+        updateSectionsSequence(courseId);
+
         return SaResult.ok("删除成功");
     }
 
@@ -1714,5 +1798,175 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 .eq(CoursesClassMappingPO::getCourseId, courseId));
 
         return SaResult.ok("成功获取班级信息").setData(coursesClassMappingPOS);
+    }
+
+    /**
+     * 获取课程师资信息
+     * @param courseId
+     * @return
+     */
+    public SaResult getCourseTeacherInformation(Long courseId) {
+        CoursesLearningPO coursesLearningPO = getBaseMapper().selectById(courseId);
+        if(coursesLearningPO != null){
+            // 获取所有的主讲老师
+            List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                    .eq(SectionsPO::getCourseId, courseId));
+            // 使用Java Stream API过滤并收集username不为空的条目
+            Set<String> usernames = sectionsPOS.stream() // 将列表转换为Stream
+                    .map(SectionsPO::getMainTeacherUsername) // 获取每个SectionsPO的MainTeacherUsername
+                    .filter(username -> username != null && !username.isEmpty()) // 过滤出不为空的username
+                    .collect(Collectors.toSet()); // 收集结果到Set中
+            usernames.add(coursesLearningPO.getDefaultMainTeacherUsername());
+
+            // 获取助教老师
+            List<CourseAssistantsPO> courseAssistantsPOS = courseAssistantsService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseAssistantsPO>()
+                    .eq(CourseAssistantsPO::getCourseId, courseId));
+            Set<String> assistants = courseAssistantsPOS.stream()
+                    .map(CourseAssistantsPO::getUsername)
+                    .collect(Collectors.toSet());// 收集结果到Set中
+
+            usernames.addAll(assistants);
+
+            // 根据这些用户名 批量获取教师信息
+            List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectTeacherInfo(new TeacherInformationSearchRO().setUsernames(usernames));
+
+            List<CourseTeacherInformationVO> courseTeacherInformationVOS = new ArrayList<>();
+            for (TeacherInformationPO teacherInformationPO : teacherInformationPOS) {
+                CourseTeacherInformationVO courseTeacherInformationVO = new CourseTeacherInformationVO()
+                        .setTeacherName(teacherInformationPO.getName())
+                        .setTeacherType1(teacherInformationPO.getTeacherType1())
+                        .setTeacherType2(teacherInformationPO.getTeacherType2())
+                        .setPhone(teacherInformationPO.getPhone())
+                        ;
+                courseTeacherInformationVOS.add(courseTeacherInformationVO);
+            }
+            return SaResult.ok("成功获取课程师资库信息").setData(courseTeacherInformationVOS);
+
+        }
+        return SaResult.error(ResultCode.UPDATE_COURSE_FAIL5.getMessage()).setCode(ResultCode.UPDATE_COURSE_FAIL5.getCode());
+    }
+
+    /**
+     * 获取课程排课明细信息
+     * @param courseScheduleSearchRO
+     * @return
+     */
+    public SaResult getCourseScheduleInformation(PageRO<CourseScheduleSearchRO> courseScheduleSearchRO) {
+
+        List<CourseScheduleVO> courseScheduleVOList = getBaseMapper().selectCoursesScheduleInfo(courseScheduleSearchRO.getEntity(),
+                courseScheduleSearchRO.getPageNumber() - 1, courseScheduleSearchRO.getPageSize(), CourseContentType.NODE.getContentType());
+        PageVO pageVO = new PageVO<CourseLearningVO>();
+        pageVO.setRecords(courseScheduleVOList);
+        pageVO.setSize(courseScheduleSearchRO.getPageSize());
+        pageVO.setCurrent(courseScheduleSearchRO.getPageNumber());
+        pageVO.setTotal(getBaseMapper().selectCoursesScheduleInfoCount(courseScheduleSearchRO.getEntity(), CourseContentType.NODE.getContentType()));
+
+
+        return SaResult.ok("成功获取排课明细数据").setData(pageVO);
+    }
+
+    /**
+     * 预览课程排课内容
+     * @param courseScheduleSearchRO
+     * @return
+     */
+    public SaResult viewCourse(CourseScheduleSearchRO courseScheduleSearchRO) {
+        List<SectionsPO> sectionsPOList = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseScheduleSearchRO.getCourseId())
+                .ne(SectionsPO::getContentType, CourseContentType.NODE.getContentType())
+        );
+        List<CourseViewVO> courseViewVOS = new ArrayList<>();
+        Date now = new Date();
+
+        // 获取今天的开始和结束时间
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date todayStart = calendar.getTime();
+
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Date tomorrowStart = calendar.getTime();
+
+        for (SectionsPO sectionsPO : sectionsPOList) {
+            CourseViewVO courseViewVO = new CourseViewVO();
+            String liveCourseChannelId = getLiveCourseChannelId(sectionsPO.getCourseId());
+            boolean playBackState = singleLivingSetting.getPlayBackState(liveCourseChannelId);
+            BeanUtils.copyProperties(sectionsPO, courseViewVO);
+            courseViewVO.setChannelId(liveCourseChannelId);
+
+            Date startTime = sectionsPO.getStartTime();
+            Date deadline = sectionsPO.getDeadline();
+
+            // 判断直播状态
+            if (startTime.before(todayStart)) {
+                courseViewVO.setLivingRoomState("已结束");
+            } else if (startTime.after(now) && startTime.before(tomorrowStart)) {
+                if (playBackState) {
+                    courseViewVO.setLivingRoomState("直播中");
+                } else {
+                    courseViewVO.setLivingRoomState("未开播");
+                }
+            } else if (startTime.after(tomorrowStart)) {
+                courseViewVO.setLivingRoomState("未开始");
+            } else if (!startTime.after(now) && !deadline.before(now)) {
+                // 正在直播或者回放
+                if (playBackState) {
+                    courseViewVO.setLivingRoomState("直播中");
+                } else {
+                    courseViewVO.setLivingRoomState("已结束");
+                }
+            }
+
+            courseViewVOS.add(courseViewVO);
+        }
+
+        return SaResult.ok().setData(courseViewVOS);
+    }
+
+
+    /**
+     * 获取课程创建参数
+     * @return
+     */
+    public SaResult getCourseCreateParams() {
+        List<TeacherSelectVO> mainTeacherList = new ArrayList<>();
+        List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherType2, "主讲教师"));
+        for(TeacherInformationPO teacherInformationPO: teacherInformationPOS){
+            String name = teacherInformationPO.getName();
+            String teacherUsername = teacherInformationPO.getTeacherUsername();
+            String label = name + " " + teacherUsername;
+            TeacherSelectVO teacherSelectVO = new TeacherSelectVO(label, teacherInformationPO.getUserId());
+            mainTeacherList.add(teacherSelectVO);
+        }
+
+        List<TeacherSelectVO> tutorList = new ArrayList<>();
+        List<TeacherInformationPO> teacherInformationPOS1 = teacherInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
+                .eq(TeacherInformationPO::getTeacherType2, "辅导教师"));
+        for(TeacherInformationPO teacherInformationPO: teacherInformationPOS1){
+            String name = teacherInformationPO.getName();
+            String teacherUsername = teacherInformationPO.getTeacherUsername();
+            String label = name + " " + teacherUsername;
+            TeacherSelectVO teacherSelectVO = new TeacherSelectVO(label, teacherInformationPO.getUserId());
+            tutorList.add(teacherSelectVO);
+        }
+
+        List<String> contentTypes = new ArrayList<>();
+        for (CourseContentType type : CourseContentType.values()) {
+            contentTypes.add(type.getContentType());
+        }
+
+        CourseCreateParamsVO courseCreateParamsVO = new CourseCreateParamsVO()
+                .setMainTeacherList(mainTeacherList)
+                .setTutorList(tutorList)
+                .setCourseTypes(contentTypes)
+                ;
+
+
+        return SaResult.ok().setData(courseCreateParamsVO);
+
     }
 }

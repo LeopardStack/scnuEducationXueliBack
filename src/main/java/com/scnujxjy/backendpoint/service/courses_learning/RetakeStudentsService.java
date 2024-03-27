@@ -125,7 +125,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
 
             Integer i = getBaseMapper().selectCount(new LambdaQueryWrapper<RetakeStudentsPO>()
                     .eq(RetakeStudentsPO::getCourseId, courseRetakeRO.getCourseId())
-                    .eq(RetakeStudentsPO::getCourseId, courseRetakeRO.getStudentNumber())
+                    .eq(RetakeStudentsPO::getStudentNumber, courseRetakeRO.getStudentNumber())
             );
             if(i == 0){
                 return SaResult.ok("已删除 无需再删除");
@@ -133,7 +133,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
 
             int delete = getBaseMapper().delete(new LambdaQueryWrapper<RetakeStudentsPO>()
                     .eq(RetakeStudentsPO::getCourseId, courseRetakeRO.getCourseId())
-                    .eq(RetakeStudentsPO::getCourseId, courseRetakeRO.getStudentNumber())
+                    .eq(RetakeStudentsPO::getStudentNumber, courseRetakeRO.getStudentNumber())
             );
             if(delete <= 0){
                 return SaResult.error("删除失败").setCode(500);

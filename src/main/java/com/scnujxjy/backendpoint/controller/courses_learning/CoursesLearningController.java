@@ -12,6 +12,7 @@ import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentI
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseSectionVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -378,6 +379,65 @@ public class CoursesLearningController {
 
         // 转换并返回
         return coursesLearningService.getStudentLivingWatchUrl(courseId);
+    }
+
+
+    /**
+     * 获取课程师资信息
+     *
+     * @return 课程节点信息
+     */
+    @GetMapping("/get_course_teacher_information")
+    public SaResult getCourseTeacherInformation(Long courseId) {
+
+        // 转换并返回
+        return coursesLearningService.getCourseTeacherInformation(courseId);
+    }
+
+
+    /**
+     * 获取课程排课明细
+     *
+     * @return 课程节点信息
+     */
+    @PostMapping("/get_course_schedule_info")
+    public SaResult getCourseScheduleInformation(@RequestBody PageRO<CourseScheduleSearchRO> courseScheduleSearchRO) {
+        if(courseScheduleSearchRO == null){
+            return SaResult.error("入参不能为空 ").setCode(ResultCode.COMMON_OPERATION_ERROR.getCode());
+        }
+        if(courseScheduleSearchRO.getEntity() == null){
+            courseScheduleSearchRO.setEntity(new CourseScheduleSearchRO());
+        }
+        // 转换并返回
+        return coursesLearningService.getCourseScheduleInformation(courseScheduleSearchRO);
+    }
+
+
+    /**
+     * 预览课程 即查看排课明细 仅仅目前针对直播
+     *
+     * @return 课程节点信息
+     */
+    @PostMapping("/view_course")
+    public SaResult viewCourse(@RequestBody CourseScheduleSearchRO courseScheduleSearchRO) {
+        if(courseScheduleSearchRO.getCourseId() == null){
+            return SaResult.error("入参不能为空 ").setCode(ResultCode.COMMON_OPERATION_ERROR.getCode());
+        }
+        // 转换并返回
+        return coursesLearningService.viewCourse(courseScheduleSearchRO);
+    }
+
+
+    /**
+     * 获取 主讲教师、助教、课程类型
+     *
+     * @return 课程节点信息
+     */
+    @GetMapping("/get_course_create_params")
+    public SaResult getCourseCreateParams() {
+
+        // 转换并返回
+        return coursesLearningService.getCourseCreateParams();
     }
 }
 

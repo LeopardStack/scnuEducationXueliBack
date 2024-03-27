@@ -24,6 +24,7 @@ public enum ResultCode {
     UPDATE_COURSE_FAIL2(20008, "课程ID 找不到对应的课程信息"),
     UPDATE_COURSE_FAIL3(20009, "创建课程节点时 节点内容不合法"),
     UPDATE_COURSE_FAIL4(20010, "学生获取观看链接失败"),
+    UPDATE_COURSE_FAIL5(20011, "通过课程 ID 获取不到课程信息"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
@@ -53,6 +54,9 @@ public enum ResultCode {
     INTERFACE_INNER_INVOKE_ERROR(60001, "内部系统接口调用异常"),
     INTERFACE_OUTTER_INVOKE_ERROR(60002, "外部系统接口调用异常"),
     INTERFACE_FORBID_VISIT(60003, "该接口已停止访问"),
+
+    // 通用操作错误
+    COMMON_OPERATION_ERROR(500, "通用操作错误"),
 
     // 权限错误：70001-79999
     PERMISSION_NO_ACCESS(70001, "无访问权限");
