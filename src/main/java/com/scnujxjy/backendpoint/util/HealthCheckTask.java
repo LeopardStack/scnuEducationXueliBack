@@ -2,13 +2,18 @@ package com.scnujxjy.backendpoint.util;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
@@ -18,6 +23,9 @@ import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.live.v1.service.channel.impl.LiveChannelStateServiceImpl;
+import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Request;
+import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -31,10 +39,7 @@ import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -74,6 +79,12 @@ public class HealthCheckTask {
 
     @Resource
     private MongoTemplate mongoTemplate;
+
+    @Resource
+    private SectionsMapper sectionsMapper;
+
+    @Resource
+    private LiveResourceMapper liveResourceMapper;
 
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
@@ -143,7 +154,7 @@ public class HealthCheckTask {
         return uniqueAdminClasses.size();
     }
 
-//    @Scheduled(fixedRate = 60_000) // 每60s触发一次
+    //    @Scheduled(fixedRate = 60_000) // 每60s触发一次
     public void getCourses() {
         if (!checkLivingStatusScan) {
             // 如果配置为 false，直接返回
@@ -162,7 +173,8 @@ public class HealthCheckTask {
         List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper.selectList(queryWrapper);
 
         if (courseSchedulePOS.size() > 0) {
-            out: for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
+            out:
+            for (CourseSchedulePO courseSchedulePO : courseSchedulePOS) {
 
                 //1、获得排课表的开始和结束时间
                 String teachingTime = courseSchedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
@@ -193,16 +205,16 @@ public class HealthCheckTask {
                     poQueryWrapper.eq("batch_index", courseSchedulePO.getBatchIndex());
                     //获取到该课同批次的课程信息
                     List<CourseSchedulePO> poList = courseScheduleMapper.selectList(poQueryWrapper);
-                    if (poList.size()!=0){
-                        for (CourseSchedulePO schedulePO:poList) {
-                            if (StrUtil.isNotBlank(schedulePO.getOnlinePlatform())){
+                    if (poList.size() != 0) {
+                        for (CourseSchedulePO schedulePO : poList) {
+                            if (StrUtil.isNotBlank(schedulePO.getOnlinePlatform())) {
                                 UpdateWrapper<CourseSchedulePO> updateWrapper = new UpdateWrapper<>();
-                                updateWrapper.set("online_platform",schedulePO.getOnlinePlatform())
+                                updateWrapper.set("online_platform", schedulePO.getOnlinePlatform())
                                         .eq("id", courseSchedulePO.getId());
                                 int update = courseScheduleMapper.update(null, updateWrapper);
-                                if (update>0){
-                                    log.info(courseSchedulePO+"该课程批次已存在直播间，直接复用无需新建");
-                                  continue out;
+                                if (update > 0) {
+                                    log.info(courseSchedulePO + "该课程批次已存在直播间，直接复用无需新建");
+                                    continue out;
                                 }
                             }
                         }
@@ -228,7 +240,7 @@ public class HealthCheckTask {
                             QueryWrapper<CourseSchedulePO> courseQueryWrapper = new QueryWrapper<>();
                             courseQueryWrapper.eq("course_name", courseSchedulePO.getCourseName())
                                     .eq("main_teacher_name", courseSchedulePO.getMainTeacherName())
-                                    .eq("batch_index",courseSchedulePO.getBatchIndex())
+                                    .eq("batch_index", courseSchedulePO.getBatchIndex())
                                     .and(i -> i.isNull("online_platform").or().eq("online_platform", ""));
 
                             List<CourseSchedulePO> schedulePOList = courseScheduleMapper.selectList(courseQueryWrapper);
@@ -245,7 +257,7 @@ public class HealthCheckTask {
                             tutorQueryWrapper.eq("channel_id", channelId);
                             Integer integer = tutorInformationMapper.selectCount(tutorQueryWrapper);
 
-                            if (integer.equals( maxTutorCount)) {
+                            if (integer.equals(maxTutorCount)) {
                                 log.info(channelId + "创建10个助教成功");
                             }
 
@@ -304,6 +316,41 @@ public class HealthCheckTask {
             redisTemplate.opsForValue().set("courseSections", courseSections); // 将数据存储在 Redis 中
         } catch (Exception e) {
             log.error("Error updating course sections in Redis", e);
+        }
+    }
+
+//    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
+    public void getChannelStatus() {
+        LiveListChannelStreamStatusV2Request liveListChannelStreamStatusV2Request = new LiveListChannelStreamStatusV2Request();
+        List<LiveListChannelStreamStatusV2Response> liveListChannelStreamStatusV2Respons;
+        try {
+            //建议拿到当天的直播频道回放状态即可。
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String todayString = today.format(formatter);
+
+            List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByDate(todayString);
+            List<String> channelIdList=new ArrayList<>();
+            for (SectionsPO sectionsPO:sectionsPOS) {
+                LiveResourcesPO query = liveResourceMapper.query(sectionsPO.getCourseId());
+                if (query!=null) {
+                    channelIdList.add(query.getChannelId());
+                }
+            }
+            if (channelIdList.isEmpty()){
+                log.info("当天无直播，无需获取直播间的直播状态");
+                return;
+            }
+            String channelIds = String.join(",", channelIdList);
+            liveListChannelStreamStatusV2Request.setChannelIds(channelIds);
+            liveListChannelStreamStatusV2Respons = new LiveChannelStateServiceImpl().listChannelLiveStreamV2(
+                    liveListChannelStreamStatusV2Request);
+            if (liveListChannelStreamStatusV2Respons != null) {
+                log.info("批量查询频道直播状态成功:{}", JSON.toJSONString(liveListChannelStreamStatusV2Respons));
+                //拿到是List<"channelId","status">的数据，自行处理。   感觉可以放redis，没必要每分钟都查，不过怕出现当天加课加直播间，再看看ba
+            }
+        } catch (Exception e) {
+            log.error("批量查询直播间状态失败，异常信息为",e);
         }
     }
 
