@@ -55,7 +55,7 @@ spring:
     username: leopard
     password: Leopard2024@
     hikari:
-      maximum-pool-size: 1000 # 设置最大连接数为1000
+      maximum-pool-size: 50 # 设置最大连接数为1000
       idleTimeout: 300  # set to 5 minutes for example
 
   elasticsearch:

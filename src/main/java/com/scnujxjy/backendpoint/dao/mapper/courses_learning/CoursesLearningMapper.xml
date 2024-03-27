@@ -210,4 +210,99 @@
     </select>
 
 
+    <sql id="commonCourseScheduleJoin">
+        FROM
+        courses_learning cl
+        INNER JOIN
+        sections ss1 ON cl.id = ss1.course_id
+        INNER JOIN
+        courses_class_mapping ccm ON cl.id = ccm.course_id
+        INNER JOIN
+        class_information ci ON ccm.class_identifier = ci.class_identifier
+        INNER JOIN
+        teacher_information ti ON ss1.main_teacher_username = ti.teacher_username
+        INNER JOIN student_status ss ON ss.class_identifier=ci.class_identifier
+        INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
+        INNER JOIN teaching_point_information tpi
+        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+        LEFT JOIN
+        live_resources lr ON cl.id=lr.course_id AND lr.section_id IS NULL
+    </sql>
+
+    <sql id="commonCourseScheduleFilters">
+        AND ss1.content_type != #{specialNodeType}
+        <if test='entity.courseId != null'>AND cl.id = #{entity.courseId}</if>
+
+        <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
+        <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
+        <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm}</if>
+        <if test='entity.className != null'>AND ci.class_name = #{entity.className}</if>
+        <if test='entity.level != null'>AND ci.level = #{entity.level}</if>
+        <if test='entity.courseName != null'>AND cl.course_name = #{entity.courseName}</if>
+        <if test='entity.courseType != null'>AND cl.course_type = #{entity.courseType}</if>
+        <if test='entity.teacherInfo != null and entity.teacherInfo.teacherName != null'>AND ti.name = #{entity.teacherInfo.teacherName}</if>
+        <if test='entity.teacherInfo != null and entity.teacherInfo.teacherUsername != null'>AND cl.default_main_teacher_username = #{entity.teacherInfo.teacherUsername}</if>
+
+        <if test='entity.startTime != null'>AND ss1.start_time >= #{entity.startTime}</if>
+        <if test='entity.deadLine != null'>AND #{entity.deadLine} >= ss1.start_time</if>
+        <if test='entity.teachingPointName != null'>AND tpi.teaching_point_name = #{entity.teachingPointName}</if>
+    </sql>
+
+    <select id="selectCoursesScheduleInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseScheduleVO">
+        select cl.id AS course_id, ci.grade, ci.college, ci.major_name, ci.level, ci.study_form,
+               tpi.teaching_point_name, ci.class_name, cl.course_name, cl.course_type,
+               ss1.start_time, ss1.deadline, lr.channel_id, COUNT(ss.id) AS total_students
+        <include refid="commonCourseScheduleJoin" />
+        WHERE
+        1=1
+        <include refid="commonCourseScheduleFilters" />
+        GROUP BY
+        cl.id,
+        ci.grade,
+        ci.college,
+        ci.major_name,
+        ci.level,
+        ci.study_form,
+        tpi.teaching_point_name,
+        ci.class_name,
+        cl.course_name,
+        cl.course_type,
+        ss1.start_time,
+        ss1.deadline,
+        lr.channel_id
+        ORDER BY
+        ci.grade, ci.college, ci.major_name, ci.level, ci.study_form, cl.course_name, ss1.start_time DESC
+        LIMIT
+        #{pageNumber}, #{pageSize}
+    </select>
+    <select id="selectCoursesScheduleInfoCount" resultType="java.lang.Long">
+        select COUNT(*)
+        FROM (
+        select cl.id AS course_id, ci.grade, ci.college, ci.major_name, ci.level, ci.study_form,
+        tpi.teaching_point_name, ci.class_name, cl.course_name, cl.course_type,
+        ss1.start_time, ss1.deadline, lr.channel_id, COUNT(ss.id) AS total_students
+        <include refid="commonCourseScheduleJoin" />
+        WHERE
+        1=1
+        <include refid="commonCourseScheduleFilters" />
+        GROUP BY
+        cl.id,
+        ci.grade,
+        ci.college,
+        ci.major_name,
+        ci.level,
+        ci.study_form,
+        tpi.teaching_point_name,
+        ci.class_name,
+        cl.course_name,
+        cl.course_type,
+        ss1.start_time,
+        ss1.deadline,
+        lr.channel_id
+        ) AS subquery
+    </select>
+
+
 </mapper>

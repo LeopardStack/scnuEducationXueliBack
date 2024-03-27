@@ -3,10 +3,12 @@ package com.scnujxjy.backendpoint.dao.mapper.courses_learning;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseScheduleSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseScheduleVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
@@ -45,4 +47,11 @@ public interface CoursesLearningMapper extends BaseMapper<CoursesLearningPO> {
     Long selectCountCourseStudentsInfo(@Param("entity") CourseStudentSearchRO entity);
 
     List<CourseLearningStudentInfoVO> selectCourseRetakeStudentsInfo(@Param("entity") CourseStudentSearchRO entity);
+
+    List<CourseScheduleVO> selectCoursesScheduleInfo(@Param("entity") CourseScheduleSearchRO entity,
+                                                     @Param("pageNumber") Long pageNumber, @Param("pageSize") Long pageSize,
+                                                     @Param("specialNodeType") String sectionContentType);
+
+    Long selectCoursesScheduleInfoCount(@Param("entity") CourseScheduleSearchRO entity,
+                                        @Param("specialNodeType") String sectionContentType);
 }
