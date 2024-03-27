@@ -102,8 +102,6 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     @Resource
     private StudentStatusService studentStatusService;
 
-    @Resource
-    private VideoStreamUtils videoStreamUtils;
 
     @Resource
     private SingleLivingSetting singleLivingSetting;
@@ -269,12 +267,24 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toSet());
             vo.setClassNames(String.join(", ", classNames));
 
-            // 获取最近的开始时间
+            // 获取当前时间
+            Date now = new Date();
+
+            // 获取最近的开始时间，首先尝试获取大于等于当前时间的最小开始时间
             Date recentStartTime = records.stream()
                     .map(CourseRecordBO::getStartTime)
                     .filter(Objects::nonNull)
+                    .filter(startTime -> !startTime.before(now)) // 过滤出未来的时间
                     .min(Date::compareTo)
-                    .orElse(null);
+                    .orElseGet(() ->
+                            // 如果没有未来的开始时间，获取过去的最接近当前时间的开始时间
+                            records.stream()
+                                    .map(CourseRecordBO::getStartTime)
+                                    .filter(Objects::nonNull)
+                                    .filter(startTime -> startTime.before(now)) // 过滤出过去的时间
+                                    .max(Date::compareTo)
+                                    .orElse(null));
+
             vo.setRecentCourseScheduleTime(recentStartTime);
         }
 
@@ -685,8 +695,19 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
         }
 
-        List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
-                courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
+        List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = new ArrayList<>();
+//        if(courseStudentSearchROPageRO.getEntity().getIsRetake().equals("Y")){
+//            courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity(),
+//                    courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
+//        }else if(){
+//            List<CourseLearningStudentInfoVO> courseLearningRetakeStudentInfoVOList = getBaseMapper().selectCourseRetakeStudentsInfo(courseStudentSearchROPageRO.getEntity(),
+//                    courseStudentSearchROPageRO.getPageNumber() - 1, courseStudentSearchROPageRO.getPageSize());
+//        }
+
+        // 将一门课里面的所有学生 存起来 再排序 再分页
+
+
+
 
 
 
@@ -811,6 +832,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     studentWhiteListInfoBOList.addAll(studentWhiteListInfoBOList1);
                 }
             }
+
+            // 清除以前的白名单 导入新的白名单
+            SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
+                    .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
+                            .setDeleteCodeList(new ArrayList<>())
+                    .setIsClear("Y")
+
+            );
             importWhiteStudents(studentWhiteListInfoBOList, getLiveCourseChannelId(coursesLearningPO.getId()));
 
         }

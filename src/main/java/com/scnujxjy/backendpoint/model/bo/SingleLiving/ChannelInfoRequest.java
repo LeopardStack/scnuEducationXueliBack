@@ -1,12 +1,20 @@
 package com.scnujxjy.backendpoint.model.bo.SingleLiving;
 
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.util.Date;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 public class ChannelInfoRequest {
     private String channelId;
     //"Y"是，"N"否
