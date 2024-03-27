@@ -779,49 +779,93 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Override
     public SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest) {
         log.info("调用批量删除白名单接口，请求入参为:{}", channelInfoRequest);
-        SaResult saResult = new SaResult();
-        Boolean liveDeleteChannelWhiteListResponse;
-        List<String> successList = new ArrayList<>();
-        List<String> failList = channelInfoRequest.getDeleteCodeList();
-        Iterator<String> iterator = failList.iterator();
+        // 校验参数
+        if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || StrUtil.isBlank(channelInfoRequest.getIsClear())) {
+            return SaResult.error("频道id和是否清空字段不能为空");
+        }
+        if (channelInfoRequest.getIsClear().equals("N") && (channelInfoRequest.getDeleteCodeList() == null || channelInfoRequest.getDeleteCodeList().isEmpty())) {
+            return SaResult.error("部分清空时，会员码不能为空");
+        }
+        if (!channelInfoRequest.getIsClear().equals("Y") && !channelInfoRequest.getIsClear().equals("N")) {
+            return SaResult.error("是否全部清空字段只能传Y或者N");
+        }
         try {
-            //遍历需要删除的白名单list，成功的装进successList,删除失败的放入failList
-            while (iterator.hasNext()) {
-                String code = iterator.next();
+            //如果是一键清空。
+            if ("Y".equals(channelInfoRequest.getIsClear())) {
+                Boolean liveDeleteChannelWhiteListResponse;
                 LiveDeleteChannelWhiteListRequest liveDeleteChannelWhiteListRequest = new LiveDeleteChannelWhiteListRequest();
                 liveDeleteChannelWhiteListRequest
                         .setRank(1)
                         .setChannelId(channelInfoRequest.getChannelId())
-                        .setIsClear(channelInfoRequest.getIsClear())
-                        .setCode(code);
+                        .setIsClear(channelInfoRequest.getIsClear());
                 liveDeleteChannelWhiteListResponse = new LiveWebAuthServiceImpl().deleteChannelWhiteList(
                         liveDeleteChannelWhiteListRequest);
                 if (liveDeleteChannelWhiteListResponse != null && liveDeleteChannelWhiteListResponse) {
-                    successList.add(code);
-                    iterator.remove(); // 删除元素使用 iterator.remove()
+                    log.info("频道id" + channelInfoRequest.getChannelId() + "一键清除白名单成功");
+                    return SaResult.ok();
                 }
-            }
-
-            if (failList.size() != 0) {
-                log.info("删除部分白名单成功" + successList);
-                saResult.setCode(ResultCode.PARTIALSUCCESS.getCode());
-                saResult.setMsg(ResultCode.PARTIALSUCCESS.getMessage());
-                saResult.setData(failList);
-                return saResult;
+                log.error("一键清空失败，入参信息为:{}", channelInfoRequest);
+                return SaResult.error("一键清空白名单失败");
             } else {
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                return saResult;
-            }
 
+                //1、先查该直播间的所有白名单列表,一次只能1000个
+                List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
+                for (int i = 1; i < 10; i++) {
+                    LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+                    liveChannelWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
+                            .setRank(1)
+                            .setCurrentPage(i)
+                            .setPageSize(1000);
+                    LiveChannelWhiteListResponse liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+                    if (liveChannelWhiteListResponse.getContents().size() != 0) {
+                        List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+                        whiteLists.addAll(contents);
+                    } else {
+                        break;
+                    }
+                }
+                log.info("查询频道观看白名单列表成功,{}", JSON.toJSONString(whiteLists));
+                //需要删除的白名单列表
+                List<String> deleteCodeList = channelInfoRequest.getDeleteCodeList();
+
+                List<LiveChannelWhiteListResponse.ChannelWhiteList> updatedContents = whiteLists.stream()
+                        .filter(channelWhiteList -> !deleteCodeList.contains(channelWhiteList.getPhone()))
+                        .collect(Collectors.toList());
+                //2、这样就拿到了删除后的所有白名单信息。然后清空频道的白名单。
+                Boolean liveDeleteChannelWhiteListResponse;
+                LiveDeleteChannelWhiteListRequest liveDeleteChannelWhiteListRequest = new LiveDeleteChannelWhiteListRequest();
+                liveDeleteChannelWhiteListRequest
+                        .setRank(1)
+                        .setChannelId(channelInfoRequest.getChannelId())
+                        .setIsClear("Y");
+                liveDeleteChannelWhiteListResponse = new LiveWebAuthServiceImpl().deleteChannelWhiteList(
+                        liveDeleteChannelWhiteListRequest);
+                if (liveDeleteChannelWhiteListResponse != null && liveDeleteChannelWhiteListResponse) {
+                    log.info("频道id" + channelInfoRequest.getChannelId() + "一键清除白名单成功");
+                    //3、清空后再添加白名单。
+                    List<StudentWhiteListVO> studentWhiteList = updatedContents.stream()
+                            .map(channelWhiteList -> {
+                                StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO();
+                                studentWhiteListVO.setCode(channelWhiteList.getPhone());
+                                studentWhiteListVO.setName(channelWhiteList.getName());
+                                return studentWhiteListVO;
+                            })
+                            .collect(Collectors.toList());
+
+                    ChannelInfoRequest channelInfoRequest1 = new ChannelInfoRequest();
+                    channelInfoRequest1.setChannelId(channelInfoRequest.getChannelId());
+                    channelInfoRequest1.setStudentWhiteList(studentWhiteList);
+                    SaResult saResult = addChannelWhiteStudentByFile(channelInfoRequest1);
+                    if (saResult.getCode() == 200) {
+                        return SaResult.ok("更新白名单成功");
+                    }
+                }
+
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("删除白名单接口调用异常", e);
+            log.error("删除部分白名单发生异常，入参为:{}", channelInfoRequest, e);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg("该直播间不含该会员码，无需删除");
-        saResult.setData(failList);
-        return saResult;
+        return SaResult.error("删除部分白名单失败");
 
     }
 
