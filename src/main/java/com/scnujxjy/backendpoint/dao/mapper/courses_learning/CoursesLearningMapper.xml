@@ -45,8 +45,18 @@
         INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
         INNER JOIN teaching_point_information tpi
         ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
-        LEFT JOIN retake_students rs ON cl.id=rs.course_id AND rs.student_number=ss.student_number
     </sql>
+
+    <sql id="courseLearningRetakeStudentsInfoJoin">
+        FROM courses_learning cl
+        INNER JOIN retake_students rs ON cl.id=rs.course_id
+        INNER JOIN student_status ss ON rs.student_number=ss.student_number
+        INNER JOIN class_information ci ON ss.class_identifier=ci.class_identifier
+        INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
+        INNER JOIN teaching_point_information tpi
+        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+    </sql>
+
 
     <sql id="commonFilters">
         <if test='entity.id != null'>AND cl.id = #{entity.id}</if>
@@ -135,30 +145,18 @@
         <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber}</if>
 
         <if test='entity.name != null'>AND pi.name >= #{entity.name}</if>
-        AND (
-        (#{entity.isRetake} = 'Y' AND rs.student_number IS NOT NULL)
-        OR (#{entity.isRetake} = 'N' AND rs.student_number IS NULL)
-        OR #{entity.isRetake} IS NULL
-        )
+
     </sql>
 
 
     <select id="selectCourseStudentsInfo"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">
         SELECT cl.id AS course_id, ss.grade, ci.college, ci.major_name, ci.study_form, ci.`level`, tpi.teaching_point_name,
-               ci.class_name, ss.id_number, ss.student_number, pi.`name`,
-               CASE
-               WHEN rs.student_number IS NOT NULL THEN 'Y'
-               ELSE 'N'
-               END AS is_retake
+        ci.class_name, ss.id_number, ss.student_number, pi.`name`
         <include refid="courseLearningStudentsInfoJoin" />
         WHERE
         1=1
         <include refid="courseStudentInfoFilter" />
-        ORDER BY
-        ss.grade DESC, ci.college, ci.major_name, ci.study_form, ci.`level`, ci.class_name
-        LIMIT
-        #{pageNumber}, #{pageSize}
     </select>
 
 
@@ -200,6 +198,15 @@
         cl.valid, cl.created_time, cl.updated_time, ti.name
         ORDER BY
         cl.created_time DESC
+    </select>
+    <select id="selectCourseRetakeStudentsInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">
+        SELECT cl.id AS course_id, ss.grade, ci.college, ci.major_name, ci.study_form, ci.`level`, tpi.teaching_point_name,
+        ci.class_name, ss.id_number, ss.student_number, pi.`name`
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
     </select>
 
 

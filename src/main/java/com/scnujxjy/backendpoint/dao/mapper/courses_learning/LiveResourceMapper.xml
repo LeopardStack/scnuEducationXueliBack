@@ -22,7 +22,7 @@
     <select id="selectLiveResource"
             resultType="com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO">
         select * from live_resources lr
-        WHERE lr.course_id = #{courseId}
+        WHERE lr.course_id = #{courseId} AND lr.section_id IS NULL
     </select>
 
 </mapper>

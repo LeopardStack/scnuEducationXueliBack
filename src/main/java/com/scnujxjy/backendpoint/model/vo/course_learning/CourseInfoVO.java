@@ -95,7 +95,17 @@ public class CourseInfoVO {
     @ApiModelProperty(value = "近期排课时间")
     private Date recentCourseScheduleTime;
 
+    /**
+     * 对于已修课程只会看到成绩
+     */
+    @ApiModelProperty(value = "90")
+    private String score;
 
+    /**
+     * eg. 已修、在修、未修
+     */
+    @ApiModelProperty(value = "课程状态")
+    private String state;
 
     /**
      * 创建时间

@@ -60,4 +60,7 @@ public class CourseLearningCreateRO {
 
     @ApiModelProperty(value = "有效状态", example = "N")
     private String valid;
+
+    @ApiModelProperty(value = "强制刷新白名单", example = "Y")
+    private String freshWhiteList;
 }

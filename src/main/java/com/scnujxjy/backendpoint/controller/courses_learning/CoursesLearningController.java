@@ -144,6 +144,23 @@ public class CoursesLearningController {
         return coursesLearningService.updateCourse(coursesLearningROPageRO);
     }
 
+
+    /**
+     * 获取课程的班级信息
+     *
+     * @param courseId
+     * @return
+     */
+    @PostMapping("/get_course_class_infos")
+    @ApiOperation(value = "获取课程所对应的班级信息")
+    public SaResult getCourseClassInfos(
+            @ApiParam(value = "获取班级信息参数", required = true)
+            Long courseId) {
+
+        // 查询数据
+        return coursesLearningService.getCourseClassInfos(courseId);
+    }
+
     /**
      * 根据课程 ID 删除这门课
      *
@@ -203,7 +220,7 @@ public class CoursesLearningController {
      * @param courseStudentSearchROPageRO
      * @return
      */
-    @GetMapping("/get_course_students_info")
+    @PostMapping("/get_course_students_info")
     @ApiOperation(value = "查询一门课程中的学生群体信息")
     public SaResult getCourseStudentsInfo(
             @ApiParam(value = "课程学生查询参数", required = true)
@@ -301,13 +318,25 @@ public class CoursesLearningController {
      *
      * @return 课程信息
      */
-    @GetMapping("/get_student_course_info")
-    public SaResult getStudentCoursesInfo() {
-        String username = StpUtil.getLoginIdAsString();
+    @PostMapping("/get_student_course_info")
+    public SaResult getStudentCoursesInfo(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
 
-        List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getCourseInfo(username);
+        List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getCourseInfo(studentsCoursesInfoSearchRO);
         // 转换并返回
         return SaResult.data(courseClassInfoVOS);
+    }
+
+    /**
+     * 获取学生的单门课程信息
+     *
+     * @return 课程信息
+     */
+    @PostMapping("/get_student_single_course_info")
+    public SaResult getStudentSingleCoursesInfo(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+
+        CourseInfoVO courseInfoVO =  coursesLearningService.getSingleCourseInfo(studentsCoursesInfoSearchRO);
+        // 转换并返回
+        return SaResult.data(courseInfoVO);
     }
 
     /**
@@ -330,12 +359,25 @@ public class CoursesLearningController {
      *
      * @return 课程节点信息
      */
-    @GetMapping("/get_student_section_info")
+    @PostMapping("/get_student_section_info")
     public SaResult getStudentCourseSectionsInfo(@RequestBody CourseSectionRO courseSectionRO) {
 
         List<CourseSectionVO> courseSectionVOS =  coursesLearningService.getStudentCourseSectionsInfo(courseSectionRO);
         // 转换并返回
         return SaResult.data(courseSectionVOS);
+    }
+
+
+    /**
+     * 获取学生的观看链接 假如这门课是直播课的话
+     *
+     * @return 课程节点信息
+     */
+    @GetMapping("/get_student_living_watch_url")
+    public SaResult getStudentLivingWatchUrl(Long courseId) {
+
+        // 转换并返回
+        return coursesLearningService.getStudentLivingWatchUrl(courseId);
     }
 }
 
