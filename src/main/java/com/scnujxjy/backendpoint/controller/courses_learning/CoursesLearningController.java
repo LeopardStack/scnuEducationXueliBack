@@ -7,10 +7,7 @@ import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseInfoVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
-import com.scnujxjy.backendpoint.model.vo.course_learning.CourseSectionVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.*;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import io.swagger.annotations.Api;
@@ -65,6 +62,32 @@ public class CoursesLearningController {
         }
         // 返回数据
         return SaResult.data(courseLearningVOPageVO);
+    }
+
+
+    /**
+     * 分页查询课程的筛选参数
+     *
+     * @param coursesLearningRO 参数
+     * @return 分页查询课程的筛选参数项
+     */
+    @PostMapping("/page_query_courses_info_select_params")
+    @ApiOperation(value = "分页查询课程的筛选参数项", notes = "根据分页参数查询课程信息. 示例请求体: { 'grade': '2023', 'college': '计算机学院', ... }")
+    public SaResult pageQueryCoursesInfoParams(
+            @ApiParam(value = "分页查询参数", required = true)
+            @RequestBody CoursesLearningRO coursesLearningRO) {
+
+        if (Objects.isNull(coursesLearningRO)) {
+            coursesLearningRO = new CoursesLearningRO();
+        }
+        // 查询数据
+        PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParams = coursesLearningService.pageQueryCoursesInfoParams(coursesLearningRO);
+        // 数据校验
+        if (Objects.isNull(pageQueryCoursesInfoParams)) {
+            throw dataNotFoundError();
+        }
+        // 返回数据
+        return SaResult.data(pageQueryCoursesInfoParams);
     }
 
 
@@ -162,6 +185,39 @@ public class CoursesLearningController {
         return coursesLearningService.getCourseClassInfos(courseId);
     }
 
+
+    /**
+     * 获取课程白名单
+     *
+     * @param courseId
+     * @return
+     */
+    @PostMapping("/get_course_living_whitelist")
+    @ApiOperation(value = "获取课程白名单")
+    public SaResult getCourseLivingWhiteList(
+            @ApiParam(value = "课程主键ID", required = true)
+            Long courseId) {
+
+        // 查询数据
+        return coursesLearningService.getCourseLivingWhiteList(courseId);
+    }
+
+    /**
+     * 获取课程白名单是否与保利威的白名单相等
+     *
+     * @param courseId
+     * @return
+     */
+    @PostMapping("/get_course_living_whitelist_equal_state")
+    @ApiOperation(value = "获取课程白名单是否与保利威的白名单相等")
+    public SaResult getCourseLivingWhiteListEqualState(
+            @ApiParam(value = "课程主键ID", required = true)
+            Long courseId) {
+
+        // 查询数据
+        return coursesLearningService.getCourseLivingWhiteListEqualState(courseId);
+    }
+
     /**
      * 根据课程 ID 删除这门课
      *
@@ -180,12 +236,7 @@ public class CoursesLearningController {
         }
 
         // 查询数据
-        boolean delete = coursesLearningService.deleteCourse(courseId);
-        if (delete) {
-            return SaResult.ok("删除成功");
-        }
-        // 返回数据
-        return SaResult.error("删除失败 ");
+        return coursesLearningService.deleteCourse(courseId);
     }
 
     /**
@@ -239,6 +290,25 @@ public class CoursesLearningController {
         PageVO<CourseLearningStudentInfoVO> courseLearningStudentInfoVOPageVO = coursesLearningService.getCourseStudentsInfo(courseStudentSearchROPageRO);
 
         return SaResult.data(courseLearningStudentInfoVOPageVO).setCode(200).setMsg("成功获取课程中的学生信息");
+    }
+
+
+    /**
+     * 获取课程的学生群体的筛选参数
+     *
+     * @param courseStudentSearchRO
+     * @return
+     */
+    @PostMapping("/get_course_students_info_select_params")
+    @ApiOperation(value = "获取课程的学生群体的筛选参数")
+    public SaResult getCourseStudentsInfoSelectParams(
+            @ApiParam(value = "课程筛选参数的条件", required = true)
+            @RequestBody CourseStudentSearchRO courseStudentSearchRO) {
+
+        // 查询数据
+        CourseStudentInfoSearchParamsVO courseStudentInfoSearchParamsVO = coursesLearningService.getCourseStudentsInfoSelectParams(courseStudentSearchRO);
+
+        return SaResult.ok().setData(courseStudentInfoSearchParamsVO);
     }
 
 
@@ -320,6 +390,7 @@ public class CoursesLearningController {
      * @return 课程信息
      */
     @PostMapping("/get_student_course_info")
+    @ApiOperation(value = "获取学生的课程信息")
     public SaResult getStudentCoursesInfo(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
 
         List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getCourseInfo(studentsCoursesInfoSearchRO);
@@ -333,6 +404,7 @@ public class CoursesLearningController {
      * @return 课程信息
      */
     @PostMapping("/get_student_single_course_info")
+    @ApiOperation(value = "获取学生的单门课程信息")
     public SaResult getStudentSingleCoursesInfo(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
 
         CourseInfoVO courseInfoVO =  coursesLearningService.getSingleCourseInfo(studentsCoursesInfoSearchRO);
@@ -346,12 +418,27 @@ public class CoursesLearningController {
      * @return 课程信息
      */
     @GetMapping("/get_teacher_course_info")
+    @ApiOperation(value = "获取教师的课程信息")
     public SaResult getTeacherCoursesInfo() {
         String username = StpUtil.getLoginIdAsString();
 
         List<CourseInfoVO> courseClassInfoVOS =  coursesLearningService.getTeacherCoursesInfo(username);
         // 转换并返回
         return SaResult.data(courseClassInfoVOS);
+    }
+
+    /**
+     * 获取老师的单门课程信息
+     *
+     * @return 课程信息
+     */
+    @PostMapping("/get_teacher_single_course_info")
+    @ApiOperation(value = "获取老师的单门课程信息")
+    public SaResult getTeacherSingleCoursesInfo(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+
+        CourseInfoVO courseInfoVO =  coursesLearningService.getTeacherSingleCoursesInfo(studentsCoursesInfoSearchRO);
+        // 转换并返回
+        return SaResult.data(courseInfoVO);
     }
 
 

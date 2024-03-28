@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.dao.entity.courses_learning.*;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
@@ -24,6 +25,7 @@ import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapp
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
+import com.scnujxjy.backendpoint.model.bo.course_learning.TeacherInfo;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
@@ -33,7 +35,9 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherSelectVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.*;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationDownloadVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.TeacherCoursesWithTypeVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.service.teaching_process.ScoreInformationService;
@@ -67,6 +71,10 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -140,7 +148,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseScheduleROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
         } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-
+            courseScheduleROPageRO.getEntity().setTeachingPointName(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
         }
         List<CourseRecordBO> courseSections = (List<CourseRecordBO>) redisTemplate.
                 opsForValue().get("courseSections");
@@ -190,6 +198,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if (filter.getGrade() != null) {
             filteredStream = filteredStream.filter(c -> c.getGrade().equals(filter.getGrade()));
         }
+
+        // 新增基于 classNameSet 的过滤条件
+        if (filter.getClassNameSet() != null && !filter.getClassNameSet().isEmpty()) {
+            List<String> classNameSet = filter.getClassNameSet();
+            filteredStream = filteredStream.filter(c -> classNameSet.contains(c.getClassName()));
+        }
+
         if (filter.getCollege() != null) {
             filteredStream = filteredStream.filter(c -> c.getCollege().equals(filter.getCollege()));
         }
@@ -208,6 +223,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if (filter.getCourseType() != null) {
             filteredStream = filteredStream.filter(c -> c.getCourseType().equals(filter.getCourseType()));
         }
+
+        if (filter.getTeachingPointName() != null) {
+            filteredStream = filteredStream.filter(c -> c.getTeachingPointName().equals(filter.getTeachingPointName()));
+        }
+
         if (filter.getMainTeacherName() != null) {
             filteredStream = filteredStream.filter(c -> c.getDefaultMainTeacherUsername().equals(filter.getMainTeacherName()));
         }
@@ -257,7 +277,6 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if (!records.isEmpty()) {
             CourseRecordBO representative = records.get(0);
             vo.setId(representative.getId());
-            vo.setGrade(representative.getGrade());
             vo.setCourseName(representative.getCourseName());
             vo.setCourseType(representative.getCourseType());
             vo.setCourseDescription(representative.getCourseDescription());
@@ -266,8 +285,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             vo.setDefaultMainTeacherName(representative.getName());
             vo.setCourseIdentifier(representative.getCourseIdentifier());
             vo.setValid(representative.getValid());
+            vo.setChannelId(representative.getChannelId());
             vo.setCreatedTime(representative.getCreatedTime());
             vo.setUpdatedTime(representative.getUpdatedTime());
+            vo.setTeachingPointName(representative.getTeachingPointName());
 
             // 获取 classNames
             Set<String> classNames = records.stream()
@@ -275,6 +296,27 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
             vo.setClassNames(String.join(", ", classNames));
+
+            // 获取 grades
+            Set<String> grades = records.stream()
+                    .map(CourseRecordBO::getGrade)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setGrades(String.join(", ", grades));
+
+            // 获取 colleges
+            Set<String> colleges = records.stream()
+                    .map(CourseRecordBO::getCollege)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setColleges(String.join(", ", colleges));
+
+            // 获取 CourseRecordBO
+            Set<String> majorNames = records.stream()
+                    .map(CourseRecordBO::getMajorName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setMajorNames(String.join(", ", majorNames));
 
             // 获取当前时间
             Date now = new Date();
@@ -344,13 +386,18 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             coursesLearningPO.setDefaultMainTeacherUsername(defaultMainTeacherUsername);
 
             List<CourseAssistantsPO> courseAssistantsPOS = new ArrayList<>();
-            for (String s : courseLearningCreateRO.getAssistantUsername()) {
-                if (!isValidUsername(s)) {
-                    throw new RuntimeException("助教用户名为空 或者 数据库中找不到 " + s);
+            boolean assistantInsert1 = false;
+            if(courseLearningCreateRO.getAssistantUsername() != null){
+                assistantInsert1 = true;
+                for (String s : courseLearningCreateRO.getAssistantUsername()) {
+                    if (!isValidUsername(s)) {
+                        throw new RuntimeException("助教用户名为空 或者 数据库中找不到 " + s);
+                    }
+                    CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO().setUsername(s);
+                    courseAssistantsPOS.add(courseAssistantsPO);
                 }
-                CourseAssistantsPO courseAssistantsPO = new CourseAssistantsPO().setUsername(s);
-                courseAssistantsPOS.add(courseAssistantsPO);
             }
+
             // 检测用户是否上传了 课程封面
             if(courseLearningCreateRO.getCourseCover() != null){
                 if (courseLearningCreateRO.getCourseCover().getOriginalFilename() == null) {
@@ -381,19 +428,22 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
             Long courseId = coursesLearningPO.getId(); // 假设 getId() 方法能获取到自动生成的主键
 
-            // 设置每个 CourseAssistantsPO 的 courseId 并收集起来
-            courseAssistantsPOS = courseLearningCreateRO.getAssistantUsername().stream()
-                    .filter(this::isValidUsername)
-                    .map(s -> new CourseAssistantsPO().setCourseId(courseId).setUsername(s))
-                    .collect(Collectors.toList());
+            if(assistantInsert1){
+                // 设置每个 CourseAssistantsPO 的 courseId 并收集起来
+                courseAssistantsPOS = courseLearningCreateRO.getAssistantUsername().stream()
+                        .filter(this::isValidUsername)
+                        .map(s -> new CourseAssistantsPO().setCourseId(courseId).setUsername(s))
+                        .collect(Collectors.toList());
 
-            // 批量插入 CourseAssistantsPOS
-            if (courseAssistantsPOS.size() != 0) {
-                boolean assistantInsert = courseAssistantsService.saveBatch(courseAssistantsPOS);
-                if (!assistantInsert) {
-                    throw new RuntimeException("批量插入助教失败");
+                // 批量插入 CourseAssistantsPOS
+                if (courseAssistantsPOS.size() != 0) {
+                    boolean assistantInsert = courseAssistantsService.saveBatch(courseAssistantsPOS);
+                    if (!assistantInsert) {
+                        throw new RuntimeException("批量插入助教失败");
+                    }
                 }
             }
+
             List<CoursesClassMappingPO> coursesClassMappingPOList = courseLearningCreateRO.getClassIdentifier().stream()
                     .filter(this::isValidClassName)
                     .map(s -> new CoursesClassMappingPO().setCourseId(courseId).setClassIdentifier(s))
@@ -597,12 +647,12 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @param courseId
      * @return
      */
-    public boolean deleteCourse(Long courseId) {
+    public SaResult deleteCourse(Long courseId) {
         try {
             if (getBaseMapper().selectCount(new LambdaQueryWrapper<CoursesLearningPO>()
                     .eq(CoursesLearningPO::getId, courseId)) == 0) {
                 // 没有这门课 说明已经被删除了
-                return true;
+                return SaResult.ok("已删除 无需再删除");
             }
             // 先删除 Section
             List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
@@ -662,10 +712,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             // 删除课程本身
             int i = getBaseMapper().deleteById(courseId);
 
-            return true;
+            return SaResult.ok("成功删除");
         } catch (Exception e) {
             log.error("删除课程失败 " + e);
-            return false;
+            return SaResult.error(ResultCode.UPDATE_COURSE_FAIL6.getMessage()).setCode(ResultCode.UPDATE_COURSE_FAIL6.getCode());
         }
     }
 
@@ -701,13 +751,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseStudentSearchROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
         } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-
+            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+            courseStudentSearchROPageRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
         }
 
         List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = new ArrayList<>();
-        if("Y".equals(courseStudentSearchROPageRO.getEntity().getIsRetake())){
+        if("N".equals(courseStudentSearchROPageRO.getEntity().getIsRetake())){
             courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(courseStudentSearchROPageRO.getEntity());
-        }else if("N".equals(courseStudentSearchROPageRO.getEntity().getIsRetake())){
+        }else if("Y".equals(courseStudentSearchROPageRO.getEntity().getIsRetake())){
             courseLearningStudentInfoVOList = getBaseMapper().
                     selectCourseRetakeStudentsInfo(courseStudentSearchROPageRO.getEntity());
         }else{
@@ -1384,6 +1435,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             // 使用 classNameList 创建 CoursesLearningRO 并设置 courseIds
             CoursesLearningRO coursesLearningRO = new CoursesLearningRO().setClassNameSet(classNameList);
+//            CoursesLearningRO coursesLearningRO = new CoursesLearningRO();
             coursesLearningRO.setCourseIds(courseIds);
 
 
@@ -1968,5 +2020,312 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
         return SaResult.ok().setData(courseCreateParamsVO);
 
+    }
+
+    public CourseStudentInfoSearchParamsVO getCourseStudentsInfoSelectParams(CourseStudentSearchRO courseStudentSearchRO) {
+
+        CourseStudentInfoSearchParamsVO courseStudentInfoSearchParamsVO = new CourseStudentInfoSearchParamsVO();
+
+        List<String> grades = new ArrayList<>();
+        List<String> grades1 = new ArrayList<>();
+        List<String> colleges = new ArrayList<>();
+        List<String> colleges1 = new ArrayList<>();
+        List<String> majorNames = new ArrayList<>();
+        List<String> majorNames1 = new ArrayList<>();
+        List<String> levels = new ArrayList<>();
+        List<String> levels1 = new ArrayList<>();
+        List<String> studyForms = new ArrayList<>();
+        List<String> studyForms1 = new ArrayList<>();
+        List<String> classNames = new ArrayList<>();
+        List<String> classNames1 = new ArrayList<>();
+        List<String> teachingPointNames = new ArrayList<>();
+        List<String> teachingPointNames1 = new ArrayList<>();
+
+        ExecutorService executor = Executors.newFixedThreadPool(14); // 选择适当的线程池大小
+
+        if("N".equals(courseStudentSearchRO.getIsRetake())){
+            Future<List<String>> gradesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsGrades(courseStudentSearchRO));
+            Future<List<String>> collegesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsColleges(courseStudentSearchRO));
+            Future<List<String>> majorNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsMajorNames(courseStudentSearchRO));
+            Future<List<String>> levelsFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsLevels(courseStudentSearchRO));
+            Future<List<String>> studyFormsFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsStudyForms(courseStudentSearchRO));
+            Future<List<String>> classNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsClassNames(courseStudentSearchRO));
+            Future<List<String>> teachingPointNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsTeachingPointNames(courseStudentSearchRO));
+
+            try{
+                grades = gradesFuture.get();
+                colleges = collegesFuture.get();
+                majorNames1 = majorNamesFuture.get();
+                levels = levelsFuture.get();
+                studyForms = studyFormsFuture.get();
+                classNames = classNamesFuture.get();
+                teachingPointNames = teachingPointNamesFuture.get();
+            }catch (Exception e){
+                log.error("从线程池获取重修学生筛选参数失败 " + e);
+            }
+        }else if("Y".equals(courseStudentSearchRO.getIsRetake())){
+            Future<List<String>> gradesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsGradesForRetake(courseStudentSearchRO));
+            Future<List<String>> collegesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsCollegesForRetake(courseStudentSearchRO));
+            Future<List<String>> majorNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsMajorNamesForRetake(courseStudentSearchRO));
+            Future<List<String>> levelsFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsLevelsForRetake(courseStudentSearchRO));
+            Future<List<String>> studyFormsFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsStudyFormsForRetake(courseStudentSearchRO));
+            Future<List<String>> classNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsClassNamesForRetake(courseStudentSearchRO));
+            Future<List<String>> teachingPointNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsTeachingPointNamesForRetake(courseStudentSearchRO));
+            try{
+                grades1 = gradesFuture1.get();
+                colleges1 = collegesFuture1.get();
+                majorNames1 = majorNamesFuture1.get();
+                levels1 = levelsFuture1.get();
+                studyForms1 = studyFormsFuture1.get();
+                classNames1 = classNamesFuture1.get();
+                teachingPointNames1 = teachingPointNamesFuture1.get();
+            }catch (Exception e){
+                log.error("从线程池获取重修学生筛选参数失败 " + e);
+            }
+
+        }else{
+            Future<List<String>> gradesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsGrades(courseStudentSearchRO));
+            Future<List<String>> collegesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsColleges(courseStudentSearchRO));
+            Future<List<String>> majorNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsMajorNames(courseStudentSearchRO));
+            Future<List<String>> levelsFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsLevels(courseStudentSearchRO));
+            Future<List<String>> studyFormsFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsStudyForms(courseStudentSearchRO));
+            Future<List<String>> classNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsClassNames(courseStudentSearchRO));
+            Future<List<String>> teachingPointNamesFuture = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsTeachingPointNames(courseStudentSearchRO));
+
+            try{
+                grades = gradesFuture.get();
+                colleges = collegesFuture.get();
+                majorNames1 = majorNamesFuture.get();
+                levels = levelsFuture.get();
+                studyForms = studyFormsFuture.get();
+                classNames = classNamesFuture.get();
+                teachingPointNames = teachingPointNamesFuture.get();
+            }catch (Exception e){
+                log.error("从线程池获取重修学生筛选参数失败 " + e);
+            }
+
+            Future<List<String>> gradesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsGradesForRetake(courseStudentSearchRO));
+            Future<List<String>> collegesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsCollegesForRetake(courseStudentSearchRO));
+            Future<List<String>> majorNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsMajorNamesForRetake(courseStudentSearchRO));
+            Future<List<String>> levelsFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsLevelsForRetake(courseStudentSearchRO));
+            Future<List<String>> studyFormsFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsStudyFormsForRetake(courseStudentSearchRO));
+            Future<List<String>> classNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsClassNamesForRetake(courseStudentSearchRO));
+            Future<List<String>> teachingPointNamesFuture1 = executor.submit(() -> getBaseMapper().selectCourseStudentsInfoSelectParamsTeachingPointNamesForRetake(courseStudentSearchRO));
+            try{
+                grades1 = gradesFuture1.get();
+                colleges1 = collegesFuture1.get();
+                majorNames1 = majorNamesFuture1.get();
+                levels1 = levelsFuture1.get();
+                studyForms1 = studyFormsFuture1.get();
+                classNames1 = classNamesFuture1.get();
+                teachingPointNames1 = teachingPointNamesFuture1.get();
+            }catch (Exception e){
+                log.error("从线程池获取重修学生筛选参数失败 " + e);
+            }
+        }
+
+        // 针对重修的学生
+
+        grades.addAll(grades1);
+        grades = grades.stream().distinct().collect(Collectors.toList());
+
+        colleges.addAll(colleges1);
+        colleges = colleges.stream().distinct().collect(Collectors.toList());
+
+        majorNames.addAll(majorNames1);
+        majorNames = majorNames.stream().distinct().collect(Collectors.toList());
+
+        levels.addAll(levels1);
+        levels = levels.stream().distinct().collect(Collectors.toList());
+
+        studyForms.addAll(studyForms1);
+        studyForms = studyForms.stream().distinct().collect(Collectors.toList());
+
+        classNames.addAll(classNames1);
+        classNames = classNames.stream().distinct().collect(Collectors.toList());
+
+        teachingPointNames.addAll(teachingPointNames1);
+        teachingPointNames = teachingPointNames.stream().distinct().collect(Collectors.toList());
+
+        courseStudentInfoSearchParamsVO.setGrades(grades);
+        courseStudentInfoSearchParamsVO.setClassNames(classNames);
+        courseStudentInfoSearchParamsVO.setColleges(colleges);
+        courseStudentInfoSearchParamsVO.setMajorNames(majorNames);
+        courseStudentInfoSearchParamsVO.setLevels(levels);
+        courseStudentInfoSearchParamsVO.setStudyForms(studyForms);
+        courseStudentInfoSearchParamsVO.setTeachingPointNames(teachingPointNames);
+        courseStudentInfoSearchParamsVO.setIsRetakes(Arrays.asList("Y", "N"));
+
+
+        return courseStudentInfoSearchParamsVO;
+    }
+
+    /**
+     * 获取课程白名单
+     * @param courseId
+     * @return
+     */
+    public SaResult getCourseLivingWhiteList(Long courseId) {
+        String channelId = getLiveCourseChannelId(courseId);
+
+        return singleLivingService.getChannelWhiteList(new ChannelInfoRequest()
+                .setChannelId(channelId)
+                .setCurrentPage(1)
+                .setPageSize(10)
+        );
+    }
+
+    /**
+     * 获取课程白名单是否与保利威的白名单相等
+     * @param courseId
+     * @return
+     */
+    public SaResult getCourseLivingWhiteListEqualState(Long courseId) {
+        return null;
+    }
+
+    /**
+     * 获取老师的单门课程信息
+     * @param studentsCoursesInfoSearchRO
+     * @return
+     */
+    public CourseInfoVO getTeacherSingleCoursesInfo(StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+        List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(new CoursesLearningRO()
+                .setId(studentsCoursesInfoSearchRO.getCourseId()));
+        if(courseLearningVOS.size() == 1){
+            CourseLearningVO courseLearningVO = courseLearningVOS.get(0);
+            CourseInfoVO courseInfoVO = new CourseInfoVO()
+                    .setCourseId(courseLearningVO.getId())
+                    .setYear(courseLearningVO.getGrade())
+                    .setCourseName(courseLearningVO.getCourseName())
+                    .setCourseType(courseLearningVO.getCourseType())
+                    .setCourseDescription(courseLearningVO.getCourseDescription())
+                    .setDefaultMainTeacherUsername(courseLearningVO.getDefaultMainTeacherUsername())
+                    .setRecentCourseScheduleTime(courseLearningVO.getRecentCourseScheduleTime())
+                    ;
+            List<CoursesClassMappingPO> coursesClassMappingPOS = coursesClassMappingService.getBaseMapper().selectList(new LambdaQueryWrapper<CoursesClassMappingPO>()
+                    .eq(CoursesClassMappingPO::getCourseId, studentsCoursesInfoSearchRO.getCourseId()));
+
+            // Assuming CoursesClassMappingPO has methods like getClassName and getGrade
+            StringBuilder classNames = new StringBuilder();
+            StringBuilder grades = new StringBuilder();
+
+            for (CoursesClassMappingPO mapping : coursesClassMappingPOS) {
+                ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
+                        .eq(ClassInformationPO::getClassIdentifier, mapping.getClassIdentifier()));
+
+                if (classNames.length() > 0) {
+                    classNames.append(" ");
+                }
+                classNames.append(classInformationPO.getClassName()); // Replace getClassName with the actual method name if different
+
+                if (grades.length() > 0) {
+                    grades.append(" ");
+                }
+                grades.append(classInformationPO.getGrade()); // Replace getGrade with the actual method name if different
+            }
+
+            courseInfoVO.setClassName(classNames.toString());
+            courseInfoVO.setGrade(grades.toString());
+
+            List<CourseAssistantsPO> courseAssistantsPOS = courseAssistantsService.getBaseMapper().selectList(
+                    new LambdaQueryWrapper<CourseAssistantsPO>()
+                            .eq(CourseAssistantsPO::getCourseId, courseLearningVO.getId()));
+
+            // 从 courseAssistantsPOS 中提取所有 username，并收集到 Set 中
+            Set<String> usernames = courseAssistantsPOS.stream()
+                    .map(CourseAssistantsPO::getUsername)
+                    .collect(Collectors.toSet());
+
+            // 创建 TeacherInformationSearchRO 对象并设置 usernames
+            TeacherInformationSearchRO teacherInformationSearchRO = new TeacherInformationSearchRO();
+            teacherInformationSearchRO.setUsernames(usernames);
+            // 获取助教信息
+            List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.
+                    getBaseMapper().selectTeacherInfo(teacherInformationSearchRO);
+            List<AssistantInfoVO> assistantInfoVOList = new ArrayList<>();
+            for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
+                AssistantInfoVO assistantInfoVO = new AssistantInfoVO()
+                        .setUsername(teacherInformationPO.getTeacherUsername())
+                        .setName(teacherInformationPO.getName())
+                        ;
+                assistantInfoVOList.add(assistantInfoVO);
+            }
+            courseInfoVO.setAssistantInfoVOList(assistantInfoVOList);
+
+            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherUsername, courseLearningVO.getDefaultMainTeacherUsername()));
+            courseInfoVO.setDefaultMainTeacherName(teacherInformationPO.getName());
+            return courseInfoVO;
+        }
+        return null;
+    }
+
+    /**
+     * 获取管理端 课程学习的筛选项
+     * @param coursesLearningRO
+     * @return
+     */
+    public PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParams(CoursesLearningRO coursesLearningRO) {
+        ExecutorService executor = Executors.newFixedThreadPool(8); // 根据需求调整线程池的大小
+        try {
+            // 提交查询到线程池并获取Future对象
+            Future<List<String>> gradesFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsGrades(coursesLearningRO));
+            Future<List<String>> collegesFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsColleges(coursesLearningRO));
+            Future<List<String>> majorNameFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsMajorNames(coursesLearningRO));
+            Future<List<String>> studyFormFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsStudyForms(coursesLearningRO));
+            Future<List<String>> levelFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsLevels(coursesLearningRO));
+            Future<List<String>> teachingPointNameFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsTeachingPointNames(coursesLearningRO));
+            Future<List<String>> classNameFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsClassNames(coursesLearningRO));
+            Future<List<String>> courseNameFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsCourseNames(coursesLearningRO));
+
+            // 等待所有查询完成并获取结果
+            List<String> grades = gradesFuture.get();
+            List<String> colleges = collegesFuture.get();
+            List<String> majorNames = majorNameFuture.get();
+            List<String> studyForms = studyFormFuture.get();
+            List<String> levels = levelFuture.get();
+            List<String> teachingPointNames = teachingPointNameFuture.get();
+            List<String> classNames = classNameFuture.get();
+            List<String> courseNames = courseNameFuture.get();
+
+            List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherType2, TeacherTypeEnum.MAIN_TEACHER.getType()));
+            List<TeacherInfoVO> teacherInfoList = new ArrayList<>();
+            for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
+                TeacherInfoVO teacherInfoVO = new TeacherInfoVO()
+                        .setTeacherUsername(teacherInformationPO.getTeacherUsername())
+                        .setName(teacherInformationPO.getName())
+                        ;
+                teacherInfoList.add(teacherInfoVO);
+            }
+
+            List<String> contentTypes = EnumSet.allOf(CourseContentType.class).stream()
+                    .map(CourseContentType::getContentType)
+                    .collect(Collectors.toList());
+
+                    // 创建并填充返回对象
+            PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParamsVO = new PageQueryCoursesInfoParamsVO()
+                    .setGrades(grades)
+                    .setColleges(colleges)
+                    .setMajorNames(majorNames)
+                    .setStudyForms(studyForms)
+                    .setLevels(levels)
+                    .setTeachingPointNames(teachingPointNames)
+                    .setClassNames(classNames)
+                    .setCourseNames(courseNames)
+                    .setTeacherInfos(teacherInfoList)
+                    .setCourseTypeList(contentTypes)
+                    ;
+
+            return pageQueryCoursesInfoParamsVO;
+
+        } catch (InterruptedException | ExecutionException e) {
+            // 处理异常
+            log.info("线程池获取课程学习筛选参数项失败 " + e);
+            return null; // 或者返回一个合适的错误响应
+        } finally {
+            executor.shutdown(); // 不要忘记关闭线程池
+        }
     }
 }
