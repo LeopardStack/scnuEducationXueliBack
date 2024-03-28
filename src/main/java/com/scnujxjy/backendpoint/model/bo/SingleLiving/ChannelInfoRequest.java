@@ -21,7 +21,7 @@ public class ChannelInfoRequest {
     private String playbackEnabled;
     private String channelName;
     private String ImgUrl;
-
+    private List<String> channelIds;
 
     //以下用于添加单个白名单字段
     private String code;

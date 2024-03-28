@@ -14,6 +14,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public interface SingleLivingService {
+
+
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException;
 
     SaResult deleteChannel(String channelIds) throws IOException, NoSuchAlgorithmException;
@@ -55,4 +57,6 @@ public interface SingleLivingService {
     SaResult getTotalTeachingTime(String courseId);
 
     SaResult getStudentViewlogDetail(ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException;
+
+    SaResult getChannelStatus(List<String> channelIdList);
 }

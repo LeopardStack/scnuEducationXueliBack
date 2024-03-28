@@ -53,12 +53,15 @@ import net.polyv.live.v1.entity.channel.playback.LiveListChannelSessionInfoRespo
 import net.polyv.live.v1.entity.web.auth.*;
 import net.polyv.live.v1.service.channel.impl.LiveChannelOperateServiceImpl;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
+import net.polyv.live.v1.service.channel.impl.LiveChannelStateServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
 import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Request;
 import net.polyv.live.v2.entity.channel.account.LiveChannelBasicInfoV2Response;
 import net.polyv.live.v2.entity.channel.operate.LiveUpdateChannelRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountRequest;
 import net.polyv.live.v2.entity.channel.operate.account.LiveCreateAccountResponse;
+import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Request;
+import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Response;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -69,10 +72,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1465,6 +1465,41 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         saResult.setCode(ResultCode.FAIL.getCode());
         saResult.setMsg(ResultCode.FAIL.getMessage());
         return saResult;
+    }
+
+    @Override
+    public SaResult getChannelStatus(List<String> channelIdList) {
+        LiveListChannelStreamStatusV2Request liveListChannelStreamStatusV2Request = new LiveListChannelStreamStatusV2Request();
+        List<LiveListChannelStreamStatusV2Response> liveListChannelStreamStatusV2Respons;
+        try {
+            //建议拿到当天的直播频道回放状态即可。
+//            LocalDate today = LocalDate.now();
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//            String todayString = today.format(formatter);
+//            List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByDate(todayString);
+//            List<String> channelIdList=new ArrayList<>();
+//            for (SectionsPO sectionsPO:sectionsPOS) {
+//                LiveResourcesPO query = liveResourceMapper.query(sectionsPO.getCourseId());
+//                if (query!=null) {
+//                    channelIdList.add(query.getChannelId());
+//                }
+//            }
+//            if (channelIdList.isEmpty()){
+//                log.info("当天无直播，无需获取直播间的直播状态");
+//                return;
+//            }
+            String channelIds = String.join(",", channelIdList);
+            liveListChannelStreamStatusV2Request.setChannelIds(channelIds);
+            liveListChannelStreamStatusV2Respons = new LiveChannelStateServiceImpl().listChannelLiveStreamV2(
+                    liveListChannelStreamStatusV2Request);
+            if (liveListChannelStreamStatusV2Respons != null) {
+                log.info("批量查询频道直播状态成功:{}", JSON.toJSONString(liveListChannelStreamStatusV2Respons));
+                return SaResult.data(liveListChannelStreamStatusV2Respons);
+            }
+        }catch (Exception e){
+            log.error("获取直播间状态失败，入参为:{}",channelIdList,e);
+        }
+        return SaResult.error("获取直播间状态失败请联系管理员");
     }
 
     @Override

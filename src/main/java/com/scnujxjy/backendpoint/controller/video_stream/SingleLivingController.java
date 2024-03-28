@@ -47,6 +47,15 @@ public class SingleLivingController {
         return singleLivingService.deleteChannel(channelId);
     }
 
+    //不能获取不存在的直播间会报错
+    @PostMapping("/edit/getChannelStatus")
+    public SaResult deleteChannels(@RequestBody ChannelInfoRequest channelInfoRequest) {
+        if (channelInfoRequest.getChannelIds()==null ||channelInfoRequest.getChannelIds().size()==0) {
+            throw dataMissError();
+        }
+        return singleLivingService.getChannelStatus(channelInfoRequest.getChannelIds());
+    }
+
     //获取频道下或具体场次下的，观众观看数据详情，详情，详情
     @GetMapping("/edit/getChannelView")
     public SaResult getChannelView(@RequestBody ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
