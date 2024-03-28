@@ -25,6 +25,7 @@ public enum ResultCode {
     UPDATE_COURSE_FAIL3(20009, "创建课程节点时 节点内容不合法"),
     UPDATE_COURSE_FAIL4(20010, "学生获取观看链接失败"),
     UPDATE_COURSE_FAIL5(20011, "通过课程 ID 获取不到课程信息"),
+    UPDATE_COURSE_FAIL6(20012, "删除课程失败"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

@@ -21,7 +21,27 @@ public class CourseLearningVO {
     /**
      * 课程所在 年级
      */
+    private String grades;
+
+    /**
+     * 年份
+     */
     private String grade;
+
+    /**
+     * 课程所在 学院
+     */
+    private String colleges;
+
+    /**
+     * 课程所在 专业名称
+     */
+    private String majorNames;
+
+    /**
+     * 班级名称
+     */
+    private String classNames;
 
     /**
      * 课程名称
@@ -59,10 +79,6 @@ public class CourseLearningVO {
      */
     private String courseIdentifier;
 
-    /**
-     * 班级名称
-     */
-    private String classNames;
 
     /**
      * 课程是否有效 Y/N
@@ -70,9 +86,19 @@ public class CourseLearningVO {
     private String valid;
 
     /**
+     * 教学点名称
+     */
+    private String teachingPointName;
+
+    /**
      * 近期排课 如果为空 说明未设置 但是直播课都会设置
      */
     private Date recentCourseScheduleTime;
+
+    /**
+     * 频道 ID 如果是直播课的话
+     */
+    private String channelId;
 
     /**
      * 创建时间

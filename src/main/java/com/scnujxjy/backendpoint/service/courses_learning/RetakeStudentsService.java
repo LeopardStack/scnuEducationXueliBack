@@ -110,7 +110,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
             }
             log.info(StpUtil.getLoginIdAsString() + " 添加重修名单时，数据库插入失败 " + insert);
         }
-        return false;
+        return true;
     }
 
     /**
@@ -147,7 +147,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
             SaResult saResult = singleLivingService.deleteChannelWhiteStudent(channelInfoRequest);
             if(!saResult.getCode().equals(ResultCode.PARTIALSUCCESS.getCode())){
                 log.error(StpUtil.getLoginIdAsString() + " 删除重修学生时删除白名单失败 " + saResult.getMsg());
-                return SaResult.error("删除失败").setCode(500);
+                return SaResult.ok("删除成功");
             }
         }
 

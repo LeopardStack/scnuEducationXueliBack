@@ -6,6 +6,7 @@ import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseScheduleSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseStudentSearchRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CoursesLearningRO;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseScheduleVO;
@@ -54,4 +55,48 @@ public interface CoursesLearningMapper extends BaseMapper<CoursesLearningPO> {
 
     Long selectCoursesScheduleInfoCount(@Param("entity") CourseScheduleSearchRO entity,
                                         @Param("specialNodeType") String sectionContentType);
+
+    List<String> selectCourseStudentsInfoSelectParamsGrades(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsColleges(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsMajorNames(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsLevels(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsStudyForms(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsClassNames(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsTeachingPointNames(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsGradesForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsCollegesForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsMajorNamesForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsLevelsForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsStudyFormsForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsClassNamesForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseStudentsInfoSelectParamsTeachingPointNamesForRetake(@Param("entity") CourseStudentSearchRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsGrades(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsColleges(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsMajorNames(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsStudyForms(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsLevels(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsTeachingPointNames(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsClassNames(@Param("entity") CoursesLearningRO entity);
+
+    List<String> selectCourseLearningDataSelectParamsCourseNames(@Param("entity") CoursesLearningRO entity);
 }

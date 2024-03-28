@@ -27,13 +27,17 @@
     <sql id="commonJoin">
         FROM
         courses_learning cl
-        LEFT JOIN
+        INNER JOIN
         sections ss ON cl.id = ss.course_id
-        LEFT JOIN
+        INNER JOIN
+        live_resources lr ON lr.course_id = cl.id AND lr.section_id is NULL
+        INNER JOIN
         courses_class_mapping ccm ON cl.id = ccm.course_id
-        LEFT JOIN
+        INNER JOIN
         class_information ci ON ccm.class_identifier = ci.class_identifier
-        LEFT JOIN
+        INNER JOIN teaching_point_information tpi
+        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+        INNER JOIN
         teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
     </sql>
 
@@ -67,6 +71,12 @@
                 #{courseId}
             </foreach>
         </if>
+        <if test="entity.classNameSet != null and !entity.classNameSet.isEmpty()">
+            AND ci.class_name IN
+            <foreach collection="entity.classNameSet" item="className" open="(" separator="," close=")">
+                #{className}
+            </foreach>
+        </if>
         <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
         <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
         <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>
@@ -75,6 +85,7 @@
         <if test='entity.courseName != null'>AND cl.course_name = #{entity.courseName}</if>
         <if test='entity.courseType != null'>AND cl.course_type = #{entity.courseType}</if>
         <if test='entity.mainTeacherName != null'>AND ti.name = #{entity.mainTeacherName}</if>
+        <if test='entity.teachingPointName != null'>AND tpi.teaching_point_name = #{entity.teachingPointName}</if>
         <if test='entity.defaultMainTeacherUsername != null'>AND cl.default_main_teacher_username = #{entity.defaultMainTeacherUsername}</if>
 
         <if test='entity.courseStartTime != null'>AND ss.start_time >= #{entity.courseStartTime}</if>
@@ -87,7 +98,9 @@
                                   resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
         SELECT
         cl.id,
-        ci.grade,
+        GROUP_CONCAT(DISTINCT ci.grade) AS grades,
+        GROUP_CONCAT(DISTINCT ci.college) AS colleges,
+        GROUP_CONCAT(DISTINCT ci.major_name) AS majorNames,
         cl.course_name,
         cl.course_type,
         cl.course_description,
@@ -96,6 +109,8 @@
         cl.course_identifier,
         cl.valid,
         cl.created_time,
+        tpi.teaching_point_name,
+        lr.channel_id,
         cl.updated_time,
         ti.name AS default_main_teacher_name,
         GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
@@ -110,7 +125,8 @@
         GROUP BY
         cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
         cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
-        cl.valid, cl.created_time, cl.updated_time, ti.name
+        cl.valid, cl.created_time, cl.updated_time, ti.name, ci.college, ci.major_name,
+        lr.channel_id, tpi.teaching_point_name
         ORDER BY
         cl.created_time DESC
         LIMIT
@@ -127,7 +143,7 @@
                ss.main_teacher_username, ss.deadline, ss.start_time, ss.valid AS section_valid,
                ccm.class_identifier, ci.grade AS class_grade, ci.class_name, ci.study_form,
                ci.level, ci.study_period, ci.college, ci.major_name, ci.major_code, ci.tuition,
-               ti.name
+               ti.name, ci.college, ci.major_name, lr.channel_id
         <include refid="commonJoin" />
     </select>
 
@@ -144,7 +160,7 @@
         <if test='entity.idNumber != null'>AND ss.id_number = #{entity.idNumber}</if>
         <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber}</if>
 
-        <if test='entity.name != null'>AND pi.name >= #{entity.name}</if>
+        <if test='entity.name != null'>AND pi.name = #{entity.name}</if>
 
     </sql>
 
@@ -302,6 +318,177 @@
         ss1.deadline,
         lr.channel_id
         ) AS subquery
+    </select>
+
+<!--    SELECT cl.id AS course_id, ss.grade, ci.college, ci.major_name, ci.study_form, ci.`level`, tpi.teaching_point_name,
+        ci.class_name, ss.id_number, ss.student_number, pi.`name`-->
+
+    <select id="selectCourseStudentsInfoSelectParamsGrades" resultType="java.lang.String">
+        SELECT DISTINCT ss.grade
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsColleges" resultType="java.lang.String">
+        SELECT DISTINCT ci.college
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsMajorNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.major_name
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsLevels" resultType="java.lang.String">
+        SELECT DISTINCT ci.level
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsStudyForms" resultType="java.lang.String">
+        SELECT DISTINCT ci.study_form
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsClassNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.class_name
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsTeachingPointNames" resultType="java.lang.String">
+        SELECT DISTINCT tpi.teaching_point_name
+        <include refid="courseLearningStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+
+
+<!--    SELECT cl.id AS course_id, ss.grade, ci.college, ci.major_name, ci.study_form, ci.`level`, tpi.teaching_point_name,
+        ci.class_name, ss.id_number, ss.student_number, pi.`name`-->
+
+    <select id="selectCourseStudentsInfoSelectParamsGradesForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ss.grade
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsCollegesForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ci.college
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsMajorNamesForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ci.major_name
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsLevelsForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ci.level
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsStudyFormsForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ci.study_form
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsClassNamesForRetake" resultType="java.lang.String">
+        SELECT DISTINCT ci.class_name
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseStudentsInfoSelectParamsTeachingPointNamesForRetake" resultType="java.lang.String">
+        SELECT DISTINCT tpi.teaching_point_name
+        <include refid="courseLearningRetakeStudentsInfoJoin" />
+        WHERE
+        1=1
+        <include refid="courseStudentInfoFilter" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsGrades" resultType="java.lang.String">
+        SELECT
+        DISTINCT cl.grade
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsColleges" resultType="java.lang.String">
+        SELECT
+        DISTINCT ci.college
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsMajorNames" resultType="java.lang.String">
+        SELECT
+        DISTINCT ci.major_name
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsStudyForms" resultType="java.lang.String">
+        SELECT
+        DISTINCT ci.study_form
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsLevels" resultType="java.lang.String">
+        SELECT
+        DISTINCT ci.level
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsTeachingPointNames" resultType="java.lang.String">
+        SELECT
+        DISTINCT tpi.teaching_point_name
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsClassNames" resultType="java.lang.String">
+        SELECT
+        DISTINCT ci.class_name
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsCourseNames" resultType="java.lang.String">
+        SELECT
+        DISTINCT cl.course_name
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
     </select>
 
 

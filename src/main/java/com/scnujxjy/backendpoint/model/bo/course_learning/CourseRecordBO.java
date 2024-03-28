@@ -32,6 +32,9 @@ public class CourseRecordBO implements Serializable {
 
     private Long id;
     private String grade;
+    private String college;
+    private String majorName;
+    private String channelId;
     private String courseName;
     private String courseType;
     private String courseDescription;
@@ -55,9 +58,8 @@ public class CourseRecordBO implements Serializable {
     private String studyForm;
     private String level;
     private String studyPeriod;
-    private String college;
-    private String majorName;
     private String majorCode;
+    private String teachingPointName;
     private Double tuition;
     private String name; // teacherName
 }
