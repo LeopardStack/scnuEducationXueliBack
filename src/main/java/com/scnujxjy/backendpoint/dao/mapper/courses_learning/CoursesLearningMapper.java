@@ -39,6 +39,8 @@ public interface CoursesLearningMapper extends BaseMapper<CoursesLearningPO> {
     List<CourseLearningVO> selectCourseLearningData(@Param("entity") CoursesLearningRO coursesLearningRO,
                                                     @Param("pageNumber") Long pageNumber, @Param("pageSize") Long pageSize);
 
+    Long selectCourseLearningDataCount(@Param("entity") CoursesLearningRO coursesLearningRO);
+
     List<CourseLearningVO> selectCourseLearningDataWithoutPaging(@Param("entity")CoursesLearningRO coursesLearningRO);
 
     List<CourseRecordBO> getCourseSectionsData();

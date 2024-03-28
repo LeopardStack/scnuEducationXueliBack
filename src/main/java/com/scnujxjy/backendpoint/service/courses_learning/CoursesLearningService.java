@@ -176,18 +176,21 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     }
 
     private PageVO getCourseData(List<CourseRecordBO> courseSections, PageRO<CoursesLearningRO> courseScheduleROPageRO) {
-        if (courseSections == null) {
-            // 可以选择从数据库加载数据，或者返回错误/空结果
-            List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningData(courseScheduleROPageRO.getEntity(),
-                    courseScheduleROPageRO.getPageNumber() - 1, courseScheduleROPageRO.getPageSize());
-            PageVO pageVO = new PageVO<CourseLearningVO>();
-            pageVO.setRecords(courseLearningVOS);
-            pageVO.setSize(courseScheduleROPageRO.getPageSize());
-            pageVO.setCurrent(courseScheduleROPageRO.getPageNumber());
-            pageVO.setTotal(Long.valueOf(getBaseMapper().selectCount(null)));
 
-            return pageVO;
-        }
+        courseSections = getCourseSections(null);
+//        if (courseSections == null) {
+//            // 可以选择从数据库加载数据，或者返回错误/空结果
+//            List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningData(courseScheduleROPageRO.getEntity(),
+//                    courseScheduleROPageRO.getPageNumber() - 1, courseScheduleROPageRO.getPageSize());
+//            PageVO pageVO = new PageVO<CourseLearningVO>();
+//            pageVO.setRecords(courseLearningVOS);
+//            pageVO.setSize(courseScheduleROPageRO.getPageSize());
+//            pageVO.setCurrent(courseScheduleROPageRO.getPageNumber());
+//            pageVO.setTotal(getBaseMapper().selectCourseLearningDataCount(courseScheduleROPageRO.getEntity()));
+//
+//            return pageVO;
+//        }
+
 
         // 筛选逻辑
         Stream<CourseRecordBO> filteredStream = courseSections.stream();
@@ -228,8 +231,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             filteredStream = filteredStream.filter(c -> c.getTeachingPointName().equals(filter.getTeachingPointName()));
         }
 
-        if (filter.getMainTeacherName() != null) {
-            filteredStream = filteredStream.filter(c -> c.getDefaultMainTeacherUsername().equals(filter.getMainTeacherName()));
+        if (filter.getDefaultMainTeacherUsername() != null) {
+            filteredStream = filteredStream.filter(c -> c.getDefaultMainTeacherUsername().equals(filter.getDefaultMainTeacherUsername()));
         }
         if (filter.getCourseStartTime() != null) {
             filteredStream = filteredStream.filter(c -> c.getStartTime() != null && !c.getStartTime().before(filter.getCourseStartTime()));
@@ -237,6 +240,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if (filter.getCourseEndTime() != null) {
             filteredStream = filteredStream.filter(c -> c.getStartTime() != null && !c.getStartTime().after(filter.getCourseEndTime()));
         }
+
+        // 使用 Java Streams 来获取不同 id 的数量
+
+
 
         // 分组和聚合
         Map<Long, CourseLearningVO> groupedAndAggregated = filteredStream
@@ -288,7 +295,6 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             vo.setChannelId(representative.getChannelId());
             vo.setCreatedTime(representative.getCreatedTime());
             vo.setUpdatedTime(representative.getUpdatedTime());
-            vo.setTeachingPointName(representative.getTeachingPointName());
 
             // 获取 classNames
             Set<String> classNames = records.stream()
@@ -317,6 +323,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
             vo.setMajorNames(String.join(", ", majorNames));
+
+            // 获取 colleges
+            Set<String> teachingPointNames = records.stream()
+                    .map(CourseRecordBO::getTeachingPointName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setTeachingPointName(String.join(", ", teachingPointNames));
 
             // 获取当前时间
             Date now = new Date();

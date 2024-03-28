@@ -307,12 +307,13 @@ public class HealthCheckTask {
         refreshCourseSectionsInRedis();
     }
 
-    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
+//    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
     public void refreshCourseSectionsInRedis() {
         try {
             log.info("开始执行课程信息预热");
             List<CourseRecordBO> courseSections = coursesLearningService.getCourseSections(null);
             log.info("预热完毕，共获取 " + courseSections.size() + " 条数据");
+
             redisTemplate.opsForValue().set("courseSections", courseSections); // 将数据存储在 Redis 中
         } catch (Exception e) {
             log.error("Error updating course sections in Redis", e);

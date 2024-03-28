@@ -25,20 +25,22 @@
 
 
     <sql id="commonJoin">
-        FROM
-        courses_learning cl
-        INNER JOIN
-        sections ss ON cl.id = ss.course_id
-        INNER JOIN
-        live_resources lr ON lr.course_id = cl.id AND lr.section_id is NULL
-        INNER JOIN
-        courses_class_mapping ccm ON cl.id = ccm.course_id
-        INNER JOIN
-        class_information ci ON ccm.class_identifier = ci.class_identifier
-        INNER JOIN teaching_point_information tpi
-        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
-        INNER JOIN
-        teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
+        FROM courses_learning cl
+        LEFT JOIN sections ss ON cl.id = ss.course_id
+        LEFT JOIN live_resources lr ON lr.course_id = cl.id AND lr.section_id IS NULL
+        LEFT JOIN teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
+        LEFT JOIN courses_class_mapping ccm ON cl.id = ccm.course_id
+        LEFT JOIN class_information ci ON ccm.class_identifier = ci.class_identifier
+        LEFT JOIN teaching_point_information tpi ON tpi.alias =
+        CASE
+        WHEN ci.class_name != '校内' THEN REGEXP_REPLACE(ci.class_name, '\\d', '')
+        ELSE NULL
+        END
+        AND tpi.teaching_point_name =
+        CASE
+        WHEN ci.class_name != '校内' THEN ci.college
+        ELSE NULL
+        END
     </sql>
 
     <sql id="courseLearningStudentsInfoJoin">
@@ -97,7 +99,7 @@
     <select id="selectCourseLearningData"
                                   resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
         SELECT
-        cl.id,
+        DISTINCT cl.id,
         GROUP_CONCAT(DISTINCT ci.grade) AS grades,
         GROUP_CONCAT(DISTINCT ci.college) AS colleges,
         GROUP_CONCAT(DISTINCT ci.major_name) AS majorNames,
@@ -143,7 +145,7 @@
                ss.main_teacher_username, ss.deadline, ss.start_time, ss.valid AS section_valid,
                ccm.class_identifier, ci.grade AS class_grade, ci.class_name, ci.study_form,
                ci.level, ci.study_period, ci.college, ci.major_name, ci.major_code, ci.tuition,
-               ti.name, ci.college, ci.major_name, lr.channel_id
+               ti.name, ci.college, ci.major_name, lr.channel_id, tpi.teaching_point_name
         <include refid="commonJoin" />
     </select>
 
@@ -489,6 +491,43 @@
         WHERE
         1=1
         <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataCount"
+            resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM (
+        SELECT
+        DISTINCT cl.id,
+        GROUP_CONCAT(DISTINCT ci.grade) AS grades,
+        GROUP_CONCAT(DISTINCT ci.college) AS colleges,
+        GROUP_CONCAT(DISTINCT ci.major_name) AS majorNames,
+        cl.course_name,
+        cl.course_type,
+        cl.course_description,
+        cl.course_cover_url,
+        cl.default_main_teacher_username,
+        cl.course_identifier,
+        cl.valid,
+        cl.created_time,
+        tpi.teaching_point_name,
+        lr.channel_id,
+        cl.updated_time,
+        ti.name AS default_main_teacher_name,
+        GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
+        COALESCE(
+        MIN(CASE WHEN ss.start_time > NOW() THEN ss.start_time END),
+        MAX(CASE WHEN NOW() > ss.start_time  THEN ss.start_time END)
+        ) AS recent_course_schedule_time
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+        GROUP BY
+        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
+        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
+        cl.valid, cl.created_time, cl.updated_time, ti.name, ci.college, ci.major_name,
+        lr.channel_id, tpi.teaching_point_name
+             ) AS subquery
     </select>
 
 
