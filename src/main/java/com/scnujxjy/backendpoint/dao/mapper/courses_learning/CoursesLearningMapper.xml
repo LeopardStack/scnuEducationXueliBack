@@ -31,16 +31,10 @@
         LEFT JOIN teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
         LEFT JOIN courses_class_mapping ccm ON cl.id = ccm.course_id
         LEFT JOIN class_information ci ON ccm.class_identifier = ci.class_identifier
-        LEFT JOIN teaching_point_information tpi ON tpi.alias =
-        CASE
-        WHEN ci.class_name != '校内' THEN REGEXP_REPLACE(ci.class_name, '\\d', '')
-        ELSE NULL
-        END
-        AND tpi.teaching_point_name =
-        CASE
-        WHEN ci.class_name != '校内' THEN ci.college
-        ELSE NULL
-        END
+        LEFT JOIN teaching_point_information tpi
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
+
     </sql>
 
     <sql id="courseLearningStudentsInfoJoin">
@@ -50,7 +44,10 @@
         INNER JOIN student_status ss ON ss.class_identifier=ci.class_identifier
         INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
         INNER JOIN teaching_point_information tpi
-        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
+
+
     </sql>
 
     <sql id="courseLearningRetakeStudentsInfoJoin">
@@ -60,7 +57,10 @@
         INNER JOIN class_information ci ON ss.class_identifier=ci.class_identifier
         INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
         INNER JOIN teaching_point_information tpi
-        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
+
+
     </sql>
 
 
@@ -73,8 +73,9 @@
                 #{courseId}
             </foreach>
         </if>
+        <!-- 班级标识 而不是班级名称 -->
         <if test="entity.classNameSet != null and !entity.classNameSet.isEmpty()">
-            AND ci.class_name IN
+            AND ci.class_identifier IN
             <foreach collection="entity.classNameSet" item="className" open="(" separator="," close=")">
                 #{className}
             </foreach>
@@ -139,7 +140,7 @@
     <select id="getCourseSectionsData"
             resultType="com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO">
         SELECT cl.id,
-               cl.grade, cl.course_name, cl.course_type, cl.course_description, cl.course_cover_url,
+               cl.grade AS year, ci.grade AS grade, cl.course_name, cl.course_type, cl.course_description, cl.course_cover_url,
                cl.default_main_teacher_username, cl.course_identifier, cl.valid, cl.created_time,
                cl.updated_time, ss.parent_section_id, ss.section_name, ss.sequence, ss.content_type,
                ss.main_teacher_username, ss.deadline, ss.start_time, ss.valid AS section_valid,
@@ -242,7 +243,8 @@
         INNER JOIN student_status ss ON ss.class_identifier=ci.class_identifier
         INNER JOIN personal_info pi ON pi.grade=ss.grade AND pi.id_number=ss.id_number
         INNER JOIN teaching_point_information tpi
-        ON REGEXP_REPLACE(ci.class_name, '\\d', '') = tpi.alias
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
         LEFT JOIN
         live_resources lr ON cl.id=lr.course_id AND lr.section_id IS NULL
     </sql>

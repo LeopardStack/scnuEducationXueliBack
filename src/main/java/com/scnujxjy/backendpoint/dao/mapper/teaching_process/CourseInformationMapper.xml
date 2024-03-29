@@ -62,7 +62,7 @@
     <sql id="commonFilters">
         <if test='filter.grade != null'>AND c.grade = #{filter.grade}</if>
         <if test='filter.courseNameSet != null and !filter.courseNameSet.isEmpty()'>
-            AND ci.course_name IN
+            AND c.course_name IN
             <foreach item="courseName" collection="filter.courseNameSet" open="(" separator="," close=")">
                 #{courseName}
             </foreach>

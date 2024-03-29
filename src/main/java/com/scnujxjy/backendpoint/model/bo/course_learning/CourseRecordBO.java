@@ -31,6 +31,7 @@ public class CourseRecordBO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Long id;
+    private String year;
     private String grade;
     private String college;
     private String majorName;

@@ -228,8 +228,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         }
 
         if (filter.getTeachingPointName() != null) {
-            filteredStream = filteredStream.filter(c -> c.getTeachingPointName().equals(filter.getTeachingPointName()));
+            filteredStream = filteredStream.filter(c -> filter.getTeachingPointName().equals(Optional.ofNullable(c.getTeachingPointName()).orElse("")));
         }
+
 
         if (filter.getDefaultMainTeacherUsername() != null) {
             filteredStream = filteredStream.filter(c -> c.getDefaultMainTeacherUsername().equals(filter.getDefaultMainTeacherUsername()));
@@ -264,6 +265,36 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         long end = Math.min(start + courseScheduleROPageRO.getPageSize(), sortedList.size());
         List<CourseLearningVO> pagedCourseLearningVOs = sortedList.subList((int) start, (int) end);
 
+        for(CourseLearningVO courseLearningVO : pagedCourseLearningVOs){
+            List<CourseAssistantsPO> courseAssistantsPOS = courseAssistantsService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseAssistantsPO>()
+                    .eq(CourseAssistantsPO::getCourseId, courseLearningVO.getId()));
+
+            // 提取 userNames 并转换为 Set
+            Set<String> userNames = courseAssistantsPOS.stream()
+                    .map(CourseAssistantsPO::getUsername) // 假设 CourseAssistantsPO 有一个 getUserName 方法
+                    .collect(Collectors.toSet());
+
+            // 创建 TeacherInformationSearchRO 对象并设置 userNames
+            TeacherInformationSearchRO searchRO = new TeacherInformationSearchRO()
+                    .setUsernames(userNames); // 假设 setUsernames 方法接受 Set 类型参数
+            if(userNames.size() == 0){
+                courseLearningVO.setAssistants(new ArrayList<>());
+                continue;
+            }
+            // 使用 searchRO 进行进一步的操作
+            List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.
+                    getBaseMapper().selectTeacherInfo(searchRO);
+
+            List<TeacherInfoVO> teacherInfoVOS = new ArrayList<>();
+            for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
+                TeacherInfoVO teacherInfoVO = new TeacherInfoVO();
+                teacherInfoVO.setName(teacherInformationPO.getName());
+                teacherInfoVO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+                teacherInfoVOS.add(teacherInfoVO);
+            }
+            courseLearningVO.setAssistants(teacherInfoVOS);
+        }
+
         // 构建分页响应
         PageVO<CourseLearningVO> pageVO = new PageVO<>();
         pageVO.setRecords(pagedCourseLearningVOs);
@@ -295,6 +326,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             vo.setChannelId(representative.getChannelId());
             vo.setCreatedTime(representative.getCreatedTime());
             vo.setUpdatedTime(representative.getUpdatedTime());
+            vo.setYear(representative.getYear());
 
             // 获取 classNames
             Set<String> classNames = records.stream()
@@ -381,16 +413,19 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
              * 将班级做好映射 先校验 合法后 再存入数据库
              */
             List<CoursesClassMappingPO> coursesClassMappingPOS = new ArrayList<>();
-            for (String s : courseLearningCreateRO.getClassIdentifier()) {
-                ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
-                        .eq(ClassInformationPO::getClassIdentifier, s));
-                if (classInformationPO == null) {
-                    throw new RuntimeException("传入的班级前缀找不到，非法前缀 ");
+            if(courseLearningCreateRO.getClassIdentifier() != null && courseLearningCreateRO.getClassIdentifier().size() > 0){
+                for (String s : courseLearningCreateRO.getClassIdentifier()) {
+                    ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
+                            .eq(ClassInformationPO::getClassIdentifier, s));
+                    if (classInformationPO == null) {
+                        throw new RuntimeException("传入的班级前缀找不到，非法前缀 ");
+                    }
+                    CoursesClassMappingPO classMappingPO = new CoursesClassMappingPO();
+                    classMappingPO.setClassIdentifier(classInformationPO.getClassIdentifier());
+                    coursesClassMappingPOS.add(classMappingPO);
                 }
-                CoursesClassMappingPO classMappingPO = new CoursesClassMappingPO();
-                classMappingPO.setClassIdentifier(classInformationPO.getClassIdentifier());
-                coursesClassMappingPOS.add(classMappingPO);
             }
+
             // 对传入的主讲教师 ID 做校验
             String defaultMainTeacherUsername = courseLearningCreateRO.getDefaultMainTeacherUsername();
             if (!isValidUsername(defaultMainTeacherUsername)) {
@@ -591,7 +626,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if (courseNames == null || courseNames.isEmpty()) {
             return "";
         }
-        return String.join(" ", courseNames);
+        return String.join(", ", courseNames);
     }
 
     /**
@@ -845,6 +880,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
         // 获取前端传递的助教用户名列表
         List<String> assistantUsername = coursesLearningROPageRO.getAssistantUsername();
+        boolean classInfoChange = false;
+        if(coursesLearningROPageRO.getCourseNames() != null && coursesLearningROPageRO.getCourseNames().size() > 0){
+            List<String> courseNames = coursesLearningROPageRO.getCourseNames();
+            String s = courseNames.stream()
+                    .collect(Collectors.joining(", "));
+            coursesLearningPO.setCourseName(s);
+            classInfoChange = true;
+        }else{
+            coursesLearningPO.setCourseName("课程名未命名");
+        }
 
         // 检查是否需要清空所有助教信息
         if (assistantUsername == null || assistantUsername.isEmpty()) {
@@ -875,113 +920,122 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
         }
 
-        // 如果班级信息集合 不同 则需要清空 班级信息 并且删除 保利威的白名单 进行重新覆盖
-        // 获取前端传递的 classIdentifier 列表
-        // 获取前端传递的 classIdentifier 列表
-        List<String> classIdentifier = coursesLearningROPageRO.getClassIdentifier();
+        if(classInfoChange){
+            // 如果班级信息集合 不同 则需要清空 班级信息 并且删除 保利威的白名单 进行重新覆盖
+            // 获取前端传递的 classIdentifier 列表
+            // 获取前端传递的 classIdentifier 列表
+            List<String> classIdentifier = coursesLearningROPageRO.getClassIdentifier();
 
-        // 获取现有的班级与课程映射关系
-        List<CoursesClassMappingPO> coursesClassMappingPOS = coursesClassMappingService.getBaseMapper().selectList(
-                new LambdaQueryWrapper<CoursesClassMappingPO>()
-                        .eq(CoursesClassMappingPO::getCourseId, coursesLearningPO.getId())
-        );
-
-        // 将前端传来的列表和数据库中的映射转换为集合
-        Set<String> existingClassIdentifiers = coursesClassMappingPOS.stream()
-                .map(CoursesClassMappingPO::getClassIdentifier)
-                .collect(Collectors.toSet());
-        Set<String> newClassIdentifiers = new HashSet<>(classIdentifier);
-
-        // 计算交集、差集
-        Set<String> toDelete = new HashSet<>(existingClassIdentifiers);
-        toDelete.removeAll(newClassIdentifiers); // 差集：需要删除的元素
-
-        Set<String> toAdd = new HashSet<>(newClassIdentifiers);
-        toAdd.removeAll(existingClassIdentifiers); // 差集：需要添加的元素
-
-        // 删除不再需要的映射
-        for (CoursesClassMappingPO existingMapping : coursesClassMappingPOS) {
-            if (toDelete.contains(existingMapping.getClassIdentifier())) {
-                coursesClassMappingService.getBaseMapper().deleteById(existingMapping.getId());
-            }
-        }
-
-        // 添加新映射
-        for (String newClassIdentifier : toAdd) {
-            // 添加班级和课程的映射
-            CoursesClassMappingPO coursesClassMappingPO = new CoursesClassMappingPO()
-                    .setClassIdentifier(newClassIdentifier)
-                    .setCourseId(coursesLearningPO.getId())
-                    ;
-            int insert = coursesClassMappingService.getBaseMapper().insert(coursesClassMappingPO);
-
-
-            List<StudentWhiteListInfoBO> studentWhiteListInfoBOList =
-                    studentStatusService.getBaseMapper().selectLivingWhiteList(
-                            new StudentStatusFilterRO().setClassIdentifier(
-                                    newClassIdentifier));
-            // 清除以前的白名单 导入新的白名单
-            List<StudentWhiteListVO> listVOS = new ArrayList<>();
-            for(StudentWhiteListInfoBO studentWhiteListInfoBO: studentWhiteListInfoBOList){
-                StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
-                        .setCode(studentWhiteListInfoBO.getIdNumber())
-                        .setName(studentWhiteListInfoBO.getName())
-                        ;
-                listVOS.add(studentWhiteListVO);
-            }
-
-            SaResult saResult = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest()
-                    .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
-                    .setStudentWhiteList(listVOS));
-        }
-
-        for (String newClassIdentifier : toDelete) {
-            List<StudentWhiteListInfoBO> studentWhiteListInfoBOList =
-                    studentStatusService.getBaseMapper().selectLivingWhiteList(
-                            new StudentStatusFilterRO().setClassIdentifier(
-                                    newClassIdentifier));
-            List<String> idNumbers = new ArrayList<>();
-            // 将学生的 ID 号码添加到 idNumbers 列表中
-            if (studentWhiteListInfoBOList != null && !studentWhiteListInfoBOList.isEmpty()) {
-                List<String> currentIdNumbers = studentWhiteListInfoBOList.stream()
-                        .map(StudentWhiteListInfoBO::getIdNumber)
-                        .collect(Collectors.toList());
-
-                idNumbers.addAll(currentIdNumbers);
-            }
-
-
-            SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
-                    .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
-                    .setIsClear("N")
-                    .setDeleteCodeList(idNumbers));
-        }
-
-        if("Y".equals(coursesLearningROPageRO.getFreshWhiteList())){
-            // 强制刷新白名单 首先获取 班级里的所有学生 以及 重修名单 直接覆盖重写
-            List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(new CourseStudentSearchRO().setCourseId(coursesLearningROPageRO.getCourseId()));
-            courseLearningStudentInfoVOList.addAll(getBaseMapper().selectCourseRetakeStudentsInfo(new CourseStudentSearchRO().setCourseId(coursesLearningROPageRO.getCourseId())));
-
-            String liveCourseChannelId = getLiveCourseChannelId(coursesLearningPO.getId());
-            // 全部清空
-            SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
-                    .setChannelId(liveCourseChannelId)
-                    .setDeleteCodeList(new ArrayList<>())
-                    .setIsClear("Y")
+            // 获取现有的班级与课程映射关系
+            List<CoursesClassMappingPO> coursesClassMappingPOS = coursesClassMappingService.getBaseMapper().selectList(
+                    new LambdaQueryWrapper<CoursesClassMappingPO>()
+                            .eq(CoursesClassMappingPO::getCourseId, coursesLearningPO.getId())
             );
-            List<StudentWhiteListVO> studentWhiteListVOList = new ArrayList<>();
-            for(CourseLearningStudentInfoVO courseLearningStudentInfoVO: courseLearningStudentInfoVOList){
-                String name = courseLearningStudentInfoVO.getName();
-                String idNumber = courseLearningStudentInfoVO.getIdNumber();
-                StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
-                        .setCode(idNumber)
-                        .setName(name)
-                        ;
-                studentWhiteListVOList.add(studentWhiteListVO);
+
+            // 将前端传来的列表和数据库中的映射转换为集合
+            Set<String> existingClassIdentifiers = coursesClassMappingPOS.stream()
+                    .map(CoursesClassMappingPO::getClassIdentifier)
+                    .collect(Collectors.toSet());
+            Set<String> newClassIdentifiers = new HashSet<>(classIdentifier);
+
+            // 计算交集、差集
+            Set<String> toDelete = new HashSet<>(existingClassIdentifiers);
+            toDelete.removeAll(newClassIdentifiers); // 差集：需要删除的元素
+
+            Set<String> toAdd = new HashSet<>(newClassIdentifiers);
+            toAdd.removeAll(existingClassIdentifiers); // 差集：需要添加的元素
+
+            // 删除不再需要的映射
+            for (CoursesClassMappingPO existingMapping : coursesClassMappingPOS) {
+                if (toDelete.contains(existingMapping.getClassIdentifier())) {
+                    coursesClassMappingService.getBaseMapper().deleteById(existingMapping.getId());
+                }
             }
 
-            SaResult saResult1 = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest().setChannelId(liveCourseChannelId)
-                    .setStudentWhiteList(studentWhiteListVOList));
+            // 添加新映射
+            for (String newClassIdentifier : toAdd) {
+                // 添加班级和课程的映射
+                CoursesClassMappingPO coursesClassMappingPO = new CoursesClassMappingPO()
+                        .setClassIdentifier(newClassIdentifier)
+                        .setCourseId(coursesLearningPO.getId())
+                        ;
+                int insert = coursesClassMappingService.getBaseMapper().insert(coursesClassMappingPO);
+
+
+                List<StudentWhiteListInfoBO> studentWhiteListInfoBOList =
+                        studentStatusService.getBaseMapper().selectLivingWhiteList(
+                                new StudentStatusFilterRO().setClassIdentifier(
+                                        newClassIdentifier));
+                // 清除以前的白名单 导入新的白名单
+                List<StudentWhiteListVO> listVOS = new ArrayList<>();
+                for(StudentWhiteListInfoBO studentWhiteListInfoBO: studentWhiteListInfoBOList){
+                    StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
+                            .setCode(studentWhiteListInfoBO.getIdNumber())
+                            .setName(studentWhiteListInfoBO.getName())
+                            ;
+                    listVOS.add(studentWhiteListVO);
+                }
+
+                SaResult saResult = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest()
+                        .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
+                        .setStudentWhiteList(listVOS));
+            }
+
+            for (String newClassIdentifier : toDelete) {
+                List<StudentWhiteListInfoBO> studentWhiteListInfoBOList =
+                        studentStatusService.getBaseMapper().selectLivingWhiteList(
+                                new StudentStatusFilterRO().setClassIdentifier(
+                                        newClassIdentifier));
+                List<String> idNumbers = new ArrayList<>();
+                // 将学生的 ID 号码添加到 idNumbers 列表中
+                if (studentWhiteListInfoBOList != null && !studentWhiteListInfoBOList.isEmpty()) {
+                    List<String> currentIdNumbers = studentWhiteListInfoBOList.stream()
+                            .map(StudentWhiteListInfoBO::getIdNumber)
+                            .collect(Collectors.toList());
+
+                    idNumbers.addAll(currentIdNumbers);
+                }
+
+                try {
+                    SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
+                            .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
+                            .setIsClear("N")
+                            .setDeleteCodeList(idNumbers));
+                }catch (net.polyv.common.v1.exception.PloyvSdkException e){
+                    // 出现删除异常，可能是因为全部删除了
+                    SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
+                            .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
+                            .setIsClear("Y")
+                            .setDeleteCodeList(idNumbers));
+                }
+            }
+
+            if("Y".equals(coursesLearningROPageRO.getFreshWhiteList())){
+                // 强制刷新白名单 首先获取 班级里的所有学生 以及 重修名单 直接覆盖重写
+                List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = getBaseMapper().selectCourseStudentsInfo(new CourseStudentSearchRO().setCourseId(coursesLearningROPageRO.getCourseId()));
+                courseLearningStudentInfoVOList.addAll(getBaseMapper().selectCourseRetakeStudentsInfo(new CourseStudentSearchRO().setCourseId(coursesLearningROPageRO.getCourseId())));
+
+                String liveCourseChannelId = getLiveCourseChannelId(coursesLearningPO.getId());
+                // 全部清空
+                SaResult saResult = singleLivingService.deleteChannelWhiteStudent(new ChannelInfoRequest()
+                        .setChannelId(liveCourseChannelId)
+                        .setDeleteCodeList(new ArrayList<>())
+                        .setIsClear("Y")
+                );
+                List<StudentWhiteListVO> studentWhiteListVOList = new ArrayList<>();
+                for(CourseLearningStudentInfoVO courseLearningStudentInfoVO: courseLearningStudentInfoVOList){
+                    String name = courseLearningStudentInfoVO.getName();
+                    String idNumber = courseLearningStudentInfoVO.getIdNumber();
+                    StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO()
+                            .setCode(idNumber)
+                            .setName(name)
+                            ;
+                    studentWhiteListVOList.add(studentWhiteListVO);
+                }
+
+                SaResult saResult1 = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest().setChannelId(liveCourseChannelId)
+                        .setStudentWhiteList(studentWhiteListVOList));
+            }
         }
 
         // 校验课程简介是否 相同 不同则替换
@@ -1064,6 +1118,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             courseSectionVO.setContentType(sectionsPO.getContentType());
             courseSectionVO.setStartTime(sectionsPO.getStartTime());
             courseSectionVO.setDeadLine(sectionsPO.getDeadline());
+            courseSectionVO.setSectionName(sectionsPO.getSectionName());
             courseSectionVO.setValid(sectionsPO.getValid());
 
             if(sectionsPO.getContentType().equals(CourseContentType.LIVING.getContentType())){
@@ -1128,6 +1183,12 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         } else {
             return SaResult.error("上课时间 必须晚于当前时间");
         }
+
+        // 如果章节名字发生了改变 则更改
+        if(!courseSectionRO.getSectionName().equals(sectionsPO.getSectionName()) ){
+            sectionsPO.setSectionName(courseSectionRO.getSectionName());
+        }
+
         int insert = sectionsService.getBaseMapper().updateById(sectionsPO);
         if(insert <= 0){
             SaResult.error("更新节点信息失败 插入数据库失败");
@@ -1465,7 +1526,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             for(CourseLearningVO courseLearningVO : courseLearningVOS){
                 CourseInfoVO courseInfoVO = new CourseInfoVO()
                         .setCourseId(courseLearningVO.getId())
-                        .setYear(courseLearningVO.getGrade())
+                        .setYear(courseLearningVO.getYear())
                         .setGrade(highestGradeStudent.getGrade())
                         .setCourseName(courseLearningVO.getCourseName())
                         .setCourseType(courseLearningVO.getCourseType())
@@ -1641,7 +1702,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 courseIds.add(courseId);
             }
             // 根据 节点信息反推课程信息
-            List<CourseLearningVO> courseLearningVOS1 = getBaseMapper().selectCourseLearningDataWithoutPaging(new CoursesLearningRO().setCourseIds(courseIds));
+            List<CourseLearningVO> courseLearningVOS1 = new ArrayList<>();
+            if(!courseIds.isEmpty()){
+                courseLearningVOS1 = getBaseMapper().
+                        selectCourseLearningDataWithoutPaging(new CoursesLearningRO().setCourseIds(courseIds));
+            }
 
             combinedSet.addAll(courseLearningVOS);
             combinedSet.addAll(courseLearningVOS1);
@@ -1653,7 +1718,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             Set<Long> courseIds = courseAssistantsPOS.stream()
                     .map(CourseAssistantsPO::getCourseId) // 提取每个 CourseAssistantsPO 的 courseId
                     .collect(Collectors.toSet()); // 将结果收集到 Set 中
-            List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(new CoursesLearningRO().setCourseIds(courseIds));
+            List<CourseLearningVO> courseLearningVOS = new ArrayList<>();
+            if(!courseIds.isEmpty()){
+                courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(new CoursesLearningRO().setCourseIds(courseIds));
+            }
             combinedSet.addAll(courseLearningVOS);
         }
 
@@ -1668,7 +1736,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             }
             CourseInfoVO courseInfoVO = new CourseInfoVO()
                     .setCourseId(id)
-                    .setYear(courseLearningVO.getGrade())
+                    .setYear(courseLearningVO.getYear())
                     .setCourseName(courseLearningVO.getCourseName())
                     .setCourseType(courseLearningVO.getCourseType())
                     .setCourseDescription(courseLearningVO.getCourseDescription())
@@ -1786,7 +1854,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CourseLearningVO courseLearningVO = courseLearningVOS.get(0);
             CourseInfoVO courseInfoVO = new CourseInfoVO()
                     .setCourseId(courseLearningVO.getId())
-                    .setYear(courseLearningVO.getGrade())
+                    .setYear(courseLearningVO.getYear())
                     .setCourseName(courseLearningVO.getCourseName())
                     .setCourseType(courseLearningVO.getCourseType())
                     .setCourseDescription(courseLearningVO.getCourseDescription())
@@ -2209,7 +2277,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CourseLearningVO courseLearningVO = courseLearningVOS.get(0);
             CourseInfoVO courseInfoVO = new CourseInfoVO()
                     .setCourseId(courseLearningVO.getId())
-                    .setYear(courseLearningVO.getGrade())
+                    .setYear(courseLearningVO.getYear())
                     .setCourseName(courseLearningVO.getCourseName())
                     .setCourseType(courseLearningVO.getCourseType())
                     .setCourseDescription(courseLearningVO.getCourseDescription())

@@ -35,21 +35,21 @@
     </root>
 
     <!-- MyBatis SQL 日志设置 -->
-<!--    <logger name="org.mybatis" level="INFO">-->
-    <logger name="org.mybatis" level="DEBUG">
+    <logger name="org.mybatis" level="INFO">
+<!--    <logger name="org.mybatis" level="DEBUG">-->
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>
 <!--记录具体的 Mapper SQL 语句，您也需要将 Mapper 的日志级别设置为 DEBUG-->
-    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">
-<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">-->
+<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">-->
+    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>
 
 
-        <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">
-<!--    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">-->
+<!--        <logger name="com.scnujxjy.backendpoint.dao.mapper" level="DEBUG">-->
+    <logger name="com.scnujxjy.backendpoint.dao.mapper" level="INFO">
         <appender-ref ref="fileLog" />
         <appender-ref ref="logstash" />
     </logger>

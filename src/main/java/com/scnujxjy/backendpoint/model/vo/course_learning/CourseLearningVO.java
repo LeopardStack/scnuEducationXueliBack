@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.course_learning;
 
+import com.scnujxjy.backendpoint.model.bo.course_learning.TeacherInfo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +27,7 @@ public class CourseLearningVO {
     /**
      * 年份
      */
-    private String grade;
+    private String year;
 
     /**
      * 课程所在 学院
@@ -72,6 +73,11 @@ public class CourseLearningVO {
      * 主讲老师姓名
      */
     private String defaultMainTeacherName;
+
+    /**
+     * 助教信息
+     */
+    private List<TeacherInfoVO> assistants;
 
     /**
      * 课程标识符 用来在未来建立好 全局统一的课程标识符后

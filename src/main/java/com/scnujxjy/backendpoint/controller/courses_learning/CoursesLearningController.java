@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -161,8 +162,14 @@ public class CoursesLearningController {
             @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
         // 校验参数 traceId
         if (Objects.isNull(coursesLearningROPageRO)) {
-            throw dataMissError();
+            return SaResult.error("入参不能为空");
         }
+
+        if(coursesLearningROPageRO.getClassIdentifier() == null){
+            coursesLearningROPageRO.setClassIdentifier(new ArrayList<>());
+        }
+
+
 
         // 查询数据
         return coursesLearningService.updateCourse(coursesLearningROPageRO);
@@ -275,6 +282,32 @@ public class CoursesLearningController {
     @PostMapping("/get_course_students_info")
     @ApiOperation(value = "查询一门课程中的学生群体信息")
     public SaResult getCourseStudentsInfo(
+            @ApiParam(value = "课程学生查询参数", required = true)
+            @RequestBody PageRO<CourseStudentSearchRO> courseStudentSearchROPageRO) {
+        // 校验参数
+        if (Objects.isNull(courseStudentSearchROPageRO)) {
+            throw dataMissError();
+        }
+
+        if (Objects.isNull(courseStudentSearchROPageRO.getEntity())) {
+            courseStudentSearchROPageRO.setEntity(new CourseStudentSearchRO());
+        }
+
+        // 查询数据
+        PageVO<CourseLearningStudentInfoVO> courseLearningStudentInfoVOPageVO = coursesLearningService.getCourseStudentsInfo(courseStudentSearchROPageRO);
+
+        return SaResult.data(courseLearningStudentInfoVOPageVO).setCode(200).setMsg("成功获取课程中的学生信息");
+    }
+
+    /**
+     * 管理员端获取学生群体 它是可以看到身份证号码的
+     *
+     * @param courseStudentSearchROPageRO
+     * @return
+     */
+    @PostMapping("/get_course_students_info_manger")
+    @ApiOperation(value = "管理员端获取学生群体 它是可以看到身份证号码的")
+    public SaResult getCourseStudentsInfoForManager(
             @ApiParam(value = "课程学生查询参数", required = true)
             @RequestBody PageRO<CourseStudentSearchRO> courseStudentSearchROPageRO) {
         // 校验参数

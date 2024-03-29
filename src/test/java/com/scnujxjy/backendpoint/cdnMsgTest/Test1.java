@@ -122,7 +122,7 @@ public class Test1 {
     @Test
     public void test3() throws InterruptedException {
         FileCommuBO fileCommuBO = new FileCommuBO();
-        fileCommuBO.setUploadFileRelativeURL("test/旧生收费/成教老生收费20240229.xlsx");
+        fileCommuBO.setUploadFileRelativeURL("test/旧生收费/成教老生收费20240229.11");
         fileCommuBO.setFileOperation(FILEOperation.UPLOAD_SPECIFIC_FILE);
         boolean send = messageSender.send(fileCommuBO);
         // 将 FileCommuBO 存储到 Redis
