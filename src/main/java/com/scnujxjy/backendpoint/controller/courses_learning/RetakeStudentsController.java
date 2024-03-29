@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.courses_learning;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseRetakeRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseSectionRO;
@@ -30,6 +31,7 @@ public class RetakeStudentsController {
      * @return 课程节点信息
      */
     @PostMapping("/add_retake_students")
+    @SaCheckPermission("课程学习.删除课程")
     public SaResult addRetakeStudents(@RequestBody CourseRetakeRO courseRetakeRO) {
 
         boolean result =  retakeStudentsService.addRetakeStudents(courseRetakeRO);
@@ -46,6 +48,7 @@ public class RetakeStudentsController {
      * @return 课程节点信息
      */
     @PostMapping("/delete_retake_students")
+    @SaCheckPermission("课程学习.删除课程")
     public SaResult deleteRetakeStudents(@RequestBody CourseRetakeRO courseRetakeRO) {
 
         return retakeStudentsService.deleteRetakeStudents(courseRetakeRO);

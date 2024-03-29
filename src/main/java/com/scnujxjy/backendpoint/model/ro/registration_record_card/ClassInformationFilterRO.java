@@ -58,4 +58,9 @@ public class ClassInformationFilterRO {
      * 班级名称
      */
     private List<String>  classNames;
+
+    /**
+     * 课程标识
+     */
+    private List<String> classIdentifiers;
 }
