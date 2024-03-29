@@ -543,10 +543,18 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             //说明该用户没有创建过助教。
             PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
+            String name=platformUserPO.getUsername();
+            if (StringUtils.isBlank(name)){
+                name="助教";
+            }else {
+                if (name.length()>8){
+                    name=name.substring(0,8);
+                }
+            }
             liveCreateAccountRequest.setChannelId(channelId)
                     .setRole("Assistant")
                     .setActor("助教")
-                    .setNickName(platformUserPO.getUsername())
+                    .setNickName(name)
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
