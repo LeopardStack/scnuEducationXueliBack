@@ -567,7 +567,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 //同时插入助教表
                 TutorInformation tutorInformation = new TutorInformation();
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
-                tutorInformation.setTutorName(platformUserPO.getUsername());
+                tutorInformation.setTutorName(name);
                 tutorInformation.setUserId(userId);
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
