@@ -4,6 +4,10 @@ package com.scnujxjy.backendpoint.controller.courses_learning;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -36,6 +40,7 @@ public class CoursesLearningController {
 
     @Resource
     private CoursesLearningService coursesLearningService;
+
 
     /**
      * 分页查询课程信息
@@ -558,6 +563,18 @@ public class CoursesLearningController {
 
         // 转换并返回
         return coursesLearningService.getCourseCreateParams();
+    }
+
+
+    /**
+     * 获取直播间信息
+     *
+     * @return 直播间基本信息
+     */
+    @PostMapping("/get_living_room_infos")
+    public SaResult getLivingRoomInfos(Long channelId) {
+        // 转换并返回
+        return coursesLearningService.getLivingRoomInfos(channelId);
     }
 }
 

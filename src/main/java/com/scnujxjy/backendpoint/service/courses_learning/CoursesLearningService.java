@@ -22,10 +22,12 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelIn
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelResponseData;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.TeacherInfo;
+import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
@@ -137,6 +139,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    private VideoStreamUtils videoStreamUtils;
+
 
     public PageVO<CourseLearningVO> pageQueryCoursesInfo(PageRO<CoursesLearningRO> courseScheduleROPageRO) {
         List<String> roleList = StpUtil.getRoleList();
@@ -1140,6 +1146,39 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 BeanUtils.copyProperties(videoResourcesPO, videoResourceVO);
                 courseSectionVO.setCourseSectionContentVO(videoResourceVO);
             }
+
+
+            // 添加主讲教师信息
+            String mainTeacherUsername = sectionsPO.getMainTeacherUsername();
+            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherUsername, mainTeacherUsername));
+            courseSectionVO.setMainTeacherUsername(teacherInformationPO.getTeacherUsername());
+            courseSectionVO.setMainTeacherName(teacherInformationPO.getName());
+            // 添加助教信息
+            List<CourseAssistantsPO> courseAssistantsPOS = courseAssistantsService.getBaseMapper().selectList(
+                    new LambdaQueryWrapper<CourseAssistantsPO>()
+                            .eq(CourseAssistantsPO::getCourseId, sectionsPO.getCourseId()));
+
+            // 将列表转换为流，提取用户名，并收集到 Set 中以去除重复项
+            Set<String> usernames = courseAssistantsPOS.stream() // 将列表转换为流
+                    .map(CourseAssistantsPO::getUsername) // 将流中的每个元素映射（转换）为用户名
+                    .collect(Collectors.toSet()); // 收集结果到一个 Set<String> 中
+
+            // 根据用户名集合查询教师信息
+            List<TeacherInformationPO> teacherInformationPOS = teacherInformationService.getBaseMapper().selectTeacherInfo(
+                    new TeacherInformationSearchRO().setUsernames(usernames));
+
+            List<TeacherInfoVO> tutorList = teacherInformationPOS.stream() // 将teacherInformationPOS列表转换为Stream
+                    .map(t -> {
+                        TeacherInfoVO teacherInfoVO = new TeacherInfoVO(); // 创建一个新的TeacherInfoVO对象
+                        // 设置TeacherInfoVO对象的属性
+                        teacherInfoVO.setName(t.getName())
+                                .setTeacherUsername(t.getTeacherUsername());
+                        return teacherInfoVO; // 返回设置好的TeacherInfoVO对象
+                    })
+                    .collect(Collectors.toList()); // 收集Stream中的所有TeacherInfoVO到一个新的List
+            courseSectionVO.setTutorList(tutorList);
+
             // 目前只处理这两种节点内容
 
             courseSectionVOs.add(courseSectionVO);
@@ -1338,6 +1377,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         List<SectionsPO> sortedSectionsPOS = sectionsPOS.stream()
                 .sorted(Comparator.comparing(SectionsPO::getStartTime))
                 .collect(Collectors.toList());
+
+        sortedSectionsPOS.forEach(section ->
+                System.out.println(section.getStartTime()));
+
 
         // 更新 sequence，从 1 开始
         int sequence = 1;
@@ -2408,5 +2451,17 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         } finally {
             executor.shutdown(); // 不要忘记关闭线程池
         }
+    }
+
+
+    /**
+     * 获取直播间基本信息
+     * @param channelId
+     * @return
+     */
+    public SaResult getLivingRoomInfos(Long channelId) {
+
+        ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo(String.valueOf(channelId));
+        return SaResult.ok().setData(channelBasicInfo);
     }
 }

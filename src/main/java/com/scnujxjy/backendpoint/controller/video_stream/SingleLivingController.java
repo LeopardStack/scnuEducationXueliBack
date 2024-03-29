@@ -5,10 +5,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +37,12 @@ public class SingleLivingController {
 
     @Resource
     private SingleLivingService singleLivingService;
+
+    @Resource
+    private PlatformUserService platformUserService;
+
+    @Resource
+    private TeacherInformationService teacherInformationService;
 
     /**
      * 刪除直播间
@@ -104,11 +114,26 @@ public class SingleLivingController {
     }
 
     //返回教师单点登录链接
+    // 要区分助教
     @PostMapping("/edit/getTeacherChannelUrl")
     public SaResult getTeacherChannelUrl(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
+
+        List<String> roleList = StpUtil.getRoleList();
+        if(roleList.contains("教师")){
+            String loginIdAsString = StpUtil.getLoginIdAsString();
+            Long userIdByUsername = platformUserService.getUserIdByUsername(loginIdAsString);
+            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                    .eq(TeacherInformationPO::getTeacherUsername, loginIdAsString));
+            if(teacherInformationPO.getTeacherType2().equals("主讲教师")){
+                return singleLivingService.getTeacherChannelUrl(channelId);
+            }else{
+                return singleLivingService.createTutorChannel(channelId, String.valueOf(userIdByUsername));
+            }
+        }
+
         return singleLivingService.getTeacherChannelUrl(channelId);
     }
 
@@ -137,6 +162,15 @@ public class SingleLivingController {
             throw dataMissError();
         }
         return singleLivingService.createTutorChannel(channelId,userId);
+    }
+
+
+    //创建助教并返回单点登录链接
+    @PostMapping("/edit/createTutorChannel1")
+    public  SaResult createTutorChannel1(String channelId){
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        Long userId = platformUserService.getUserIdByUsername(loginIdAsString);
+        return singleLivingService.createTutorChannel(channelId, String.valueOf(userId));
     }
 
     @PostMapping("/edit/UpdateChannelNameAndImg")

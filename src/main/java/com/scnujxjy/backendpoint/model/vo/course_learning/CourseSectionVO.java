@@ -45,6 +45,9 @@ public class CourseSectionVO {
     @ApiModelProperty(value = "主讲老师姓名", example = "张三")
     private String mainTeacherName;
 
+    @ApiModelProperty(value = "助教老师集合", example = "张三")
+    private List<TeacherInfoVO> tutorList;
+
     @ApiModelProperty(value = "是否有效", example = "Y")
     private String valid;
 
