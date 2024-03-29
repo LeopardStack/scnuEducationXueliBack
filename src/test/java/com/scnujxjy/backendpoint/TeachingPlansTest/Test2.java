@@ -79,7 +79,7 @@ public class Test2 {
                 ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
                         .eq(ClassInformationPO::getGrade, "2024")
                         .eq(ClassInformationPO::getCollege, "政治与公共管理学院")
-                        .eq(ClassInformationPO::getClassName, "东莞欧龙")
+                        .eq(ClassInformationPO::getClassName, alias)
                 );
                 CourseInformationPO courseInformationPO1 = courseInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CourseInformationPO>()
                         .eq(CourseInformationPO::getAdminClass, classInformationPO.getClassIdentifier())

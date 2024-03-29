@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -546,7 +547,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             liveCreateAccountRequest.setChannelId(channelId)
                     .setRole("Assistant")
                     .setActor("助教")
-                    .setNickName(platformUserPO.getUsername())
+                    .setNickName(platformUserPO.getName().isEmpty() ? StpUtil.getRoleList().get(0) : platformUserPO.getName())
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));

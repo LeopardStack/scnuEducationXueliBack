@@ -2028,6 +2028,19 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public SaResult getCourseScheduleInformation(PageRO<CourseScheduleSearchRO> courseScheduleSearchRO) {
+        List<String> roleList = StpUtil.getRoleList();
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+            // 学历教育部
+
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 二级学院
+            CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+            courseScheduleSearchRO.getEntity().setCollege(userBelongCollege.getCollegeName());
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+            courseScheduleSearchRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+        }
+
 
         List<CourseScheduleVO> courseScheduleVOList = getBaseMapper().selectCoursesScheduleInfo(courseScheduleSearchRO.getEntity(),
                 courseScheduleSearchRO.getPageNumber() - 1, courseScheduleSearchRO.getPageSize(), CourseContentType.NODE.getContentType());
