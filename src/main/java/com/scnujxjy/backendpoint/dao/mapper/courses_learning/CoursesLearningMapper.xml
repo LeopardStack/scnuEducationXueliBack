@@ -189,6 +189,37 @@
     </select>
     <select id="selectCourseLearningDataWithoutPaging"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
+<!--        SELECT-->
+<!--        cl.id,-->
+<!--        cl.grade,-->
+<!--        cl.course_name,-->
+<!--        cl.course_type,-->
+<!--        cl.course_description,-->
+<!--        cl.course_cover_url,-->
+<!--        cl.default_main_teacher_username,-->
+<!--        cl.course_identifier,-->
+<!--        cl.valid,-->
+<!--        cl.created_time,-->
+<!--        cl.updated_time,-->
+<!--        ti.name AS default_main_teacher_name,-->
+<!--        GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,-->
+<!--        COALESCE(-->
+<!--        MIN(CASE WHEN ss.start_time > NOW() THEN ss.start_time END),-->
+<!--        MAX(CASE WHEN NOW() > ss.start_time  THEN ss.start_time END)-->
+<!--        ) AS recent_course_schedule_time-->
+<!--        <include refid="commonJoin" />-->
+<!--        WHERE-->
+<!--        1=1-->
+<!--        <include refid="commonFilters" />-->
+<!--        GROUP BY-->
+<!--        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,-->
+<!--        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,-->
+<!--        cl.valid, cl.created_time, cl.updated_time, ti.name-->
+<!--        ORDER BY-->
+<!--        cl.created_time DESC-->
+
+        SELECT *, ABS(TIMESTAMPDIFF(SECOND, recent_course_schedule_time, NOW())) AS time_difference
+        FROM (
         SELECT
         cl.id,
         cl.grade,
@@ -203,10 +234,7 @@
         cl.updated_time,
         ti.name AS default_main_teacher_name,
         GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
-        COALESCE(
-        MIN(CASE WHEN ss.start_time > NOW() THEN ss.start_time END),
-        MAX(CASE WHEN NOW() > ss.start_time  THEN ss.start_time END)
-        ) AS recent_course_schedule_time
+        ss.start_time AS recent_course_schedule_time
         <include refid="commonJoin" />
         WHERE
         1=1
@@ -214,9 +242,12 @@
         GROUP BY
         cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
         cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
-        cl.valid, cl.created_time, cl.updated_time, ti.name
+        cl.valid, cl.created_time, cl.updated_time, ti.name, ss.start_time
         ORDER BY
         cl.created_time DESC
+        ) AS subquery
+        ORDER BY time_difference ASC
+        LIMIT 1;
     </select>
     <select id="selectCourseRetakeStudentsInfo"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">

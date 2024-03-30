@@ -1,11 +1,13 @@
 package com.scnujxjy.backendpoint.service.teaching_point;
 
+import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_point.TeachingPointInformationInverter;
@@ -13,6 +15,9 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointMangerInfoVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +39,12 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
 
     @Resource
     private TeachingPointInformationInverter teachingPointInformationInverter;
+
+    @Resource
+    private PlatformUserService platformUserService;
+
+    @Resource
+    private TeachingPointAdminInformationService teachingPointAdminInformationService;
 
     /**
      * 根据teachingPointId查询教学点基础信息
@@ -137,4 +148,68 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
         return count;
     }
 
+    /**
+     * 添加新的教学点
+     * @param teachingPointInformationRO
+     * @return
+     */
+    public SaResult addTeachingPoint(TeachingPointInformationRO teachingPointInformationRO) {
+        // 对传入进来的教学点名称进行校验
+        if(teachingPointInformationRO.getTeachingPointName().isEmpty()){
+            return ResultCode.TEACHING_POINT_FAIL1.generateErrorResultInfo();
+        }
+
+        if(teachingPointInformationRO.getAlias().isEmpty()){
+            return ResultCode.TEACHING_POINT_FAIL2.generateErrorResultInfo();
+        }
+
+        Integer exist = getBaseMapper().selectCount(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getTeachingPointName, teachingPointInformationRO.getTeachingPointName()));
+        if(exist > 0){
+            // 说明已经存在了
+            return ResultCode.TEACHING_POINT_FAIL3.generateErrorResultInfo();
+        }
+
+        // 构造一个 teachingPointId
+        Long maxTeachingPointId = getBaseMapper().selectMaxTeachingPointId();
+
+        TeachingPointInformationPO teachingPointInformationPO = new TeachingPointInformationPO()
+                .setTeachingPointId(String.valueOf(maxTeachingPointId + 1))
+                .setTeachingPointName(teachingPointInformationRO.getTeachingPointName())
+                .setPhone(teachingPointInformationRO.getPhone())
+                .setAddress(teachingPointInformationRO.getAddress())
+                .setAlias(teachingPointInformationRO.getAlias());
+        int insert = getBaseMapper().insert(teachingPointInformationPO);
+        if(insert <= 0){
+            return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
+        }
+
+        return ResultCode.generateOKInfo("成功添加教学点 " + teachingPointInformationPO.getTeachingPointName());
+    }
+
+    /**
+     * 根据 教学点 ID 获取其 管理人员信息
+     * @param teachingPointId
+     * @return
+     */
+    public SaResult getTeachingPointMangerInfos(String teachingPointId) {
+        TeachingPointInformationPO teachingPointInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
+        if(teachingPointInformationPO == null){
+            return ResultCode.TEACHING_POINT_FAIL4.generateErrorResultInfo();
+        }
+
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getTeachingPointId, teachingPointInformationPO.getTeachingPointId()));
+
+        for(TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS){
+            TeachingPointMangerInfoVO teachingPointMangerInfoVO = new TeachingPointMangerInfoVO()
+                    .setMangerType(teachingPointAdminInformationPO.getIdentity())
+                    ;
+        }
+
+
+
+        return null;
+    }
 }

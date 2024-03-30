@@ -32,7 +32,7 @@ public class TeachingPointInformationPO implements Serializable {
     /**
      * 教学点代码
      */
-    @TableId(value = "teaching_point_id", type = IdType.AUTO)
+    @TableId(value = "teaching_point_id")
     private String teachingPointId;
 
     /**

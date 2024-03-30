@@ -83,9 +83,9 @@ mybatis-plus:
 logging:
   config: src/main/resources/logback.xml
 #  config: logback.xml
-#  level:
-#    org.apache.ibatis: DEBUG
-#    com.scnujxjy.backendpoint.dao.mapper: DEBUG
+  level:
+    org.apache.ibatis: DEBUG
+    com.scnujxjy.backendpoint.dao.mapper: DEBUG
 
 
 minio:
