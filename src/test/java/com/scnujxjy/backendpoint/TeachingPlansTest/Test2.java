@@ -44,7 +44,9 @@ public class Test2 {
         );
         log.info("\n" + courseInformationPO.toString());
 
-        ArrayList<String> list1 = new ArrayList<>(Arrays.asList("东莞师华",
+        ArrayList<String> list1 = new ArrayList<>(Arrays.asList(
+                "校内",
+                "东莞师华",
                 "番禺学程",
                 "佛山七天",
                 "佛山三水",

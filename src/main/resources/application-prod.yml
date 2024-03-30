@@ -32,6 +32,10 @@ spring:
     queue4: data_export2
     queue5: data_system_msg
     queue6: data_upload
+    # 这个队列是用来发送操作消息给 CDN 服务
+    cdn_queue1: cdn_file_operation1_alice
+    # 这个队列是用来监听 CDN 服务发送过来的响应消息的
+    cdn_queue2: cdn_file_operation1_blob
 
   servlet:
     multipart:
@@ -120,4 +124,13 @@ wechat:
   app-secret: 0ec180d59b9b076454e09a4fa4eff865
   app-id: wxf06ee34ae8ba2687
 
-
+knife4j:
+  # 开启增强配置
+  enable: true
+  # 开启Swagger的Basic认证功能,默认是false
+  basic:
+    enable: true
+    # Basic认证用户名
+    username: scnuAdmin
+    # Basic认证密码
+    password: scnuAdmin2024@
