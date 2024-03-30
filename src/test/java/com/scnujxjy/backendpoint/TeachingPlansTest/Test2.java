@@ -44,7 +44,9 @@ public class Test2 {
         );
         log.info("\n" + courseInformationPO.toString());
 
-        ArrayList<String> list1 = new ArrayList<>(Arrays.asList("东莞师华",
+        ArrayList<String> list1 = new ArrayList<>(Arrays.asList(
+                "校内",
+                "东莞师华",
                 "番禺学程",
                 "佛山七天",
                 "佛山三水",
@@ -87,6 +89,7 @@ public class Test2 {
                 );
                 if(courseInformationPO1 == null){
                     // 重复的就不需要写入了
+                    log.info("\n写入成功 " + classInformationPO);
                     CourseInformationPO courseInformationPO2 = new CourseInformationPO();
                     BeanUtils.copyProperties(courseInformationPO, courseInformationPO2);
                     courseInformationPO2.setId(null);
@@ -95,6 +98,8 @@ public class Test2 {
                     if(insert <= 0){
                         log.error("插入失败 " + insert);
                     }
+                }else{
+
                 }
             }
 

@@ -387,7 +387,17 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                                     .max(Date::compareTo)
                                     .orElse(null));
 
-            vo.setRecentCourseScheduleTime(recentStartTime);
+            Date closestStartTime = records.stream()
+                    .map(CourseRecordBO::getStartTime)
+                    .filter(Objects::nonNull)
+                    .min((date1, date2) -> {
+                        long diff1 = Math.abs(date1.getTime() - now.getTime());
+                        long diff2 = Math.abs(date2.getTime() - now.getTime());
+                        return Long.compare(diff1, diff2);
+                    })
+                    .orElse(null); // 如果没有找到合适的时间，返回 null
+
+            vo.setRecentCourseScheduleTime(closestStartTime);
         }
 
         return vo;
