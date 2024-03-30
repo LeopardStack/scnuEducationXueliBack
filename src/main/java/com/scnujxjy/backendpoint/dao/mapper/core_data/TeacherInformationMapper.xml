@@ -36,4 +36,59 @@
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
+
+    <select id="selectTeacherInformation" parameterType="com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest"
+            resultType="com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO">
+        select * from teacher_information t
+        <where>
+            1=1
+            <if test="name != null and name != ''">
+                and t.name  LIKE CONCAT('%', #{name},'%')
+            </if>
+            <if test="idNumber != null and idNumber != ''">
+                and t.id_card_number LIKE CONCAT('%', #{idNumber},'%')
+            </if>
+            <if test="gender != null and gender != ''">
+                and t.gender =#{gender}
+            </if>
+            <if test="userName != null and userName != ''">
+                and t.teacher_username LIKE CONCAT('%', #{userName},'%')
+            </if>
+            <if test="college != null and college!='' ">
+                and t.college_id LIKE CONCAT('%', #{college},'%')
+            </if>
+            <if test="teacherType != null and teacherType!='' ">
+                and t.teacher_type2 =#{teacherType}
+            </if>
+
+        </where>
+        order by t.user_id asc LIMIT #{offset},#{pageSize}
+    </select>
+
+    <select id="selectTeacherInformationCount" parameterType="com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest"
+            resultType="Long">
+        select count(*) from teacher_information t
+        <where>
+            1=1
+            <if test="name != null and name != ''">
+                and t.name  LIKE CONCAT('%', #{name},'%')
+            </if>
+            <if test="idNumber != null and idNumber != ''">
+                and t.id_card_number LIKE CONCAT('%', #{idNumber},'%')
+            </if>
+            <if test="gender != null and gender != ''">
+                and t.gender =#{gender}
+            </if>
+            <if test="userName != null and userName != ''">
+                and t.teacher_username LIKE CONCAT('%', #{userName},'%')
+            </if>
+            <if test="college != null and college!='' ">
+                and t.college_id LIKE CONCAT('%', #{college},'%')
+            </if>
+            <if test="teacherType != null and teacherType!='' ">
+                and t.teacher_type2 =#{teacherType}
+            </if>
+        </where>
+    </select>
+
 </mapper>
