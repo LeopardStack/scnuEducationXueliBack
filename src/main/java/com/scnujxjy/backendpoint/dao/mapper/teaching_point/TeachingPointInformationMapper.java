@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_point;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
+import org.apache.ibatis.annotations.Select;
 
 /**
  * <p>
@@ -12,5 +13,8 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformat
  * @since 2023-08-02
  */
 public interface TeachingPointInformationMapper extends BaseMapper<TeachingPointInformationPO> {
+
+    @Select("SELECT MAX(CAST(teaching_point_id AS UNSIGNED)) AS max_id FROM teaching_point_information")
+    Long selectMaxTeachingPointId();
 
 }

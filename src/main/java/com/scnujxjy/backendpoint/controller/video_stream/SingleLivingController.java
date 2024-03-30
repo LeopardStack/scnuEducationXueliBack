@@ -148,20 +148,22 @@ public class SingleLivingController {
 
     //返回助教单点登录链接
     @PostMapping("/edit/getTutorChannelUrl")
-    public  SaResult getTutorChannelUrl(String channelId,String userId){
-        if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
+    public  SaResult getTutorChannelUrl(String channelId){
+        Object userId = StpUtil.getLoginId();
+        if (StrUtil.isBlank(channelId) || Objects.isNull(userId)) {
             throw dataMissError();
         }
-        return singleLivingService.getTutorChannelUrl(channelId,userId);
+        return singleLivingService.getTutorChannelUrl(channelId,userId.toString());
     }
 
     //创建助教并返回单点登录链接
     @PostMapping("/edit/createTutorChannel")
-    public  SaResult createTutorChannel(String channelId,String userId){
-        if (StrUtil.isBlank(channelId) || StrUtil.isBlank(userId)) {
+    public  SaResult createTutorChannel(String channelId){
+        Object userId = StpUtil.getLoginId();
+        if (StrUtil.isBlank(channelId) || Objects.isNull(userId)) {
             throw dataMissError();
         }
-        return singleLivingService.createTutorChannel(channelId,userId);
+        return singleLivingService.createTutorChannel(channelId,userId.toString());
     }
 
 

@@ -1,6 +1,10 @@
 package com.scnujxjy.backendpoint.util;
 
 
+import cn.dev33.satoken.util.SaResult;
+import lombok.Getter;
+
+@Getter
 public enum ResultCode {
     // 成功状态码
     SUCCESS(200, "成功"),
@@ -10,6 +14,8 @@ public enum ResultCode {
 
     // 参数错误：10001-19999
     PARAM_IS_INVALID(10001, "参数无效"),
+    PARAM_IS_NULL(10002, "参数不能为空"),
+    DATABASE_INSERT_ERROR(10003, "参数不能为空"),
 
     // 用户错误：20001-29999
     USER_NOT_EXIST(20001, "用户不存在"),
@@ -18,6 +24,10 @@ public enum ResultCode {
     USER_LOGIN_FAIL(20004, "用户角色信息缺失，登录失败"),
     USER_LOGIN_FAIL1(20005, "用户角色信息存在多个，登录失败"),
     USER_LOGIN_FAIL2(20006, "用户角色信息缺失，登录失败"),
+    TEACHING_POINT_FAIL1(20007, "创建新的教学点，教学点名称不能为空"),
+    TEACHING_POINT_FAIL2(20008, "创建新的教学点，教学点简称不能为空"),
+    TEACHING_POINT_FAIL3(20009, "创建新的教学点，教学点名称重复"),
+    TEACHING_POINT_FAIL4(20010, "根据教学点ID查询不到教学点信息"),
 
     // 课程学习错误码
     UPDATE_COURSE_FAIL1(20007, "课程ID 不存在"),
@@ -79,6 +89,14 @@ public enum ResultCode {
 
     public String getMessage() {
         return message;
+    }
+
+    public SaResult generateErrorResultInfo(){
+        return SaResult.error(message).setCode(code);
+    }
+
+    public static SaResult generateOKInfo(String msg){
+        return SaResult.ok(msg);
     }
 }
 

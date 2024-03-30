@@ -89,6 +89,7 @@ public class Test2 {
                 );
                 if(courseInformationPO1 == null){
                     // 重复的就不需要写入了
+                    log.info("\n写入成功 " + classInformationPO);
                     CourseInformationPO courseInformationPO2 = new CourseInformationPO();
                     BeanUtils.copyProperties(courseInformationPO, courseInformationPO2);
                     courseInformationPO2.setId(null);
@@ -97,6 +98,8 @@ public class Test2 {
                     if(insert <= 0){
                         log.error("插入失败 " + insert);
                     }
+                }else{
+
                 }
             }
 

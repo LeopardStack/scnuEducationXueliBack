@@ -1,6 +1,5 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -544,10 +543,18 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             //说明该用户没有创建过助教。
             PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
+            String name=platformUserPO.getUsername();
+            if (StringUtils.isBlank(name)){
+                name="助教";
+            }else {
+                if (name.length()>8){
+                    name=name.substring(0,8);
+                }
+            }
             liveCreateAccountRequest.setChannelId(channelId)
                     .setRole("Assistant")
                     .setActor("助教")
-                    .setNickName(platformUserPO.getName().isEmpty() ? StpUtil.getRoleList().get(0) : platformUserPO.getName())
+                    .setNickName(name)
                     .setPurviewList(Arrays.asList(new LiveCreateAccountRequest.Purview().setCode(
                             LiveConstant.RolePurview.CHAT_LIST_ENABLED.getCode())
                             .setEnabled(LiveConstant.Flag.YES.getFlag())));
@@ -560,7 +567,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 //同时插入助教表
                 TutorInformation tutorInformation = new TutorInformation();
                 tutorInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveCreateAccountResponse.getAccount());
-                tutorInformation.setTutorName(platformUserPO.getUsername());
+                tutorInformation.setTutorName(name);
                 tutorInformation.setUserId(userId);
                 tutorInformation.setChannelId(channelId);
                 tutorInformation.setTutorPassword(liveCreateAccountResponse.getPasswd());
