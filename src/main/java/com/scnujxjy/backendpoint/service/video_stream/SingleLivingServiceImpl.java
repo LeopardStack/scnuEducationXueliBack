@@ -10,6 +10,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
@@ -34,6 +36,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
+import com.scnujxjy.backendpoint.model.ro.core_data.PageBeanResult;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
@@ -76,6 +79,8 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
 @Service
 @Slf4j
@@ -543,12 +548,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             //说明该用户没有创建过助教。
             PlatformUserPO platformUserPO = platformUserMapper.selectById(userId);
-            String name=platformUserPO.getUsername();
-            if (StringUtils.isBlank(name)){
-                name="助教";
-            }else {
-                if (name.length()>8){
-                    name=name.substring(0,8);
+            String name = platformUserPO.getUsername();
+            if (StringUtils.isBlank(name)) {
+                name = "助教";
+            } else {
+                if (name.length() > 8) {
+                    name = name.substring(0, 8);
                 }
             }
             liveCreateAccountRequest.setChannelId(channelId)
@@ -666,37 +671,37 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest) {
-        SaResult saResult = new SaResult();
-        if (channelInfoRequest.getPageSize() != null && channelInfoRequest.getPageSize() > 1000) {
-            saResult.setCode(ResultCode.FAIL.getCode());
-            saResult.setMsg("每页的最大数量不能超过1000");
-            return saResult;
+        if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || Objects.isNull(channelInfoRequest.getCurrentPage())
+        || Objects.isNull(channelInfoRequest.getPageSize())) {
+            throw dataMissError();
         }
 
-        LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
-        LiveChannelWhiteListResponse liveChannelWhiteListResponse;
+        PageHelper.startPage(channelInfoRequest.getCurrentPage(), channelInfoRequest.getPageSize());
+        List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {
-            liveChannelWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
-                    .setRank(1)
-                    .setKeyword(channelInfoRequest.getKeyword())
-                    .setCurrentPage(channelInfoRequest.getCurrentPage())
-                    .setPageSize(channelInfoRequest.getPageSize());
-            liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(
-                    liveChannelWhiteListRequest);
-            if (liveChannelWhiteListResponse != null) {
-                log.info("测试查询频道观看白名单列表成功,{}", JSON.toJSONString(liveChannelWhiteListResponse));
-                saResult.setCode(ResultCode.SUCCESS.getCode());
-                saResult.setMsg(ResultCode.SUCCESS.getMessage());
-                saResult.setData(liveChannelWhiteListResponse.getContents());
-                return saResult;
+            for (int i = 1; i < 10; i++) {
+                LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+                liveChannelWhiteListRequest.setChannelId(channelInfoRequest.getChannelId())
+                        .setRank(1)
+                        .setCurrentPage(i)
+                        .setPageSize(1000);
+                LiveChannelWhiteListResponse liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+                if (liveChannelWhiteListResponse.getContents().size() != 0) {
+                    List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+                    whiteLists.addAll(contents);
+                } else {
+                    break;
+                }
             }
+
+            PageInfo<LiveChannelWhiteListResponse.ChannelWhiteList> info = new PageInfo<>(whiteLists);
+            PageBeanResult pageBeanResult = new PageBeanResult(info.getTotal(), whiteLists, channelInfoRequest.getCurrentPage());
+            return SaResult.data(pageBeanResult);
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("调用查询白名单接口异常", e);
+            log.error("查询白名单失败，入参为:{}", channelInfoRequest);
         }
-        saResult.setCode(ResultCode.FAIL.getCode());
-        saResult.setMsg(ResultCode.FAIL.getMessage());
-        return saResult;
+        return SaResult.error("查询白名单失败，请联系管理员");
+
     }
 
 
@@ -1504,8 +1509,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 log.info("批量查询频道直播状态成功:{}", JSON.toJSONString(liveListChannelStreamStatusV2Respons));
                 return SaResult.data(liveListChannelStreamStatusV2Respons);
             }
-        }catch (Exception e){
-            log.error("获取直播间状态失败，入参为:{}",channelIdList,e);
+        } catch (Exception e) {
+            log.error("获取直播间状态失败，入参为:{}", channelIdList, e);
         }
         return SaResult.error("获取直播间状态失败请联系管理员");
     }
