@@ -1,7 +1,10 @@
 package com.scnujxjy.backendpoint.service.teaching_process;
 
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.crypto.digest.SM3;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.core_data.PageBeanResult;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest;
@@ -17,6 +20,8 @@ public class TeacherInformationNewServiceImpl implements TeacherInformationNewSe
 
     @Resource
     private TeacherInformationMapper teacherInformationMapper;
+    @Resource
+    private PlatformUserMapper platformUserMapper;
 
     @Override
     public SaResult queryTeacherInformation(TeacherInformationRequest teacherInformationRequest) {
@@ -55,10 +60,24 @@ public class TeacherInformationNewServiceImpl implements TeacherInformationNewSe
     public SaResult addTeacherInformation(TeacherInformationPO teacherInformationPO) {
 
         try {
-            int insert = teacherInformationMapper.insert(teacherInformationPO);
-            if (insert > 0) {
+            int insertTeacher=0;
+            int insertUser=0;
+            insertTeacher = teacherInformationMapper.insert(teacherInformationPO);
+
+            PlatformUserPO platformUserPO=new PlatformUserPO();
+            platformUserPO.setRoleId(2L);
+            String password=teacherInformationPO.getTeacherUsername().substring(teacherInformationPO.getTeacherUsername().length()-6);
+            String encryptedPassword = new SM3().digestHex(password);
+            platformUserPO.setPassword(encryptedPassword);
+            platformUserPO.setUsername(teacherInformationPO.getTeacherUsername());
+            platformUserPO.setName(teacherInformationPO.getName());
+            insertUser = platformUserMapper.insert(platformUserPO);
+            if (insertTeacher > 0 && insertUser>0) {
                 return SaResult.ok("添加成功");
+            }else if(insertTeacher >0 && insertUser==0){
+                return SaResult.ok("添加教师成功，但生成平台账号失败");
             }
+
         }catch (Exception e){
             log.error("添加师资库出现异常,入参信息为:{}", teacherInformationPO, e);
         }
@@ -68,10 +87,25 @@ public class TeacherInformationNewServiceImpl implements TeacherInformationNewSe
     @Override
     public SaResult delteteTeacherInformation(TeacherInformationRequest teacherInformationRequest) {
         try {
-            int i = teacherInformationMapper.deleteById(teacherInformationRequest.getUserId());
-            if (i > 0) {
-                return SaResult.ok("删除成功");
+            TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectById(teacherInformationRequest.getUserId());
+            int deleteTeacher=0;
+            int deleteUser=0;
+            if (teacherInformationPO==null){
+                return SaResult.error("该教师不存在,无需删除");
             }
+
+            PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(teacherInformationPO.getTeacherUsername());
+            //先删除平台用户，再删除师资库
+            if (platformUserPO!=null){
+                deleteUser = platformUserMapper.deleteById(platformUserPO.getUserId());
+            }
+            deleteTeacher = teacherInformationMapper.deleteById(teacherInformationRequest.getUserId());
+            if (deleteTeacher > 0 && deleteUser>0) {
+                return SaResult.ok("删除成功");
+            }else if(deleteTeacher >0 && deleteUser==0){
+                return SaResult.ok("删除教师成功，但平台用户账号不存在无需删除");
+            }
+
         }catch (Exception e){
             log.error("删除师资库出现异常,入参信息为:{}", teacherInformationRequest, e);
         }
