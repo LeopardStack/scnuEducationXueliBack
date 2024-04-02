@@ -2,8 +2,10 @@ package com.scnujxjy.backendpoint.dao.entity.core_data;
 
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,35 +43,42 @@ public class TeacherInformationPO implements Serializable {
      * 姓名
      */
     @ExcelProperty(index = 1)
+    @TableField(value = "name")
     private String name;
 
     /**
      * 性别
      */
+    @TableField(value = "gender")
     @ExcelProperty(index = 2)
     private String gender;
 
     /**
      * 出生年月
      */
+    @TableField(value = "birth_date")
     @ExcelProperty(index = 3)
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date birthDate;
 
     /**
      * 政治面貌
      */
+    @TableField(value = "political_status")
     @ExcelProperty(index = 4)
     private String politicalStatus;
 
     /**
      * 学历
      */
+    @TableField(value = "education")
     @ExcelProperty(index = 5)
     private String education;
 
     /**
      * 学位
      */
+    @TableField(value = "degree")
     @ExcelProperty(index = 6)
     private String degree;
 

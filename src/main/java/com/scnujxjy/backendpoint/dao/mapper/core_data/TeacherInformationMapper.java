@@ -1,14 +1,17 @@
 package com.scnujxjy.backendpoint.dao.mapper.core_data;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
+import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.TeacherInformationSearchRO;
+import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -22,6 +25,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
 
     /**
      * 根据 身份证号码查找教师
+     *
      * @param idCardNumber 身份证号码
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
@@ -30,6 +34,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
 
     /**
      * 根据 工号查找教师
+     *
      * @param workNumber 工号
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
@@ -38,6 +43,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
 
     /**
      * 根据 手机号码查找教师
+     *
      * @param phone 手机号码
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
@@ -47,6 +53,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
 
     /**
      * 根据 姓名查找教师
+     *
      * @param name 姓名
      * @return 教师信息集合，类型为 TeacherInformationPO
      */
@@ -54,12 +61,13 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
     List<TeacherInformationPO> selectByName(String name);
 
     @Select("SELECT * FROM teacher_information WHERE name = #{name} and  work_number = #{workNumber} limit 1")
-    TeacherInformationPO selectByNameAndWorkNumber(String name,String workNumber);
+    TeacherInformationPO selectByNameAndWorkNumber(String name, String workNumber);
 
 
     /**
      * 根据 user_id 更新 teacher_username
-     * @param userId 教师的 user_id
+     *
+     * @param userId          教师的 user_id
      * @param teacherUsername 新的 teacher_username
      */
     @Update("UPDATE teacher_information SET teacher_username = #{teacherUsername} WHERE user_id = #{userId}")
@@ -67,4 +75,15 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
 
 
     List<TeacherInformationPO> selectTeacherInfo(@Param("entity") TeacherInformationSearchRO teacherInformationSearchRO);
+
+    List<TeacherInformationPO> selectTeacherInformation(TeacherInformationRequest teacherInformationRequest);
+
+    Long selectTeacherInformationCount(TeacherInformationRequest teacherInformationRequeste);
+
+    List<TeacherInformationVO> selectTeacherInformationWithAccountInfo(@Param("entity") TeacherInformationRO entity,
+                                                                       @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    Long selectTeacherInformationWithAccountInfoCount(@Param("entity") TeacherInformationRO entity);
+
+    Set<String> getDistincetTeacherNames(@Param("entity") TeacherInformationRO teacherInformationRO);
 }

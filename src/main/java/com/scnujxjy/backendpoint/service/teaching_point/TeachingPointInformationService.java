@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -202,14 +204,23 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
         List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
                 .eq(TeachingPointAdminInformationPO::getTeachingPointId, teachingPointInformationPO.getTeachingPointId()));
 
+        List<TeachingPointMangerInfoVO> teachingPointMangerInfoVOList = new ArrayList<>();
+
         for(TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS){
+            PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, teachingPointAdminInformationPO.getUserId()));
+
             TeachingPointMangerInfoVO teachingPointMangerInfoVO = new TeachingPointMangerInfoVO()
                     .setMangerType(teachingPointAdminInformationPO.getIdentity())
+                    .setName(teachingPointAdminInformationPO.getName())
+                    .setUsername(platformUserPO.getUsername())
+                    .setIdNumber(teachingPointAdminInformationPO.getIdCardNumber())
                     ;
+            teachingPointMangerInfoVOList.add(teachingPointMangerInfoVO);
         }
 
 
 
-        return null;
+        return SaResult.ok().setData(teachingPointMangerInfoVOList);
     }
 }

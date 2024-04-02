@@ -1145,6 +1145,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 );
                 LiveResourceVO liveResourceVO = new LiveResourceVO();
                 BeanUtils.copyProperties(liveResourcesPO, liveResourceVO);
+                liveResourceVO.setPlayBack(singleLivingSetting.getPlayBackState(liveResourcesPO.getChannelId()));
                 courseSectionVO.setCourseSectionContentVO(liveResourceVO);
 
             }else if(sectionsPO.getContentType().equals(CourseContentType.VIDEO.getContentType())){
@@ -1190,6 +1191,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             courseSectionVO.setTutorList(tutorList);
 
             // 目前只处理这两种节点内容
+
+            // 获取回放状态
+
 
             courseSectionVOs.add(courseSectionVO);
         }
@@ -1710,10 +1714,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 );
                 LiveResourceVO liveResourceVO = new LiveResourceVO();
                 BeanUtils.copyProperties(liveResourcesPO, liveResourceVO);
+                liveResourceVO.setPlayBack(singleLivingSetting.getPlayBackState(liveResourcesPO.getChannelId()));
                 courseSectionVO.setCourseSectionContentVO(liveResourceVO);
 
             }else if(sectionsPO.getContentType().equals(CourseContentType.VIDEO.getContentType())){
-                // 直播节点
+                // 点播节点
                 VideoResourcesPO videoResourcesPO = videoResourcesService.getBaseMapper().selectOne(new LambdaQueryWrapper<VideoResourcesPO>()
                         .eq(VideoResourcesPO::getSectionId, sectionsPO.getId())
                 );

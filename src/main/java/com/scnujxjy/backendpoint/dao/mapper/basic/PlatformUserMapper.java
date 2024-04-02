@@ -48,4 +48,7 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
      * @return
      */
     Integer updateUser(@Param("platformUserPO") PlatformUserPO platformUserPO);
+
+    @Select("select * from platform_user where username=#{username} limit 1")
+    PlatformUserPO selectByUserName(String username);
 }

@@ -15,7 +15,9 @@ public enum ResultCode {
     // 参数错误：10001-19999
     PARAM_IS_INVALID(10001, "参数无效"),
     PARAM_IS_NULL(10002, "参数不能为空"),
-    DATABASE_INSERT_ERROR(10003, "参数不能为空"),
+    DATABASE_INSERT_ERROR(10003, "数据库插入数据失败"),
+    DATABASE_DELETE_ERROR(10004, "已删除，无需再删除"),
+    DATABASE_DELETE_ERROR2(10005, "数据库删除失败"),
 
     // 用户错误：20001-29999
     USER_NOT_EXIST(20001, "用户不存在"),
@@ -28,6 +30,24 @@ public enum ResultCode {
     TEACHING_POINT_FAIL2(20008, "创建新的教学点，教学点简称不能为空"),
     TEACHING_POINT_FAIL3(20009, "创建新的教学点，教学点名称重复"),
     TEACHING_POINT_FAIL4(20010, "根据教学点ID查询不到教学点信息"),
+    USER_LOGIN_FAIL3(20011, "修改密码时入参不能为空"),
+    USER_LOGIN_FAIL4(20012, "密码不符合格式规范"),
+    USER_LOGIN_FAIL5(20013, "修改密码时插入数据库失败"),
+    COLLEGE_FAIL1(20014, "没有找到合适的二级学院 ID 来创建新的二级学院"),
+    COLLEGE_FAIL2(20015, "二级学院已经存在了"),
+    COLLEGE_FAIL3(20016, "二级学院插入数据库失败"),
+    COLLEGE_FAIL4(20017, "非法的二级学院 ID"),
+    TEACHER_INFORMATION_FAIL1(20018, "添加老师的姓名不能为空"),
+    TEACHER_INFORMATION_FAIL2(20019, "教师类型 主讲/辅导教师 不能为空"),
+    TEACHER_INFORMATION_FAIL3(20020, "教师的工号/学号、身份证号码不能同时为空"),
+    TEACHER_INFORMATION_FAIL4(20021, "创建教师平台账户时，教师的工号/学号、身份证号码不合理"),
+    TEACHER_INFORMATION_FAIL5(20022, "创建教师平台账户时，该教师账户已存在"),
+    TEACHER_INFORMATION_FAIL6(20023, "创建教师平台账户时，账号长度不能小于 6"),
+    TEACHER_INFORMATION_FAIL7(20024, "修改教师信息时，根据 user_id 找不到该教师"),
+    TEACHER_INFORMATION_FAIL8(20025, "修改教师信息时，更新数据库失败"),
+    TEACHER_INFORMATION_FAIL9(20026, "创建教师时，插入数据库失败"),
+    TEACHER_INFORMATION_FAIL10(20027, "删除教师失败"),
+    TEACHER_INFORMATION_FAIL11(20028, "批量导入师资表失败"),
 
     // 课程学习错误码
     UPDATE_COURSE_FAIL1(20007, "课程ID 不存在"),

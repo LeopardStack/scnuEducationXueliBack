@@ -60,7 +60,7 @@ public class SingleLivingController {
     //不能获取不存在的直播间会报错
     @PostMapping("/edit/getChannelStatus")
     public SaResult deleteChannels(@RequestBody ChannelInfoRequest channelInfoRequest) {
-        if (channelInfoRequest.getChannelIds()==null ||channelInfoRequest.getChannelIds().size()==0) {
+        if (channelInfoRequest.getChannelIds() == null || channelInfoRequest.getChannelIds().size() == 0) {
             throw dataMissError();
         }
         return singleLivingService.getChannelStatus(channelInfoRequest.getChannelIds());
@@ -71,7 +71,7 @@ public class SingleLivingController {
     public SaResult getChannelView(@RequestBody ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
         //要么传getCurrentDay，要么传getStartTime和getEndTime。不能三者同时为空
         if (StrUtil.isBlank(channelViewRequest.getChannelId()) ||
-       (StrUtil.isBlank(channelViewRequest.getCurrentDay()) && StrUtil.isBlank(channelViewRequest.getStartTime()) && StrUtil.isBlank(channelViewRequest.getEndTime()))) {
+                (StrUtil.isBlank(channelViewRequest.getCurrentDay()) && StrUtil.isBlank(channelViewRequest.getStartTime()) && StrUtil.isBlank(channelViewRequest.getEndTime()))) {
             throw dataMissError();
         }
         return singleLivingService.getChannelCardPush(channelViewRequest);
@@ -85,18 +85,17 @@ public class SingleLivingController {
             throw dataMissError();
         }
 
-        return singleLivingService.exportStudentSituation(sectionId,response);
+        return singleLivingService.exportStudentSituation(sectionId, response);
     }
-
 
 
     @PostMapping("/edit/exportAllStudentSituation")
     public void exportAllStudentSituation(@RequestParam String[] courseId, HttpServletResponse response) {
         // 校验参数
-        if (courseId.length==0) {
+        if (courseId.length == 0) {
             throw dataMissError();
         }
-        singleLivingService.exportAllCourseSituation(courseId,response);
+        singleLivingService.exportAllCourseSituation(courseId, response);
         return;
     }
 
@@ -122,14 +121,14 @@ public class SingleLivingController {
         }
 
         List<String> roleList = StpUtil.getRoleList();
-        if(roleList.contains("教师")){
+        if (roleList.contains("教师")) {
             String loginIdAsString = StpUtil.getLoginIdAsString();
             Long userIdByUsername = platformUserService.getUserIdByUsername(loginIdAsString);
             TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                     .eq(TeacherInformationPO::getTeacherUsername, loginIdAsString));
-            if(teacherInformationPO.getTeacherType2().equals("主讲教师")){
+            if (teacherInformationPO.getTeacherType2().equals("主讲教师")) {
                 return singleLivingService.getTeacherChannelUrl(channelId);
-            }else{
+            } else {
                 return singleLivingService.createTutorChannel(channelId, String.valueOf(userIdByUsername));
             }
         }
@@ -139,7 +138,7 @@ public class SingleLivingController {
 
     //返回学生登录链接
     @PostMapping("/edit/getStudentChannelUrl")
-    public SaResult getStudentChannelUrl(String channelId){
+    public SaResult getStudentChannelUrl(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }
@@ -148,28 +147,28 @@ public class SingleLivingController {
 
     //返回助教单点登录链接
     @PostMapping("/edit/getTutorChannelUrl")
-    public  SaResult getTutorChannelUrl(String channelId){
+    public SaResult getTutorChannelUrl(String channelId) {
         Object userId = StpUtil.getLoginId();
         if (StrUtil.isBlank(channelId) || Objects.isNull(userId)) {
             throw dataMissError();
         }
-        return singleLivingService.getTutorChannelUrl(channelId,userId.toString());
+        return singleLivingService.getTutorChannelUrl(channelId, userId.toString());
     }
 
     //创建助教并返回单点登录链接
     @PostMapping("/edit/createTutorChannel")
-    public  SaResult createTutorChannel(String channelId){
+    public SaResult createTutorChannel(String channelId) {
         Object userId = StpUtil.getLoginId();
         if (StrUtil.isBlank(channelId) || Objects.isNull(userId)) {
             throw dataMissError();
         }
-        return singleLivingService.createTutorChannel(channelId,userId.toString());
+        return singleLivingService.createTutorChannel(channelId, userId.toString());
     }
 
 
     //创建助教并返回单点登录链接
     @PostMapping("/edit/createTutorChannel1")
-    public  SaResult createTutorChannel1(String channelId){
+    public SaResult createTutorChannel1(String channelId) {
         String loginIdAsString = StpUtil.getLoginIdAsString();
         Long userId = platformUserService.getUserIdByUsername(loginIdAsString);
         return singleLivingService.createTutorChannel(channelId, String.valueOf(userId));
@@ -199,9 +198,6 @@ public class SingleLivingController {
     @PostMapping("/edit/queryChannelWhiteStudent")
     public SaResult queryChannelWhiteStudent(@RequestBody ChannelInfoRequest request) {
         // 校验参数
-        if (StrUtil.isBlank(request.getChannelId())) {
-            throw dataMissError();
-        }
 
         return singleLivingService.getChannelWhiteList(request);
     }

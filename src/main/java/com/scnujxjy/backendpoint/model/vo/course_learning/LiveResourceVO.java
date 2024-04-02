@@ -26,4 +26,9 @@ public class LiveResourceVO extends CourseSectionContentVO{
 
     private Date updatedTime;
 
+    /**
+     * 是否回放中
+     */
+    private boolean isPlayBack;
+
 }
