@@ -32,6 +32,7 @@ import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CourseScheduleFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuTimeInterval;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
@@ -459,9 +460,10 @@ public class VideoStreamRecordController {
      */
     @PostMapping("/set_living_args")
     @SaCheckPermission("设置回放")
-    public SaResult createLivingRoom(@RequestBody ChannelSetRO channelSetRO) {
+    @Deprecated
+    public SaResult setLivingIsPlayBack(@RequestBody ChannelSetRO channelSetRO) {
         if (channelSetRO == null) {
-            return SaResult.error("创建直播间失败").setCode(2000);
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         if ("Y".equals(channelSetRO.getPlayBack())) {
             boolean b = singleLivingSetting.setPlayBack(channelSetRO.getChannelId(), true, true);

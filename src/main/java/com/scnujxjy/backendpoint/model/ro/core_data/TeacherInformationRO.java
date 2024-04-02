@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro.core_data;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
 
 @Builder
 @Accessors(chain = true)
@@ -17,7 +19,7 @@ public class TeacherInformationRO {
     /**
      * 用户id
      */
-    private int userId;
+    private Integer userId;
 
     /**
      * 姓名
@@ -32,6 +34,7 @@ public class TeacherInformationRO {
     /**
      * 出生年月
      */
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date birthDate;
 
     /**
@@ -72,7 +75,7 @@ public class TeacherInformationRO {
     /**
      * 所属学院
      */
-    private String collegeId;
+    private String college;
 
     /**
      * 所属教学点
@@ -123,4 +126,9 @@ public class TeacherInformationRO {
      * 教师的平台用户名
      */
     private String teacherUsername;
+
+    /**
+     * 教师的平台用户名集合
+     */
+    private List<String> usernames;
 }

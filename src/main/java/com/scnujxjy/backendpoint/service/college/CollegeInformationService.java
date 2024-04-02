@@ -1,11 +1,13 @@
 package com.scnujxjy.backendpoint.service.college;
 
+import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.inverter.college.CollegeInformationInverter;
@@ -13,12 +15,15 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeInformationVO;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * <p>
@@ -33,6 +38,9 @@ import java.util.Objects;
 public class CollegeInformationService extends ServiceImpl<CollegeInformationMapper, CollegeInformationPO> implements IService<CollegeInformationPO> {
     @Resource
     private CollegeInformationInverter collegeInformationInverter;
+
+    @Resource
+    private CollegeAdminInformationService collegeAdminInformationService;
 
     /**
      * 根据collegeId查询学院信息
@@ -133,4 +141,65 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
         return count;
     }
 
+
+    /**
+     * 添加单个二级学院信息
+     * @param collegeInformationRO 前端传递过来的新的二级学院信息
+     * @return
+     */
+    public SaResult addCollegeInfo(CollegeInformationRO collegeInformationRO) {
+        CollegeInformationPO collegeInformationPO = new CollegeInformationPO()
+                .setCollegeName(collegeInformationRO.getCollegeName())
+                .setCollegePhone(collegeInformationRO.getCollegePhone())
+                .setCollegeAddress(collegeInformationRO.getCollegeAddress());
+
+        List<CollegeInformationPO> collegeInformationPOS = getBaseMapper().selectList(null);
+
+
+        // 使用stream处理，先转换为int比较，找到最大的collegeId
+        Optional<CollegeInformationPO> maxCollegeInformation = collegeInformationPOS.stream()
+                .max(Comparator.comparingInt(c -> Integer.parseInt(c.getCollegeId())));
+
+        // 检查是否找到最大的collegeId
+        if (maxCollegeInformation.isPresent()) {
+            String maxCollegeId = maxCollegeInformation.get().getCollegeId();
+            collegeInformationPO.setCollegeId(maxCollegeId);
+
+            Integer i = getBaseMapper().selectCount(new LambdaQueryWrapper<CollegeInformationPO>()
+                    .eq(CollegeInformationPO::getCollegeName, collegeInformationPO.getCollegeName()));
+            if(i > 0){
+                return ResultCode.COLLEGE_FAIL2.generateErrorResultInfo();
+            }
+
+            int insert = getBaseMapper().insert(collegeInformationPO);
+            if(insert > 0){
+                return SaResult.ok("新增成功");
+            }else{
+                return ResultCode.COLLEGE_FAIL3.generateErrorResultInfo();
+            }
+
+        } else {
+            return ResultCode.COLLEGE_FAIL1.generateErrorResultInfo();
+        }
+
+    }
+
+
+    /**
+     * 查询二级学院管理员信息
+     * @param collegeInformationRO
+     * @return
+     */
+    public SaResult queryCollegeAdminInfo(CollegeInformationRO collegeInformationRO) {
+        CollegeInformationPO collegeInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
+                .eq(CollegeInformationPO::getCollegeId, collegeInformationRO.getCollegeId()));
+        if(collegeInformationPO == null){
+            return ResultCode.COLLEGE_FAIL4.generateErrorResultInfo();
+        }else{
+            List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<CollegeAdminInformationPO>()
+                    .eq(CollegeAdminInformationPO::getCollegeId, collegeInformationPO.getCollegeId()));
+
+            return SaResult.ok().setData(collegeAdminInformationPOS);
+        }
+    }
 }

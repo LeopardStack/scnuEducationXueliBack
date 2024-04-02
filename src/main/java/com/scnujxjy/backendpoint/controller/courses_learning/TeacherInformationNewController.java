@@ -10,6 +10,8 @@ import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
+import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.service.platform_message.UserUploadsService;
 import com.scnujxjy.backendpoint.service.teaching_process.TeacherInformationNewService;
 import com.scnujxjy.backendpoint.util.excelListener.TeacherInformationListener;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,12 @@ public class TeacherInformationNewController {
 
     @Resource
     private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private OldDataSynchronize oldDataSynchronize;
+
+    @Resource
+    private UserUploadsService userUploadsService;
 
     @RequestMapping(value = "/query", method = RequestMethod.POST)
     public SaResult query(@RequestBody TeacherInformationRequest teacherInformationRequest) {
@@ -72,7 +80,8 @@ public class TeacherInformationNewController {
 
     @RequestMapping(value = "/import", method = RequestMethod.POST)
     public SaResult importFile(@RequestParam("file") MultipartFile file) {
-        TeacherInformationListener listener = new TeacherInformationListener(teacherInformationMapper, platformUserMapper);
+        TeacherInformationListener listener = new TeacherInformationListener(teacherInformationMapper, platformUserMapper,
+                oldDataSynchronize, userUploadsService, null, null, null);
         try {
             EasyExcel.read(file.getInputStream(), TeacherInformationExcelImportVO.class, listener)
                     .excelType(ExcelTypeEnum.XLSX) // 指定 Excel 文件格式为 XLSX

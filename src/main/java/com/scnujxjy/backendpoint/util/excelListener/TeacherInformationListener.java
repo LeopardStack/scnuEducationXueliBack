@@ -8,12 +8,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationErrorRecord;
 import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationExcelImportVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleExcelOutputVO;
+import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.service.platform_message.UserUploadsService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,12 +31,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
+@Data
 public class TeacherInformationListener extends AnalysisEventListener<TeacherInformationExcelImportVO> {
 
     private TeacherInformationMapper teacherInformationMapper;
     private PlatformUserMapper platformUserMapper;
+    private OldDataSynchronize oldDataSynchronize;
+    private UserUploadsService userUploadsService;
+    private Long uploadId;
+    private String importBucketName;
+    private MinioService minioService;
 
     private int dataCount = 0; // 添加一个计数变量
+
+    private  boolean uploadToMinio = false;
 
     // 记录导入失败的数据
     private List<TeacherInformationErrorRecord> errorRecords = new ArrayList<>();
@@ -37,9 +54,16 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
 
 
 
-    public TeacherInformationListener(TeacherInformationMapper teacherInformationMapper, PlatformUserMapper platformUserMapper) {
+    public TeacherInformationListener(TeacherInformationMapper teacherInformationMapper, PlatformUserMapper platformUserMapper,
+                                      OldDataSynchronize oldDataSynchronize, UserUploadsService userUploadsService,
+                                      Long uploadId, MinioService minioService, String importBucketName) {
         this.teacherInformationMapper = teacherInformationMapper;
         this.platformUserMapper=platformUserMapper;
+        this.oldDataSynchronize=oldDataSynchronize;
+        this.userUploadsService=userUploadsService;
+        this.uploadId=uploadId;
+        this.minioService=minioService;
+        this.importBucketName=importBucketName;
     }
 
     public int getDataCount() {
@@ -103,7 +127,8 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
 
 
     public static TeacherInformationPO from(TeacherInformationExcelImportVO vo, TeacherInformationMapper teacherInformationMapper) {
-        TeacherInformationListener listener = new TeacherInformationListener(null,null);
+        TeacherInformationListener listener = new TeacherInformationListener(null,null,
+                null, null, null, null, null);
         Date birthDate = null;
         if(vo.getIdCardNumber() != null && !vo.getIdCardNumber().isEmpty()){
             birthDate = listener.convertBirthDateFromIdCard(vo.getIdCardNumber());
@@ -369,6 +394,8 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
     @Override
     public void doAfterAllAnalysed(AnalysisContext context) {
         log.info("总共读入了 " + dataCount + " 条数据");
+        UserUploadsPO userUploadsPO = userUploadsService.getBaseMapper().selectOne(new LambdaQueryWrapper<UserUploadsPO>()
+                .eq(UserUploadsPO::getId, this.uploadId));
 
         if (!errorRecords.isEmpty()) {
             log.error("存在导入失败的数据 " + errorRecords.size() + " 条");
@@ -376,24 +403,62 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
             String currentDateTime = LocalDateTime.now().format(formatter);
             String relativePath = "data_import_error_excel/teacherInformation";
             String errorFileName = currentDateTime + "_errorImportTeacherInformation.xlsx";
+            if(uploadToMinio){
 
-            // 创建目录
-            File directory = new File(relativePath);
-            if (!directory.exists()) {
-                boolean dirsCreated = directory.mkdirs();
-                if (!dirsCreated) {
-                    log.error("Failed to create directories: " + relativePath);
-                    return;  // 或者抛出异常
+                String fileUrl = userUploadsPO.getFileUrl().replace("import", "feedback");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    // 现在写入 ByteArrayOutputStream
+                    EasyExcel.write(baos, TeacherInformationErrorRecord.class)
+                            .sheet("Sheet1")
+                            .doWrite(errorRecords);
+                } catch (Exception e) {
+                    log.error("写入排课表处理结果反馈文件失败 " + e.toString());
                 }
-            }
 
-            EasyExcel.write(relativePath + "/" + errorFileName,
-                    TeacherInformationErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
+                // 将 ByteArrayOutputStream 转换为 ByteArrayInputStream
+                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+
+                // 现在你可以使用 uploadStreamToMinio 方法上传数据到 Minio
+                boolean uploadSuccess = minioService.uploadStreamToMinio(bais, fileUrl, importBucketName);
+
+                if (uploadSuccess) {
+                    log.info("排课表反馈文件上传成功");
+                    // 最后更新消息列表
+
+                    userUploadsPO.setResultDesc("存在部分错误，请下载反馈文件");
+                    userUploadsPO.setResultUrl(fileUrl);
+
+                } else {
+                    log.error("排课表反馈文件上传失败");
+                    // 最后更新消息列表
+                    userUploadsPO.setResultDesc("服务器处理失败");
+                }
+            }else{
+
+                // 创建目录
+                File directory = new File(relativePath);
+                if (!directory.exists()) {
+                    boolean dirsCreated = directory.mkdirs();
+                    if (!dirsCreated) {
+                        log.error("Failed to create directories: " + relativePath);
+                        return;  // 或者抛出异常
+                    }
+                }
+
+                EasyExcel.write(relativePath + "/" + errorFileName,
+                        TeacherInformationErrorRecord.class).sheet("ErrorRecords").doWrite(errorRecords);
+            }
+        }else{
+            userUploadsPO.setResultDesc("全部导入成功");
         }
 
 
+        int i = userUploadsService.getBaseMapper().updateById(userUploadsPO);
+        log.info("上传消息已更新 " + i);
+
         // 检查同名同性的教师
-        checkForDuplicateTeachers();
+//        checkForDuplicateTeachers();
     }
 
     private void checkForDuplicateTeachers() {

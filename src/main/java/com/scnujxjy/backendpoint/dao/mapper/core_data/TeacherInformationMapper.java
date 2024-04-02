@@ -2,13 +2,16 @@ package com.scnujxjy.backendpoint.dao.mapper.core_data;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRequest;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.TeacherInformationSearchRO;
+import com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * <p>
@@ -76,4 +79,11 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
     List<TeacherInformationPO> selectTeacherInformation(TeacherInformationRequest teacherInformationRequest);
 
     Long selectTeacherInformationCount(TeacherInformationRequest teacherInformationRequeste);
+
+    List<TeacherInformationVO> selectTeacherInformationWithAccountInfo(@Param("entity") TeacherInformationRO entity,
+                                                                       @Param("pageSize") Long pageSize, @Param("l") long l);
+
+    Long selectTeacherInformationWithAccountInfoCount(@Param("entity") TeacherInformationRO entity);
+
+    Set<String> getDistincetTeacherNames(@Param("entity") TeacherInformationRO teacherInformationRO);
 }

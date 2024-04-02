@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.basic;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
@@ -29,6 +30,7 @@ import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformat
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.annotations.CheckIPWhiteList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -391,6 +393,65 @@ public class PlatformUserController {
         }
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO);
+    }
+
+
+    /**
+     * 修改平台用户密码
+     * @param platformUserRO
+     * @return
+     */
+    @PostMapping("/platform_change_password")
+    @SaCheckPermission("平台基础信息.修改密码")
+    public SaResult changePassword(@RequestBody PlatformUserRO platformUserRO) {
+        // 参数校验
+        if (Objects.isNull(platformUserRO)) {
+            return ResultCode.USER_LOGIN_FAIL3.generateErrorResultInfo();
+        }
+
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername(platformUserRO.getUsername());
+
+        // 检查 platformUserVO 是否为空
+        if (Objects.isNull(platformUserVO)) {
+            return ResultCode.USER_NOT_EXIST.generateErrorResultInfo();
+        }
+
+        String password = platformUserRO.getPassword();
+
+        // 密码强度校验
+        String passwordValidationError = validatePasswordStrength(password);
+        if (passwordValidationError != null) {
+            return ResultCode.USER_LOGIN_FAIL4.generateErrorResultInfo().setMsg(passwordValidationError);
+        }
+
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), password);
+        if(aBoolean){
+            return SaResult.ok("修改密码成功");
+        }
+
+        // 返回数据
+        return ResultCode.USER_LOGIN_FAIL5.generateErrorResultInfo();
+    }
+
+    /**
+     * Validates the password strength and returns null if the password is strong enough.
+     * If the password is not strong enough, it returns a validation error message.
+     */
+    private String validatePasswordStrength(String password) {
+        if (password == null || password.length() < 6 || password.length() > 20) {
+            return "密码必须为 6 到 20 位";
+        }
+        boolean hasUpperCase = false, hasLowerCase = false, hasDigit = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpperCase = true;
+            else if (Character.isLowerCase(c)) hasLowerCase = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+        }
+        // 密码必须包含大小写字母和数字
+        if (!hasUpperCase || !hasLowerCase || !hasDigit) {
+            return "密码必须由字母的大小写和数字组成";
+        }
+        return null; // 密码强度符合要求
     }
 }
 

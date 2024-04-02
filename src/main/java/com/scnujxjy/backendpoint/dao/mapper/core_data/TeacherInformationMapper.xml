@@ -5,6 +5,11 @@
         FROM teacher_information ti
     </sql>
 
+    <sql id="commonTeacherAccountJoin">
+        FROM teacher_information ti
+        LEFT JOIN platform_user pu ON pu.username = ti.teacher_username
+    </sql>
+
     <sql id="commonFilters">
         <if test='entity.id != null'>
             AND ti.id = #{entity.id}
@@ -89,6 +94,62 @@
                 and t.teacher_type2 =#{teacherType}
             </if>
         </where>
+    </select>
+
+
+    <sql id="commonTeacherAccountFilters">
+        <if test='entity.userId != null'>
+            AND ti.user_id = #{entity.userId}
+        </if>
+        <if test='entity.teacherUsername != null'>
+            AND ti.teacher_username = #{entity.teacherUsername}
+        </if>
+        <if test='entity.name != null'>
+            AND ti.name = #{entity.name}
+        </if>
+        <if test='entity.idCardNumber != null'>
+            AND ti.id_card_number = #{entity.idCardNumber}
+        </if>
+        <if test='entity.name != null'>
+            AND ti.name = #{entity.name}
+        </if>
+
+        <if test='entity.workNumber != null'>
+            AND ti.work_number = #{entity.workNumber}
+        </if>
+
+        <if test='entity.teacherType2 != null'>
+            AND ti.teacher_type2 = #{entity.teacherType2}
+        </if>
+
+        <if test="entity.usernames != null and !entity.usernames.isEmpty()">
+            AND ti.teacher_username IN
+            <foreach collection="entity.usernames" item="username" open="(" separator="," close=")">
+                #{username}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="selectTeacherInformationWithAccountInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.core_data.TeacherInformationVO">
+        SELECT  ti.*, pu.username
+        <include refid="commonTeacherAccountJoin" />
+        WHERE 1=1
+        <include refid="commonTeacherAccountFilters" />
+        LIMIT #{l}, #{pageSize}
+    </select>
+
+    <select id="selectTeacherInformationWithAccountInfoCount" resultType="java.lang.Long">
+        SELECT  COUNT(*)
+        <include refid="commonTeacherAccountJoin" />
+        WHERE 1=1
+        <include refid="commonTeacherAccountFilters" />
+    </select>
+    <select id="getDistincetTeacherNames" resultType="java.lang.String">
+        SELECT DISTINCT ti.name
+        <include refid="commonTeacherAccountJoin" />
+        WHERE 1=1
+        <include refid="commonTeacherAccountFilters" />
     </select>
 
 </mapper>
