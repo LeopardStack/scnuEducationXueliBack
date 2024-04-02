@@ -1558,7 +1558,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             // 看她是否是重修的学生
             List<RetakeStudentsPO> retakeStudentsPOS = retakeStudentsService.getBaseMapper().selectList(
                     new LambdaQueryWrapper<RetakeStudentsPO>()
-                            .eq(RetakeStudentsPO::getStudentNumber, highestGradeStudent.getStudentNumber()));
+                            .eq(RetakeStudentsPO::getStudentNumber, highestGradeStudent.getStudentNumber()
+                            ));
 
             // 从 retakeStudentsPOS 中提取所有 courseId，并收集到 Set 中
             Set<Long> courseIds = retakeStudentsPOS.stream()
@@ -1566,9 +1567,15 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toSet());
 
             // 使用 classNameList 创建 CoursesLearningRO 并设置 courseIds
-            CoursesLearningRO coursesLearningRO = new CoursesLearningRO().setClassNameSet(classNameList);
-//            CoursesLearningRO coursesLearningRO = new CoursesLearningRO();
-            coursesLearningRO.setCourseIds(courseIds);
+            CoursesLearningRO coursesLearningRO = new CoursesLearningRO();
+            if(retakeStudentsPOS.size() > 0){
+                coursesLearningRO.setCourseIds(courseIds);
+            }else{
+                coursesLearningRO = new CoursesLearningRO().setClassNameSet(classNameList);
+                coursesLearningRO.setCourseIds(courseIds);
+            }
+
+
 
 
             // 现在 coursesLearningRO 包含了正确的列表，可以传递给 selectCourseLearningData 方法

@@ -5,6 +5,7 @@ import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.RetakeStudentsPO;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
@@ -48,12 +49,15 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
     @Resource
     private CoursesClassMappingService coursesClassMappingService;
 
+    @Resource
+    public LiveResourceService liveResourceService;
+
     /**
      * 添加重修学生
      * @param courseRetakeRO
      * @return
      */
-    public boolean addRetakeStudents(CourseRetakeRO courseRetakeRO) {
+    public SaResult addRetakeStudents(CourseRetakeRO courseRetakeRO) {
         StudentStatusPO studentStatusPO = studentStatusService.getBaseMapper().selectOne(new LambdaQueryWrapper<StudentStatusPO>()
                 .eq(StudentStatusPO::getStudentNumber, courseRetakeRO.getStudentNumber()));
         PersonalInfoPO personalInfoPO = personalInfoService.getBaseMapper().selectOne(new LambdaQueryWrapper<PersonalInfoPO>()
@@ -67,7 +71,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
                     .eq(CoursesClassMappingPO::getCourseId, courseRetakeRO.getCourseId()));
             if(coursesClassMappingPOS.isEmpty()){
                 log.info(StpUtil.getLoginIdAsString() + " 添加重修名单时，课程主键 ID 找不到");
-                return false;
+                return ResultCode.UPDATE_COURSE_FAI7.generateErrorResultInfo();
             }
             String studentClassIdentifier = studentStatusPO.getClassIdentifier();
             boolean b = coursesClassMappingPOS.stream()
@@ -76,7 +80,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
                 // 如果它是正常的班级里的学生 也为 false
                 log.info(StpUtil.getLoginIdAsString() + " 添加重修名单时，该学生已经在正常的班级里 "
                         + courseRetakeRO.getStudentNumber());
-                return false;
+                return ResultCode.UPDATE_COURSE_FAI8.generateErrorResultInfo();
             }
             RetakeStudentsPO retakeStudentsPO  = new RetakeStudentsPO()
                     .setCourseId(courseRetakeRO.getCourseId())
@@ -88,7 +92,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
             );
             if(i > 0){
                 log.info(StpUtil.getLoginIdAsString() + " 添加重修名单时，该学生已经在重修库中");
-                return false;
+                return ResultCode.UPDATE_COURSE_FAI9.generateErrorResultInfo();
             }
             int insert = getBaseMapper().insert(retakeStudentsPO);
             if(insert > 0){
@@ -100,17 +104,19 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
                         .setName(personalInfoPO.getName())
                         ;
                 studentWhiteListVOS.add(studentWhiteListVO);
+                LiveResourcesPO liveResourcesPO = liveResourceService.getBaseMapper().selectLiveResource(courseRetakeRO.getCourseId());
+                channelInfoRequest.setChannelId(liveResourcesPO.getChannelId());
                 channelInfoRequest.setStudentWhiteList(studentWhiteListVOS);
                 SaResult saResult = singleLivingService.addChannelWhiteStudent(channelInfoRequest);
-                if(saResult.getCode().equals(ResultCode.PARTIALSUCCESS.getCode())){
-                    return true;
+                if(saResult.getCode().equals(ResultCode.SUCCESS.getCode())){
+                    return SaResult.ok("添加成功");
                 }
                 log.info(StpUtil.getLoginIdAsString() + " 添加白名单失败 " + saResult.getMsg());
-                return false;
+                return ResultCode.UPDATE_COURSE_FAI10.generateErrorResultInfo();
             }
             log.info(StpUtil.getLoginIdAsString() + " 添加重修名单时，数据库插入失败 " + insert);
         }
-        return true;
+        return ResultCode.UPDATE_COURSE_FAI11.generateErrorResultInfo();
     }
 
     /**
@@ -138,12 +144,16 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
             if(delete <= 0){
                 return SaResult.error("删除失败").setCode(500);
             }
+
+            LiveResourcesPO liveResourcesPO = liveResourceService.getBaseMapper().selectLiveResource(courseRetakeRO.getCourseId());
+
             // 删除成功后 是需要删除白名单的
             ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
             List<String> deleteList = new ArrayList<>();
             deleteList.add(studentStatusPO.getIdNumber());
-
+            channelInfoRequest.setChannelId(liveResourcesPO.getChannelId());
             channelInfoRequest.setDeleteCodeList(deleteList);
+            channelInfoRequest.setIsClear("N");
             SaResult saResult = singleLivingService.deleteChannelWhiteStudent(channelInfoRequest);
             if(!saResult.getCode().equals(ResultCode.PARTIALSUCCESS.getCode())){
                 log.error(StpUtil.getLoginIdAsString() + " 删除重修学生时删除白名单失败 " + saResult.getMsg());

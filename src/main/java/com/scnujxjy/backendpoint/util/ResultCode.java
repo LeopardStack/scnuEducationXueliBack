@@ -50,12 +50,17 @@ public enum ResultCode {
     TEACHER_INFORMATION_FAIL11(20028, "批量导入师资表失败"),
 
     // 课程学习错误码
-    UPDATE_COURSE_FAIL1(20007, "课程ID 不存在"),
-    UPDATE_COURSE_FAIL2(20008, "课程ID 找不到对应的课程信息"),
-    UPDATE_COURSE_FAIL3(20009, "创建课程节点时 节点内容不合法"),
-    UPDATE_COURSE_FAIL4(20010, "学生获取观看链接失败"),
-    UPDATE_COURSE_FAIL5(20011, "通过课程 ID 获取不到课程信息"),
-    UPDATE_COURSE_FAIL6(20012, "删除课程失败"),
+    UPDATE_COURSE_FAIL1(21007, "课程ID 不存在"),
+    UPDATE_COURSE_FAIL2(21008, "课程ID 找不到对应的课程信息"),
+    UPDATE_COURSE_FAIL3(21009, "创建课程节点时 节点内容不合法"),
+    UPDATE_COURSE_FAIL4(21010, "学生获取观看链接失败"),
+    UPDATE_COURSE_FAIL5(21011, "通过课程 ID 获取不到课程信息"),
+    UPDATE_COURSE_FAIL6(21012, "删除课程失败"),
+    UPDATE_COURSE_FAI7(21013, "添加重修名单时，课程主键 ID 找不到"),
+    UPDATE_COURSE_FAI8(21014, "添加重修名单时，该学生已经在正常的班级里"),
+    UPDATE_COURSE_FAI9(21015, "添加重修名单时，该学生已经在重修库中"),
+    UPDATE_COURSE_FAI10(21016, "添加白名单失败"),
+    UPDATE_COURSE_FAI11(21017, "添加重修学生失败"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

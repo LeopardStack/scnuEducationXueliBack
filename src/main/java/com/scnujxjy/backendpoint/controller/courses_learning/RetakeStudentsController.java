@@ -34,12 +34,7 @@ public class RetakeStudentsController {
     @SaCheckPermission("课程学习.删除课程")
     public SaResult addRetakeStudents(@RequestBody CourseRetakeRO courseRetakeRO) {
 
-        boolean result =  retakeStudentsService.addRetakeStudents(courseRetakeRO);
-        // 转换并返回
-        if(result){
-            return SaResult.ok("添加成功");
-        }
-        return SaResult.error(String.valueOf(result));
+        return retakeStudentsService.addRetakeStudents(courseRetakeRO);
     }
 
     /**
