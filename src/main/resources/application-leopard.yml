@@ -145,3 +145,7 @@ knife4j:
     username: scnuAdmin
     # Basic认证密码
     password: scnuAdmin2024@
+
+#设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
+singleLiving:
+  category: 520488
