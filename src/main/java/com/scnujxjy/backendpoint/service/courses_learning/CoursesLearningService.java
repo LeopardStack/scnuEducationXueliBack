@@ -1246,6 +1246,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if(insert <= 0){
             SaResult.error("更新节点信息失败 插入数据库失败");
         }
+        updateSectionsSequence(sectionsPO.getCourseId());
         return SaResult.ok("成功修改节点信息");
     }
 
