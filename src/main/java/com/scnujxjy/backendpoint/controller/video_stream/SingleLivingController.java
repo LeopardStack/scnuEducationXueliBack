@@ -112,6 +112,14 @@ public class SingleLivingController {
         return singleLivingService.setRecordSetting(request);
     }
 
+    @PostMapping("/edit/getRecordSetting")
+    public SaResult getWatchCondition(String channelId){
+        if (StrUtil.isBlank(channelId)) {
+            throw dataMissError();
+        }
+        return singleLivingService.getRecordSetting(channelId);
+    }
+
     //返回教师单点登录链接
     // 要区分助教
     @PostMapping("/edit/getTeacherChannelUrl")

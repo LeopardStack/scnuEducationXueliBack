@@ -22,6 +22,8 @@ public interface SingleLivingService {
 
     SaResult setRecordSetting(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
 
+    SaResult getRecordSetting(String channelId) ;
+
     SaResult getTeacherChannelUrl(String channelId);
 
     SaResult getStudentChannelUrl(String channelId);
