@@ -60,7 +60,7 @@
     </sql>
 
     <sql id="commonFilters">
-        <if test='filter.grade != null'>AND c.grade = #{filter.grade}</if>
+        <if test='filter.grade != null'>AND ci.grade = #{filter.grade}</if>
         <if test='filter.courseNameSet != null and !filter.courseNameSet.isEmpty()'>
             AND c.course_name IN
             <foreach item="courseName" collection="filter.courseNameSet" open="(" separator="," close=")">
@@ -68,10 +68,10 @@
             </foreach>
         </if>
         <if test='filter.college != null'>AND ci.college = #{filter.college}</if>
-        <if test='filter.majorName != null'>AND c.major_name = #{filter.majorName}</if>
-        <if test='filter.level != null'>AND c.level = #{filter.level}</if>
-        <if test='filter.studyForm != null'>AND c.study_form = #{filter.studyForm}</if>
-        <if test='filter.adminClass != null'>AND c.admin_class = #{filter.adminClass}</if>
+        <if test='filter.majorName != null'>AND ci.major_name = #{filter.majorName}</if>
+        <if test='filter.level != null'>AND ci.level = #{filter.level}</if>
+        <if test='filter.studyForm != null'>AND ci.study_form = #{filter.studyForm}</if>
+        <if test='filter.adminClass != null'>AND ci.admin_class = #{filter.adminClass}</if>
         <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
         <if test='filter.grades != null and !filter.grades.isEmpty()'>
             AND ci.grade IN
@@ -79,12 +79,12 @@
                 #{grade}
             </foreach>
         </if>
-        <if test='filter.studyHours != null'>AND c.study_hours = #{filter.studyHours}</if>
-        <if test='filter.assessmentType != null'>AND c.assessment_type = #{filter.assessmentType}</if>
-        <if test='filter.teachingMethod != null'>AND c.teaching_method = #{filter.teachingMethod}</if>
-        <if test='filter.courseType != null'>AND c.course_type = #{filter.courseType}</if>
-        <if test='filter.credit != null'>AND c.credit = #{filter.credit}</if>
-        <if test='filter.semester != null'>AND c.teaching_semester = #{filter.semester}</if>
+        <if test='filter.studyHours != null'>AND ci.study_hours = #{filter.studyHours}</if>
+        <if test='filter.assessmentType != null'>AND ci.assessment_type = #{filter.assessmentType}</if>
+        <if test='filter.teachingMethod != null'>AND ci.teaching_method = #{filter.teachingMethod}</if>
+        <if test='filter.courseType != null'>AND ci.course_type = #{filter.courseType}</if>
+        <if test='filter.credit != null'>AND ci.credit = #{filter.credit}</if>
+        <if test='filter.semester != null'>AND ci.teaching_semester = #{filter.semester}</if>
         <if test='filter.courseCode != null'>AND c.course_code = #{filter.courseCode}</if>
         <if test='filter.className != null'>AND ci.class_name = #{filter.className}</if>
         <if test='filter.classNameSet != null and !filter.classNameSet.isEmpty()'>

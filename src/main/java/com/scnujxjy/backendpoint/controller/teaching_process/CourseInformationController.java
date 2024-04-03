@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseInformationService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.excelListener.CourseInformationListener;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
@@ -407,20 +408,13 @@ public class CourseInformationController {
      */
     @PostMapping("/get_class_info_by_course_info")
     public SaResult getClassInfosByCoursesInfo(@RequestBody CourseInformationRO courseInformationRO) {
-        List<String> roleList = StpUtil.getRoleList();
-        log.info("登录角色 " + roleList);
-
         Set<CourseClassInfoVO> courseClassInfoVOS = null;
-        if (roleList.isEmpty()) {
-            throw dataNotFoundError();
-        } else {
-            courseClassInfoVOS = courseInformationService.getClassInfosByCoursesInfo(courseInformationRO);
+        if (Objects.isNull(courseInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
-        if (Objects.isNull(courseClassInfoVOS)) {
-            throw dataNotFoundError();
-        }
+        courseClassInfoVOS = courseInformationService.getClassInfosByCoursesInfo(courseInformationRO);
         // 转换并返回
-        return SaResult.data(courseClassInfoVOS);
+        return SaResult.ok().setData(courseClassInfoVOS);
     }
 
 }

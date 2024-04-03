@@ -278,7 +278,16 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
         Set<CourseClassInfoVO> courseClassInfoVOS = new HashSet<>();
         for(String grade: courseInformationRO.getGrades()){
             for(String courseName: courseInformationRO.getCourseNames()){
-                List<CourseClassInfoVO> courseClassInfoVOS1 =  getBaseMapper().selectClassByCourseCreateCondition(new CourseInformationRO().setGrade(grade).setCourseName(courseName));
+                List<CourseClassInfoVO> courseClassInfoVOS1 =  getBaseMapper().selectClassByCourseCreateCondition(
+                        new CourseInformationRO()
+                                .setGrade(grade)
+                                .setCourseName(courseName)
+                                .setCollege(courseInformationRO.getCollege())
+                                .setMajorName(courseInformationRO.getMajorName())
+                                .setLevel(courseInformationRO.getLevel())
+                                .setStudyForm(courseInformationRO.getStudyForm())
+                                .setClassName(courseInformationRO.getClassName())
+                );
                 courseClassInfoVOS.addAll(courseClassInfoVOS1);
             }
         }
