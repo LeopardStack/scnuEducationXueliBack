@@ -2,30 +2,38 @@ package com.scnujxjy.backendpoint.service.teaching_point;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.inverter.teaching_point.TeachingPointInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointAdminInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationQueryArgsVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointMangerInfoVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -95,10 +103,13 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
         // 列表查询 或 分页查询 并返回结果
         if (Objects.equals(true, teachingPointInformationROPageRO.getIsAll())) {
             List<TeachingPointInformationPO> teachingPointInformationPOS = baseMapper.selectList(wrapper);
-            return new PageVO<>(teachingPointInformationInverter.po2VO(teachingPointInformationPOS));
+            Integer total = baseMapper.selectCount(wrapper);
+            return new PageVO<>(teachingPointInformationInverter.po2VO(teachingPointInformationPOS)).setTotal(Long.valueOf(total));
         } else {
             Page<TeachingPointInformationPO> teachingPointInformationPOPage = baseMapper.selectPage(teachingPointInformationROPageRO.getPage(), wrapper);
-            return new PageVO<>(teachingPointInformationPOPage, teachingPointInformationInverter.po2VO(teachingPointInformationPOPage.getRecords()));
+            Integer total = baseMapper.selectCount(wrapper);
+            return new PageVO<>(teachingPointInformationPOPage, teachingPointInformationInverter.po2VO(teachingPointInformationPOPage.getRecords()))
+                    .setTotal(Long.valueOf(total));
         }
     }
 
@@ -215,6 +226,7 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
                     .setName(teachingPointAdminInformationPO.getName())
                     .setUsername(platformUserPO.getUsername())
                     .setIdNumber(teachingPointAdminInformationPO.getIdCardNumber())
+                    .setUserId(teachingPointAdminInformationPO.getUserId())
                     ;
             teachingPointMangerInfoVOList.add(teachingPointMangerInfoVO);
         }
@@ -222,5 +234,191 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
 
 
         return SaResult.ok().setData(teachingPointMangerInfoVOList);
+    }
+
+    /**
+     *
+     * @param     teachingPointAdminInformationRO
+     * @return
+     */
+    public SaResult addManager(TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        if(StrUtil.isEmpty(teachingPointAdminInformationRO.getTeachingPointId())){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL1.generateErrorResultInfo();
+        }
+        TeachingPointInformationPO teachingPointInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointAdminInformationRO.getTeachingPointId()));
+        if(teachingPointInformationPO == null){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL2.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(teachingPointAdminInformationRO.getPhone()) &&
+                StrUtil.isEmpty(teachingPointAdminInformationRO.getIdCardNumber())){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL3.generateErrorResultInfo();
+        }
+
+        String username = "";
+        if(!StrUtil.isEmpty(teachingPointAdminInformationRO.getPhone())){
+            username = "M" + teachingPointAdminInformationRO.getPhone();
+        }else if(!StrUtil.isEmpty(teachingPointAdminInformationRO.getIdCardNumber())){
+            username = "M" + teachingPointAdminInformationRO.getIdCardNumber();
+        }
+
+        if(username.length() < 6){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL4.generateErrorResultInfo();
+        }
+
+        // 为新教学点管理人员生成平台账户
+        String password=username.substring(username.length()-6);
+        String encryptedPassword = new SM3().digestHex(password);
+
+        PlatformUserPO platformUserPO = new PlatformUserPO()
+                .setRoleId(RoleEnum.TEACHING_POINT_ADMIN.getRoleId())
+                .setName(teachingPointAdminInformationRO.getName())
+                .setUsername(username)
+                .setPassword(encryptedPassword)
+                ;
+
+        PlatformUserPO platformUserPO1 = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, username));
+        if(platformUserPO1 != null){
+            // 存在老账号 删除
+            PlatformUserVO platformUserVO = platformUserService.detailById(platformUserPO1.getUserId());
+        }
+        int insert = platformUserService.getBaseMapper().insert(platformUserPO);
+
+        TeachingPointAdminInformationPO teachingPointAdminInformationPO = new TeachingPointAdminInformationPO()
+                .setUserId(String.valueOf(platformUserPO.getUserId()))
+                .setTeachingPointId(teachingPointAdminInformationRO.getTeachingPointId())
+                .setPhone(teachingPointAdminInformationRO.getPhone())
+                .setIdCardNumber(teachingPointAdminInformationRO.getIdCardNumber())
+                .setIdentity(teachingPointAdminInformationRO.getIdentity())
+                .setName(teachingPointAdminInformationRO.getName())
+                ;
+        int insert1 = teachingPointAdminInformationService.getBaseMapper().insert(teachingPointAdminInformationPO);
+        if(insert1 <= 0){
+            return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
+        }
+
+        return SaResult.ok("新增教学点教务员成功");
+    }
+
+    /**
+     *
+     * @param teachingPointAdminInformationRO
+     * @return
+     */
+    public SaResult updateManager(TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        // 校验 userId 的平台账户是否存在
+        TeachingPointAdminInformationPO teachingPointAdminInformationPO1 = teachingPointAdminInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        if(teachingPointAdminInformationPO1 == null){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL5.generateErrorResultInfo();
+        }
+
+
+        if(StrUtil.isEmpty(teachingPointAdminInformationRO.getTeachingPointId())){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL1.generateErrorResultInfo();
+        }
+        TeachingPointInformationPO teachingPointInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointAdminInformationRO.getTeachingPointId()));
+        if(teachingPointInformationPO == null){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL2.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(teachingPointAdminInformationRO.getPhone()) &&
+                StrUtil.isEmpty(teachingPointAdminInformationRO.getIdCardNumber())){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL3.generateErrorResultInfo();
+        }
+
+        String username = "";
+        if(!StrUtil.isEmpty(teachingPointAdminInformationRO.getPhone())){
+            username = "M" + teachingPointAdminInformationRO.getPhone();
+        }else if(!StrUtil.isEmpty(teachingPointAdminInformationRO.getIdCardNumber())){
+            username = "M" + teachingPointAdminInformationRO.getIdCardNumber();
+        }
+
+        if(username.length() < 6){
+            return ResultCode.TEACHINGPOINT_INFORMATION_FAIL4.generateErrorResultInfo();
+        }
+
+        // 为新教学点管理人员生成平台账户
+        String password=username.substring(username.length()-6);
+        String encryptedPassword = new SM3().digestHex(password);
+
+        PlatformUserPO platformUserPO = new PlatformUserPO()
+                .setRoleId(RoleEnum.TEACHING_POINT_ADMIN.getRoleId())
+                .setName(teachingPointAdminInformationRO.getName())
+                .setUsername(username)
+                .setPassword(encryptedPassword)
+                ;
+
+        PlatformUserPO platformUserPO1 = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        if(platformUserPO1 != null){
+            // 存在老账号 删除
+            int delete = platformUserService.getBaseMapper().delete(
+                    new LambdaQueryWrapper<PlatformUserPO>().eq(PlatformUserPO::getUserId, platformUserPO1.getUserId())
+            );
+        }
+        int insert = platformUserService.getBaseMapper().insert(platformUserPO);
+
+        TeachingPointAdminInformationPO teachingPointAdminInformationPO = new TeachingPointAdminInformationPO()
+                .setUserId(String.valueOf(platformUserPO.getUserId()))
+                .setTeachingPointId(teachingPointAdminInformationRO.getTeachingPointId())
+                .setPhone(teachingPointAdminInformationRO.getPhone())
+                .setIdCardNumber(teachingPointAdminInformationRO.getIdCardNumber())
+                .setIdentity(teachingPointAdminInformationRO.getIdentity())
+                .setName(teachingPointAdminInformationRO.getName())
+                ;
+        // 删除原来的
+        int delete = teachingPointAdminInformationService.getBaseMapper().delete(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+
+        int insert1 = teachingPointAdminInformationService.getBaseMapper().insert(teachingPointAdminInformationPO);
+        if(insert1 <= 0){
+            return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
+        }
+
+        return SaResult.ok("修改教学点教务员成功");
+
+    }
+
+    /**
+     * 根据传递过来的 userId 来删除管理人员记录 和平台账号记录
+     * @param teachingPointAdminInformationRO
+     * @return
+     */
+    public SaResult deleteManager(TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        int delete = platformUserService.getBaseMapper().delete(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        int delete1 = teachingPointAdminInformationService.getBaseMapper().delete(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        if(delete1 < 0){
+            return ResultCode.DATABASE_DELETE_ERROR2.generateErrorResultInfo();
+        }else if(delete1 == 0){
+            return ResultCode.DATABASE_DELETE_ERROR.generateErrorResultInfo();
+        }else{
+            return SaResult.ok("删除成功");
+        }
+    }
+
+    /**
+     * 获取教学点的筛选参数项
+     * @param teachingPointInformationRO
+     * @return
+     */
+    public TeachingPointInformationQueryArgsVO getQueryTeachingPointInformationArgs(TeachingPointInformationRO teachingPointInformationRO) {
+        List<TeachingPointInformationPO> teachingPointInformationPOS = getBaseMapper().selectList(null);
+
+        List<String> allAliases = new ArrayList<>(teachingPointInformationPOS.stream()
+                .map(TeachingPointInformationPO::getAlias) // 提取每个对象的alias字段
+                .filter(Objects::nonNull) // 过滤掉null值
+                .collect(Collectors.toSet())); // 先收集到Set中去重，然后转换为List
+
+
+
+        TeachingPointInformationQueryArgsVO teachingPointInformationQueryArgsVO = new TeachingPointInformationQueryArgsVO();
+        teachingPointInformationQueryArgsVO.setAlias(allAliases);
+        return teachingPointInformationQueryArgsVO;
     }
 }

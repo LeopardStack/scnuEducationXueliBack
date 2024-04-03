@@ -32,7 +32,7 @@ public class CollegeInformationPO implements Serializable {
     /**
      * 学院代码
      */
-    @TableId(value = "college_id", type = IdType.AUTO)
+    @TableId(value = "college_id")
     private String collegeId;
 
     /**

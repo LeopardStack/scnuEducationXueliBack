@@ -32,7 +32,7 @@ public class TeachingPointAdminInformationPO implements Serializable {
     /**
      * 用户代码
      */
-
+    @TableId(value = "user_id")
     private String userId;
 
     /**
@@ -48,7 +48,6 @@ public class TeachingPointAdminInformationPO implements Serializable {
     /**
      * 身份证号码
      */
-    @TableId(value = "id_card_number")
     private String idCardNumber;
 
     /**

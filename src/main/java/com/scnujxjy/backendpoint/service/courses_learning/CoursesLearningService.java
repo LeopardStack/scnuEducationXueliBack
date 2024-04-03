@@ -1616,16 +1616,31 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                 TeacherInformationSearchRO teacherInformationSearchRO = new TeacherInformationSearchRO();
                 teacherInformationSearchRO.setUsernames(usernames);
                 // 获取助教信息
-                List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.
-                        getBaseMapper().selectTeacherInfo(teacherInformationSearchRO);
+                // 加入空判断 若没有任何的条件 则不获取任何助教信息
                 List<AssistantInfoVO> assistantInfoVOList = new ArrayList<>();
-                for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
-                    AssistantInfoVO assistantInfoVO = new AssistantInfoVO()
-                            .setUsername(teacherInformationPO.getTeacherUsername())
-                            .setName(teacherInformationPO.getName())
-                            ;
-                    assistantInfoVOList.add(assistantInfoVO);
+                if(teacherInformationSearchRO.getId() == null &&
+                        StringUtils.isEmpty(teacherInformationSearchRO.getIdNumber()) &&
+                        StringUtils.isEmpty(teacherInformationSearchRO.getUsername()) &&
+                        StringUtils.isEmpty(teacherInformationSearchRO.getName()) &&
+                        StringUtils.isEmpty(teacherInformationSearchRO.getWorkNumber()) &&
+                        (teacherInformationSearchRO.getUsername() == null ||
+                                teacherInformationSearchRO.getUsername().isEmpty())
+                ){
+
+                }else{
+                    List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.
+                            getBaseMapper().selectTeacherInfo(teacherInformationSearchRO);
+
+                    for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
+                        AssistantInfoVO assistantInfoVO = new AssistantInfoVO()
+                                .setUsername(teacherInformationPO.getTeacherUsername())
+                                .setName(teacherInformationPO.getName())
+                                ;
+                        assistantInfoVOList.add(assistantInfoVO);
+                    }
                 }
+
+
                 courseInfoVO.setAssistantInfoVOList(assistantInfoVOList);
 
                 TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()

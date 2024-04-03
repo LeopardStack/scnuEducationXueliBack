@@ -76,6 +76,8 @@ public class TeachingPlansDataImport {
             executorService.execute(() -> {
                 try {
                     while (true) {
+                        log.info("Thread ID: " + Thread.currentThread().getId() + " - Queue size: " + queue.size());
+
                         HashMap<String, String> hashMap = queue.take();
                         if(hashMap.containsKey("END")){
                             break;

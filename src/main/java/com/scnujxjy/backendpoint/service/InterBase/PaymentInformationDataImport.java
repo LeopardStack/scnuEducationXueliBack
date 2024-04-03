@@ -81,7 +81,7 @@ public class PaymentInformationDataImport {
             executorService.execute(() -> {
                 try {
                     while (true) {
-//                        log.info("Thread ID: " + Thread.currentThread().getId() + " - Queue size: " + queue.size());
+                        log.info("Thread ID: " + Thread.currentThread().getId() + " - Queue size: " + queue.size());
 
 
                         HashMap<String, String> hashMap = queue.take();

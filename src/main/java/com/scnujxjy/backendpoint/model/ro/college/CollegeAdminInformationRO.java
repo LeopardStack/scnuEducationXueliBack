@@ -38,4 +38,9 @@ public class CollegeAdminInformationRO {
      */
     private String workNumber;
 
+    /**
+     * 身份证号码
+     */
+    private String idNumber;
+
 }

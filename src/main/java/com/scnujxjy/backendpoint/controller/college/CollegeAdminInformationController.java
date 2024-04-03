@@ -8,6 +8,8 @@ import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeAdminInformationVO;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
+import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -22,8 +24,11 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  * @since 2023-08-02
  */
 @RestController
-@RequestMapping("/college-admin-information")
+@RequestMapping("/college_admin_information")
 public class CollegeAdminInformationController {
+
+    @Resource
+    private CollegeInformationService collegeInformationService;
 
     @Resource
     private CollegeAdminInformationService collegeAdminInformationService;
@@ -76,25 +81,36 @@ public class CollegeAdminInformationController {
     }
 
     /**
+     * 为指定学院添加新的教务员
+     *
+     * @param collegeAdminInformationRO
+     * @return
+     */
+    @PostMapping("/add")
+    public SaResult addNewManager(@RequestBody CollegeAdminInformationRO collegeAdminInformationRO) {
+        // 参数校验
+        if (Objects.isNull(collegeAdminInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        // 返回数据
+        return collegeInformationService.addNewManager(collegeAdminInformationRO);
+    }
+
+    /**
      * 根据userId更新学院教务员信息
      *
      * @param collegeAdminInformationRO
      * @return
      */
-    @PutMapping("/edit")
-    public SaResult editById(CollegeAdminInformationRO collegeAdminInformationRO) {
+    @PostMapping("/edit")
+    public SaResult editById(@RequestBody CollegeAdminInformationRO collegeAdminInformationRO) {
         // 参数校验
-        if (Objects.isNull(collegeAdminInformationRO) || StrUtil.isBlank(collegeAdminInformationRO.getUserId())) {
-            throw dataMissError();
+        if (Objects.isNull(collegeAdminInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
-        // 更新数据
-        CollegeAdminInformationVO collegeAdminInformationVO = collegeAdminInformationService.editById(collegeAdminInformationRO);
-        // 更新校验
-        if (Objects.isNull(collegeAdminInformationVO)) {
-            throw dataUpdateError();
-        }
+
         // 返回数据
-        return SaResult.data(collegeAdminInformationVO);
+        return collegeInformationService.editById(collegeAdminInformationRO);
     }
 
     /**
@@ -107,15 +123,9 @@ public class CollegeAdminInformationController {
     public SaResult deleteById(String userId) {
         // 参数校验
         if (StrUtil.isBlank(userId)) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
-        // 删除数据
-        int count = collegeAdminInformationService.deleteById(userId);
-        // 删除校验
-        if (count <= 0) {
-            throw dataDeleteError();
-        }
-        return SaResult.data(count);
+        return collegeInformationService.deleteCollegeAdminInfo(userId);
     }
 
 }

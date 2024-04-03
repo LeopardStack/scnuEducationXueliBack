@@ -3,10 +3,14 @@ package com.scnujxjy.backendpoint.controller.teaching_point;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointAdminInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationQueryArgsVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_point.TeachingPointInformationVO;
+import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointAdminInformationService;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +32,9 @@ public class TeachingPointInformationController {
 
     @Resource
     private TeachingPointInformationService teachingPointInformationService;
+
+    @Resource
+    private TeachingPointAdminInformationService pointAdminInformationService;
 
     /**
      * 根据teachingPointId查询教学点基础信息
@@ -79,7 +86,7 @@ public class TeachingPointInformationController {
     public SaResult pageQueryTeachingPointInformation(@RequestBody PageRO<TeachingPointInformationRO> teachingPointInformationROPageRO) {
         // 数据校验
         if (Objects.isNull(teachingPointInformationROPageRO)) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         if (Objects.isNull(teachingPointInformationROPageRO.getEntity())) {
             teachingPointInformationROPageRO.setEntity(new TeachingPointInformationRO());
@@ -92,6 +99,30 @@ public class TeachingPointInformationController {
         }
         // 返回数据
         return SaResult.data(teachingPointInformationVOPageVO);
+    }
+
+
+    /**
+     * 分页查询教学点基础信息的筛选项参数
+     *
+     * @param teachingPointInformationROPageRO 分页查询教学点基础信息参数
+     * @return 分页查询教学点基础信息数据
+     */
+    @PostMapping("/get_args")
+    public SaResult getQueryTeachingPointInformationArgs(@RequestBody TeachingPointInformationRO teachingPointInformationRO) {
+        // 数据校验
+        if (Objects.isNull(teachingPointInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        if (Objects.isNull(teachingPointInformationRO)) {
+            teachingPointInformationRO = new TeachingPointInformationRO();
+        }
+        // 列表查询 或 分页查询
+        TeachingPointInformationQueryArgsVO teachingPointInformationQueryArgsVO = teachingPointInformationService
+                .getQueryTeachingPointInformationArgs(teachingPointInformationRO);
+
+        // 返回数据
+        return SaResult.ok().setData(teachingPointInformationQueryArgsVO);
     }
 
     /**
@@ -148,6 +179,57 @@ public class TeachingPointInformationController {
         }
         // 返回数据
         return SaResult.data(count);
+    }
+
+
+    /**
+     * 根据teachingPointId添加教学点管理人员
+     *
+     * @param teachingPointAdminInformationRO 教学点id
+     * @return 删除的数量
+     */
+    @PostMapping("/add_manager")
+    public SaResult addManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        // 参数校验
+        if (Objects.isNull(teachingPointAdminInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        // 返回数据
+        return teachingPointInformationService.addManager(teachingPointAdminInformationRO);
+    }
+
+
+    /**
+     * 根据teachingPointId userId 修改教学点管理人员
+     *
+     * @param teachingPointAdminInformationRO 教学点id userId
+     * @return 删除的数量
+     */
+    @PostMapping("/update_manager")
+    public SaResult updateManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        // 参数校验
+        if (Objects.isNull(teachingPointAdminInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        // 返回数据
+        return teachingPointInformationService.updateManager(teachingPointAdminInformationRO);
+    }
+
+
+    /**
+     * 根据teachingPointId userId 修改教学点管理人员
+     *
+     * @param teachingPointAdminInformationRO 教学点id userId
+     * @return 删除的数量
+     */
+    @DeleteMapping("/delete_manager")
+    public SaResult deleteManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
+        // 参数校验
+        if (Objects.isNull(teachingPointAdminInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        // 返回数据
+        return teachingPointInformationService.deleteManager(teachingPointAdminInformationRO);
     }
 
 }

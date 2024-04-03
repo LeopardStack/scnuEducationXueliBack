@@ -118,7 +118,7 @@ public class CollegeInformationController {
      * @param collegeInformationRO 更新的学院信息
      * @return 更新后的学院信息
      */
-    @PutMapping("/edit")
+    @PostMapping("/edit")
     public SaResult editById(@RequestBody CollegeInformationRO collegeInformationRO) {
         // 参数校验
         if (Objects.isNull(collegeInformationRO) || StrUtil.isBlank(collegeInformationRO.getCollegeId())) {

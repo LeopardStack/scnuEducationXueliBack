@@ -99,15 +99,15 @@ public class Test1 {
     @Test
     public void test6(){
         try {
-            for(int grade = 2024; grade >= 2022; grade--){
+            for(int grade = 2024; grade >= 2019; grade--){
                 int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
                         .eq(PaymentInfoPO::getGrade, "" + grade));
                 log.info("删除 " + grade + " 的缴费数据 " + delete);
             }
 
             oldDataSynchronize.synchronizePaymentInfoDataByInterval(
-                    true, 2024, 2022,
-                    new ArrayList<>());
+                    true, 2024, 2019,
+                    new ArrayList<>(Arrays.asList("休学", "退学", "转学")));
         }catch (Exception e){
             log.info("同步成教缴费数据失败 " + e);
         }

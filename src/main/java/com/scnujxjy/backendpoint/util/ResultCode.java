@@ -49,6 +49,23 @@ public enum ResultCode {
     TEACHER_INFORMATION_FAIL10(20027, "删除教师失败"),
     TEACHER_INFORMATION_FAIL11(20028, "批量导入师资表失败"),
 
+
+    COLLEGE_INFORMATION_FAIL1(22001, "新增学院教务员，名字不能为空"),
+    COLLEGE_INFORMATION_FAIL2(22002, "新增学院教务员，工号或者身份证号码不能同时为空"),
+    COLLEGE_INFORMATION_FAIL3(22003, "新增学院教务员，学院ID 不能为空"),
+    COLLEGE_INFORMATION_FAIL4(22004, "新增学院教务员，根据学院ID 找不到该学院信息"),
+    COLLEGE_INFORMATION_FAIL5(22005, "更新学院教务员，名字不能为空"),
+    COLLEGE_INFORMATION_FAIL6(22006, "更新学院教务员，工号或者身份证号码不能同时为空"),
+    COLLEGE_INFORMATION_FAIL7(22007, "更新学院教务员，学院ID 不能为空"),
+    COLLEGE_INFORMATION_FAIL8(22008, "更新学院教务员，根据学院ID 找不到该学院信息"),
+
+
+    TEACHINGPOINT_INFORMATION_FAIL1(23001, "新增教学点管理人员信息，教学点 ID 不能为空"),
+    TEACHINGPOINT_INFORMATION_FAIL2(23002, "新增教学点管理人员信息，根据教学点 ID 找不到对应的教学点"),
+    TEACHINGPOINT_INFORMATION_FAIL3(23003, "新增教学点管理人员信息，管理人员必须提供身份证号码或者手机号码"),
+    TEACHINGPOINT_INFORMATION_FAIL4(23004, "新增教学点管理人员信息，管理人员的身份证号码或者手机号码长度必须大于5"),
+    TEACHINGPOINT_INFORMATION_FAIL5(23005, "修改教学点管理人员信息，通过 userId 找不到原教学点管理人员信息记录"),
+
     // 课程学习错误码
     UPDATE_COURSE_FAIL1(21007, "课程ID 不存在"),
     UPDATE_COURSE_FAIL2(21008, "课程ID 找不到对应的课程信息"),

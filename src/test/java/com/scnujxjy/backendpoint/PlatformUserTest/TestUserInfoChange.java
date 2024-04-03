@@ -51,8 +51,8 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword() {
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername("M13007");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M130072023@");
+        PlatformUserVO platformUserVO = platformUserService.detailByUsername("M51829");
+        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "M518292024@");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -73,6 +73,23 @@ public class TestUserInfoChange {
         platformUserROList.add(platformUserRO);
         List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROList);
         log.info("生成超级管理员  \n" + platformUserVOS);
+    }
+
+    /**
+     * 添加超级管理员 -2
+     */
+    @Test
+    public void addSuperAdmin1() {
+        log.info("生成学历教育管理员");
+
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+        PlatformUserRO platformUserRO = new PlatformUserRO();
+        platformUserRO.setUsername("Luheyan");
+        platformUserRO.setPassword("Luheyan2024@");
+        platformUserRO.setRoleId(3L);
+        platformUserROList.add(platformUserRO);
+        List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROList);
+        log.info("生成学历教育管理员  \n" + platformUserVOS);
     }
 
     /**

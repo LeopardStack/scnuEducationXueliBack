@@ -135,7 +135,7 @@ public class CoursesLearningController {
      */
     @PostMapping("/create_course")
     @ApiOperation(value = "创建课程学习中的一门课")
-    @SaCheckPermission("课程学习.删除课程")
+    @SaCheckPermission("课程学习.创建课程")
     public SaResult createCourse(
             @ApiParam(value = "课程创建参数", required = true)
             @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
@@ -163,7 +163,7 @@ public class CoursesLearningController {
      */
     @PostMapping("/update_course")
     @ApiOperation(value = "修改课程学习中的一门课, 主要是修改课程的主讲老师 上课时间 班级 助教老师")
-    @SaCheckPermission("课程学习.删除课程")
+    @SaCheckPermission("课程学习.更新课程")
     public SaResult updateCourse(
             @ApiParam(value = "课程修改参数", required = true)
             @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
@@ -262,7 +262,6 @@ public class CoursesLearningController {
     @PostMapping("/set_course_valid")
     @ApiOperation(value = "删除课程学习中的一门课")
     @SaCheckPermission("课程学习.设置课程是否有效")
-
     public SaResult setCourseInvalid(
             @ApiParam(value = "课程删除参数", required = true)
                     Long courseId) {
@@ -379,7 +378,7 @@ public class CoursesLearningController {
      */
     @PostMapping("/update_course_section")
     @ApiOperation(value = "修改课程节点信息 比如 章节")
-    @SaCheckPermission("课程学习.删除课程")
+    @SaCheckPermission("课程学习.编辑课程")
     public SaResult updateCourseSectionInfo(
             @ApiParam(value = "课程节点修改参数", required = true)
             @RequestBody CourseSectionRO courseSectionRO) {
@@ -399,7 +398,7 @@ public class CoursesLearningController {
      */
     @PostMapping("/delete_course_section")
     @ApiOperation(value = "删除课程节点信息 比如 章节")
-    @SaCheckPermission("课程学习.删除课程")
+    @SaCheckPermission("课程学习.编辑课程")
     public SaResult deleteCourseSectionInfo(
             @ApiParam(value = "课程节点删除参数", required = true)
             @RequestBody CourseSectionRO courseSectionRO) {
@@ -417,7 +416,7 @@ public class CoursesLearningController {
      */
     @PostMapping("/create_course_section")
     @ApiOperation(value = "创建课程节点信息 比如 章节")
-    @SaCheckPermission("课程学习.删除课程")
+    @SaCheckPermission("课程学习.编辑课程")
     public SaResult createCourseSectionInfo(
             @ApiParam(value = "课程节点创建参数", required = true)
             @RequestBody CourseSectionRO courseSectionRO) {

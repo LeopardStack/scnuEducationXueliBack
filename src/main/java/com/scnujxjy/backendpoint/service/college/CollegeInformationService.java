@@ -2,22 +2,28 @@ package com.scnujxjy.backendpoint.service.college;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.inverter.college.CollegeInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeInformationVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.annotation.Resource;
 import java.util.Comparator;
@@ -41,6 +47,9 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
 
     @Resource
     private CollegeAdminInformationService collegeAdminInformationService;
+
+    @Resource
+    private PlatformUserService platformUserService;
 
     /**
      * 根据collegeId查询学院信息
@@ -86,10 +95,13 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
         // 列表查询 或 分页查询 并返回数据
         if (Objects.equals(true, collegeInformationROPageRO.getIsAll())) {
             List<CollegeInformationPO> collegeInformationPOS = baseMapper.selectList(wrapper);
-            return new PageVO<>(collegeInformationInverter.po2VO(collegeInformationPOS));
+            Integer total = baseMapper.selectCount(wrapper);
+            return new PageVO<>(collegeInformationInverter.po2VO(collegeInformationPOS)).setTotal(Long.valueOf(total));
         } else {
             Page<CollegeInformationPO> collegeInformationPOPage = baseMapper.selectPage(collegeInformationROPageRO.getPage(), wrapper);
-            return new PageVO<>(collegeInformationPOPage, collegeInformationInverter.po2VO(collegeInformationPOPage.getRecords()));
+            Integer total = baseMapper.selectCount(wrapper);
+            return new PageVO<>(collegeInformationPOPage, collegeInformationInverter.po2VO(collegeInformationPOPage.getRecords()))
+                    .setTotal(Long.valueOf(total));
         }
     }
 
@@ -162,7 +174,7 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
 
         // 检查是否找到最大的collegeId
         if (maxCollegeInformation.isPresent()) {
-            String maxCollegeId = maxCollegeInformation.get().getCollegeId();
+            String maxCollegeId = String.valueOf(Integer.parseInt(maxCollegeInformation.get().getCollegeId())+1);
             collegeInformationPO.setCollegeId(maxCollegeId);
 
             Integer i = getBaseMapper().selectCount(new LambdaQueryWrapper<CollegeInformationPO>()
@@ -201,5 +213,170 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
 
             return SaResult.ok().setData(collegeAdminInformationPOS);
         }
+    }
+
+
+    /**
+     * 根据userId更新学院教务员信息
+     *
+     * @param collegeAdminInformationRO
+     * @return
+     */
+    public SaResult editById(CollegeAdminInformationRO collegeAdminInformationRO) {
+        // 参数校验
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getName())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL5.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getWorkNumber()) &&
+                StrUtil.isEmpty(collegeAdminInformationRO.getIdNumber())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL6.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getCollegeId())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL7.generateErrorResultInfo();
+        }
+
+        CollegeInformationPO collegeInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
+                .eq(CollegeInformationPO::getCollegeId, collegeAdminInformationRO.getCollegeId()));
+        if(collegeInformationPO == null){
+            return ResultCode.COLLEGE_INFORMATION_FAIL8.generateErrorResultInfo();
+        }
+        CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO()
+                .setName(collegeAdminInformationRO.getName())
+                .setIdNumber(collegeAdminInformationRO.getIdNumber())
+                .setWorkNumber(collegeAdminInformationRO.getWorkNumber())
+                .setCollegeId(collegeAdminInformationRO.getCollegeId())
+                .setPhone(collegeAdminInformationRO.getPhone())
+                ;
+
+        String username = "";
+        if(!StrUtil.isEmpty(collegeAdminInformationRO.getWorkNumber()) ){
+            username= "M" + collegeAdminInformationRO.getWorkNumber();
+        }else{
+            username= "M" + collegeAdminInformationRO.getIdNumber();
+        }
+
+        // 为新二级学院管理人员生成平台账户
+        String password=username.substring(username.length()-6);
+        String encryptedPassword = new SM3().digestHex(password);
+
+        PlatformUserPO platformUserPO = new PlatformUserPO()
+                .setName(collegeAdminInformationRO.getName())
+                .setUsername(username)
+                .setPassword(encryptedPassword)
+                .setRoleId(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleId())
+                ;
+        // 先把它原来的账号给删除
+        PlatformUserPO platformUserPO1 = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUserId, collegeAdminInformationRO.getUserId()));
+        if(platformUserPO1 != null){
+            int i = platformUserService.getBaseMapper().delete(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, platformUserPO1.getUserId()));
+            // 删除账号后 删除二级学院管理员信息
+            int delete = collegeAdminInformationService.getBaseMapper().delete(new LambdaQueryWrapper<CollegeAdminInformationPO>()
+                    .eq(CollegeAdminInformationPO::getUserId, collegeAdminInformationRO.getUserId()));
+        }
+        int insert1 = platformUserService.getBaseMapper().insert(platformUserPO);
+
+
+        collegeAdminInformationPO.setUserId(String.valueOf(platformUserPO.getUserId()));
+        int insert = collegeAdminInformationService.getBaseMapper().insert(collegeAdminInformationPO);
+        if(insert <= 0){
+            return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
+        }
+        // 返回数据
+        return SaResult.ok("更新成功");
+    }
+
+    /**
+     * 根据userId删除学院教务员信息
+     *
+     * @param userId
+     * @return
+     */
+    public SaResult deleteCollegeAdminInfo(String userId) {
+        PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUserId, userId));
+        if(platformUserPO != null){
+            int i = platformUserService.getBaseMapper().delete(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, userId));
+        }
+        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeAdminInformationPO>()
+                .eq(CollegeAdminInformationPO::getUserId, userId));
+        if(collegeAdminInformationPO != null){
+            int delete = collegeAdminInformationService.getBaseMapper().delete(new LambdaQueryWrapper<CollegeAdminInformationPO>()
+                    .eq(CollegeAdminInformationPO::getUserId, userId));
+            if(delete <= 0){
+                return ResultCode.DATABASE_DELETE_ERROR2.generateErrorResultInfo();
+            }else{
+                return SaResult.ok("删除成功");
+            }
+        }else{
+            return SaResult.ok("已删除，请勿重复删除");
+        }
+
+    }
+
+
+    /**
+     * 为二级学院添加新的教务员
+     * @param collegeAdminInformationRO
+     * @return
+     */
+    public SaResult addNewManager( CollegeAdminInformationRO collegeAdminInformationRO) {
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getName())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL1.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getWorkNumber()) &&
+                StrUtil.isEmpty(collegeAdminInformationRO.getIdNumber())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL2.generateErrorResultInfo();
+        }
+
+        if(StrUtil.isEmpty(collegeAdminInformationRO.getCollegeId())){
+            return ResultCode.COLLEGE_INFORMATION_FAIL3.generateErrorResultInfo();
+        }
+
+        CollegeInformationPO collegeInformationPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
+                .eq(CollegeInformationPO::getCollegeId, collegeAdminInformationRO.getCollegeId()));
+        if(collegeInformationPO == null){
+            return ResultCode.COLLEGE_INFORMATION_FAIL4.generateErrorResultInfo();
+        }
+
+        CollegeAdminInformationPO collegeAdminInformationPO = new CollegeAdminInformationPO()
+                .setName(collegeAdminInformationRO.getName())
+                .setIdNumber(collegeAdminInformationRO.getIdNumber())
+                .setWorkNumber(collegeAdminInformationRO.getWorkNumber())
+                .setCollegeId(collegeAdminInformationRO.getCollegeId())
+                .setPhone(collegeAdminInformationRO.getPhone())
+                ;
+
+        String username = "";
+        if(!StrUtil.isEmpty(collegeAdminInformationRO.getWorkNumber()) ){
+            username= "M" + collegeAdminInformationRO.getWorkNumber();
+        }else{
+            username= "M" + collegeAdminInformationRO.getIdNumber();
+        }
+
+        // 为新老师生成平台账户
+        String password=username.substring(username.length()-6);
+        String encryptedPassword = new SM3().digestHex(password);
+
+        PlatformUserPO platformUserPO = new PlatformUserPO()
+                .setName(collegeAdminInformationRO.getName())
+                .setUsername(username)
+                .setPassword(encryptedPassword)
+                .setRoleId(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleId())
+                ;
+        int insert1 = platformUserService.getBaseMapper().insert(platformUserPO);
+
+
+        collegeAdminInformationPO.setUserId(String.valueOf(platformUserPO.getUserId()));
+        int insert = collegeAdminInformationService.getBaseMapper().insert(collegeAdminInformationPO);
+        if(insert <= 0){
+            return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
+        }
+        return SaResult.ok("新增教务员成功");
     }
 }

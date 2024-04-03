@@ -36,4 +36,6 @@ public class TeachingPointMangerInfoVO {
      * 身份证号码
      */
     private String idNumber;
+
+    private String userId;
 }

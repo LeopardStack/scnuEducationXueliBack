@@ -1,18 +1,26 @@
 package com.scnujxjy.backendpoint.service.college;
 
+import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.inverter.college.CollegeAdminInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeAdminInformationVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -85,53 +93,6 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
             Page<CollegeAdminInformationPO> collegeAdminInformationPOPage = baseMapper.selectPage(collegeAdminInformationROPageRO.getPage(), wrapper);
             return new PageVO<>(collegeAdminInformationPOPage, collegeAdminInformationInverter.po2VO(collegeAdminInformationPOPage.getRecords()));
         }
-    }
-
-    /**
-     * 根据userId更新学院教务员信息
-     *
-     * @param collegeAdminInformationRO
-     * @return
-     */
-    public CollegeAdminInformationVO editById(CollegeAdminInformationRO collegeAdminInformationRO) {
-        // 参数校验
-        if (Objects.isNull(collegeAdminInformationRO) || StrUtil.isBlank(collegeAdminInformationRO.getUserId())) {
-            log.error("参数缺失");
-            return null;
-        }
-        // 转换类型
-        CollegeAdminInformationPO collegeAdminInformationPO = collegeAdminInformationInverter.ro2PO(collegeAdminInformationRO);
-        // 更新数据
-        int count = baseMapper.updateById(collegeAdminInformationPO);
-        // 更新校验
-        if (count <= 0) {
-            log.error("更新失败，数据：{}", collegeAdminInformationPO);
-            return null;
-        }
-        // 返回数据
-        return detailById(collegeAdminInformationRO.getUserId());
-    }
-
-    /**
-     * 根据userId删除学院教务员信息
-     *
-     * @param userId
-     * @return
-     */
-    public Integer deleteById(String userId) {
-        // 参数校验
-        if (StrUtil.isBlank(userId)) {
-            log.error("参数缺失");
-            return null;
-        }
-        // 删除数据
-        int count = baseMapper.deleteById(userId);
-        // 删除校验
-        if (count <= 0) {
-            log.error("删除失败，userId：{}", userId);
-            return null;
-        }
-        return count;
     }
 
 
