@@ -1,10 +1,7 @@
 package com.scnujxjy.backendpoint.util.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.util.RandomUtil;
 import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.write.builder.ExcelWriterBuilder;
-import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.fastjson.JSON;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
@@ -19,21 +16,18 @@ import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
-import net.polyv.live.v1.constant.LiveConstant;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.channel.operate.LiveSonChannelInfoListResponse;
 import net.polyv.live.v1.entity.channel.playback.LiveChannelPlaybackEnabledInfoRequest;
 import net.polyv.live.v1.entity.web.auth.LiveCreateChannelWhiteListRequest;
-import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUploadWhiteListRequest;
 import net.polyv.live.v1.service.channel.impl.LiveChannelPlaybackServiceImpl;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
-import org.apache.commons.io.FileUtils;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +42,9 @@ public class SingleLivingSetting {
 
     @Resource
     private VideoStreamUtils videoStreamUtils;
+
+    @Value("${singleLiving.category:123456}")
+    private Integer category;
 
     /**
      * 创建频道
@@ -70,7 +67,7 @@ public class SingleLivingSetting {
         liveRequestBody.setTemplate("ppt");
         // 设置是否开启无延迟
         liveRequestBody.setPureRtcEnabled(pureRtcEnabled);
-        liveRequestBody.setCategoryId(520488);//设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
+        liveRequestBody.setCategoryId(category);//设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
         // 获取北京时间的时间戳
         long beijingTimestamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
         String timestamp = String.valueOf(beijingTimestamp);
@@ -385,7 +382,6 @@ public class SingleLivingSetting {
 
         return saResult;
     }
-
 
 
 }

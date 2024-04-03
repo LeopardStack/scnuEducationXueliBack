@@ -6,6 +6,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -450,6 +451,34 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
+    public SaResult getRecordSetting(String channelId) {
+        String appId = LiveGlobalConfig.getAppId();
+        String appSecret = LiveGlobalConfig.getAppSecret();
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String url = "http://api.polyv.net/live/v3/channel/playback/get-setting";
+
+        try {
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("appId", appId);
+            requestMap.put("timestamp", timestamp);
+            requestMap.put("channelId", channelId);
+            requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+            String response = HttpUtil.get(url, requestMap);
+            log.info("查询频道回放设置，返回值：{}", response);
+            JSONObject jsonObject = JSONObject.parseObject(response, JSONObject.class);
+            String record = jsonObject.getJSONObject("data").getString("playbackEnabled");
+            if (!record.equals("Y") && !record.equals("N")) {
+                return SaResult.error("查询回放状态失败");
+            } else {
+                return SaResult.data(record);
+            }
+        } catch (Exception e) {
+            log.error(channelId + "查询回放状态失败", e);
+            return SaResult.error("查询回放状态失败");
+        }
+    }
+
+    @Override
     public SaResult getTeacherChannelUrl(String channelId) {
         try {
             String tutorSSOLink = videoStreamUtils.generateTeacherSSOLink(channelId);
@@ -672,7 +701,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Override
     public SaResult getChannelWhiteList(ChannelInfoRequest channelInfoRequest) {
         if (StrUtil.isBlank(channelInfoRequest.getChannelId()) || Objects.isNull(channelInfoRequest.getCurrentPage())
-        || Objects.isNull(channelInfoRequest.getPageSize())) {
+                || Objects.isNull(channelInfoRequest.getPageSize())) {
             throw dataMissError();
         }
 
@@ -1431,11 +1460,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     }
 
-    public static void main(String[] args) {
-        Long totalTime = 86990L;
-        System.out.println(totalTime / 3600.0);
-    }
-
     @Override
     public SaResult getStudentViewlogDetail(ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException {
         SaResult saResult = new SaResult();
@@ -1501,12 +1525,29 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                log.info("当天无直播，无需获取直播间的直播状态");
 //                return;
 //            }
+//            live：直播中
+//            playback：回放中
+//            end：已结束
+//            waiting：等待中
+//            unStart：未开始
+//            banpush：已禁播
+            Map<String,String> map=new HashMap<>();
+            map.put("live","直播中");
+            map.put("playback","回放中");
+            map.put("end","已结束");
+            map.put("waiting","等待中");
+            map.put("unStart","未开始");
+            map.put("banpush","已禁播");
+
             String channelIds = String.join(",", channelIdList);
             liveListChannelStreamStatusV2Request.setChannelIds(channelIds);
             liveListChannelStreamStatusV2Respons = new LiveChannelStateServiceImpl().listChannelLiveStreamV2(
                     liveListChannelStreamStatusV2Request);
             if (liveListChannelStreamStatusV2Respons != null) {
                 log.info("批量查询频道直播状态成功:{}", JSON.toJSONString(liveListChannelStreamStatusV2Respons));
+                for (LiveListChannelStreamStatusV2Response response:liveListChannelStreamStatusV2Respons) {
+                    response.setLiveStatus(map.get(response.getLiveStatus()));
+                }
                 return SaResult.data(liveListChannelStreamStatusV2Respons);
             }
         } catch (Exception e) {
