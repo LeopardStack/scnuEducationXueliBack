@@ -8,11 +8,16 @@ import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerIntercept
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import javax.sql.DataSource;
 
 /**
  * @author leopard
  */
 @Configuration
+@EnableTransactionManagement
 @MapperScan("com.scnujxjy.backendpoint.dao.mapper")
 public class MybatisPlusConfig {
     @Bean
@@ -26,4 +31,9 @@ public class MybatisPlusConfig {
         mybatisPlusInterceptor.addInnerInterceptor(optimisticLockerInnerInterceptor);
         return mybatisPlusInterceptor;
     }
+
+//    @Bean
+//    public PlatformTransactionManager transactionManager(DataSource dynamicDataSource) {
+//        return new DataSourceTransactionManager(dynamicDataSource);
+//    }
 }

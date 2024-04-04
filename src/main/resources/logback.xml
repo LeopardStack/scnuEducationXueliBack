@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <configuration>
+    <!-- ShardingSphere SQL 日志 -->
+    <logger name="org.apache.shardingsphere" level="DEBUG"/>
+
 
     <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
         <layout class="ch.qos.logback.classic.PatternLayout">
