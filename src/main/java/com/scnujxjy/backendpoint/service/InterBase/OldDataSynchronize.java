@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.oa.MajorChangeRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
@@ -10,6 +11,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInf
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.oa.*;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
@@ -41,7 +43,7 @@ import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.*;
 @Slf4j
 public class OldDataSynchronize {
 
-    public static final int CONSUMER_COUNT = 400;
+    public static final int CONSUMER_COUNT = 800;
 
     @Resource
     private StudentStatusMapper studentStatusMapper;
@@ -77,6 +79,9 @@ public class OldDataSynchronize {
     private RetentionRecordMapper retentionRecordMapper;
     @Resource
     private SuspensionRecordMapper suspensionRecordMapper;
+
+    @Resource
+    private AdmissionInformationMapper admissionInformationMapper;
 
     @Resource
     private MinioService minioService;
@@ -194,6 +199,18 @@ public class OldDataSynchronize {
 
     public void synchronizeStudentStatusData(int startYear, int endYear, boolean updateAny, boolean personalUpdate) throws InterruptedException {
         StudentStatusDataImport studentStatusDataImport = new StudentStatusDataImport();
+        // 获取所有 AdmissionInformationPO 对象
+        List<AdmissionInformationPO> admissionInformationList = admissionInformationMapper.selectList(null); // 传入null获取所有记录
+        Map<String, List<AdmissionInformationPO>> admissionInfoCache = new HashMap<>();
+        // 根据考生号分组
+        for (AdmissionInformationPO admissionInfo : admissionInformationList) {
+            String admissionNumber = admissionInfo.getAdmissionNumber();
+
+            // 检查map中是否已经有这个考生号的列表，如果没有，创建一个
+            admissionInfoCache.computeIfAbsent(admissionNumber, k -> new ArrayList<>()).add(admissionInfo);
+        }
+        studentStatusDataImport.setAdmissionInfoCache(admissionInfoCache);
+
         if(!personalUpdate){
             studentStatusDataImport.setUpdatePersonalInfo(personalUpdate);
         }
@@ -715,6 +732,11 @@ public class OldDataSynchronize {
 
             try {
                 GradeInfoDataImport gradeInfoDataImport = new GradeInfoDataImport();
+
+                // 设置教学计划 可以传递过去 避免每次 插入 都访问数据库 要数据
+                List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectList(null);
+                gradeInfoDataImport.setCourseInformationList(courseInformationPOS);
+
                 ArrayList<HashMap<String, String>> gradeInfos = getGradeInfos("" + i);
                 gradeInfoDataImport.insertLogs.add("旧系统成绩数据总数 " + gradeInfos.size());
 

@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize.CONSUMER_COUNT;
 import static java.util.regex.Pattern.*;
@@ -41,6 +42,7 @@ public class GradeInfoDataImport {
     private int success_insert = 0;
     private int failed_insert = 0;
     private final static String constValue1 = "NULL";
+    private List<CourseInformationPO> courseInformationList = new ArrayList<>();
 
     public GradeInfoDataImport(){
         ApplicationContext ctx = ApplicationContextProvider.getApplicationContext();
@@ -117,7 +119,13 @@ public class GradeInfoDataImport {
             scoreInformationPO.setCourseName(studentData.get("KCHM"));
             scoreInformationPO.setCourseCode(course_id);
             // 选修必须要从教学计划中获得
-            List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectByAdminClassId(class_identifier, course_id);
+//            List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectByAdminClassId(class_identifier, course_id);
+
+            // 使用 Stream API 过滤出满足条件的对象
+            List<CourseInformationPO> courseInformationPOS = courseInformationList.stream()
+                    .filter(courseInfo -> class_identifier.equals(courseInfo.getAdminClass()) && course_id.equals(courseInfo.getCourseCode()))
+                    .collect(Collectors.toList());
+
             String courseType = null;
             if(courseInformationPOS.size() != 1){
                 if(courseInformationPOS.size() == 0){

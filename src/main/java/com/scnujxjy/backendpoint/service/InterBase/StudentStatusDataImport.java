@@ -16,6 +16,7 @@ import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
+import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import javax.annotation.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.sql.SQLTransientConnectionException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -49,13 +51,14 @@ public class StudentStatusDataImport {
 
     private PersonalInfoMapper personalInfoMapper;
 
-    private AdmissionInformationMapper admissionInformationMapper;
-
     private OriginalEducationInfoMapper originalEducationInfoMapper;
 
     private GraduationInfoMapper graduationInfoMapper;
 
     private MinioService minioService;
+
+    private Map<String, List<AdmissionInformationPO>> admissionInfoCache;
+
 
 
     public StudentStatusDataImport() {
@@ -63,7 +66,6 @@ public class StudentStatusDataImport {
         this.studentStatusMapper = ctx.getBean(StudentStatusMapper.class);
         this.minioService = ctx.getBean(MinioService.class);
         this.personalInfoMapper = ctx.getBean(PersonalInfoMapper.class);
-        this.admissionInformationMapper = ctx.getBean(AdmissionInformationMapper.class);
         this.originalEducationInfoMapper = ctx.getBean(OriginalEducationInfoMapper.class);
         this.graduationInfoMapper = ctx.getBean(GraduationInfoMapper.class);
 
@@ -225,25 +227,25 @@ public class StudentStatusDataImport {
 
     @Transactional(rollbackFor = Exception.class)
     int insertData(HashMap<String, String> studentData){
-        StudentStatusPO studentStatusPO = new StudentStatusPO();
-        PersonalInfoPO personalInfoPO = new PersonalInfoPO();
-        OriginalEducationInfoPO originalEducationInfoPO = new OriginalEducationInfoPO();
-        GraduationInfoPO graduationInfoPO = new GraduationInfoPO();
+            StudentStatusPO studentStatusPO = new StudentStatusPO();
+            PersonalInfoPO personalInfoPO = new PersonalInfoPO();
+            OriginalEducationInfoPO originalEducationInfoPO = new OriginalEducationInfoPO();
+            GraduationInfoPO graduationInfoPO = new GraduationInfoPO();
 
-        // 请根据实际的字段名和数据类型调整以下代码
-        studentStatusPO.setStudentNumber(studentData.get("XH"));
-        studentStatusPO.setGrade(studentData.get("NJ"));
-        studentStatusPO.setCollege(studentData.get("XSH"));
+            // 请根据实际的字段名和数据类型调整以下代码
+            studentStatusPO.setStudentNumber(studentData.get("XH"));
+            studentStatusPO.setGrade(studentData.get("NJ"));
+            studentStatusPO.setCollege(studentData.get("XSH"));
 
-        ErrorStudentStatusExportExcel errorData = new ErrorStudentStatusExportExcel();
+            ErrorStudentStatusExportExcel errorData = new ErrorStudentStatusExportExcel();
 
-        // 处理各种日期格式转换
-        SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyyMMdd");
-        SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
-        SimpleDateFormat dateFormat4 = new SimpleDateFormat("yyyy/MM");
-        SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
-        SimpleDateFormat dateFormat6 = new SimpleDateFormat("yyyy.MM.dd");
+            // 处理各种日期格式转换
+            SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyyMMdd");
+            SimpleDateFormat dateFormat3 = new SimpleDateFormat("yyyy/MM/dd");
+            SimpleDateFormat dateFormat4 = new SimpleDateFormat("yyyy/MM");
+            SimpleDateFormat dateFormat5 = new SimpleDateFormat("yyyy.MM");
+            SimpleDateFormat dateFormat6 = new SimpleDateFormat("yyyy.MM.dd");
 
 //            TimeZone timeZone = TimeZone.getTimeZone("Asia/Shanghai"); // 设置为北京时间
 //            dateFormat1.setTimeZone(timeZone);
@@ -252,139 +254,142 @@ public class StudentStatusDataImport {
 //            dateFormat4.setTimeZone(timeZone);
 //            dateFormat5.setTimeZone(timeZone);
 //            dateFormat6.setTimeZone(timeZone);
-        try {
+            try {
 //            if(studentData.get("XXXS").contains("文凭")){
 //                // 澳门培训的文凭班学生直接跳过
 //                throw new RuntimeException("澳门班学员");
 //            }
-            if (studentData.get("BSHI").startsWith("WP")) {
-                throw new RuntimeException("澳门班学员");
-            }
+                if (studentData.get("BSHI").startsWith("WP")) {
+                    throw new RuntimeException("澳门班学员");
+                }
 
 
-            // 教学点 BH，去掉末尾的数字
-            String teachingPoint = studentData.get("BH");
-            teachingPoint = teachingPoint.replaceAll("\\d+$", "");
-            if (!jxd_jc.containsKey(teachingPoint)) {
-                undefinedJxd.add(teachingPoint);
-                if (teachingPoint.contains("校内")) {
-                    teachingPoint = teachingPoint;
+                // 教学点 BH，去掉末尾的数字
+                String teachingPoint = studentData.get("BH");
+                teachingPoint = teachingPoint.replaceAll("\\d+$", "");
+                if (!jxd_jc.containsKey(teachingPoint)) {
+                    undefinedJxd.add(teachingPoint);
+                    if (teachingPoint.contains("校内")) {
+                        teachingPoint = teachingPoint;
+                    } else {
+                        teachingPoint = teachingPoint + "教学点";
+                    }
+
                 } else {
-                    teachingPoint = teachingPoint + "教学点";
+                    teachingPoint = jxd_jc.get(teachingPoint);
                 }
 
-            } else {
-                teachingPoint = jxd_jc.get(teachingPoint);
-            }
+                studentStatusPO.setTeachingPoint(teachingPoint);
 
-            studentStatusPO.setTeachingPoint(teachingPoint);
+                studentStatusPO.setMajorName(studentData.get("ZYMC"));
+                studentStatusPO.setStudyForm(studentData.get("XXXS"));
+                studentStatusPO.setLevel(studentData.get("CC"));
+                studentStatusPO.setStudyDuration(studentData.get("XZ"));
+                studentStatusPO.setAdmissionNumber(studentData.get("KSH"));
+                studentStatusPO.setAcademicStatus(studentData.get("ZT"));
 
-            studentStatusPO.setMajorName(studentData.get("ZYMC"));
-            studentStatusPO.setStudyForm(studentData.get("XXXS"));
-            studentStatusPO.setLevel(studentData.get("CC"));
-            studentStatusPO.setStudyDuration(studentData.get("XZ"));
-            studentStatusPO.setAdmissionNumber(studentData.get("KSH"));
-            studentStatusPO.setAcademicStatus(studentData.get("ZT"));
-
-            String enrollDateString = studentData.get("RXRQ");
-            Date enrollDate = null;
-            enrollDate = dateFormat5.parse(enrollDateString);
-            studentStatusPO.setEnrollmentDate(enrollDate);
-            studentStatusPO.setIdNumber(studentData.get("SFZH"));
-            studentStatusPO.setClassIdentifier(studentData.get("BSHI"));
+                String enrollDateString = studentData.get("RXRQ");
+                Date enrollDate = null;
+                enrollDate = dateFormat5.parse(enrollDateString);
+                studentStatusPO.setEnrollmentDate(enrollDate);
+                studentStatusPO.setIdNumber(studentData.get("SFZH"));
+                studentStatusPO.setClassIdentifier(studentData.get("BSHI"));
 
 
-            personalInfoPO.setGender(studentData.get("XB"));
+                personalInfoPO.setGender(studentData.get("XB"));
 
-            String birthDateString = studentData.get("CSRQ");
-            Date birthDate = getBirthday(birthDateString, dateFormat1, dateFormat2, dateFormat3, dateFormat6);
+                String birthDateString = studentData.get("CSRQ");
+                Date birthDate = getBirthday(birthDateString, dateFormat1, dateFormat2, dateFormat3, dateFormat6);
 
-            if (birthDate != null) {
-                personalInfoPO.setBirthDate(birthDate);
-            }
+                if (birthDate != null) {
+                    personalInfoPO.setBirthDate(birthDate);
+                }
 
-            personalInfoPO.setGender(studentData.get("XB"));
+                personalInfoPO.setGender(studentData.get("XB"));
 
-            // 根据考生号来获取新生数据中的个人信息
-            String ksh = studentData.get("KSH");
-            AdmissionInformationPO student = null;
+                // 根据考生号来获取新生数据中的个人信息
+                String ksh = studentData.get("KSH");
+                AdmissionInformationPO student = null;
 
-            QueryWrapper<AdmissionInformationPO> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("admission_number", ksh);
-            List<AdmissionInformationPO> admissionInformationPOS = admissionInformationMapper.selectList(queryWrapper);
-            if(admissionInformationPOS.size() == 1){
-                student = admissionInformationMapper.selectOne(queryWrapper);
-            }else if(admissionInformationPOS.size() > 1){
-                for(int i = 0; i < admissionInformationPOS.size(); i++){
-                    AdmissionInformationPO admissionInformationPO = admissionInformationPOS.get(i);
-                    String grade1 = admissionInformationPO.getGrade();
-                    if(grade1.equals(getYearFromCode(ksh)+"")){
-                        student = admissionInformationPO;
-                        break;
+//                QueryWrapper<AdmissionInformationPO> queryWrapper = new QueryWrapper<>();
+//                queryWrapper.eq("admission_number", ksh);
+//                List<AdmissionInformationPO> admissionInformationPOS = admissionInformationMapper.selectList(queryWrapper);
+
+                List<AdmissionInformationPO> admissionInformationPOS = admissionInfoCache.get(ksh);
+
+                if (admissionInformationPOS.size() == 1) {
+                    student =admissionInformationPOS.get(0);
+                } else if (admissionInformationPOS.size() > 1) {
+                    for (int i = 0; i < admissionInformationPOS.size(); i++) {
+                        AdmissionInformationPO admissionInformationPO = admissionInformationPOS.get(i);
+                        String grade1 = admissionInformationPO.getGrade();
+                        if (grade1.equals(getYearFromCode(ksh) + "")) {
+                            student = admissionInformationPO;
+                            break;
+                        }
                     }
                 }
-            }
-            if(student == null){
-                setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
-                        dateFormat3, dateFormat6, " 录取表中获取不到该学生的原始个人信息，无法填充政治面貌等信息");
+                if (student == null) {
+                    setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
+                            dateFormat3, dateFormat6, " 录取表中获取不到该学生的原始个人信息，无法填充政治面貌等信息");
 //                throw new RuntimeException("录取表中获取不到该学生的原始个人信息，无法填充政治面貌等信息");
-            }else{
-                personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
-                if (!studentData.get("MZ").equals(student.getEthnicity())) {
-                    String grade = studentStatusPO.getGrade();
-                    insertLogs.add(grade + "年 " + studentStatusPO.toString() + " 民族信息与新生信息不同 " + student.getEthnicity());
-                }
-                personalInfoPO.setPostalCode(student.getPostalCode());
-                personalInfoPO.setPhoneNumber(student.getPhoneNumber());
-                personalInfoPO.setAddress(student.getAddress());
-
-                originalEducationInfoPO.setGraduationSchool(student.getGraduationSchool());
-                originalEducationInfoPO.setOriginalEducation(student.getOriginalEducation());
-                originalEducationInfoPO.setGraduationDate(student.getGraduationDate());
-            }
-
-
-            personalInfoPO.setEthnicity(studentData.get("MZ"));
-            personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
-            personalInfoPO.setIdNumber(studentData.get("SFZH"));
-            personalInfoPO.setName(studentData.get("XM"));
-
-            personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
-            personalInfoPO.setGrade(studentData.get("NJ"));
-
-
-            originalEducationInfoPO.setGrade(studentData.get("NJ"));
-            originalEducationInfoPO.setIdNumber(studentData.get("SFZH"));
-
-
-            graduationInfoPO.setGrade(studentData.get("NJ"));
-            graduationInfoPO.setIdNumber(studentData.get("SFZH"));
-            graduationInfoPO.setStudentNumber(studentData.get("XH"));
-            graduationInfoPO.setGraduationNumber(studentData.get("BYZH"));
-
-            List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(new LambdaQueryWrapper<StudentStatusPO>().
-                    eq(StudentStatusPO::getGrade, studentStatusPO.getGrade()).
-                    eq(StudentStatusPO::getIdNumber, studentStatusPO.getIdNumber()));
-            if(studentStatusPOS.size() > 1){
-                throw new RuntimeException("同一个年级，同一个学生存在多条学籍记录");
-            }else if(studentStatusPOS.size() == 1){
-                if(updateAny){
-                    // 条件更新
-                    int update = studentStatusMapper.update(studentStatusPO, new LambdaQueryWrapper<StudentStatusPO>().
-                            eq(StudentStatusPO::getGrade, studentStatusPO.getGrade()).
-                            eq(StudentStatusPO::getIdNumber, studentStatusPO.getIdNumber()));
-                    if(update > 0){
-                        String key1 = studentStatusPO.getGrade() + " 更新学籍数据";
-                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
-
+                } else {
+                    personalInfoPO.setPoliticalStatus(student.getPoliticalStatus());
+                    if (!studentData.get("MZ").equals(student.getEthnicity())) {
+                        String grade = studentStatusPO.getGrade();
+                        insertLogs.add(grade + "年 " + studentStatusPO.toString() + " 民族信息与新生信息不同 " + student.getEthnicity());
                     }
+                    personalInfoPO.setPostalCode(student.getPostalCode());
+                    personalInfoPO.setPhoneNumber(student.getPhoneNumber());
+                    personalInfoPO.setAddress(student.getAddress());
+
+                    originalEducationInfoPO.setGraduationSchool(student.getGraduationSchool());
+                    originalEducationInfoPO.setOriginalEducation(student.getOriginalEducation());
+                    originalEducationInfoPO.setGraduationDate(student.getGraduationDate());
                 }
 
-            }else{
-                // 没有找到任何记录 直接插入
-                int insert = studentStatusMapper.insert(studentStatusPO);
-                if(insert > 0){
-                    String key1 = studentStatusPO.getGrade() + " 新增学籍数据";
+
+                personalInfoPO.setEthnicity(studentData.get("MZ"));
+                personalInfoPO.setIdType(identifyID(studentData.get("SFZH")));
+                personalInfoPO.setIdNumber(studentData.get("SFZH"));
+                personalInfoPO.setName(studentData.get("XM"));
+
+                personalInfoPO.setEntrancePhoto(studentData.get("RXPIC"));
+                personalInfoPO.setGrade(studentData.get("NJ"));
+
+
+                originalEducationInfoPO.setGrade(studentData.get("NJ"));
+                originalEducationInfoPO.setIdNumber(studentData.get("SFZH"));
+
+
+                graduationInfoPO.setGrade(studentData.get("NJ"));
+                graduationInfoPO.setIdNumber(studentData.get("SFZH"));
+                graduationInfoPO.setStudentNumber(studentData.get("XH"));
+                graduationInfoPO.setGraduationNumber(studentData.get("BYZH"));
+
+                List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(new LambdaQueryWrapper<StudentStatusPO>().
+                        eq(StudentStatusPO::getGrade, studentStatusPO.getGrade()).
+                        eq(StudentStatusPO::getIdNumber, studentStatusPO.getIdNumber()));
+                if (studentStatusPOS.size() > 1) {
+                    throw new RuntimeException("同一个年级，同一个学生存在多条学籍记录");
+                } else if (studentStatusPOS.size() == 1) {
+                    if (updateAny) {
+                        // 条件更新
+                        int update = studentStatusMapper.update(studentStatusPO, new LambdaQueryWrapper<StudentStatusPO>().
+                                eq(StudentStatusPO::getGrade, studentStatusPO.getGrade()).
+                                eq(StudentStatusPO::getIdNumber, studentStatusPO.getIdNumber()));
+                        if (update > 0) {
+                            String key1 = studentStatusPO.getGrade() + " 更新学籍数据";
+                            updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
+                        }
+                    }
+
+                } else {
+                    // 没有找到任何记录 直接插入
+                    int insert = studentStatusMapper.insert(studentStatusPO);
+                    if (insert > 0) {
+                        String key1 = studentStatusPO.getGrade() + " 新增学籍数据";
 //                    synchronized (this){
 //                        if(!updateCountMap.containsKey(key1)){
 //                            updateCountMap.put(key1, 1L);
@@ -392,129 +397,129 @@ public class StudentStatusDataImport {
 //                            updateCountMap.put(key1, updateCountMap.get(key1) + 1L);
 //                        }
 //                    }
-                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
-
-                }
-            }
-
-
-            List<PersonalInfoPO> personalInfoPOS = personalInfoMapper.selectList(new LambdaQueryWrapper<PersonalInfoPO>().
-                    eq(PersonalInfoPO::getGrade, personalInfoPO.getGrade()).
-                    eq(PersonalInfoPO::getIdNumber, personalInfoPO.getIdNumber()));
-            if(personalInfoPOS.size() > 1){
-                throw new RuntimeException("同一个年级，同一个学生存在多条个人信息记录");
-            }else if(personalInfoPOS.size() == 1){
-                if(updateAny && updatePersonalInfo){
-                    // 条件更新
-                    int update = personalInfoMapper.update(personalInfoPO, new LambdaQueryWrapper<PersonalInfoPO>().
-                            eq(PersonalInfoPO::getGrade, personalInfoPO.getGrade()).
-                            eq(PersonalInfoPO::getIdNumber, personalInfoPO.getIdNumber()));
-                    if(update > 0){
-                        String key1 = personalInfoPO.getGrade() + " 更新学生个人信息数据";
                         updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
                     }
                 }
 
-            }else{
-                // 没有找到任何记录 直接插入
-                if(updatePersonalInfo) {
-                    int insert = personalInfoMapper.insert(personalInfoPO);
-                    if (insert > 0) {
-                        String key1 = studentStatusPO.getGrade() + " 新增学生个人信息数据";
-                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
-                    }
-                }
-            }
-
-            List<OriginalEducationInfoPO> originalEducationInfoPOS = originalEducationInfoMapper.selectList(new LambdaQueryWrapper<OriginalEducationInfoPO>().
-                    eq(OriginalEducationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
-                    eq(OriginalEducationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
-
-            if(originalEducationInfoPOS.size() > 1){
-                throw new RuntimeException("同一个年级，同一个学生存在多条原学历记录");
-            }else if(originalEducationInfoPOS.size() == 1){
-                if(updateAny){
-                    // 条件更新
-                    int update = originalEducationInfoMapper.update(originalEducationInfoPO, new LambdaQueryWrapper<OriginalEducationInfoPO>().
-                            eq(OriginalEducationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
-                            eq(OriginalEducationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
-                    if(update > 0){
-                        String key1 = originalEducationInfoPO.getGrade() + " 更新学生原学历数据";
-                        updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
-
-                    }
-                }
-
-            }else{
-                // 没有找到任何记录 直接插入
-                int insert = originalEducationInfoMapper.insert(originalEducationInfoPO);
-                if(insert > 0){
-                    String key1 = originalEducationInfoPO.getGrade() + " 新增学生原学历数据";
-                    updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
-
-                }
-            }
-
-
-            String graduateDateString = studentData.get("BYRQ");
-            String bypic = studentData.get("BYPIC");
-            if((graduateDateString != null && !graduateDateString.equals("NULL")) || bypic != null){
-                Date graduateDate = null;
-                if(graduateDateString != null && !graduateDateString.equals("NULL")
-                        && !graduateDateString.isEmpty()){
-                    graduateDate = dateFormat5.parse(graduateDateString);
-                }
-                graduationInfoPO.setGraduationDate(graduateDate);
-
-                graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
-
-                // 检查一下数据库中是否存在该毕业信息数据，如果存在根据是否覆盖标志 进行覆盖
-                // 如果没有找到任何数据 直接插入，如果存在多条毕业数据 则报错
-                List<GraduationInfoPO> graduationInfoPOS = graduationInfoMapper.selectList(new LambdaQueryWrapper<GraduationInfoPO>().
-                        eq(GraduationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
-                        eq(GraduationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
-                if(graduationInfoPOS.size() > 1){
-                    throw new RuntimeException("同一个年级，同一个学生存在多条毕业记录");
-                }else if(graduationInfoPOS.size() == 1){
-                    if(updateAny){
+                List<PersonalInfoPO> personalInfoPOS = personalInfoMapper.selectList(new LambdaQueryWrapper<PersonalInfoPO>().
+                        eq(PersonalInfoPO::getGrade, personalInfoPO.getGrade()).
+                        eq(PersonalInfoPO::getIdNumber, personalInfoPO.getIdNumber()));
+                if (personalInfoPOS.size() > 1) {
+                    throw new RuntimeException("同一个年级，同一个学生存在多条个人信息记录");
+                } else if (personalInfoPOS.size() == 1) {
+                    if (updateAny && updatePersonalInfo) {
                         // 条件更新
-                        int update = graduationInfoMapper.update(graduationInfoPO, new LambdaQueryWrapper<GraduationInfoPO>().
-                                eq(GraduationInfoPO::getGrade, graduationInfoPO.getGrade()).
-                                eq(GraduationInfoPO::getIdNumber, graduationInfoPO.getIdNumber()));
-                        if(update > 0){
-                            String key1 = graduationInfoPO.getGrade() + " 更新学生毕业数据";
+                        int update = personalInfoMapper.update(personalInfoPO, new LambdaQueryWrapper<PersonalInfoPO>().
+                                eq(PersonalInfoPO::getGrade, personalInfoPO.getGrade()).
+                                eq(PersonalInfoPO::getIdNumber, personalInfoPO.getIdNumber()));
+                        if (update > 0) {
+                            String key1 = personalInfoPO.getGrade() + " 更新学生个人信息数据";
                             updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
                         }
                     }
 
-                }else{
+                } else {
                     // 没有找到任何记录 直接插入
-                    int insert = graduationInfoMapper.insert(graduationInfoPO);
-                    if(insert > 0){
-                        String key1 = graduationInfoPO.getGrade() + " 新增学生毕业数据";
+                    if (updatePersonalInfo) {
+                        int insert = personalInfoMapper.insert(personalInfoPO);
+                        if (insert > 0) {
+                            String key1 = studentStatusPO.getGrade() + " 新增学生个人信息数据";
+                            updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
+                        }
+                    }
+                }
+
+                List<OriginalEducationInfoPO> originalEducationInfoPOS = originalEducationInfoMapper.selectList(new LambdaQueryWrapper<OriginalEducationInfoPO>().
+                        eq(OriginalEducationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
+                        eq(OriginalEducationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
+
+                if (originalEducationInfoPOS.size() > 1) {
+                    throw new RuntimeException("同一个年级，同一个学生存在多条原学历记录");
+                } else if (originalEducationInfoPOS.size() == 1) {
+                    if (updateAny) {
+                        // 条件更新
+                        int update = originalEducationInfoMapper.update(originalEducationInfoPO, new LambdaQueryWrapper<OriginalEducationInfoPO>().
+                                eq(OriginalEducationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
+                                eq(OriginalEducationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
+                        if (update > 0) {
+                            String key1 = originalEducationInfoPO.getGrade() + " 更新学生原学历数据";
+                            updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
+                        }
+                    }
+
+                } else {
+                    // 没有找到任何记录 直接插入
+                    int insert = originalEducationInfoMapper.insert(originalEducationInfoPO);
+                    if (insert > 0) {
+                        String key1 = originalEducationInfoPO.getGrade() + " 新增学生原学历数据";
                         updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
 
                     }
                 }
 
-            }
 
-        } catch (Exception e) {
-            try {
-                setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
-                        dateFormat3, dateFormat6, e.toString());
+                String graduateDateString = studentData.get("BYRQ");
+                String bypic = studentData.get("BYPIC");
+                if ((graduateDateString != null && !graduateDateString.equals("NULL")) || bypic != null) {
+                    Date graduateDate = null;
+                    if (graduateDateString != null && !graduateDateString.equals("NULL")
+                            && !graduateDateString.isEmpty()) {
+                        graduateDate = dateFormat5.parse(graduateDateString);
+                    }
+                    graduationInfoPO.setGraduationDate(graduateDate);
 
-            }catch (Exception e1){
-                log.info("异常捕获时报错 " + e1);
+                    graduationInfoPO.setGraduationPhoto(studentData.get("BYPIC"));
+
+                    // 检查一下数据库中是否存在该毕业信息数据，如果存在根据是否覆盖标志 进行覆盖
+                    // 如果没有找到任何数据 直接插入，如果存在多条毕业数据 则报错
+                    List<GraduationInfoPO> graduationInfoPOS = graduationInfoMapper.selectList(new LambdaQueryWrapper<GraduationInfoPO>().
+                            eq(GraduationInfoPO::getGrade, originalEducationInfoPO.getGrade()).
+                            eq(GraduationInfoPO::getIdNumber, originalEducationInfoPO.getIdNumber()));
+                    if (graduationInfoPOS.size() > 1) {
+                        throw new RuntimeException("同一个年级，同一个学生存在多条毕业记录");
+                    } else if (graduationInfoPOS.size() == 1) {
+                        if (updateAny) {
+                            // 条件更新
+                            int update = graduationInfoMapper.update(graduationInfoPO, new LambdaQueryWrapper<GraduationInfoPO>().
+                                    eq(GraduationInfoPO::getGrade, graduationInfoPO.getGrade()).
+                                    eq(GraduationInfoPO::getIdNumber, graduationInfoPO.getIdNumber()));
+                            if (update > 0) {
+                                String key1 = graduationInfoPO.getGrade() + " 更新学生毕业数据";
+                                updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
+                            }
+                        }
+
+                    } else {
+                        // 没有找到任何记录 直接插入
+                        int insert = graduationInfoMapper.insert(graduationInfoPO);
+                        if (insert > 0) {
+                            String key1 = graduationInfoPO.getGrade() + " 新增学生毕业数据";
+                            updateCountMap.compute(key1, (k, v) -> (v == null) ? 1L : v + 1L);
+
+                        }
+                    }
+
+                }
+
+            } catch (Exception e) {
+                try {
+                    setErrorDataToExcel(errorData, studentData, dateFormat5, dateFormat1, dateFormat2,
+                            dateFormat3, dateFormat6, e.toString());
+
+                } catch (Exception e1) {
+                    log.info("异常捕获时报错 " + e1);
+                }
+                synchronized (lock) {
+                    errorList.add(errorData);
+                    failed_insert += 1;
+                }
             }
-            synchronized(lock) {
-                errorList.add(errorData);
-                failed_insert += 1;
-            }
-        }
         return -1;
     }
 
