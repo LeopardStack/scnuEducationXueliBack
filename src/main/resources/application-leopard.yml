@@ -133,8 +133,8 @@ logging:
 
 minio:
   url: http://124.71.34.208:9000/
-  accessKey: VDS3UEAF87MJSYJ192VE
-  secretKey: 2SX0MDnVJ+IklCXDYrgBtDMAICNQAinm2qJUkPsp
+  accessKey: LZUTGX5G7ESR7UPBQ6XG
+  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
   bucketName: xuelistudentpictures
   courseCoverDir: xueli-course-resources
   importBucketName: dataimport
