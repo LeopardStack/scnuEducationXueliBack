@@ -444,10 +444,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             // 对传入的主讲教师 ID 做校验
             String defaultMainTeacherUsername = courseLearningCreateRO.getDefaultMainTeacherUsername();
-            if (!isValidUsername(defaultMainTeacherUsername)) {
-                throw new RuntimeException("教师用户名为空 或者 数据库中找不到 " + defaultMainTeacherUsername);
+            if(!StringUtils.isEmpty(defaultMainTeacherUsername)){
+                if (!isValidUsername(defaultMainTeacherUsername)) {
+                    throw new RuntimeException("教师用户名为空 或者 数据库中找不到 " + defaultMainTeacherUsername);
+                }
+                coursesLearningPO.setDefaultMainTeacherUsername(defaultMainTeacherUsername);
             }
-            coursesLearningPO.setDefaultMainTeacherUsername(defaultMainTeacherUsername);
+
+
 
             List<CourseAssistantsPO> courseAssistantsPOS = new ArrayList<>();
             boolean assistantInsert1 = false;
@@ -881,12 +885,15 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             return SaResult.error(ResultCode.UPDATE_COURSE_FAIL2.getMessage()).
                     setCode(ResultCode.UPDATE_COURSE_FAIL2.getCode());
         }
-
-        // 校验主讲是否一致 不一致就修改
-        if(!coursesLearningROPageRO.getDefaultMainTeacherUsername().equals(coursesLearningPO.getDefaultMainTeacherUsername())){
-            TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
-                    .eq(TeacherInformationPO::getTeacherUsername, coursesLearningROPageRO.getDefaultMainTeacherUsername()));
-            coursesLearningPO.setDefaultMainTeacherUsername(teacherInformationPO.getTeacherUsername());
+// 对传入的主讲教师 ID 做校验
+        String defaultMainTeacherUsername = coursesLearningROPageRO.getDefaultMainTeacherUsername();
+        if(!StringUtils.isEmpty(defaultMainTeacherUsername)){
+            // 校验主讲是否一致 不一致就修改
+            if(!coursesLearningROPageRO.getDefaultMainTeacherUsername().equals(coursesLearningPO.getDefaultMainTeacherUsername())){
+                TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getTeacherUsername, coursesLearningROPageRO.getDefaultMainTeacherUsername()));
+                coursesLearningPO.setDefaultMainTeacherUsername(teacherInformationPO.getTeacherUsername());
+            }
         }
 
         // 校验助教集合是否一致
