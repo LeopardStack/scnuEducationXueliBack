@@ -46,9 +46,9 @@ public interface SingleLivingService {
 
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
-    SaResult exportStudentSituation(Long sectionId, HttpServletResponse response);
+    void exportStudentSituation(Long sectionId, HttpServletResponse response);
 
-    void exportAllCourseSituation(String[] courseId, HttpServletResponse response);
+    SaResult exportAllCourseSituation(Long courseId, HttpServletResponse response);
 
     List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
