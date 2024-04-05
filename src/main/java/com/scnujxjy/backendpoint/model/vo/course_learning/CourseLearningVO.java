@@ -102,6 +102,11 @@ public class CourseLearningVO {
     private Date recentCourseScheduleTime;
 
     /**
+     * 下次排课 如果为空 说明未设置 但是直播课都会设置
+     */
+    private Date nextCourseScheduleTime;
+
+    /**
      * 频道 ID 如果是直播课的话
      */
     private String channelId;

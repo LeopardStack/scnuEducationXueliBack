@@ -1580,7 +1580,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             // 现在 coursesLearningRO 包含了正确的列表，可以传递给 selectCourseLearningData 方法
             List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(coursesLearningRO);
-
+            for(CourseLearningVO courseLearningVO : courseLearningVOS){
+                setRecentCourseScheduleTime(courseLearningVO);
+            }
 
             // 使用 Stream API 过滤掉 valid 为 'N' 的课程
             List<CourseLearningVO> filteredCourseLearningVOS = courseLearningVOS.stream()
@@ -1598,6 +1600,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                         .setCourseDescription(courseLearningVO.getCourseDescription())
                         .setDefaultMainTeacherUsername(courseLearningVO.getDefaultMainTeacherUsername())
                         .setRecentCourseScheduleTime(courseLearningVO.getRecentCourseScheduleTime())
+                        .setNextCourseScheduleTime(courseLearningVO.getNextCourseScheduleTime())
                         ;
                 ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
                         .eq(ClassInformationPO::getClassIdentifier, highestGradeStudent.getClassIdentifier()));
@@ -1801,7 +1804,17 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .collect(Collectors.toSet()); // 将结果收集到 Set 中
             List<CourseLearningVO> courseLearningVOS = new ArrayList<>();
             if(!courseIds.isEmpty()){
+                // selectCourseLearningDataWithoutPaging 在 SELECT 里面采用 聚合函数 这个在 shardingSphere 里面是不被支持的
+                // 因此需要修改
+                // 注意这里是老师的话 则需要找到这门课的所有 课程信息
                 courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(new CoursesLearningRO().setCourseIds(courseIds));
+                for(CourseLearningVO courseLearningVO : courseLearningVOS){
+                    List<String> classNames = getClassNames(courseLearningVO.getId());
+                    // 将classNames列表中的元素用逗号隔开拼成一个字符串
+                    String classNamesStr = String.join(", ", classNames);
+                    // 设置到courseLearningVO的classNames属性
+                    courseLearningVO.setClassNames(classNamesStr);
+                }
             }
             combinedSet.addAll(courseLearningVOS);
         }
@@ -1825,6 +1838,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .setDefaultMainTeacherUsername(courseLearningVO.getDefaultMainTeacherUsername())
                     .setRecentCourseScheduleTime(courseLearningVO.getRecentCourseScheduleTime())
                     ;
+
+            // 设置回放状态
+            String liveCourseChannelId = getLiveCourseChannelId(courseInfoVO.getCourseId());
+            boolean playBackState = singleLivingSetting.getPlayBackState(liveCourseChannelId);
+            courseInfoVO.setPlayBackState(playBackState);
+            courseInfoVO.setChannelId(liveCourseChannelId);
+
             String courseCoverUrl = courseLearningVO.getCourseCoverUrl();
             if(courseCoverUrl != null){
                 courseInfoVO.setCourseCoverUrl(minioService.generatePresignedUrl(courseCoverUrl));
@@ -2515,4 +2535,53 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         ChannelResponseBO channelBasicInfo = videoStreamUtils.getChannelBasicInfo(String.valueOf(channelId));
         return SaResult.ok().setData(channelBasicInfo);
     }
+
+
+    /**
+     * 根据课程主键 ID 获取班级名称集合
+     * @param courseId
+     * @return
+     */
+    private List<String> getClassNames(Long courseId) {
+        List<ClassInformationPO> classInformationPOList = coursesClassMappingService.getBaseMapper().selectClassInfos(new CourseClassMappingRO().setCourseId(courseId));
+        // 使用Java 8 Stream API来收集所有classNames
+        return classInformationPOList.stream()
+                .map(ClassInformationPO::getClassName) // 将每个ClassInformationPO转换为其className
+                .collect(Collectors.toList()); // 收集结果为List
+    }
+
+    private void setRecentCourseScheduleTime(CourseLearningVO courseLearningVO){
+        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                .eq(SectionsPO::getCourseId, courseLearningVO.getId()));
+        // 获取当前时间
+        Date now = new Date();
+
+        // 查找最近的未来上课时间（即下次上课时间）
+        Optional<SectionsPO> nextSectionOpt = sectionsPOS.stream()
+                .filter(s -> s.getStartTime().after(now))
+                .min(Comparator.comparing(SectionsPO::getStartTime));
+
+        // 查找最近的过去上课时间（即最近一次上课时间）
+        Optional<SectionsPO> recentPastSectionOpt = sectionsPOS.stream()
+                .filter(s -> s.getStartTime().before(now))
+                .max(Comparator.comparing(SectionsPO::getStartTime));
+
+        // 将Optional转换为实际的值或null
+        SectionsPO nextSection = nextSectionOpt.orElse(null);
+        SectionsPO recentPastSection = recentPastSectionOpt.orElse(null);
+
+        // 根据需求使用nextSection和recentPastSection
+        if (nextSection != null) {
+            // 处理未来的上课时间...
+            Date futureCourseScheduleTime = nextSection.getStartTime();
+            courseLearningVO.setNextCourseScheduleTime(futureCourseScheduleTime);
+        }
+
+        if (recentPastSection != null) {
+            // 处理过去的上课时间...
+            Date recentCourseScheduleTime = recentPastSection.getStartTime();
+            courseLearningVO.setRecentCourseScheduleTime(recentCourseScheduleTime);
+        }
+    }
+
 }

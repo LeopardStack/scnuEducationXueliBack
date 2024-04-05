@@ -204,7 +204,8 @@
         cl.created_time,
         cl.updated_time,
         ti.name AS default_main_teacher_name,
-        GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,
+        <!--  GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,   -->
+
         ss.start_time AS recent_course_schedule_time
         <include refid="commonJoin" />
         WHERE

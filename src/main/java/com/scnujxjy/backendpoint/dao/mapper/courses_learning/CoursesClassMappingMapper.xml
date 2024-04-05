@@ -13,5 +13,13 @@
     <sql id="Base_Column_List">
         id, course_id, class_identifier
     </sql>
+    <select id="selectClassInfos"
+            resultType="com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO">
+        select ci.*
+        FROM courses_class_mapping ccm
+        INNER JOIN class_information ci
+        ON ccm.class_identifier = ci.class_identifier
+        WHERE ccm.course_id = #{entity.courseId}
+    </select>
 
 </mapper>

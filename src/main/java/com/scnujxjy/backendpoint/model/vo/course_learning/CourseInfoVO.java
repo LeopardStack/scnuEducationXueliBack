@@ -96,6 +96,12 @@ public class CourseInfoVO {
     private Date recentCourseScheduleTime;
 
     /**
+     * 近期排课 如果为空 说明未设置 但是直播课都会设置
+     */
+    @ApiModelProperty(value = "下次排课时间")
+    private Date nextCourseScheduleTime;
+
+    /**
      * 对于已修课程只会看到成绩
      */
     @ApiModelProperty(value = "90")
@@ -106,6 +112,12 @@ public class CourseInfoVO {
      */
     @ApiModelProperty(value = "课程状态")
     private String state;
+
+    @ApiModelProperty(value = "回放状态")
+    private Boolean playBackState;
+
+    @ApiModelProperty(value = "直播频道号")
+    private String channelId;
 
     /**
      * 创建时间
