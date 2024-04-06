@@ -34,6 +34,8 @@ public interface PersonalInfoMapper extends BaseMapper<PersonalInfoPO> {
     @Select("SELECT * FROM personal_info WHERE grade = #{grade} And id_number = #{studentId}")
     PersonalInfoVO selectInfoByGradeAndIdNumberOne(String grade, String studentId);
 
+    @Select("SELECT * FROM personal_info WHERE id_number = #{idNumber} limit 1")
+    PersonalInfoPO selectInfoByGradeAndIdNumberOne(String idNumber);
 
     /**
      * 根据年级和身份证号码来更新学生的所有个人信息

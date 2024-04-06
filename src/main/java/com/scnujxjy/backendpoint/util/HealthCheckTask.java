@@ -5,25 +5,38 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
-import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
+import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
+import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListRequest;
+import net.polyv.live.v1.entity.web.auth.LiveChannelWhiteListResponse;
 import net.polyv.live.v1.service.channel.impl.LiveChannelStateServiceImpl;
+import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
 import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Request;
 import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +54,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -85,6 +99,15 @@ public class HealthCheckTask {
 
     @Resource
     private LiveResourceMapper liveResourceMapper;
+
+    @Resource
+    private CoursesClassMappingMapper coursesClassMappingMapper;
+
+    @Resource
+    private StudentStatusMapper studentStatusMapper;
+
+    @Resource
+    private PersonalInfoMapper personalInfoMapper;
 
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
@@ -307,7 +330,7 @@ public class HealthCheckTask {
         refreshCourseSectionsInRedis();
     }
 
-//    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
+    //    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
     public void refreshCourseSectionsInRedis() {
         try {
             log.info("开始执行课程信息预热");
@@ -320,7 +343,7 @@ public class HealthCheckTask {
         }
     }
 
-//    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
+    //    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
     public void getChannelStatus() {
         LiveListChannelStreamStatusV2Request liveListChannelStreamStatusV2Request = new LiveListChannelStreamStatusV2Request();
         List<LiveListChannelStreamStatusV2Response> liveListChannelStreamStatusV2Respons;
@@ -331,14 +354,14 @@ public class HealthCheckTask {
             String todayString = today.format(formatter);
 
             List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByDate(todayString);
-            List<String> channelIdList=new ArrayList<>();
-            for (SectionsPO sectionsPO:sectionsPOS) {
+            List<String> channelIdList = new ArrayList<>();
+            for (SectionsPO sectionsPO : sectionsPOS) {
                 LiveResourcesPO query = liveResourceMapper.query(sectionsPO.getCourseId());
-                if (query!=null) {
+                if (query != null) {
                     channelIdList.add(query.getChannelId());
                 }
             }
-            if (channelIdList.isEmpty()){
+            if (channelIdList.isEmpty()) {
                 log.info("当天无直播，无需获取直播间的直播状态");
                 return;
             }
@@ -351,10 +374,100 @@ public class HealthCheckTask {
                 //拿到是List<"channelId","status">的数据，自行处理。   感觉可以放redis，没必要每分钟都查，不过怕出现当天加课加直播间，再看看ba
             }
         } catch (Exception e) {
-            log.error("批量查询直播间状态失败，异常信息为",e);
+            log.error("批量查询直播间状态失败，异常信息为", e);
         }
     }
 
 
+//  @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+    public void updateWhiteList() {
+        List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
+        try {
+            //先找出今天的所有直播
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String todayString = today.format(formatter);
+
+            List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByDate(todayString);
+            List<String> channelIdList = new ArrayList<>();
+            for (SectionsPO sectionsPO : sectionsPOS) {
+                LiveResourcesPO liveResourcesPO = liveResourceMapper.query(sectionsPO.getCourseId());
+                if (liveResourcesPO != null && StringUtils.isNotBlank(liveResourcesPO.getChannelId())) {
+                    channelIdList.add(liveResourcesPO.getChannelId());
+                }
+            }
+            if (channelIdList.isEmpty()) {
+                log.info("当天无直播，无需更新直播间白名单");
+                return;
+            }
+            //建议只有当天有直播的才需要去更新白名单
+            for (String channelId:channelIdList) {
+                for (int i = 1; i < 10; i++) {
+                    LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
+                    liveChannelWhiteListRequest.setChannelId(channelId)
+                            .setRank(1)
+                            .setCurrentPage(i)
+                            .setPageSize(1000);
+                    LiveChannelWhiteListResponse liveChannelWhiteListResponse = new LiveWebAuthServiceImpl().getChannelWhiteList(liveChannelWhiteListRequest);
+                    if (liveChannelWhiteListResponse.getContents().size() != 0) {
+                        List<LiveChannelWhiteListResponse.ChannelWhiteList> contents = liveChannelWhiteListResponse.getContents();
+                        whiteLists.addAll(contents);
+                    } else {
+                        break;
+                    }
+                }
+                List<String> whiteCodeList = new ArrayList<>();
+                for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : whiteLists) {
+                    whiteCodeList.add(channelWhiteList.getPhone());
+                }
+                //这样就拿到了该直播间的所有白名单。再查出当堂课的所有班级对应的所有学生。看二者是否相同
+
+                LiveResourcesPO liveResourcesPO = liveResourceMapper.queryCourseId(channelId);
+                List<CoursesClassMappingPO> coursesClassMappingPOS = coursesClassMappingMapper.selectByCourseId(liveResourcesPO.getCourseId());
+                List<String> uniqueClassIdentifier = coursesClassMappingPOS.stream()
+                        .map(CoursesClassMappingPO::getClassIdentifier)
+                        .distinct()
+                        .collect(Collectors.toList());
+                if (uniqueClassIdentifier.size() == 0) {
+                    continue;
+                }
+
+                //找出所有行政班的学生
+                List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(
+                        Wrappers.<StudentStatusPO>lambdaQuery().in(StudentStatusPO::getClassIdentifier, uniqueClassIdentifier)
+                );
+
+                //只有白名单中不存在该学生时才需要去更新该频道的白名单
+                List<StudentWhiteListVO> studentWhiteList = studentStatusPOS.stream()
+                        .filter(studentStatusPO -> !whiteCodeList.contains(studentStatusPO.getIdNumber()))
+                        .map(studentStatusPO -> {
+                            StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO();
+                            studentWhiteListVO.setCode(studentStatusPO.getIdNumber());
+                            PersonalInfoPO personalInfoPO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(studentStatusPO.getIdNumber());
+                            if (personalInfoPO != null && StringUtils.isNotBlank(personalInfoPO.getName())) {
+                                studentWhiteListVO.setName(personalInfoPO.getName());
+                            }
+                            return studentWhiteListVO;
+                        })
+                        .collect(Collectors.toList());
+                if (studentWhiteList.size() == 0) {
+                    continue;
+                }
+
+                ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
+                channelInfoRequest.setChannelId(channelId);
+                channelInfoRequest.setStudentWhiteList(studentWhiteList);
+                SaResult saResult = singleLivingService.addChannelWhiteStudentByFile(channelInfoRequest);
+                if (saResult.getCode() == 200) {
+                    log.info(channelId+"更新白名单成功");
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("批量更新直播间白名单失败，异常信息为", e);
+        }
+
+
+    }
 }
 
