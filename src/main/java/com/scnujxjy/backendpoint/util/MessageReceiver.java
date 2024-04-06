@@ -40,6 +40,7 @@ import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.UserUploadsService;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.excelListener.CourseScheduleListener;
 import com.scnujxjy.backendpoint.util.excelListener.CustomDateConverter;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
@@ -57,6 +58,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -119,6 +121,9 @@ public class MessageReceiver {
 
     @Resource
     private PlatformUserService platformUserService;
+
+    @Resource
+    private SingleLivingService singleLivingService;
 
     @RabbitListener(queuesToDeclare = @Queue("${spring.rabbitmq.queue1}"))
     public void process(String msg, Channel channel, Message message) {
@@ -259,6 +264,17 @@ public class MessageReceiver {
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 // 处理pageRO
                 admissionInformationService.generateBatchAdmissionData(pageRO, filter, userId, platformMessagePO);
+
+            }else if("java.lang.Long".equals(type)){
+                Long sectionId = message.getLong("data");
+                String loginId = message.getString("loginId");
+                Integer integer = message.getInteger("exportType");
+                if (integer==1){
+                    singleLivingService.exportStudentSituation(sectionId, loginId);
+                }else if (integer==2){
+                    singleLivingService.exportAllCourseSituation(sectionId,loginId);
+                }
+
 
             }
             // 添加其他类型的处理逻辑

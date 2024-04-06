@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
+import com.scnujxjy.backendpoint.util.MessageSender;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -43,6 +44,9 @@ public class SingleLivingController {
 
     @Resource
     private TeacherInformationService teacherInformationService;
+
+    @Resource
+    private MessageSender messageSender;
 
     /**
      * 刪除直播间
@@ -79,24 +83,30 @@ public class SingleLivingController {
 
     //导出考勤表接口
     @PostMapping("/edit/exportStudentSituation")
-    public SaResult exportStudentSituation(@RequestParam Long sectionId, HttpServletResponse response) {
+    public SaResult exportStudentSituation(@RequestParam Long sectionId) {
         // 校验参数
         if (Objects.isNull(sectionId)) {
             throw dataMissError();
         }
-
-        return singleLivingService.exportStudentSituation(sectionId, response);
+        boolean send = messageSender.sendExportStudentSituation(sectionId,(String)StpUtil.getLoginId(),1);
+        if (send) {
+            return SaResult.ok("导出该堂课考勤表成功");
+        }
+        return SaResult.error("导出该堂课考勤表失败");
     }
 
 
     @PostMapping("/edit/exportAllStudentSituation")
-    public void exportAllStudentSituation(@RequestParam String[] courseId, HttpServletResponse response) {
+    public SaResult exportAllStudentSituation(@RequestParam Long courseId) {
         // 校验参数
-        if (courseId.length == 0) {
+        if (Objects.isNull(courseId)) {
             throw dataMissError();
         }
-        singleLivingService.exportAllCourseSituation(courseId, response);
-        return;
+        boolean send = messageSender.sendExportStudentSituation(courseId,(String)StpUtil.getLoginId(),2);
+        if (send) {
+            return SaResult.ok("导出该门课所有考勤信息成功");
+        }
+        return SaResult.error("导出该门课所有考勤信息失败");
     }
 
     /**
@@ -113,7 +123,7 @@ public class SingleLivingController {
     }
 
     @PostMapping("/edit/getRecordSetting")
-    public SaResult getWatchCondition(String channelId){
+    public SaResult getWatchCondition(String channelId) {
         if (StrUtil.isBlank(channelId)) {
             throw dataMissError();
         }

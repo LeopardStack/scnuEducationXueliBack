@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
@@ -13,11 +14,15 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
+import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
@@ -30,6 +35,8 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
@@ -41,6 +48,7 @@ import com.scnujxjy.backendpoint.model.ro.core_data.PageBeanResult;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
+import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
@@ -70,17 +78,18 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.time.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.scnujxjy.backendpoint.constant.enums.MessageEnum.DOWNLOAD_MSG;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
 @Service
@@ -119,6 +128,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private SectionsMapper sectionsMapper;
+
+    @Resource
+    private MinioService minioService;
+
+    @Resource
+    private DownloadMessageMapper downloadMessageMapper;
+    @Resource
+    private PlatformMessageMapper platformMessageMapper;
 
 
     @Override
@@ -926,18 +943,18 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public SaResult exportStudentSituation(Long sectionId, HttpServletResponse response) {
+    public void exportStudentSituation(Long sectionId, String loginId) throws IOException {
         log.info("传入的节点id为" + sectionId);
-        SaResult saResult = new SaResult();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             //1、传入sectionID，拿到课程开始时间 2、连表查询course_id,拿到channelId 3、白名单接口拿到学生数据，生成文件
             SectionsPO sectionsPO = sectionsMapper.selectById(sectionId);
             if (Objects.isNull(sectionsPO.getCourseId())) {
-                return SaResult.error("该节点不与课程相关联，请联系管理员");
+                log.error("该节点不与课程相关联，请联系管理员");
             }
             LiveResourcesPO live = liveResourceMapper.query(sectionsPO.getCourseId());
             if (StringUtils.isBlank(live.getChannelId())) {
-                return SaResult.error("该课程还未生成直播间，请联系管理员");
+                log.error("该课程还未生成直播间，请联系管理员");
             }
 
             CoursesLearningPO coursesLearningPO = coursesLearningMapper.selectById(live.getCourseId());
@@ -960,9 +977,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
             if (viewLogResponseList.size() == 0) {
-                saResult.setCode(ResultCode.FAIL.getCode());
-                saResult.setMsg("该排课时间段内没有学生观看数据，请联系管理员");
-                return saResult;
+                log.error("该排课时间段内没有学生观看数据，请联系管理员");
             }
             log.info("学生观看数据获取成功" + viewLogResponseList);
             //将观看数据根据param1字段聚合后playDuration相加，再去重。
@@ -997,11 +1012,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
+                if(studentStatusVO==null){
+                    studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
+                }
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
                     QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1056,11 +1074,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
+                if(studentStatusVO==null){
+                    studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
+                }
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
                     QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1072,48 +1093,102 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
                 attendanceVOList.add(attendanceVO);
             }
-            downloadExportFile(response, attendanceVOList);
-            return SaResult.ok();
+
+            // 使用当前日期和时间作为文件名的一部分
+            Date generateData = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String currentDateTime = sdf.format(generateData);
+
+//            String templateFilePath = currentDateTime+"考勤数据.xlsx";
+//            EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
+//            File file = new File(templateFilePath);
+            EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
+
+            // 构建文件名
+            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
+            String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
+
+            boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
+            if (uploadSuccess) {
+                log.info("上传考勤表成功");
+                DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+                downloadMessagePO.setCreatedAt(generateData);
+                downloadMessagePO.setFileName(DownloadFileNameEnum.ATTENDANCE_STUDENTS_EXPORT_FILE.getFilename());
+                downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+                downloadMessagePO.setFileSize((long)outputStream.toByteArray().length);
+                int insert = downloadMessageMapper.insert(downloadMessagePO);
+                if (insert>0){
+                    log.info("插入导出表成功");
+                }
+                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
+                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
+                        .messageType(DOWNLOAD_MSG.getMessageName())
+                        .userId(String.valueOf(platformUserPO.getUserId()))
+                        .relatedMessageId(downloadMessagePO.getId())
+                        .createdAt(DateUtil.date())
+                        .isRead(false)
+                        .build();
+                int insert1 = platformMessageMapper.insert(platformMessagePO);
+                if (insert1>0) {
+                    log.info("插入消息表成功");
+                }
+                outputStream.close();
+//                boolean delete = file.delete();
+//                if (delete) {
+//                    log.info("删除文件成功");
+//                }
+            }
+//            downloadExportFile(response, attendanceVOList);
         } catch (Exception e) {
             log.error("调用导出考勤表接口失败，该堂课节点id为:{}", sectionId, e);
+            outputStream.close();
         }
-        return SaResult.error("导出考勤表失败，请联系管理员");
     }
 
     @Override
-    public void exportAllCourseSituation(String[] courseId, HttpServletResponse response) {
-
+    public void exportAllCourseSituation(Long courseId, String loginId) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
-            for (String id : courseId) {
+            List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByCourseId(courseId);
+            if (sectionsPOS.size() == 0) {
+                log.error("该课程不含有节点id，请联系管理员");
+            }
+
+            for (SectionsPO sectionsPO : sectionsPOS) {
                 //获取该排课表的频道直播间id
-                CourseSchedulePO schedulePO = courseScheduleMapper.selectById(id);
-                if (StrUtil.isBlank(schedulePO.getOnlinePlatform())) {
-                    log.error("该排课表还未创建直播间");
-                    return;
+                if (Objects.isNull(sectionsPO.getCourseId())) {
+                    log.info("该节点不与课程相关联，请联系管理员");
+                    continue;
+                }
+                LiveResourcesPO live = liveResourceMapper.query(sectionsPO.getCourseId());
+                if (StringUtils.isBlank(live.getChannelId())) {
+                    log.info("该课程还未生成直播间，请联系管理员");
+                    continue;
                 }
 
-                VideoStreamRecordPO videoStreamRecordPO = videoStreamRecordsMapper.selectById(schedulePO.getOnlinePlatform());
-                //开始和结束时间应该是该排课的，而不是直播记录表的。
-                String teachingTime = schedulePO.getTeachingTime().replace("-", "—");//14:30—17:00, 2:00-5:00
-                String courseStartTime = teachingTime.substring(0, teachingTime.indexOf("—"));//获取14:30, 2:00
-                String courseEndTime = teachingTime.substring(teachingTime.indexOf("—") + 1);//获取17:00, 5:00
+                CoursesLearningPO coursesLearningPO = coursesLearningMapper.selectById(live.getCourseId());
 
-                String datePattern = "yyyy-MM-dd";
-                SimpleDateFormat sdf1 = new SimpleDateFormat(datePattern);
-                String pattern = "yyyy-MM-dd HH:mm";
-                SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+                Date exportStartTime = minusSubtractOneHour(sectionsPO.getStartTime());
+                Date exportEndTime = minusAddOneHour(sectionsPO.getDeadline());
+                String startTime = format.format(exportStartTime);
+                String endTime = format.format(exportEndTime);
 
-                videoStreamRecordPO.setStartTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseStartTime));
-                videoStreamRecordPO.setEndTime(sdf.parse(sdf1.format(schedulePO.getTeachingDate()) + " " + courseEndTime));
+                ChannelViewRequest channelViewRequest = new ChannelViewRequest();
+                channelViewRequest.setChannelId(live.getChannelId());
+                channelViewRequest.setStartTime(startTime);
+                channelViewRequest.setEndTime(endTime);
+                channelViewRequest.setParam3("live");
+                channelViewRequest.setPageSize("10000");
 
-                SaResult channelCardPush = getStudentViewLog(videoStreamRecordPO);
+                log.info("获取指定条件下的观看数据请求为：" + channelViewRequest);
+                SaResult channelCardPush = getChannelCardPush(channelViewRequest);
+
                 List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
                 if (viewLogResponseList.size() == 0) {
                     log.error("该排课时间段内没有学生观看数据，请联系管理员");
-                    return;
                 }
-
                 log.info("学生观看数据获取成功" + viewLogResponseList);
                 //将观看数据根据param1字段聚合后playDuration相加，再去重。
                 Map<String, List<ViewLogResponse>> groupByParam1 = viewLogResponseList.stream()
@@ -1142,16 +1217,20 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 List<AttendanceVO> attendanceVOList = new ArrayList<>();
                 for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                     AttendanceVO attendanceVO = new AttendanceVO();
-                    attendanceVO.setGrade(schedulePO.getGrade());
-                    attendanceVO.setLevel(schedulePO.getLevel());
-                    attendanceVO.setMajorName(schedulePO.getMajorName());
-                    attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+//                attendanceVO.setGrade(schedulePO.getGrade());
+//                attendanceVO.setLevel(schedulePO.getLevel());
+//                attendanceVO.setMajorName(schedulePO.getMajorName());
+//                attendanceVO.setStudyForm(schedulePO.getStudyForm());
+//                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
+                    attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(viewLogResponse.getParam2());
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
-                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), schedulePO.getGrade());
+                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
+                    if(studentStatusVO==null){
+                        studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
+                    }
+                    //两次都查不到就说明确实没了
                     if (studentStatusVO != null) {
                         attendanceVO.setCode(studentStatusVO.getStudentNumber());
                         QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1163,14 +1242,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     }
                     attendanceVOList.add(attendanceVO);
                 }
-                Collections.sort(attendanceVOList, Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
+                attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
                 log.info("获取所有观看的学生数据并降序排序完成" + attendanceVOList);
 
                 //拿到直播间所有学生白名单数据whiteLists
                 List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
                 for (int i = 1; i < 10; i++) {
                     LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
-                    liveChannelWhiteListRequest.setChannelId(videoStreamRecordPO.getChannelId())
+                    liveChannelWhiteListRequest.setChannelId(live.getChannelId())
                             .setRank(1)
                             .setCurrentPage(i)
                             .setPageSize(1000);
@@ -1201,16 +1280,19 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
                 for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : noAttendList) {
                     AttendanceVO attendanceVO = new AttendanceVO();
-                    attendanceVO.setGrade(schedulePO.getGrade());
-                    attendanceVO.setLevel(schedulePO.getLevel());
-                    attendanceVO.setMajorName(schedulePO.getMajorName());
-                    attendanceVO.setStudyForm(schedulePO.getStudyForm());
-                    attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+//                attendanceVO.setGrade(schedulePO.getGrade());
+//                attendanceVO.setLevel(schedulePO.getLevel());
+//                attendanceVO.setMajorName(schedulePO.getMajorName());
+//                attendanceVO.setStudyForm(schedulePO.getStudyForm());
+//                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
+                    attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(channelWhiteList.getName());
                     attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
-                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), schedulePO.getGrade());
+                    StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
+                    if(studentStatusVO==null){
+                        studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
+                    }
                     if (studentStatusVO != null) {
                         attendanceVO.setCode(studentStatusVO.getStudentNumber());
                         QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1222,15 +1304,51 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     }
                     attendanceVOList.add(attendanceVO);
                 }
-
                 exportAttendanceVOList.addAll(attendanceVOList);
             }
 
-            downloadExportFile(response, exportAttendanceVOList);
+            // 使用当前日期和时间作为文件名的一部分
+            Date generateData = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String currentDateTime = sdf.format(generateData);
 
+            EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(exportAttendanceVOList);
+
+            // 构建文件名
+            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
+            String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
+
+            boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
+            if (uploadSuccess) {
+                log.info("上传考勤表成功");
+                DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+                downloadMessagePO.setCreatedAt(generateData);
+                downloadMessagePO.setFileName(DownloadFileNameEnum.ATTENDANCE_STUDENTS_EXPORT_FILE.getFilename());
+                downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+                downloadMessagePO.setFileSize((long)outputStream.toByteArray().length);
+                int insert = downloadMessageMapper.insert(downloadMessagePO);
+                if (insert>0){
+                    log.info("插入导出表成功");
+                }
+
+                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
+                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
+                        .messageType(DOWNLOAD_MSG.getMessageName())
+                        .userId(String.valueOf(platformUserPO.getUserId()))
+                        .relatedMessageId(downloadMessagePO.getId())
+                        .createdAt(DateUtil.date())
+                        .isRead(false)
+                        .build();
+                int insert1 = platformMessageMapper.insert(platformMessagePO);
+                if (insert1>0){
+                    log.info("插入消息表成功");
+                }
+            }
+            outputStream.close();
+//            downloadExportFile(response, exportAttendanceVOList);
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("");
+            log.error(courseId + "导出考勤表失败", e);
+            outputStream.close();
         }
 
     }
@@ -1259,6 +1377,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         String templateFilePath = "考勤数据.xls";
         EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
         File file = new File(templateFilePath);
+
+        //存进minio中。
+
+
         OutputStream outputStream = response.getOutputStream();
         FileInputStream fileInputStream = new FileInputStream(file);
 
@@ -1531,13 +1653,13 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //            waiting：等待中
 //            unStart：未开始
 //            banpush：已禁播
-            Map<String,String> map=new HashMap<>();
-            map.put("live","直播中");
-            map.put("playback","回放中");
-            map.put("end","已结束");
-            map.put("waiting","等待中");
-            map.put("unStart","未开始");
-            map.put("banpush","已禁播");
+            Map<String, String> map = new HashMap<>();
+            map.put("live", "直播中");
+            map.put("playback", "回放中");
+            map.put("end", "已结束");
+            map.put("waiting", "等待中");
+            map.put("unStart", "未开始");
+            map.put("banpush", "已禁播");
 
             String channelIds = String.join(",", channelIdList);
             liveListChannelStreamStatusV2Request.setChannelIds(channelIds);
@@ -1545,7 +1667,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     liveListChannelStreamStatusV2Request);
             if (liveListChannelStreamStatusV2Respons != null) {
                 log.info("批量查询频道直播状态成功:{}", JSON.toJSONString(liveListChannelStreamStatusV2Respons));
-                for (LiveListChannelStreamStatusV2Response response:liveListChannelStreamStatusV2Respons) {
+                for (LiveListChannelStreamStatusV2Response response : liveListChannelStreamStatusV2Respons) {
                     response.setLiveStatus(map.get(response.getLiveStatus()));
                 }
                 return SaResult.data(liveListChannelStreamStatusV2Respons);

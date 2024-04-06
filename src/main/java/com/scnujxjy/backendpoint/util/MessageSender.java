@@ -159,6 +159,24 @@ public class MessageSender {
         }
     }
 
+    public boolean sendExportStudentSituation(Long sectionId,String loginId,Integer exportType){
+        try {
+            // 创建一个包含数据和类型信息的JSON对象
+            JSONObject message = new JSONObject();
+            message.put("type", sectionId.getClass().getName());
+            message.put("data", sectionId);
+            message.put("dataType", "考勤表信息");
+            message.put("loginId", loginId);
+            //type为1单节点，2整门课
+            message.put("exportType",exportType);
+            this.rabbitTemplate.convertAndSend(queue4, message.toJSONString());
+            log.info(loginId+"成功发送导出文件处理消息 ");
+            return true;
+        } catch (AmqpException e) {
+            log.error(loginId+"发送导出文件处理消息失败: " + e.getMessage());
+            return false;
+        }
+    }
 
     public void send(String queue, String msg) {
         System.out.println(msg);

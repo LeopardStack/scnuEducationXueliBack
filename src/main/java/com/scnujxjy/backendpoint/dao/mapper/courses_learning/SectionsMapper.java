@@ -25,4 +25,7 @@ public interface SectionsMapper extends BaseMapper<SectionsPO> {
 
     @Select("SELECT * FROM sections WHERE start_time >= #{date} AND start_time < DATE_ADD(#{date}, INTERVAL 1 DAY)")
     List<SectionsPO> selectSectionsByDate(@Param("date") String date);
+
+    @Select("SELECT * FROM sections WHERE course_id = #{courseId}")
+    List<SectionsPO> selectSectionsByCourseId(@Param("courseId") Long courseId);
 }

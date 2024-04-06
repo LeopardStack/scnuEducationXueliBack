@@ -23,11 +23,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.Map;
 import java.util.Objects;
 
 /**
- * 公告消息表
+ * 消息表
  *
  * @author 谢辉龙
  * @since 2023-09-23
@@ -87,6 +86,7 @@ public class AnnouncementMessageController {
 
     /**
      * 学生获取自己的录取公告，弹框显示
+     *
      * @return 录取学生分页信息
      */
     @GetMapping("/get_admission_announcement_pop")
@@ -100,17 +100,17 @@ public class AnnouncementMessageController {
                 .eq(AdmissionInformationPO::getIdCardNumber, userName)
                 .eq(AdmissionInformationPO::getGrade, currentAdmissionYear)
         );
-        if(admissionInformationPO == null){
+        if (admissionInformationPO == null) {
             return SaResult.error("获取公告信息失败").setCode(2001);
         }
         GlobalConfigPO globalConfigPO = globalConfigService.getBaseMapper().selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
                 .eq(GlobalConfigPO::getConfigKey, AnnounceAttachmentEnum.NOW_NEW_STUDENT_ADMISSION.getSystemArg()));
         String configValue = globalConfigPO.getConfigValue();
         String s = minioService.generatePresignedUrl(configValue);
-        if(admissionInformationPO.getIsConfirmed().equals(1)){
+        if (admissionInformationPO.getIsConfirmed().equals(1)) {
             // 已确认 不需要再弹框公告
             return SaResult.ok("已确认").setCode(201).setData(s);
-        }else{
+        } else {
             return SaResult.ok().setData(s);
         }
 
