@@ -267,7 +267,14 @@ public class MessageReceiver {
 
             }else if("java.lang.Long".equals(type)){
                 Long sectionId = message.getLong("data");
-                singleLivingService.exportStudentSituation(sectionId, null);
+                String loginId = message.getString("loginId");
+                Integer integer = message.getInteger("exportType");
+                if (integer==1){
+                    singleLivingService.exportStudentSituation(sectionId, loginId);
+                }else if (integer==2){
+                    singleLivingService.exportAllCourseSituation(sectionId,loginId);
+                }
+
 
             }
             // 添加其他类型的处理逻辑

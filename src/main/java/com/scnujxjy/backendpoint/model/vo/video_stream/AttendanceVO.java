@@ -18,6 +18,8 @@ public class AttendanceVO {
 //    private String studyForm;
 //    @ExcelProperty(value = {describe,"上课时间"})
 //    private String teachingTime;
+    @ExcelProperty(value = {describe,"层次"})
+    private String section;
     @ExcelProperty(value = {describe,"学号"})
     private String code;
 

@@ -88,21 +88,25 @@ public class SingleLivingController {
         if (Objects.isNull(sectionId)) {
             throw dataMissError();
         }
-        boolean send = messageSender.sendExportStudentSituation(sectionId,(String)StpUtil.getLoginId());
+        boolean send = messageSender.sendExportStudentSituation(sectionId,(String)StpUtil.getLoginId(),1);
         if (send) {
-            return SaResult.ok("导出考试名单信息成功");
+            return SaResult.ok("导出该堂课考勤表成功");
         }
-        return SaResult.error("导出该堂课信息失败");
+        return SaResult.error("导出该堂课考勤表失败");
     }
 
 
     @PostMapping("/edit/exportAllStudentSituation")
-    public SaResult exportAllStudentSituation(@RequestParam Long courseId, HttpServletResponse response) {
+    public SaResult exportAllStudentSituation(@RequestParam Long courseId) {
         // 校验参数
         if (Objects.isNull(courseId)) {
             throw dataMissError();
         }
-        return singleLivingService.exportAllCourseSituation(courseId, response);
+        boolean send = messageSender.sendExportStudentSituation(courseId,(String)StpUtil.getLoginId(),2);
+        if (send) {
+            return SaResult.ok("导出该门课所有考勤信息成功");
+        }
+        return SaResult.error("导出该门课所有考勤信息失败");
     }
 
     /**

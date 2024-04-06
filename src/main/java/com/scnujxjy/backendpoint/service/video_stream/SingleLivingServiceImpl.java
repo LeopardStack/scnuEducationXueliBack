@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
@@ -13,12 +14,15 @@ import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.*;
@@ -31,6 +35,8 @@ import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
@@ -72,10 +78,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -86,6 +89,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.scnujxjy.backendpoint.constant.enums.MessageEnum.DOWNLOAD_MSG;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
 @Service
@@ -127,6 +131,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private MinioService minioService;
+
+    @Resource
+    private DownloadMessageMapper downloadMessageMapper;
+    @Resource
+    private PlatformMessageMapper platformMessageMapper;
 
 
     @Override
@@ -934,8 +943,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public void exportStudentSituation(Long sectionId, HttpServletResponse response) {
+    public void exportStudentSituation(Long sectionId, String loginId) throws IOException {
         log.info("传入的节点id为" + sectionId);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             //1、传入sectionID，拿到课程开始时间 2、连表查询course_id,拿到channelId 3、白名单接口拿到学生数据，生成文件
             SectionsPO sectionsPO = sectionsMapper.selectById(sectionId);
@@ -1002,11 +1012,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
+                if(studentStatusVO==null){
+                    studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
+                }
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
                     QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1061,11 +1074,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
+                if(studentStatusVO==null){
+                    studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
+                }
                 if (studentStatusVO != null) {
                     attendanceVO.setCode(studentStatusVO.getStudentNumber());
                     QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1078,36 +1094,65 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVOList.add(attendanceVO);
             }
 
-            String templateFilePath = "考勤数据.xlsx";
-            EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
-            File file = new File(templateFilePath);
-
             // 使用当前日期和时间作为文件名的一部分
             Date generateData = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
             String currentDateTime = sdf.format(generateData);
 
+//            String templateFilePath = currentDateTime+"考勤数据.xlsx";
+//            EasyExcel.write(templateFilePath, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
+//            File file = new File(templateFilePath);
+            EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
+
             // 构建文件名
-            String fileName = "考勤表" + "/" + currentDateTime + "_新生缴费数据.xlsx";
+            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
             String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
-            boolean uploadSuccess = minioService.uploadStreamToMinio(new FileInputStream(file), fileName, bucketName);
+
+            boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
             if (uploadSuccess) {
                 log.info("上传考勤表成功");
+                DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+                downloadMessagePO.setCreatedAt(generateData);
+                downloadMessagePO.setFileName(DownloadFileNameEnum.ATTENDANCE_STUDENTS_EXPORT_FILE.getFilename());
+                downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+                downloadMessagePO.setFileSize((long)outputStream.toByteArray().length);
+                int insert = downloadMessageMapper.insert(downloadMessagePO);
+                if (insert>0){
+                    log.info("插入导出表成功");
+                }
+                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
+                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
+                        .messageType(DOWNLOAD_MSG.getMessageName())
+                        .userId(String.valueOf(platformUserPO.getUserId()))
+                        .relatedMessageId(downloadMessagePO.getId())
+                        .createdAt(DateUtil.date())
+                        .isRead(false)
+                        .build();
+                int insert1 = platformMessageMapper.insert(platformMessagePO);
+                if (insert1>0) {
+                    log.info("插入消息表成功");
+                }
+                outputStream.close();
+//                boolean delete = file.delete();
+//                if (delete) {
+//                    log.info("删除文件成功");
+//                }
             }
 //            downloadExportFile(response, attendanceVOList);
         } catch (Exception e) {
             log.error("调用导出考勤表接口失败，该堂课节点id为:{}", sectionId, e);
+            outputStream.close();
         }
     }
 
     @Override
-    public SaResult exportAllCourseSituation(Long courseId, HttpServletResponse response) {
-
+    public void exportAllCourseSituation(Long courseId, String loginId) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
             List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByCourseId(courseId);
             if (sectionsPOS.size() == 0) {
-                return SaResult.error("该课程不含有节点id，请联系管理员");
+                log.error("该课程不含有节点id，请联系管理员");
             }
 
             for (SectionsPO sectionsPO : sectionsPOS) {
@@ -1142,7 +1187,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
                 List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
                 if (viewLogResponseList.size() == 0) {
-                    return SaResult.error("该排课时间段内没有学生观看数据，请联系管理员");
+                    log.error("该排课时间段内没有学生观看数据，请联系管理员");
                 }
                 log.info("学生观看数据获取成功" + viewLogResponseList);
                 //将观看数据根据param1字段聚合后playDuration相加，再去重。
@@ -1177,11 +1222,15 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                    attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(viewLogResponse.getParam2());
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
+                    if(studentStatusVO==null){
+                        studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
+                    }
+                    //两次都查不到就说明确实没了
                     if (studentStatusVO != null) {
                         attendanceVO.setCode(studentStatusVO.getStudentNumber());
                         QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1236,11 +1285,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setMajorName(schedulePO.getMajorName());
 //                attendanceVO.setStudyForm(schedulePO.getStudyForm());
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
-
+                    attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(channelWhiteList.getName());
                     attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
+                    if(studentStatusVO==null){
+                        studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
+                    }
                     if (studentStatusVO != null) {
                         attendanceVO.setCode(studentStatusVO.getStudentNumber());
                         QueryWrapper<ClassInformationPO> queryWrapper = new QueryWrapper<>();
@@ -1255,11 +1307,48 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 exportAttendanceVOList.addAll(attendanceVOList);
             }
 
-            downloadExportFile(response, exportAttendanceVOList);
-            return SaResult.ok();
+            // 使用当前日期和时间作为文件名的一部分
+            Date generateData = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String currentDateTime = sdf.format(generateData);
+
+            EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(exportAttendanceVOList);
+
+            // 构建文件名
+            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
+            String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
+
+            boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
+            if (uploadSuccess) {
+                log.info("上传考勤表成功");
+                DownloadMessagePO downloadMessagePO = new DownloadMessagePO();
+                downloadMessagePO.setCreatedAt(generateData);
+                downloadMessagePO.setFileName(DownloadFileNameEnum.ATTENDANCE_STUDENTS_EXPORT_FILE.getFilename());
+                downloadMessagePO.setFileMinioUrl(bucketName + "/" + fileName);
+                downloadMessagePO.setFileSize((long)outputStream.toByteArray().length);
+                int insert = downloadMessageMapper.insert(downloadMessagePO);
+                if (insert>0){
+                    log.info("插入导出表成功");
+                }
+
+                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
+                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
+                        .messageType(DOWNLOAD_MSG.getMessageName())
+                        .userId(String.valueOf(platformUserPO.getUserId()))
+                        .relatedMessageId(downloadMessagePO.getId())
+                        .createdAt(DateUtil.date())
+                        .isRead(false)
+                        .build();
+                int insert1 = platformMessageMapper.insert(platformMessagePO);
+                if (insert1>0){
+                    log.info("插入消息表成功");
+                }
+            }
+            outputStream.close();
+//            downloadExportFile(response, exportAttendanceVOList);
         } catch (Exception e) {
             log.error(courseId + "导出考勤表失败", e);
-            return SaResult.error("导出考勤表失败，请联系管理员");
+            outputStream.close();
         }
 
     }
