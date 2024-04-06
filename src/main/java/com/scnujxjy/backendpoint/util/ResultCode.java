@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum ResultCode {
     // 成功状态码
     SUCCESS(200, "成功"),
-    FAIL(0,"失败"),
+    FAIL(500,"失败"),
 
     PARTIALSUCCESS(100, "操作部分名单成功"),
 
