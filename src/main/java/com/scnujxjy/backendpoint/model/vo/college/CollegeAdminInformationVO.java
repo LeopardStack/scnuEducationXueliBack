@@ -20,6 +20,11 @@ public class CollegeAdminInformationVO {
     private String userId;
 
     /**
+     * 用户名
+     */
+    private String username;
+
+    /**
      * 姓名
      */
     private String name;

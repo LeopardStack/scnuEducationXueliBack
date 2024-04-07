@@ -35,6 +35,7 @@ public class CollegeAdminInformationPO implements Serializable {
     @TableId(value = "user_id")
     private String userId;
 
+
     /**
      * 姓名
      */

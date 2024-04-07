@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.college.CollegeAdminInformationVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeInformationVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.util.ResultCode;
@@ -208,8 +209,10 @@ public class CollegeInformationService extends ServiceImpl<CollegeInformationMap
         if(collegeInformationPO == null){
             return ResultCode.COLLEGE_FAIL4.generateErrorResultInfo();
         }else{
-            List<CollegeAdminInformationPO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<CollegeAdminInformationPO>()
-                    .eq(CollegeAdminInformationPO::getCollegeId, collegeInformationPO.getCollegeId()));
+            List<CollegeAdminInformationVO> collegeAdminInformationPOS = collegeAdminInformationService.getBaseMapper()
+                    .selectCollegeAdminInfos(new CollegeAdminInformationRO().setCollegeId(collegeInformationPO.getCollegeId()));
+//            new LambdaQueryWrapper<CollegeAdminInformationPO>()
+//                    .eq(CollegeAdminInformationPO::getCollegeId, collegeInformationPO.getCollegeId()));
 
             return SaResult.ok().setData(collegeAdminInformationPOS);
         }

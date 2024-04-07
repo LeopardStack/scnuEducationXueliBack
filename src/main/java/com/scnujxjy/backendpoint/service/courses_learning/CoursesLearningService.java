@@ -7,6 +7,7 @@ import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.CourseContentType;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.StudentCoursesStatusEnum;
 import com.scnujxjy.backendpoint.constant.enums.TeacherTypeEnum;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
@@ -58,6 +59,7 @@ import net.polyv.live.v1.constant.LiveConstant;
 import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
 import net.polyv.live.v1.entity.web.auth.LiveUpdateChannelAuthRequest;
 import net.polyv.live.v1.service.web.impl.LiveWebAuthServiceImpl;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.apache.tika.utils.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -1233,10 +1235,18 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         // 检查课程的开始时间和结束时间是否都在当前时间之后，以及结束时间是否在开始时间之后
         Date newStartTime = courseSectionRO.getStartTime();
         Date newDeadLine = courseSectionRO.getDeadLine();
+
+        Date oldStartTime = sectionsPO.getStartTime();
+        Date oldDeadLine = sectionsPO.getDeadline();
         if (newStartTime.after(now) &&
                 newDeadLine.after(now) &&
                 newDeadLine.after(newStartTime)) {
-
+            if(!StpUtil.getRoleList().contains(SUPER_ADMIN.getRoleName())){
+                // 不是超级管理员 想改过去的时间 直接报错
+                if(oldStartTime.before(now)){
+                    return SaResult.error("过去的排课时间不允许修改");
+                }
+            }
             sectionsPO.setStartTime(newStartTime);
             sectionsPO.setDeadline(newDeadLine);
 
@@ -1248,7 +1258,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         if(!courseSectionRO.getSectionName().equals(sectionsPO.getSectionName()) ){
             sectionsPO.setSectionName(courseSectionRO.getSectionName());
         }
-
+        log.info(StpUtil.getLoginIdAsString() + " 修改课程章节信息 " + sectionsPO);
         int insert = sectionsService.getBaseMapper().updateById(sectionsPO);
         if(insert <= 0){
             SaResult.error("更新节点信息失败 插入数据库失败");
@@ -1391,30 +1401,36 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     }
 
     private void updateSectionsSequence(Long courseId){
-        // 获取一门课的所有 Sections
-        List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
-                .eq(SectionsPO::getCourseId, courseId));
+        try {
+            // 显示声明 从写数据库中 读取数据 因为从数据更新有延迟
+            HintManager.getInstance().setWriteRouteOnly();
+            // 获取一门课的所有 Sections
+            List<SectionsPO> sectionsPOS = sectionsService.getBaseMapper().selectList(new LambdaQueryWrapper<SectionsPO>()
+                    .eq(SectionsPO::getCourseId, courseId));
 
-        // 根据 startTime 排序
-        List<SectionsPO> sortedSectionsPOS = sectionsPOS.stream()
-                .sorted(Comparator.comparing(SectionsPO::getStartTime))
-                .collect(Collectors.toList());
+            // 根据 startTime 排序
+            List<SectionsPO> sortedSectionsPOS = sectionsPOS.stream()
+                    .sorted(Comparator.comparing(SectionsPO::getStartTime))
+                    .collect(Collectors.toList());
 
-        sortedSectionsPOS.forEach(section ->
-                System.out.println(section.getStartTime()));
+            sortedSectionsPOS.forEach(section ->
+                    System.out.println(section.getStartTime()));
 
 
-        // 更新 sequence，从 1 开始
-        int sequence = 1;
-        for (SectionsPO section : sortedSectionsPOS) {
-            section.setSequence(sequence++);
+            // 更新 sequence，从 1 开始
+            int sequence = 1;
+            for (SectionsPO section : sortedSectionsPOS) {
+                section.setSequence(sequence++);
+            }
+
+            // 更新到数据库，这里假设 sectionsService 提供了批量更新的方法
+            // 请替换为你的实际批量更新方法
+            // 注意：MyBatis Plus 默认的 updateBatchById 方法可能对大量数据的批量更新不够高效
+            // 如果数据量很大，考虑分批更新或使用更高效的批量更新策略
+            sectionsService.updateBatchById(sortedSectionsPOS);
+        } finally {
+            HintManager.clear();
         }
-
-        // 更新到数据库，这里假设 sectionsService 提供了批量更新的方法
-        // 请替换为你的实际批量更新方法
-        // 注意：MyBatis Plus 默认的 updateBatchById 方法可能对大量数据的批量更新不够高效
-        // 如果数据量很大，考虑分批更新或使用更高效的批量更新策略
-        sectionsService.updateBatchById(sortedSectionsPOS);
     }
 
 
@@ -1655,11 +1671,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
                 TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                         .eq(TeacherInformationPO::getTeacherUsername, courseLearningVO.getDefaultMainTeacherUsername()));
-                courseInfoVO.setDefaultMainTeacherName(teacherInformationPO.getName());
-                String courseCoverUrl = courseLearningVO.getCourseCoverUrl();
-                if(courseCoverUrl != null){
-                    courseInfoVO.setCourseCoverUrl(minioService.generatePresignedUrl(courseCoverUrl));
+                if(teacherInformationPO != null){
+                    courseInfoVO.setDefaultMainTeacherName(teacherInformationPO.getName());
+                    String courseCoverUrl = courseLearningVO.getCourseCoverUrl();
+                    if(courseCoverUrl != null){
+                        courseInfoVO.setCourseCoverUrl(minioService.generatePresignedUrl(courseCoverUrl));
+                    }
                 }
+
                 courseInfoVOS.add(courseInfoVO);
             }
 

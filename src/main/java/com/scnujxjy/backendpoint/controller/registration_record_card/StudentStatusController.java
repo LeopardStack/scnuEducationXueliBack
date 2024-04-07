@@ -3,6 +3,8 @@ package com.scnujxjy.backendpoint.controller.registration_record_card;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
@@ -11,11 +13,13 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentAllStatusInfoVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.WangTiLoginUserVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
@@ -503,6 +507,38 @@ public class StudentStatusController {
             }
         }
         return SaResult.error("导出学籍数据失败！");
+    }
+
+
+
+    /**
+     * 获取学生的学号 和密码
+     * 密码： scnu+身份证后六位
+     *
+     * @return 教学计划
+     */
+    @GetMapping("/get_student_wangti_user")
+    public SaResult getStudentWangTiLoginUser() {
+        // 身份证号码
+        String username = StpUtil.getLoginIdAsString();
+
+        List<StudentStatusPO> studentStatusPOS = studentStatusService.getBaseMapper().selectList(new LambdaQueryWrapper<StudentStatusPO>()
+                .eq(StudentStatusPO::getIdNumber, username));
+
+        // 假设grade是一个可以转换为数字的字符串
+        Optional<StudentStatusPO> latestStudentStatus = studentStatusPOS.stream()
+                .max(Comparator.comparingInt(s -> Integer.parseInt(s.getGrade())));
+
+        if (latestStudentStatus.isPresent()) {
+            StudentStatusPO latestStudent = latestStudentStatus.get();
+            WangTiLoginUserVO wangTiLoginUserVO = new WangTiLoginUserVO()
+                    .setUsername(latestStudent.getStudentNumber())
+                    .setPassword("scnu" + username.substring(username.length() - 6))
+                    ;
+            return SaResult.ok().setData(wangTiLoginUserVO);
+        } else {
+            return ResultCode.VIDEO_INFORMATION_FAIL1.generateErrorResultInfo();
+        }
     }
 }
 

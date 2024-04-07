@@ -219,7 +219,6 @@
         cl.created_time DESC
         ) AS subquery
         ORDER BY time_difference ASC
-        LIMIT 1;
     </select>
     <select id="selectCourseRetakeStudentsInfo"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">

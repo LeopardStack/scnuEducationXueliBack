@@ -66,6 +66,8 @@ public enum ResultCode {
     TEACHINGPOINT_INFORMATION_FAIL4(23004, "新增教学点管理人员信息，管理人员的身份证号码或者手机号码长度必须大于5"),
     TEACHINGPOINT_INFORMATION_FAIL5(23005, "修改教学点管理人员信息，通过 userId 找不到原教学点管理人员信息记录"),
 
+    VIDEO_INFORMATION_FAIL1(24001, "没有找到学生的网梯登录信息"),
+
     // 课程学习错误码
     UPDATE_COURSE_FAIL1(21007, "课程ID 不存在"),
     UPDATE_COURSE_FAIL2(21008, "课程ID 找不到对应的课程信息"),
