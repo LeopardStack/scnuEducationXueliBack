@@ -71,6 +71,20 @@ spring:
     index_name: es_xueli_index
     pipelineName: es_xueli_pipeline
 
+  binlog4j:
+    redis-config:
+      host: 116.205.190.9
+      port: 6379
+      password: 12345A
+    client-configs:
+      master:
+        username: leopard
+        password: Leopard2024@
+        host: 124.71.34.208
+        persistence: true
+        port: 3308
+        serverId: 1001
+
 #配置日志
 mybatis-plus:
   mapper-locations: classpath*:mappers/**/*xml
