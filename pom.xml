@@ -209,7 +209,11 @@
             <artifactId>amqp-client</artifactId>
         </dependency>
 
-
+        <dependency>
+            <groupId>com.gitee.Jmysy</groupId>
+            <artifactId>binlog4j-spring-boot-starter</artifactId>
+            <version>1.9.1</version>
+        </dependency>
         <!-- Apache POI dependency for excel -->
         <dependency>
             <groupId>org.apache.poi</groupId>

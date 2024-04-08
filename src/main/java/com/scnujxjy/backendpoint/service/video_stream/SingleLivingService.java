@@ -8,13 +8,13 @@ import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public interface SingleLivingService {
 
+    SaResult getChannelInformation(Long sectionId);
 
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException;
 
@@ -22,7 +22,7 @@ public interface SingleLivingService {
 
     SaResult setRecordSetting(ChannelInfoRequest channelInfoRequest) throws IOException, NoSuchAlgorithmException;
 
-    SaResult getRecordSetting(String channelId) ;
+    SaResult getRecordSetting(String channelId);
 
     SaResult getTeacherChannelUrl(String channelId);
 
@@ -46,7 +46,7 @@ public interface SingleLivingService {
 
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
-    void exportStudentSituation(Long sectionId,  String loginId) throws IOException;
+    void exportStudentSituation(Long sectionId, String loginId) throws IOException;
 
     void exportAllCourseSituation(Long courseId, String loginId) throws IOException;
 
