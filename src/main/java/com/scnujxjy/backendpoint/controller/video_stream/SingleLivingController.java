@@ -15,10 +15,10 @@ import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.MessageSender;
-import com.scnujxjy.backendpoint.util.ResultCode;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -61,14 +61,6 @@ public class SingleLivingController {
         return singleLivingService.deleteChannel(channelId);
     }
 
-    @PostMapping("/edit/getChannelInformation")
-    public SaResult getChannelInformation(Long sectionId) throws IOException, NoSuchAlgorithmException {
-        if (Objects.isNull(sectionId)) {
-            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
-        }
-        return singleLivingService.getChannelInformation(sectionId);
-    }
-
     //不能获取不存在的直播间会报错
     @PostMapping("/edit/getChannelStatus")
     public SaResult deleteChannels(@RequestBody ChannelInfoRequest channelInfoRequest) {
@@ -96,7 +88,7 @@ public class SingleLivingController {
         if (Objects.isNull(sectionId)) {
             throw dataMissError();
         }
-        boolean send = messageSender.sendExportStudentSituation(sectionId, (String) StpUtil.getLoginId(), 1);
+        boolean send = messageSender.sendExportStudentSituation(sectionId,(String)StpUtil.getLoginId(),1);
         if (send) {
             return SaResult.ok("导出该堂课考勤表成功");
         }
@@ -110,7 +102,7 @@ public class SingleLivingController {
         if (Objects.isNull(courseId)) {
             throw dataMissError();
         }
-        boolean send = messageSender.sendExportStudentSituation(courseId, (String) StpUtil.getLoginId(), 2);
+        boolean send = messageSender.sendExportStudentSituation(courseId,(String)StpUtil.getLoginId(),2);
         if (send) {
             return SaResult.ok("导出该门课所有考勤信息成功");
         }
