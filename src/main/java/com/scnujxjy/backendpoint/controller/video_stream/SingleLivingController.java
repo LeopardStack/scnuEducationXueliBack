@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -59,6 +60,22 @@ public class SingleLivingController {
             throw dataMissError();
         }
         return singleLivingService.deleteChannel(channelId);
+    }
+
+    @PostMapping("/edit/getChannelInformation")
+    public SaResult getChannelInformation(Long sectionId) {
+        if (Objects.isNull(sectionId)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        return singleLivingService.getChannelInformation(sectionId);
+    }
+
+    @PostMapping("/edit/getChannelBasicInformation")
+    public SaResult getChannelInformation(String channelId) {
+        if (Objects.isNull(channelId)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        return singleLivingService.getChannelBasicInformation(channelId);
     }
 
     //不能获取不存在的直播间会报错

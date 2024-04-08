@@ -58,8 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
 import net.polyv.live.v1.config.LiveGlobalConfig;
 import net.polyv.live.v1.constant.LiveConstant;
-import net.polyv.live.v1.entity.channel.operate.LiveChannelSettingRequest;
-import net.polyv.live.v1.entity.channel.operate.LiveDeleteChannelRequest;
+import net.polyv.live.v1.entity.channel.operate.*;
 import net.polyv.live.v1.entity.channel.playback.LiveListChannelSessionInfoRequest;
 import net.polyv.live.v1.entity.channel.playback.LiveListChannelSessionInfoResponse;
 import net.polyv.live.v1.entity.web.auth.*;
@@ -137,6 +136,114 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     @Resource
     private PlatformMessageMapper platformMessageMapper;
 
+    @Override
+    public SaResult getChannelBasicInformation(String channelId){
+        ChannelInformation channelInformation = new ChannelInformation();
+        try {
+
+            channelInformation.setStartUrl("https://live.polyv.net/web-start/?channelId=" + channelId);
+            channelInformation.setAudienceUrl("https://live.polyv.cn/watch/" + channelId);
+            channelInformation.setChannelId(channelId);
+
+            LiveChannelInfoRequest liveChannelInfoRequest = new LiveChannelInfoRequest();
+            LiveChannelInfoResponse liveChannelInfoResponse;
+
+            liveChannelInfoRequest.setChannelId(channelId);
+            liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
+            if (liveChannelInfoResponse != null) {
+                log.info("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
+                channelInformation.setChannelPassword(liveChannelInfoResponse.getChannelPasswd());
+            }
+
+
+            LiveSonChannelInfoListRequest liveSonChannelInfoListRequest = new LiveSonChannelInfoListRequest();
+            LiveSonChannelInfoListResponse liveSonChannelInfoResponse;
+            //准备测试数据
+            liveSonChannelInfoListRequest.setChannelId(channelId);
+            liveSonChannelInfoResponse = new LiveChannelOperateServiceImpl().getSonChannelInfoList(
+                    liveSonChannelInfoListRequest);
+            if (liveSonChannelInfoResponse != null) {
+                log.info("查询频道号下所有角色信息成功{}", JSON.toJSONString(liveSonChannelInfoResponse));
+                List<LiveSonChannelInfoResponse> sonChannelInfos = liveSonChannelInfoResponse.getSonChannelInfos();
+                if (sonChannelInfos.size() != 0) {
+                    LiveSonChannelInfoResponse liveSonChannelInfoResponse1 = sonChannelInfos.get(0);
+                    channelInformation.setTutorName(liveSonChannelInfoResponse1.getNickname());
+                    channelInformation.setTutorPassword(liveSonChannelInfoResponse1.getPasswd());
+                    channelInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveSonChannelInfoResponse1.getAccount());
+                }
+            }
+
+            return SaResult.data(channelInformation);
+
+        } catch (Exception e) {
+            log.error(channelId + "生成该堂课的直播间基本信息异常", e);
+        }
+        return SaResult.error("生成该堂课的直播间基本信息失败");
+    }
+
+
+    @Override
+    public SaResult getChannelInformation(Long sectionId) {
+
+        ChannelInformation channelInformation = new ChannelInformation();
+        try {
+            SectionsPO sectionsPO = sectionsMapper.selectById(sectionId);
+            if (sectionsPO == null) {
+                return ResultCode.SELECT_SECTION_FAIL.generateErrorResultInfo();
+            }
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String startDateString = sdf.format(sectionsPO.getStartTime());
+            channelInformation.setStartTime(startDateString);
+
+            LiveResourcesPO liveResourcesPO = liveResourceMapper.query(sectionsPO.getCourseId());
+
+            if (liveResourcesPO == null) {
+                return ResultCode.SELECT_VIDEO_FAIL.generateErrorResultInfo();
+            }
+            channelInformation.setStartUrl("https://live.polyv.net/web-start/?channelId=" + liveResourcesPO.getChannelId());
+            channelInformation.setAudienceUrl("https://live.polyv.cn/watch/" + liveResourcesPO.getChannelId());
+            channelInformation.setChannelId(liveResourcesPO.getChannelId());
+            CoursesLearningPO coursesLearningPO = coursesLearningMapper.selectById(sectionsPO.getCourseId());
+            if (coursesLearningPO == null) {
+                return ResultCode.SELECT_COURSE_FAIL.generateErrorResultInfo();
+            }
+            channelInformation.setCourseName(coursesLearningPO.getCourseName());
+
+            LiveChannelInfoRequest liveChannelInfoRequest = new LiveChannelInfoRequest();
+            LiveChannelInfoResponse liveChannelInfoResponse;
+
+            liveChannelInfoRequest.setChannelId(liveResourcesPO.getChannelId());
+            liveChannelInfoResponse = new LiveChannelOperateServiceImpl().getChannelInfo(liveChannelInfoRequest);
+            if (liveChannelInfoResponse != null) {
+                log.info("查询频道信息成功{}", JSON.toJSONString(liveChannelInfoResponse));
+                channelInformation.setChannelPassword(liveChannelInfoResponse.getChannelPasswd());
+            }
+
+
+            LiveSonChannelInfoListRequest liveSonChannelInfoListRequest = new LiveSonChannelInfoListRequest();
+            LiveSonChannelInfoListResponse liveSonChannelInfoResponse;
+            //准备测试数据
+            liveSonChannelInfoListRequest.setChannelId(liveResourcesPO.getChannelId());
+            liveSonChannelInfoResponse = new LiveChannelOperateServiceImpl().getSonChannelInfoList(
+                    liveSonChannelInfoListRequest);
+            if (liveSonChannelInfoResponse != null) {
+                log.info("查询频道号下所有角色信息成功{}", JSON.toJSONString(liveSonChannelInfoResponse));
+                List<LiveSonChannelInfoResponse> sonChannelInfos = liveSonChannelInfoResponse.getSonChannelInfos();
+                if (sonChannelInfos.size() != 0) {
+                    LiveSonChannelInfoResponse liveSonChannelInfoResponse1 = sonChannelInfos.get(0);
+                    channelInformation.setTutorName(liveSonChannelInfoResponse1.getNickname());
+                    channelInformation.setTutorPassword(liveSonChannelInfoResponse1.getPasswd());
+                    channelInformation.setTutorUrl("https://console.polyv.net/live/login.html?channelId=" + liveSonChannelInfoResponse1.getAccount());
+                }
+            }
+
+            return SaResult.data(channelInformation);
+
+        } catch (Exception e) {
+            log.error(sectionId + "生成该堂课的直播间基本信息异常", e);
+        }
+        return SaResult.error("生成该堂课的直播间基本信息失败");
+    }
 
     @Override
     public SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException {

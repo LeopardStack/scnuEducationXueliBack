@@ -104,6 +104,11 @@ public enum ResultCode {
     PROJECT_MANAGE_BRIEF_GET_FAIL(50006, "获取所有项目文件信息失败"),
     PROJECT_MANAGE_BRIEF_FILE_DELETE_FAIL(50007, "删除文件失败"),
 
+    //直播课程相关错误码
+    SELECT_SECTION_FAIL(50008, "不存在该门节点课程，请联系管理员"),
+    SELECT_VIDEO_FAIL(50009, "不存在该门直播间，请联系管理员"),
+    SELECT_COURSE_FAIL(50010, "不存在该门直播间，请联系管理员"),
+
 
     // 接口错误：60001-69999
     INTERFACE_INNER_INVOKE_ERROR(60001, "内部系统接口调用异常"),

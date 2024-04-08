@@ -61,4 +61,8 @@ public interface SingleLivingService {
     SaResult getStudentViewlogDetail(ChannelViewStudentRequest channelViewStudentRequest) throws IOException, NoSuchAlgorithmException;
 
     SaResult getChannelStatus(List<String> channelIdList);
+
+    SaResult getChannelInformation(Long sectionId);
+
+    SaResult getChannelBasicInformation(String channelId);
 }
