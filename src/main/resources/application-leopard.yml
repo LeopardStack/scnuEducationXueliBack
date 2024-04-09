@@ -63,7 +63,7 @@ spring:
       master:
         type: com.zaxxer.hikari.HikariDataSource
         driver-class-name: com.mysql.cj.jdbc.Driver
-        jdbc-url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        jdbc-url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
         username: leopard
         password: Leopard2024@
       slave:
@@ -191,4 +191,4 @@ knife4j:
 
 #设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
 singleLiving:
-  category: 520488
+  category: 510211

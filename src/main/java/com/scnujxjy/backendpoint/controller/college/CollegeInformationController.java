@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.college;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -24,6 +25,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  */
 @RestController
 @RequestMapping("/college_information")
+@SaCheckPermission("平台基础信息.查询信息")
 public class CollegeInformationController {
 
     @Resource
@@ -101,6 +103,7 @@ public class CollegeInformationController {
      * @return 添加结果
      */
     @PostMapping("/add")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult addCollegeInfo(@RequestBody CollegeInformationRO collegeInformationRO) {
         // 参数校验
         if (Objects.isNull(collegeInformationRO)) {
@@ -119,6 +122,7 @@ public class CollegeInformationController {
      * @return 更新后的学院信息
      */
     @PostMapping("/edit")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult editById(@RequestBody CollegeInformationRO collegeInformationRO) {
         // 参数校验
         if (Objects.isNull(collegeInformationRO) || StrUtil.isBlank(collegeInformationRO.getCollegeId())) {
@@ -141,6 +145,7 @@ public class CollegeInformationController {
      * @return 删除的数量
      */
     @DeleteMapping("/delete")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult deleteById(String collegeId) {
         // 参数校验
         if (StrUtil.isBlank(collegeId)) {

@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.teaching_point;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -23,6 +24,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  */
 @RestController
 @RequestMapping("/teaching-point-admin-information")
+@SaCheckPermission("平台基础信息.查询信息")
 public class TeachingPointAdminInformationController {
 
     @Resource

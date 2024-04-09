@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.teaching_point;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
@@ -28,6 +29,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  */
 @RestController
 @RequestMapping("/teaching_point_information")
+@SaCheckPermission("平台基础信息.查询信息")
 public class TeachingPointInformationController {
 
     @Resource
@@ -105,7 +107,7 @@ public class TeachingPointInformationController {
     /**
      * 分页查询教学点基础信息的筛选项参数
      *
-     * @param teachingPointInformationROPageRO 分页查询教学点基础信息参数
+     * @param teachingPointInformationRO 分页查询教学点基础信息参数
      * @return 分页查询教学点基础信息数据
      */
     @PostMapping("/get_args")
@@ -132,6 +134,7 @@ public class TeachingPointInformationController {
      * @return 更新后的教学点基本信息
      */
     @PostMapping("/add")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult addTeachingPoint(@RequestBody TeachingPointInformationRO teachingPointInformationRO) {
         // 更新数据
         return teachingPointInformationService.addTeachingPoint(teachingPointInformationRO);
@@ -144,6 +147,7 @@ public class TeachingPointInformationController {
      * @return 更新后的教学点基本信息
      */
     @PostMapping("/edit")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult editById(@RequestBody TeachingPointInformationRO teachingPointInformationRO) {
         // 参数校验
         if (Objects.isNull(teachingPointInformationRO) || StrUtil.isBlank(teachingPointInformationRO.getTeachingPointId())) {
@@ -166,6 +170,7 @@ public class TeachingPointInformationController {
      * @return 删除的数量
      */
     @DeleteMapping("/delete")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult deleteById(String teachingPointId) {
         // 参数校验
         if (StrUtil.isBlank(teachingPointId)) {
@@ -189,6 +194,7 @@ public class TeachingPointInformationController {
      * @return 删除的数量
      */
     @PostMapping("/add_manager")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult addManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
         // 参数校验
         if (Objects.isNull(teachingPointAdminInformationRO)) {
@@ -206,6 +212,7 @@ public class TeachingPointInformationController {
      * @return 删除的数量
      */
     @PostMapping("/update_manager")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult updateManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
         // 参数校验
         if (Objects.isNull(teachingPointAdminInformationRO)) {
@@ -223,6 +230,7 @@ public class TeachingPointInformationController {
      * @return 删除的数量
      */
     @DeleteMapping("/delete_manager")
+    @SaCheckPermission("平台基础信息.编辑信息")
     public SaResult deleteManager(@RequestBody TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
         // 参数校验
         if (Objects.isNull(teachingPointAdminInformationRO)) {

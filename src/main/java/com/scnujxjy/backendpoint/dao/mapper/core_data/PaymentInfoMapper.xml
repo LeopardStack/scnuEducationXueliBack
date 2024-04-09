@@ -83,7 +83,7 @@
             AND ci.class_name LIKE CONCAT(#{entity.teachingPoint}, '%')
         </if>
         <if test='entity.grade != null'>
-            AND ss.grade = #{entity.grade}
+            AND pi.grade = #{entity.grade}
         </if>
         <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
             AND ci.class_name LIKE

@@ -109,11 +109,11 @@ mybatis-plus:
 # 设置日志输出
 logging:
   config: src/main/resources/logback.xml
-  level:
-    org.apache.ibatis: DEBUG
-    com.scnujxjy.backendpoint.dao.mapper: DEBUG
-    org:
-      springframework: DEBUG
+#  level:
+#    org.apache.ibatis: DEBUG
+#    com.scnujxjy.backendpoint.dao.mapper: DEBUG
+#    org:
+#      springframework: DEBUG
 
 
 minio:

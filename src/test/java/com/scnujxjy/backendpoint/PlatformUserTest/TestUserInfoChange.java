@@ -332,6 +332,25 @@ public class TestUserInfoChange {
         }
     }
 
+    /**
+     * 添加单个学生
+     */
+    @Test
+    public void addStudent() {
+        log.info("生成学生账号");
+
+        List<PlatformUserRO> platformUserROList = new ArrayList<>();
+        PlatformUserRO platformUserRO = new PlatformUserRO();
+        platformUserRO.setUsername("44512119960103392X");
+        platformUserRO.setPassword("03392X");
+        platformUserRO.setRoleId(1L);
+        platformUserROList.add(platformUserRO);
+
+
+        List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROList);
+        log.info("生成学生账号  \n" + platformUserVOS);
+    }
+
 
     private void deleteStudentAccountByGrade(String grade) {
         // 获取指定年级的所有学生的账号

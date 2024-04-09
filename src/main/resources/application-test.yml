@@ -1,10 +1,14 @@
 server:
-  port: 40001
+  port: 40000
 
 run:
   schedule: false  # 设置为 true 以启动定时任务，设置为 false 则不运行
   oldDataSynchronizeStatus: false  # 开启旧系统同步
   checkLivingStatusScan: false  # 开启直播状态
+
+
+flowable:
+  database-schema-update: false
 
 spring:
   jackson:
@@ -48,18 +52,61 @@ spring:
     multipart:
       maxFileSize: 10GB
       maxRequestSize: 10GB
+  shardingsphere:
+    # 属性配置
+    props:
+      # 显示修改以后的sql语句
+      sql-show: true  # 是否打印sql
+      sql-simple: true  # 打印简单的sql
+    datasource:
+      names: master,slave
+      master:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+        username: leopard
+        password: Leopard2024@
+      slave:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://139.159.132.31:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: xhl2024@
+    rules:
+      readwrite-splitting:
+        data-sources:
+          mds: #名字自定义
+            type: static #类型 静态获取
+            props:
+              auto-aware-data-source-name: master
+              write-data-source-name: master
+
+              read-data-source-names: master, slave  # 添加这两个才能平等读 否则只有 slave 在读
+            load-balancer-name: read-random  #读写分离规则自定义命名
+        load-balancers:
+          read-random:
+            type: ROUND_ROBIN # 轮询负载均衡
   ## mysql
-  datasource:
-    driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: scnu_xueli_admin
-    password: SCNUXueli2024@
-    hikari:
-      maximum-pool-size: 1000 # 设置最大连接数为1000
-      idleTimeout: 300000  # set to 5 minutes for example
+  #  datasource:
+  #    master:
+  #      driverClassName: com.mysql.cj.jdbc.Driver
+  #      url: jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+  #      username: leopard
+  #      password: Leopard2024@
+  #      hikari:
+  #        maximum-pool-size: 50 # 设置最大连接数为1000
+  #        idleTimeout: 300  # set to 5 minutes for example
+  #    slave:
+  #      url: jdbc:mysql://139.159.132.31:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+  #      username: root
+  #      password: xhl2024@
+  #      driver-class-name: com.mysql.cj.jdbc.Driver
+  #      hikari:
+  #        maximum-pool-size: 50
+  #        idle-timeout: 300000 # 5 minutes in milliseconds
 
   elasticsearch:
-    uris: 124.71.34.208
+    uris: 124.71.34.208:9200
     port: 9200
     username: elastic
     password: elastic
@@ -77,20 +124,21 @@ mybatis-plus:
 
 # 设置日志输出
 logging:
-  config: src/main/resources/logback.xml
-#  config: logback.xml
-  level:
-    org.apache.ibatis: DEBUG
-    com.scnujxjy.backendpoint.dao.mapper: DEBUG
+  #  config: src/main/resources/logback.xml
+  config: logback.xml
+#  level:
+#    org.apache.ibatis: DEBUG
+#    com.scnujxjy.backendpoint.dao.mapper: DEBUG
 
 
 minio:
   url: http://124.71.34.208:9000/
-  accessKey: VDS3UEAF87MJSYJ192VE
-  secretKey: 2SX0MDnVJ+IklCXDYrgBtDMAICNQAinm2qJUkPsp
+  accessKey: LZUTGX5G7ESR7UPBQ6XG
+  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
   bucketName: xuelistudentpictures
   courseCoverDir: xueli-course-resources
   importBucketName: dataimport
+
 
 sa-token:
   # token名称 (同时也是cookie名称)
@@ -129,3 +177,18 @@ wechat:
 info:
   secret_key: 97b4464a57277c90d1a84827a3380d48
   init_vector: bf78261356848f05bd2ca5262d5f82dd
+
+knife4j:
+  # 开启增强配置
+  enable: true
+  # 开启Swagger的Basic认证功能,默认是false
+  basic:
+    enable: true
+    # Basic认证用户名
+    username: scnuAdmin
+    # Basic认证密码
+    password: scnuAdmin2024@
+
+#设置直播分类为2024学历教育520488。 510210是非学历培训，测试510211,默认分类486269
+singleLiving:
+  category: 510211

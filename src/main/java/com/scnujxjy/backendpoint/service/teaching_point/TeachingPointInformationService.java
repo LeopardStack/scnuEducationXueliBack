@@ -281,10 +281,13 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
         PlatformUserPO platformUserPO1 = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
                 .eq(PlatformUserPO::getUsername, username));
         if(platformUserPO1 != null){
-            // 存在老账号 删除
-            PlatformUserVO platformUserVO = platformUserService.detailById(platformUserPO1.getUserId());
+            // 存在老账号 删除，如果账号相同  复用即可
+//            PlatformUserVO platformUserVO = platformUserService.detailById(platformUserPO1.getUserId());
+            platformUserPO = platformUserPO1;
+        }else{
+            int insert = platformUserService.getBaseMapper().insert(platformUserPO);
         }
-        int insert = platformUserService.getBaseMapper().insert(platformUserPO);
+
 
         TeachingPointAdminInformationPO teachingPointAdminInformationPO = new TeachingPointAdminInformationPO()
                 .setUserId(String.valueOf(platformUserPO.getUserId()))
@@ -389,10 +392,19 @@ public class TeachingPointInformationService extends ServiceImpl<TeachingPointIn
      * @return
      */
     public SaResult deleteManager(TeachingPointAdminInformationRO teachingPointAdminInformationRO) {
-        int delete = platformUserService.getBaseMapper().delete(new LambdaQueryWrapper<PlatformUserPO>()
-                .eq(PlatformUserPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+
         int delete1 = teachingPointAdminInformationService.getBaseMapper().delete(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
+                .eq(TeachingPointAdminInformationPO::getUserId, teachingPointAdminInformationRO.getUserId())
+                .eq(TeachingPointAdminInformationPO::getTeachingPointId, teachingPointAdminInformationRO.getTeachingPointId())
+        );
+
+        Integer i = teachingPointAdminInformationService.getBaseMapper().selectCount(new LambdaQueryWrapper<TeachingPointAdminInformationPO>()
                 .eq(TeachingPointAdminInformationPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        if(i == 0){
+            int delete = platformUserService.getBaseMapper().delete(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, teachingPointAdminInformationRO.getUserId()));
+        }
+
         if(delete1 < 0){
             return ResultCode.DATABASE_DELETE_ERROR2.generateErrorResultInfo();
         }else if(delete1 == 0){

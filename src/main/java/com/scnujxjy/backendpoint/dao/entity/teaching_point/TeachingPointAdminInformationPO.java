@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -28,11 +29,26 @@ import java.io.Serializable;
 public class TeachingPointAdminInformationPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
     /**
      * 用户代码
      */
-    @TableId(value = "user_id")
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+
+    /**
+     * 用户ID
+     */
     private String userId;
 
     /**

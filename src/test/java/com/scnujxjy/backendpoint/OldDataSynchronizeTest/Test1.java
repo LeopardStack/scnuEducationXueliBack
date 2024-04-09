@@ -60,8 +60,8 @@ public class Test1 {
     @Test
     public void test4(){
         try{
-            oldDataSynchronize.synchronizeStudentStatusData(2024,
-                    2024, true, false);
+            oldDataSynchronize.synchronizeStudentStatusData(2023,
+                    2023, true, true);
         }catch (Exception e){
             log.info("同步学籍数据失败");
         }
@@ -91,6 +91,18 @@ public class Test1 {
         }catch (Exception e){
             log.info("同步成教缴费数据失败 " + e);
         }
+    }
+
+    /**
+     * 获取旧系统所有的缴费数据 筛选出 休学、退学、复学 并一起做同步
+     * 获取所有数据 筛选出 休学、退学、复学的
+     */
+    @Test
+    public void test6_0(){
+        paymentInfoMapper.truncateTable();
+
+        oldDataSynchronize.synchronizePaymentInfoDataAll(true,
+                new ArrayList<>(Arrays.asList("休学", "退学", "转学")));
     }
 
     /**
@@ -150,7 +162,7 @@ public class Test1 {
     @Test
     public void test9(){
         try {
-            oldDataSynchronize.synchronizeGradeInformationData(2024, 2023, true);
+            oldDataSynchronize.synchronizeGradeInformationData(2024, 2022, true);
         }catch (Exception e){
             log.info("同步新旧系统成绩数据失败 " + e.toString());
         }
