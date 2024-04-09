@@ -210,6 +210,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             filteredStream = filteredStream.filter(c -> c.getGrade().equals(filter.getGrade()));
         }
 
+        if (filter.getYear() != null) {
+            filteredStream = filteredStream.filter(c -> c.getYear().equals(filter.getYear()));
+        }
+
+        if (filter.getClassName() != null) {
+            filteredStream = filteredStream.filter(c -> c.getClassName().equals(filter.getClassName()));
+        }
+
         // 新增基于 classNameSet 的过滤条件
         if (filter.getClassNameSet() != null && !filter.getClassNameSet().isEmpty()) {
             List<String> classNameSet = filter.getClassNameSet();
@@ -240,9 +248,14 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         }
 
 
-        if (filter.getDefaultMainTeacherUsername() != null) {
-            filteredStream = filteredStream.filter(c -> c.getDefaultMainTeacherUsername().equals(filter.getDefaultMainTeacherUsername()));
+        if (filter.getDefaultMainTeacherUsername() != null && !filter.getDefaultMainTeacherUsername().trim().isEmpty()) {
+            filteredStream = filteredStream.filter(c ->
+                    c.getDefaultMainTeacherUsername() != null
+                            && !c.getDefaultMainTeacherUsername().trim().isEmpty()
+                            && c.getDefaultMainTeacherUsername().equals(filter.getDefaultMainTeacherUsername())
+            );
         }
+
         if (filter.getCourseStartTime() != null) {
             filteredStream = filteredStream.filter(c -> c.getStartTime() != null && !c.getStartTime().before(filter.getCourseStartTime()));
         }
@@ -335,6 +348,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             vo.setCreatedTime(representative.getCreatedTime());
             vo.setUpdatedTime(representative.getUpdatedTime());
             vo.setYear(representative.getYear());
+//            vo.setLevel(representative.getLevel());
+//            vo.setStudyForm(representative.getStudyForm());
 
             // 获取 classNames
             Set<String> classNames = records.stream()
@@ -370,6 +385,20 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
             vo.setTeachingPointName(String.join(", ", teachingPointNames));
+
+            // 获取 levels
+            Set<String> levels = records.stream()
+                    .map(CourseRecordBO::getLevel)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setLevels(String.join(", ", levels));
+
+            // 获取 studyForms
+            Set<String> studyForms = records.stream()
+                    .map(CourseRecordBO::getStudyForm)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            vo.setStudyForms(String.join(", ", studyForms));
 
             // 获取当前时间
             Date now = new Date();
@@ -2488,10 +2517,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParams(CoursesLearningRO coursesLearningRO) {
-        ExecutorService executor = Executors.newFixedThreadPool(8); // 根据需求调整线程池的大小
+        ExecutorService executor = Executors.newFixedThreadPool(9); // 根据需求调整线程池的大小
         try {
             // 提交查询到线程池并获取Future对象
             Future<List<String>> gradesFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsGrades(coursesLearningRO));
+            Future<List<String>> yearsFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsYears(coursesLearningRO));
             Future<List<String>> collegesFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsColleges(coursesLearningRO));
             Future<List<String>> majorNameFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsMajorNames(coursesLearningRO));
             Future<List<String>> studyFormFuture = executor.submit(() -> getBaseMapper().selectCourseLearningDataSelectParamsStudyForms(coursesLearningRO));
@@ -2509,6 +2539,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             List<String> teachingPointNames = teachingPointNameFuture.get();
             List<String> classNames = classNameFuture.get();
             List<String> courseNames = courseNameFuture.get();
+            List<String> years = yearsFuture.get();
 
             List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeacherInformationPO>()
                     .eq(TeacherInformationPO::getTeacherType2, TeacherTypeEnum.MAIN_TEACHER.getType()));
@@ -2537,6 +2568,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     .setCourseNames(courseNames)
                     .setTeacherInfos(teacherInfoList)
                     .setCourseTypeList(contentTypes)
+                    .setYears(years)
                     ;
 
             return pageQueryCoursesInfoParamsVO;

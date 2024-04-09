@@ -17,6 +17,8 @@ import java.util.List;
 public class PageQueryCoursesInfoParamsVO {
     List<String> grades;
 
+    List<String> years;
+
     List<String> colleges;
 
     List<String> majorNames;

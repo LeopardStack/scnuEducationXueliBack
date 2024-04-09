@@ -26,6 +26,9 @@ public class CoursesLearningRO {
     @ApiModelProperty(value = "课程主键ID集合", example = "1")
     private Set<Long> courseIds;
 
+    @ApiModelProperty(value = "年份", example = "2023")
+    String year;
+
     @ApiModelProperty(value = "年级", example = "2023")
     String grade;
 
@@ -37,6 +40,9 @@ public class CoursesLearningRO {
 
     @ApiModelProperty(value = "班级名称集合 存在一个教学点管理多个不同简称的班级", example = "广州达德")
     List<String> classNameSet;
+
+    @ApiModelProperty(value = "班级名称", example = "广州达德")
+    String className;
 
     @ApiModelProperty(value = "专业", example = "计算机科学与技术")
     String majorName;

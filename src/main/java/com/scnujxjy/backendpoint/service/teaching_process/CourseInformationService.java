@@ -23,6 +23,7 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.AddEditCourseClassInfoSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseCreateArgsVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
@@ -33,7 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.text.Collator;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -278,7 +285,7 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
         Set<CourseClassInfoVO> courseClassInfoVOS = new HashSet<>();
         for(String grade: courseInformationRO.getGrades()){
             for(String courseName: courseInformationRO.getCourseNames()){
-                List<CourseClassInfoVO> courseClassInfoVOS1 =  getBaseMapper().selectClassByCourseCreateCondition(
+                List<CourseClassInfoVO> courseClassInfoVOS1 = getBaseMapper().selectClassByCourseCreateCondition(
                         new CourseInformationRO()
                                 .setGrade(grade)
                                 .setCourseName(courseName)
@@ -291,6 +298,50 @@ public class CourseInformationService extends ServiceImpl<CourseInformationMappe
                 courseClassInfoVOS.addAll(courseClassInfoVOS1);
             }
         }
-        return courseClassInfoVOS;
+
+        // 按照班级名称 拼音 排序
+        Collator collator = Collator.getInstance(Locale.CHINA); // 获取中文比较器
+        return courseClassInfoVOS.stream()
+                .sorted(Comparator.comparing(CourseClassInfoVO::getClassName, collator))
+                .collect(Collectors.toCollection(LinkedHashSet::new)); // 收集结果为LinkedHashSet以保持排序
+    }
+
+    /**
+     * 获取班级的筛选参数项
+     * @param courseInformationRO
+     * @return
+     */
+    public AddEditCourseClassInfoSelectArgs getClassInfosByCoursesInfoSelectArgs(CourseInformationRO courseInformationRO) {
+        ExecutorService executor = Executors.newFixedThreadPool(4); // 创建一个固定大小的线程池，这里假设是4个线程
+
+        AddEditCourseClassInfoSelectArgs addEditCourseClassInfoSelectArgs = new AddEditCourseClassInfoSelectArgs();
+
+        // 使用Future来异步获取结果
+        Future<List<String>> collegeNamesFuture = executor.submit(() -> getBaseMapper().selectDistinctCollegeNames(courseInformationRO));
+        Future<List<String>> majorNamesFuture = executor.submit(() -> getBaseMapper().selectDistinctMajorNames(courseInformationRO));
+        Future<List<String>> levelsFuture = executor.submit(() -> getBaseMapper().selectDistinctLevels(courseInformationRO));
+        Future<List<String>> studyFormsFuture = executor.submit(() -> getBaseMapper().selectDistinctStudyForms(courseInformationRO));
+
+        try {
+            // 获取异步操作的结果，如果未完成则会阻塞
+            List<String> collegeNames = collegeNamesFuture.get();
+            List<String> majorNames = majorNamesFuture.get();
+            List<String> levels = levelsFuture.get();
+            List<String> studyForms = studyFormsFuture.get();
+
+            // 设置获取到的结果
+            addEditCourseClassInfoSelectArgs
+                    .setColleges(collegeNames)
+                    .setMajorNames(majorNames)
+                    .setLevels(levels)
+                    .setStudyForms(studyForms);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("线程池获取添加/编辑课程的班级筛选项信息失败 " + e);
+            return null;
+        } finally {
+            executor.shutdown(); // 不要忘记关闭线程池
+        }
+
+        return addEditCourseClassInfoSelectArgs;
     }
 }

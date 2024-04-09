@@ -50,6 +50,16 @@ public class CourseLearningVO {
     private String courseName;
 
     /**
+     * 层次
+     */
+    private String levels;
+
+    /**
+     * 学习形式
+     */
+    private String studyForms;
+
+    /**
      * 课程类型 直播、点播、线下、 混合
      */
     private String courseType;

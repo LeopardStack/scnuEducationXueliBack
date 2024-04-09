@@ -10,6 +10,7 @@ import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.AddEditCourseClassInfoSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseCreateArgsVO;
 import com.scnujxjy.backendpoint.model.vo.course_learning.CourseInfoVO;
@@ -415,6 +416,23 @@ public class CourseInformationController {
         courseClassInfoVOS = courseInformationService.getClassInfosByCoursesInfo(courseInformationRO);
         // 转换并返回
         return SaResult.ok().setData(courseClassInfoVOS);
+    }
+
+
+    /**
+     * 根据不同的角色 来根据课程信息来锁定班级信息 的筛选参数集合
+     *
+     * @return 班级信息
+     */
+    @PostMapping("/get_class_info_by_course_info_select_args")
+    public SaResult getClassInfosByCoursesInfoSelectArgs(@RequestBody CourseInformationRO courseInformationRO) {
+        AddEditCourseClassInfoSelectArgs addEditCourseClassInfoSelectArgs = null;
+        if (Objects.isNull(courseInformationRO)) {
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
+        }
+        addEditCourseClassInfoSelectArgs = courseInformationService.getClassInfosByCoursesInfoSelectArgs(courseInformationRO);
+        // 转换并返回
+        return SaResult.ok().setData(addEditCourseClassInfoSelectArgs);
     }
 
 }

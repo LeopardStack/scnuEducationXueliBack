@@ -140,11 +140,12 @@
     <select id="getCourseSectionsData"
             resultType="com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO">
         SELECT cl.id,
-               cl.grade AS year, ci.grade AS grade, cl.course_name, cl.course_type, cl.course_description, cl.course_cover_url,
+               cl.grade AS year, ci.grade AS grade, cl.course_name, cl.course_type,
+               cl.course_description, cl.course_cover_url,
                cl.default_main_teacher_username, cl.course_identifier, cl.valid, cl.created_time,
                cl.updated_time, ss.parent_section_id, ss.section_name, ss.sequence, ss.content_type,
                ss.main_teacher_username, ss.deadline, ss.start_time, ss.valid AS section_valid,
-               ccm.class_identifier, ci.grade AS class_grade, ci.class_name, ci.study_form,
+               ccm.class_identifier, ci.class_name, ci.study_form,
                ci.level, ci.study_period, ci.college, ci.major_name, ci.major_code, ci.tuition,
                ti.name, ci.college, ci.major_name, lr.channel_id, tpi.teaching_point_name
         <include refid="commonJoin" />
@@ -434,6 +435,14 @@
     </select>
     <select id="selectCourseLearningDataSelectParamsGrades" resultType="java.lang.String">
         SELECT
+        DISTINCT ci.grade
+        <include refid="commonJoin" />
+        WHERE
+        1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="selectCourseLearningDataSelectParamsYears" resultType="java.lang.String">
+        SELECT
         DISTINCT cl.grade
         <include refid="commonJoin" />
         WHERE
@@ -533,6 +542,7 @@
         lr.channel_id, tpi.teaching_point_name
              ) AS subquery
     </select>
+
 
 
 </mapper>

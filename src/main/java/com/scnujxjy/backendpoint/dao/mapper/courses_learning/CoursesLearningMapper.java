@@ -88,6 +88,8 @@ public interface CoursesLearningMapper extends BaseMapper<CoursesLearningPO> {
 
     List<String> selectCourseLearningDataSelectParamsGrades(@Param("entity") CoursesLearningRO entity);
 
+    List<String> selectCourseLearningDataSelectParamsYears(@Param("entity") CoursesLearningRO coursesLearningRO);
+
     List<String> selectCourseLearningDataSelectParamsColleges(@Param("entity") CoursesLearningRO entity);
 
     List<String> selectCourseLearningDataSelectParamsMajorNames(@Param("entity") CoursesLearningRO entity);
