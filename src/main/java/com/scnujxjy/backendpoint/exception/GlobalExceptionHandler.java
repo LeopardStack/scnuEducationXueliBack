@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.handler;
+package com.scnujxjy.backendpoint.exception;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
