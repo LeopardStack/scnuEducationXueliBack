@@ -16,11 +16,13 @@
         <if test='entity.studyPeriod != null'>AND ci.study_period = #{entity.studyPeriod} </if>
         <if test='entity.studyForm != null'>AND ci.study_form = #{entity.studyForm} </if>
         <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName} </if>
+
         <if test='entity.classNames != null and entity.classNames.size() > 0'>
-            AND ci.class_name LIKE
-            <foreach item="className" collection="entity.classNames" open="(" separator="," close=")">
-                CONCAT('%', #{className}, '%')
+            AND (
+            <foreach collection="entity.classNames" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
 
         <if test="entity.classIdentifiers != null and !entity.classIdentifiers.isEmpty()">

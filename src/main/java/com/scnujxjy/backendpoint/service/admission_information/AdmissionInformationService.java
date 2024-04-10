@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 
@@ -129,8 +130,22 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
         }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
             // 采用超级管理员的筛选器 在里面添加一个条件 即该教学点教务员所属教学点的信息
-            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-            admissionInformationROPageRO.getEntity().setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            // 先判断 她所管理的教学点是否存在多个
+            Integer userBelongTeachingPointCount = scnuXueliTools.getUserBelongTeachingPointCount();
+            if(userBelongTeachingPointCount > 1){
+                List<TeachingPointInformationPO> userBelongTeachingPoints = scnuXueliTools.getUserBelongTeachingPoints();
+
+                // 使用流（Stream）去重并收集教学点名称
+                List<String> teachingPoints = userBelongTeachingPoints.stream()
+                        .map(TeachingPointInformationPO::getTeachingPointName) // 从每个PO对象中提取教学点名称
+                        .distinct() // 去重
+                        .collect(Collectors.toList()); // 收集到List中
+                admissionInformationROPageRO.getEntity().setTeachingPoints(teachingPoints);
+            }else{
+                TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+                admissionInformationROPageRO.getEntity().setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            }
+
             return managerFilter.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
         }
         else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {
@@ -260,8 +275,21 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
         }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
             // 采用超级管理员的筛选器 在里面添加一个条件 即该教学点教务员所属教学点的信息
-            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-            admissionInformationRO.setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            // 先判断 她所管理的教学点是否存在多个
+            Integer userBelongTeachingPointCount = scnuXueliTools.getUserBelongTeachingPointCount();
+            if(userBelongTeachingPointCount > 1){
+                List<TeachingPointInformationPO> userBelongTeachingPoints = scnuXueliTools.getUserBelongTeachingPoints();
+
+                // 使用流（Stream）去重并收集教学点名称
+                List<String> teachingPoints = userBelongTeachingPoints.stream()
+                        .map(TeachingPointInformationPO::getTeachingPointName) // 从每个PO对象中提取教学点名称
+                        .distinct() // 去重
+                        .collect(Collectors.toList()); // 收集到List中
+                admissionInformationRO.setTeachingPoints(teachingPoints);
+            }else{
+                TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+                admissionInformationRO.setTeachingPoint(userBelongTeachingPoint.getTeachingPointName());
+            }
             return managerFilter.getAdmissionArgsByAllRoles(admissionInformationRO);
         }
         else if (permissionList.contains(PermissionEnum.VIEW_NEW_STUDENT_INFORMATION.getPermission())) {

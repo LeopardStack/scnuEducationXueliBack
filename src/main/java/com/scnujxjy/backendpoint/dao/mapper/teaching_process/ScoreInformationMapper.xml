@@ -62,11 +62,12 @@
             <!-- Ensure graduation_number is not null -->
             AND gi.graduation_number IS NOT NULL
         </if>
-        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
-            AND ci.class_name LIKE
-            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                CONCAT('%', #{className}, '%')
+        <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="entity.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
     </sql>
 
@@ -120,11 +121,12 @@
             <!-- Ensure graduation_number is not null -->
             AND gi.graduation_number IS NOT NULL
         </if>
-        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
-            AND ci.class_name LIKE
-            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                CONCAT('%', #{className}, '%')
+        <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="entity.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
     </sql>
 

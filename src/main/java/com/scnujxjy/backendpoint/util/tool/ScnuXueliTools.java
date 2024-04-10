@@ -138,6 +138,60 @@ public class ScnuXueliTools {
         return null;
     }
 
+    public List<TeachingPointInformationPO> getUserBelongTeachingPoints(){
+        try{
+            String loginId = (String) StpUtil.getLoginId();
+            if (StrUtil.isBlank(loginId)) {
+                return null;
+            }
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+            if (Objects.isNull(platformUserPO)) {
+                return null;
+            }
+            // 创建查询包装器实例
+            LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+            // 设置查询条件
+            queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+            // 执行查询
+            List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
+            List<TeachingPointInformationPO> teachingPointAdminInformationPOList = new ArrayList<>();
+            for(TeachingPointAdminInformationPO teachingPointAdminInformationPO: teachingPointAdminInformationPOS){
+                TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPO.getTeachingPointId());
+                teachingPointAdminInformationPOList.add(teachingPointInformationPO);
+            }
+
+            return teachingPointAdminInformationPOList;
+
+        }catch (Exception e){
+            log.error("获取用户所属教学点信息失败 " + e.toString());
+        }
+        return null;
+    }
+
+    public Integer getUserBelongTeachingPointCount(){
+        try{
+            String loginId = (String) StpUtil.getLoginId();
+            if (StrUtil.isBlank(loginId)) {
+                return null;
+            }
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+            if (Objects.isNull(platformUserPO)) {
+                return null;
+            }
+            // 创建查询包装器实例
+            LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+            // 设置查询条件
+            queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+            // 执行查询
+            return teachingPointAdminInformationMapper.selectCount(queryWrapper);
+
+
+        }catch (Exception e){
+            log.error("获取用户所属教学点信息失败 " + e.toString());
+        }
+        return null;
+    }
+
     public CollegeInformationPO getUserBelongCollege(){
         try{
             String loginId = (String) StpUtil.getLoginId();

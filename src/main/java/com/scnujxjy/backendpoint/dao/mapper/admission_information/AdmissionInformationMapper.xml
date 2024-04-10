@@ -24,6 +24,13 @@
         <if test='entity.isConfirmed != null'>AND ai.is_confirmed = #{entity.isConfirmed}</if>
 
         <if test='entity.idCardNumber != null'>AND ai.id_card_number = #{entity.idCardNumber}</if>
+        <!-- 动态检查teachingPoints集合中的元素 -->
+        <if test="entity.teachingPoints != null and !entity.teachingPoints.isEmpty()">
+            AND tpi.teaching_point_name IN
+            <foreach collection="entity.teachingPoints" item="teachingPoint" open="(" close=")" separator=",">
+                #{teachingPoint}
+            </foreach>
+        </if>
     </sql>
 
     <select id="getAdmissionInformationByAllRoles"

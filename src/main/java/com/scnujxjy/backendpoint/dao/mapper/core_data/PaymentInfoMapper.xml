@@ -5,6 +5,9 @@
         FROM payment_info pi
         LEFT JOIN student_status ss ON ss.student_number = pi.student_number
         LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier
+        LEFT JOIN teaching_point_information tpi
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
     </sql>
 
     <sql id="commonJoinForNewStudent">
@@ -85,12 +88,14 @@
         <if test='entity.grade != null'>
             AND pi.grade = #{entity.grade}
         </if>
-        <if test="entity.classNameSet != null and entity.classNameSet.size() > 0">
-            AND ci.class_name LIKE
-            <foreach collection="entity.classNameSet" item="className" open="(" close=")" separator=",">
-                #{className}
+        <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="entity.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
+
     </sql>
 
 
@@ -182,8 +187,7 @@
     </select>
 
     <select id="getDistinctAcademicYears" resultType="String">
-        SELECT DISTINCT pi.academic_year
-
+        SELECT DISTINCT ci.study_period
         <include refid="commonJoin"/>
         WHERE 1=1
         <include refid="commonFilters"/>
@@ -216,6 +220,36 @@
         ELSE 2
         END,
         pi.grade+0 DESC
+    </select>
+    <select id="getDistinctLevels" resultType="java.lang.String">
+        SELECT DISTINCT ci.level
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctStudyForms" resultType="java.lang.String">
+        SELECT DISTINCT ci.study_form
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctClassNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.class_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctTeachingPoints" resultType="java.lang.String">
+        SELECT DISTINCT tpi.teaching_point_name
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+    <select id="getDistinctCollegeNames" resultType="java.lang.String">
+        SELECT DISTINCT ci.college
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
     </select>
     <select id="getDistinctRemarks" resultType="java.lang.String">
         SELECT DISTINCT pi.remark
@@ -300,4 +334,7 @@
         WHERE 1=1
         <include refid="commonFilters"/>
     </select>
+
+
+
 </mapper>
