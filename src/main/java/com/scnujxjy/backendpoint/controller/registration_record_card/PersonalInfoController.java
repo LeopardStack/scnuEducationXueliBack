@@ -41,9 +41,7 @@ public class PersonalInfoController {
         }
         // 查询数据
         PersonalInfoVO personalInfoVO = personalInfoService.detailById(id);
-        if (Objects.isNull(personalInfoVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(personalInfoVO);
     }
 
@@ -64,9 +62,7 @@ public class PersonalInfoController {
         }
         // 查询数据
         PageVO<PersonalInfoVO> personalInfoVOPageVO = personalInfoService.pageQueryPersonalInfo(personalInfoROPageRO);
-        if (Objects.isNull(personalInfoVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(personalInfoROPageRO);
     }
 

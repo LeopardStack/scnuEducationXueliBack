@@ -60,10 +60,6 @@ public class AdmissionInformationController {
         // 查找数据
         AdmissionInformationVO admissionInformationVO = admissionInformationService.detailById(id);
 
-        // 校验结果
-        if (Objects.isNull(admissionInformationVO)) {
-            throw dataNotFoundError();
-        }
 
         // 返回结果
         return SaResult.data(admissionInformationVO);
@@ -87,10 +83,7 @@ public class AdmissionInformationController {
         // 查询数据
         PageVO<AdmissionInformationVO> admissionInformationVOPageVO = admissionInformationService.getAdmissionInformationByAllRoles(admissionInformationROPageRO);
 //        PageVO<AdmissionInformationVO> admissionInformationVOPageVO = admissionInformationService.pageQueryAdmissionInformation(admissionInformationROPageRO);
-        // 校验数据
-        if (Objects.isNull(admissionInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO);
     }

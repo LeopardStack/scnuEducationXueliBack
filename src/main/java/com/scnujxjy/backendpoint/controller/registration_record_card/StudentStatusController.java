@@ -87,9 +87,7 @@ public class StudentStatusController {
         }
         // 查询
         StudentStatusVO studentStatusVO = studentStatusService.detailById(id);
-        if (Objects.isNull(studentStatusVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(studentStatusVO);
     }
 
@@ -110,9 +108,7 @@ public class StudentStatusController {
         }
         // 查询
         PageVO<StudentStatusVO> studentStatusVOPageVO = studentStatusService.pageQueryStudentStatus(studentStatusROPageRO);
-        if (Objects.isNull(studentStatusVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(studentStatusVOPageVO);
     }
 
@@ -177,9 +173,7 @@ public class StudentStatusController {
         }
         // 查询
         List<StudentAllStatusInfoVO> studentAllStatusInfoVOS = studentStatusService.statusInfoByIdNumber(studentId);
-        if (Objects.isNull(studentAllStatusInfoVOS)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(studentAllStatusInfoVOS);
     }
 
@@ -198,9 +192,6 @@ public class StudentStatusController {
         // 查询
         List<StudentStatusVO> studentStatusVOs = studentStatusService.getBaseMapper().
                 selectStudentByidNumber(loginId);
-        if (Objects.isNull(studentStatusVOs) || studentStatusVOs.size() == 0) {
-            throw dataNotFoundError();
-        }
 
         // 使用流操作找到最大的 grade 值
         Optional<StudentStatusVO> maxGradeStudent = studentStatusVOs.stream()
@@ -314,7 +305,7 @@ public class StudentStatusController {
 //        PageVO<FilterDataVO> filterDataVO = null;
             // 获取访问者 ID
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的教学计划
@@ -328,10 +319,6 @@ public class StudentStatusController {
                     filterDataVO.setPages((long) Math.ceil((double) studentStatusFilterDataVO.getData().size()
                             / studentStatusROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
                         || roleList.contains(ADMISSION_ADMIN.getRoleName())
@@ -347,10 +334,6 @@ public class StudentStatusController {
                     filterDataVO.setPages((long) Math.ceil((double) studentStatusFilterDataVO.getData().size()
                             / studentStatusROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     FilterDataVO dataVO = studentStatusService.allPageQueryStudentStatusFilter(studentStatusROPageRO, teachingPointFilter);
                     // 创建并返回分页信息
@@ -361,10 +344,6 @@ public class StudentStatusController {
                     filterDataVO.setPages((long) Math.ceil((double) dataVO.getData().size()
                             / studentStatusROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName()) || roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
                 }
@@ -455,7 +434,7 @@ public class StudentStatusController {
 
         if (studentStatusSelectArgs == null) {
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = studentStatusService.getStudentStatusArgs(loginId, collegeAdminFilter);
@@ -493,7 +472,7 @@ public class StudentStatusController {
         String userId = (String) StpUtil.getLoginId();
         CourseInformationSelectArgs courseInformationSelectArgs = null;
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员

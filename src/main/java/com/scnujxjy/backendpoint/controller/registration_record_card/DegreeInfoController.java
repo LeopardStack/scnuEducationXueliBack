@@ -41,9 +41,7 @@ public class DegreeInfoController {
         }
         // 数据查询
         DegreeInfoVO degreeInfoVO = degreeInfoService.detailById(id);
-        if (Objects.isNull(degreeInfoVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(degreeInfoVO);
     }
 
@@ -64,9 +62,7 @@ public class DegreeInfoController {
         }
         // 数据查询
         PageVO<DegreeInfoVO> degreeInfoVOPageVO = degreeInfoService.pageQueryDegreeInfo(degreeInfoROPageRO);
-        if (Objects.isNull(degreeInfoVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(degreeInfoVOPageVO);
     }
 

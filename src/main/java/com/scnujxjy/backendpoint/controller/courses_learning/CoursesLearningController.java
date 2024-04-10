@@ -4,10 +4,6 @@ package com.scnujxjy.backendpoint.controller.courses_learning;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
-import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
-import com.scnujxjy.backendpoint.model.bo.video_stream.ChannelResponseBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -26,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 课程学习主接口控制器
@@ -55,17 +50,13 @@ public class CoursesLearningController {
             @RequestBody PageRO<CoursesLearningRO> coursesLearningROPageRO) {
         // 校验参数
         if (Objects.isNull(coursesLearningROPageRO)) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         if (Objects.isNull(coursesLearningROPageRO.getEntity())) {
             coursesLearningROPageRO.setEntity(new CoursesLearningRO());
         }
         // 查询数据
         PageVO<CourseLearningVO> courseLearningVOPageVO = coursesLearningService.pageQueryCoursesInfo(coursesLearningROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseLearningVOPageVO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         return SaResult.data(courseLearningVOPageVO);
     }
@@ -88,10 +79,7 @@ public class CoursesLearningController {
         }
         // 查询数据
         PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParams = coursesLearningService.pageQueryCoursesInfoParams(coursesLearningRO);
-        // 数据校验
-        if (Objects.isNull(pageQueryCoursesInfoParams)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(pageQueryCoursesInfoParams);
     }
@@ -117,10 +105,7 @@ public class CoursesLearningController {
         }
         // 查询数据
         PageVO<CourseLearningVO> courseLearningVOPageVO = coursesLearningService.pageQueryCoursesInfo1(coursesLearningROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseLearningVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseLearningVOPageVO);
     }

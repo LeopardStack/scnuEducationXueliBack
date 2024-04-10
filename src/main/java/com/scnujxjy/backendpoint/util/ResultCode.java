@@ -9,6 +9,7 @@ public enum ResultCode {
     // 成功状态码
     SUCCESS(200, "成功"),
     FAIL(500,"失败"),
+    ROLE_INFO_FAIL1(500,"获取用户角色信息为空"),
 
     PARTIALSUCCESS(100, "操作部分名单成功"),
 

@@ -3,15 +3,16 @@ package com.scnujxjy.backendpoint.controller.oa;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeDBFInfoRO;
 import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.oa.MajorChangeRecordVO;
 import com.scnujxjy.backendpoint.model.vo.oa.MajorChangeSelectArgs;
 import com.scnujxjy.backendpoint.service.oa.MajorChangeRecordService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 转专业 Rest 接口
@@ -51,10 +51,7 @@ public class MajorChangeRecordController {
         }
         // 查询数据
         PageVO<MajorChangeRecordVO> admissionInformationVOPageVO = majorChangeRecordService.getMajorChangeInfos(majorChangeRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(admissionInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO).setCode(200);
     }
@@ -76,10 +73,7 @@ public class MajorChangeRecordController {
         }
         // 查询数据
         MajorChangeSelectArgs majorChangeInfosSelectArgs = majorChangeRecordService.getMajorChangeInfosSelectArgs(majorChangeRecordROPageRO.getEntity());
-//        // 校验数据
-        if (Objects.isNull(majorChangeInfosSelectArgs)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(majorChangeInfosSelectArgs).setCode(200);
     }
@@ -128,10 +122,7 @@ public class MajorChangeRecordController {
         }
         // 查询数据
         List<MajorChangeRecordVO> admissionInformationVOPageVO = majorChangeRecordService.getSingleMajorChangeInfos(majorChangeRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(admissionInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO).setCode(200);
     }

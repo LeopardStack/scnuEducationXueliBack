@@ -75,10 +75,7 @@ public class CourseInformationController {
         }
         // 查询
         CourseInformationVO courseInformationVO = courseInformationService.detailById(id);
-        // 参数校验
-        if (Objects.isNull(courseInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 转换并返回
         return SaResult.data(courseInformationVO);
     }
@@ -100,10 +97,7 @@ public class CourseInformationController {
         }
         // 查询数据
         PageVO<CourseInformationVO> courseInformationVOPageVO = courseInformationService.pageQueryCourseInformation(courseInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseInformationVOPageVO);
     }
@@ -165,10 +159,7 @@ public class CourseInformationController {
         Object loginId = StpUtil.getLoginId();
         // 查询
         List<CourseInformationRO> studentTeachingPlan = courseInformationService.getStudentTeachingPlan((String) loginId);
-        // 参数校验
-        if (Objects.isNull(studentTeachingPlan)) {
-            throw dataNotFoundError();
-        }
+
         // 转换并返回
         return SaResult.data(studentTeachingPlan);
     }
@@ -185,10 +176,7 @@ public class CourseInformationController {
         Object loginId = StpUtil.getLoginId();
         // 查询
         List<CourseInformationPO> studentTeachingPlan = courseInformationService.getBaseMapper().getStudentTeachingPlans((String) loginId);
-        // 参数校验
-        if (Objects.isNull(studentTeachingPlan)) {
-            throw dataNotFoundError();
-        }
+
         // 转换并返回
         return SaResult.data(studentTeachingPlan);
     }
@@ -207,7 +195,7 @@ public class CourseInformationController {
         String loginId = StpUtil.getLoginIdAsString();
         CourseInformationSelectArgs courseInformationSelectArgs = null;
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
@@ -221,9 +209,6 @@ public class CourseInformationController {
                 courseInformationSelectArgs = courseInformationService.getTeachingPlansArgsByCollege(loginId, teachingPointFilter);
 
             }
-        }
-        if (Objects.isNull(courseInformationSelectArgs)) {
-            throw dataNotFoundError();
         }
         // 转换并返回
         return SaResult.data(courseInformationSelectArgs);
@@ -243,7 +228,7 @@ public class CourseInformationController {
         PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 log.info("现在登录的是二级学院的管理员");
@@ -259,11 +244,6 @@ public class CourseInformationController {
                 filterDataVO.setPages((long) Math.ceil((double) courseInformationFilterDataVO.getData().size()
                         / courseInformationROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
-
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员权限范围内的教学计划
@@ -276,10 +256,7 @@ public class CourseInformationController {
                 filterDataVO.setSize(courseInformationROPageRO.getPageSize());
                 filterDataVO.setPages((long) Math.ceil((double) courseInformationFilterDataVO.getData().size()
                         / courseInformationROPageRO.getPageSize()));
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
+
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 
                 // 查询继续教育学院管理员权限范围内的教学计划
@@ -292,10 +269,7 @@ public class CourseInformationController {
                 filterDataVO.setSize(courseInformationROPageRO.getPageSize());
                 filterDataVO.setPages((long) Math.ceil((double) courseInformationFilterDataVO.getData().size()
                         / courseInformationROPageRO.getPageSize()));
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
+
             }
         }
 
@@ -390,12 +364,9 @@ public class CourseInformationController {
 
         CourseCreateArgsVO courseCreateArgsVO = null;
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             courseCreateArgsVO = courseInformationService.getTeachingPlansArgs(courseInformationRO);
-        }
-        if (Objects.isNull(courseCreateArgsVO)) {
-            throw dataNotFoundError();
         }
         // 转换并返回
         return SaResult.data(courseCreateArgsVO);

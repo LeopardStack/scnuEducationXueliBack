@@ -44,10 +44,7 @@ public class TeachingPointAdminInformationController {
         }
         // 查询数据
         TeachingPointAdminInformationVO teachingPointAdminInformationVO = teachingPointAdminInformationService.detailById(userId);
-        // 数据校验
-        if (Objects.isNull(teachingPointAdminInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(teachingPointAdminInformationVO);
     }
@@ -69,10 +66,7 @@ public class TeachingPointAdminInformationController {
         }
         // 查询
         PageVO<TeachingPointAdminInformationVO> teachingPointAdminInformationVOPageVO = teachingPointAdminInformationService.pageQueryTeachingPointAdminInformation(teachingPointAdminInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(teachingPointAdminInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(teachingPointAdminInformationVOPageVO);
     }

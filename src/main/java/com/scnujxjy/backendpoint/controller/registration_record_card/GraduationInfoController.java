@@ -53,9 +53,7 @@ public class GraduationInfoController {
         }
         // 查询数据
         GraduationInfoVO graduationInfoVO = graduationInfoService.detailById(id);
-        if (Objects.isNull(graduationInfoVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(graduationInfoVO);
     }
 
@@ -76,9 +74,7 @@ public class GraduationInfoController {
         }
         // 数据查询
         PageVO<GraduationInfoVO> graduationInfoVOPageVO = graduationInfoService.pageQueryGraduationInfo(graduationInfoROPageRO);
-        if (Objects.isNull(graduationInfoVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(graduationInfoVOPageVO);
     }
 

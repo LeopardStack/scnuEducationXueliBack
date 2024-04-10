@@ -26,10 +26,10 @@ import com.scnujxjy.backendpoint.model.ro.video_stream.VideoStreamRecordRO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseScheduleVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamAllUrlInformationVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.VideoStreamRecordVO;
-import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
+import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.service.video_stream.VideoStreamRecordService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.ResultCode;
@@ -53,7 +53,6 @@ import java.util.regex.Pattern;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.STUDENT;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 直播记录管理
@@ -178,9 +177,7 @@ public class VideoStreamRecordController {
             throw dataMissError();
         }
         VideoStreamRecordVO videoStreamRecordVO = videoStreamRecordService.detailByChannelId(channelId);
-        if (Objects.isNull(videoStreamRecordVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(videoStreamRecordVO);
     }
 

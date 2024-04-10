@@ -14,6 +14,7 @@ import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.registration_record_card.ClassInformationService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -70,10 +71,7 @@ public class ClassInformationController {
         }
         // 查询数据
         ClassInformationVO classInformationVO = classInformationService.detailById(id);
-        // 数据校验
-        if (Objects.isNull(classInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 转换数据并返回
         return SaResult.data(classInformationVO);
     }
@@ -95,10 +93,7 @@ public class ClassInformationController {
         }
         // 分页查询
         PageVO<ClassInformationVO> classInformationVOPage = classInformationService.pageQueryClassInformation(classInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(classInformationVOPage)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(classInformationVOPage);
     }
@@ -174,7 +169,7 @@ public class ClassInformationController {
             List<String> roleList = StpUtil.getRoleList();
             // 获取访问者 ID
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 查询二级学院管理员权限范围内的班级信息
@@ -259,7 +254,7 @@ public class ClassInformationController {
 
         if (classInformationSelectArgs == null) {
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, collegeAdminFilter);
@@ -294,7 +289,7 @@ public class ClassInformationController {
         // 获取访问者 ID
         String userId = (String) StpUtil.getLoginId();
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
@@ -313,13 +308,10 @@ public class ClassInformationController {
     @PostMapping("/detail-class-information-batch-index")
     public SaResult selectClassInformationBatchIndex(Long batchIndex) {
         if (Objects.isNull(batchIndex)) {
-            throw dataNotFoundError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         List<ClassInformationVO> classInformationVOS = classInformationService.selectClassInformationByBatchIndex(batchIndex);
 
-        if (CollUtil.isEmpty(classInformationVOS)) {
-            throw dataNotFoundError();
-        }
         return SaResult.data(classInformationVOS);
     }
 
@@ -342,10 +334,7 @@ public class ClassInformationController {
         }
         // 分页查询
         List<StudentStatusChangeClassInfoVO> classInformationVOPage = classInformationService.pageQueryStudentStatusChangeClassInformation(classInformationRO);
-        // 数据校验
-        if (Objects.isNull(classInformationVOPage)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(classInformationVOPage);
     }

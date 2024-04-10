@@ -41,14 +41,10 @@ public class CollegeInformationController {
     public SaResult detailById(String collegeId) {
         // 参数校验
         if (StrUtil.isBlank(collegeId)) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         // 查询数据
         CollegeInformationVO collegeInformationVO = collegeInformationService.detailById(collegeId);
-        // 数据校验
-        if (Objects.isNull(collegeInformationVO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         return SaResult.data(collegeInformationVO);
     }
@@ -70,10 +66,7 @@ public class CollegeInformationController {
         }
         // 查询数据
         PageVO<CollegeInformationVO> collegeInformationVOPageVO = collegeInformationService.pageQueryCollegeInformation(collegeInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(collegeInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 数据返回
         return SaResult.data(collegeInformationVOPageVO);
     }

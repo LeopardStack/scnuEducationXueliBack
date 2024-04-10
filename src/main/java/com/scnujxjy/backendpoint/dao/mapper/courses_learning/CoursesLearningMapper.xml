@@ -190,8 +190,7 @@
     </select>
     <select id="selectCourseLearningDataWithoutPaging"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
-        SELECT *, ABS(TIMESTAMPDIFF(SECOND, recent_course_schedule_time, NOW())) AS time_difference
-        FROM (
+        SELECT * FROM (
         SELECT
         cl.id,
         cl.grade,
@@ -205,9 +204,8 @@
         cl.created_time,
         cl.updated_time,
         ti.name AS default_main_teacher_name,
-        <!--  GROUP_CONCAT(DISTINCT ci.class_name) AS classNames,   -->
-
-        ss.start_time AS recent_course_schedule_time
+        ss.start_time AS recent_course_schedule_time,
+        ABS(TIMESTAMPDIFF(SECOND, ss.start_time, NOW())) AS time_difference
         <include refid="commonJoin" />
         WHERE
         1=1
@@ -216,10 +214,9 @@
         cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
         cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
         cl.valid, cl.created_time, cl.updated_time, ti.name, ss.start_time
-        ORDER BY
-        cl.created_time DESC
-        ) AS subquery
         ORDER BY time_difference ASC
+        LIMIT 1
+        ) AS subquery;
     </select>
     <select id="selectCourseRetakeStudentsInfo"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">

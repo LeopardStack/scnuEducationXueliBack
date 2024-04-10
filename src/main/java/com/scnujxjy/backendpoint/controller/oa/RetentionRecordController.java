@@ -3,26 +3,20 @@ package com.scnujxjy.backendpoint.controller.oa;
 
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.oa.DropoutRecordRO;
 import com.scnujxjy.backendpoint.model.ro.oa.RetentionRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.oa.DropoutRecordVO;
-import com.scnujxjy.backendpoint.model.vo.oa.DropoutSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.oa.RetentionRecordVO;
 import com.scnujxjy.backendpoint.model.vo.oa.RetentionSelectArgs;
-import com.scnujxjy.backendpoint.service.oa.DropoutRecordService;
 import com.scnujxjy.backendpoint.service.oa.RetentionRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 留级 Rest 接口
@@ -53,10 +47,7 @@ public class RetentionRecordController {
         }
         // 查询数据
         PageVO<RetentionRecordVO> dropoutRecordVOPageVO = retentionRecordService.getRetentionInfos(retentionRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(dropoutRecordVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(dropoutRecordVOPageVO).setCode(200);
     }
@@ -78,10 +69,7 @@ public class RetentionRecordController {
         }
         // 查询数据
         RetentionSelectArgs retentionInfosSelectArgs = retentionRecordService.getRetentionInfosSelectArgs(retentionRecordROPageRO.getEntity());
-//        // 校验数据
-        if (Objects.isNull(retentionInfosSelectArgs)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(retentionInfosSelectArgs).setCode(200);
     }

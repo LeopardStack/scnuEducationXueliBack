@@ -3,32 +3,29 @@ package com.scnujxjy.backendpoint.service.exam;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamAssistantsPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
-import com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
-import com.scnujxjy.backendpoint.model.ro.exam.ExamFilterRO;
 import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * <p>
@@ -88,7 +85,8 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
         String userId = (String) StpUtil.getLoginId();
 
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            log.error(ResultCode.ROLE_INFO_FAIL1.getMessage());
+            return false;
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
@@ -127,7 +125,8 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
         String userId = (String) StpUtil.getLoginId();
 
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            log.error(ResultCode.ROLE_INFO_FAIL1.getMessage());
+            return false;
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员

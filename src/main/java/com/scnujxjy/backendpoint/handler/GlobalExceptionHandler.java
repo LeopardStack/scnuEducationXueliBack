@@ -33,6 +33,17 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<SaResult> handlerException(Exception e) {
+        log.info("出现服务端获取数据异常 " + e);
+        if(e instanceof cn.dev33.satoken.exception.NotLoginException){
+            // Token 无效的情况
+            log.info("token 无效 重新登录 " + e);
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED) // 401 Unauthorized
+                    .body(SaResult.error("Token 无效").setCode(401));
+        }else{
+            log.info("识别不到异常 " + e);
+        }
+
         if (e instanceof NotPermissionException) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN) // 403 Forbidden

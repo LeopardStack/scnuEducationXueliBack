@@ -52,10 +52,7 @@ public class TeachingPointInformationController {
         }
         // 查询
         TeachingPointInformationVO teachingPointInformationVO = teachingPointInformationService.detailById(teachingPointId);
-        // 数据校验
-        if (Objects.isNull(teachingPointInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 转换类型并返回
         return SaResult.data(teachingPointInformationVO);
     }
@@ -95,10 +92,7 @@ public class TeachingPointInformationController {
         }
         // 列表查询 或 分页查询
         PageVO<TeachingPointInformationVO> teachingPointInformationVOPageVO = teachingPointInformationService.pageQueryTeachingPointInformation(teachingPointInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(teachingPointInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(teachingPointInformationVOPageVO);
     }

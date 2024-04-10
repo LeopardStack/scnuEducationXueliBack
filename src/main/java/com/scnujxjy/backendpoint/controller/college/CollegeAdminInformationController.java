@@ -49,10 +49,7 @@ public class CollegeAdminInformationController {
         }
         // 查询数据
         CollegeAdminInformationVO collegeAdminInformationVO = collegeAdminInformationService.detailById(userId);
-        // 校验数据
-        if (Objects.isNull(collegeAdminInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(collegeAdminInformationVO);
     }
@@ -74,10 +71,7 @@ public class CollegeAdminInformationController {
         }
         // 查询数据
         PageVO<CollegeAdminInformationVO> collegeAdminInformationVOPageVO = collegeAdminInformationService.pageQueryCollegeAdminInformation(collegeAdminInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(collegeAdminInformationROPageRO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(collegeAdminInformationVOPageVO);
     }

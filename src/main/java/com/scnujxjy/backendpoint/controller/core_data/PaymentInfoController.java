@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.service.core_data.PaymentInfoService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -82,9 +83,7 @@ public class PaymentInfoController {
         }
         // 查询数据
         PaymentInfoVO paymentInfoVO = paymentInfoService.detailById(id);
-        if (Objects.isNull(paymentInfoVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(paymentInfoVO);
     }
 
@@ -117,9 +116,7 @@ public class PaymentInfoController {
         }
         // 数据查询
         PageVO<PaymentInfoVO> paymentInfoVOPageVO = paymentInfoService.pageQueryPaymentInfo(paymentInfoROPageRO);
-        if (Objects.isNull(paymentInfoVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(paymentInfoVOPageVO);
     }
 
@@ -179,9 +176,7 @@ public class PaymentInfoController {
         // 判断以下是否属于新生  也就是 学籍信息是否存在
         // 查询数据
         List<PaymentInfoPO> paymentInfoPOS = paymentInfoService.getBaseMapper().getStudentPayInfo(loginId);
-        if (Objects.isNull(paymentInfoPOS)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(paymentInfoPOS);
     }
 
@@ -213,7 +208,7 @@ public class PaymentInfoController {
             List<String> roleList = StpUtil.getRoleList();
             // 获取访问者 ID
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 查询二级学院管理员权限范围内的教学计划
@@ -228,10 +223,7 @@ public class PaymentInfoController {
                     filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
                             / paymentInfoFilterROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
+
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
                         || roleList.contains(ADMISSION_ADMIN.getRoleName())
@@ -248,10 +240,6 @@ public class PaymentInfoController {
                     filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
                             / paymentInfoFilterROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO paymentInfoVOPageVO = null;
@@ -265,10 +253,7 @@ public class PaymentInfoController {
                     filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
                             / paymentInfoFilterROPageRO.getPageSize()));
 
-                    // 数据校验
-                    if (Objects.isNull(filterDataVO)) {
-                        throw dataNotFoundError();
-                    }
+
                 }
 
                 // 如果获取的数据不为空，则放入Redis
@@ -310,7 +295,7 @@ public class PaymentInfoController {
             List<String> roleList = StpUtil.getRoleList();
             // 获取访问者 ID
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     // 查询二级学院管理员权限范围内的教学计划
@@ -335,11 +320,6 @@ public class PaymentInfoController {
                 filterDataVO.setSize(paymentInfoFilterROPageRO.getPageSize());
                 filterDataVO.setPages((long) Math.ceil((double) paymentInfoVOPageVO.getData().size()
                         / paymentInfoFilterROPageRO.getPageSize()));
-
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
 
                 // 如果获取的数据不为空，则放入Redis
                 if (filterDataVO != null) {
@@ -374,7 +354,7 @@ public class PaymentInfoController {
 
         if (paymentInformationSelectArgs == null) {
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
@@ -419,7 +399,7 @@ public class PaymentInfoController {
 
         if (paymentInformationSelectArgs == null) {
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, collegeAdminFilter);
@@ -457,7 +437,7 @@ public class PaymentInfoController {
         String userId = (String) StpUtil.getLoginId();
         CourseInformationSelectArgs courseInformationSelectArgs = null;
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
@@ -504,7 +484,7 @@ public class PaymentInfoController {
         // 获取访问者 ID
         String userId = (String) StpUtil.getLoginId();
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
@@ -552,7 +532,7 @@ public class PaymentInfoController {
         // 获取访问者 ID
         String userId = (String) StpUtil.getLoginId();
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员

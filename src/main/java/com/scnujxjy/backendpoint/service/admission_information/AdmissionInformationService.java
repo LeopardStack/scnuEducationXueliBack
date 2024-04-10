@@ -1,7 +1,6 @@
 package com.scnujxjy.backendpoint.service.admission_information;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
@@ -12,32 +11,21 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.scnujxjy.backendpoint.constant.enums.*;
+import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
+import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
+import com.scnujxjy.backendpoint.constant.enums.PermissionEnum;
+import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
-import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.GlobalConfigMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
-import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamAssistantsMapper;
-import com.scnujxjy.backendpoint.dao.mapper.exam.CourseExamInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.inverter.admission_information.AdmissionInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
@@ -45,13 +33,10 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionStudentsInfoVO;
-import com.scnujxjy.backendpoint.model.vo.exam.ExamStudentsInfoVO;
-import com.scnujxjy.backendpoint.model.vo.exam.ExamTeachersInfoVO;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
-import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.*;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.Data;
@@ -69,8 +54,6 @@ import java.time.LocalDate;
 import java.util.*;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.TEACHING_POINT_ADMIN;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * <p>
@@ -298,7 +281,8 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
         List<String> roleList = StpUtil.getRoleList();
         String userId = StpUtil.getLoginIdAsString();
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            log.error(ResultCode.ROLE_INFO_FAIL1.getMessage());
+            return false;
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员

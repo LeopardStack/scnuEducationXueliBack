@@ -44,10 +44,7 @@ public class CollegeLeaderInformationController {
         }
         // 查询数据
         CollegeLeaderInformationVO collegeLeaderInformationVO = collegeLeaderInformationService.detailById(userId);
-        // 数据校验
-        if (Objects.isNull(collegeLeaderInformationVO)) {
-            throw dataNotFoundError();
-        }
+
         // 转换数据并返回结果
         return SaResult.data(collegeLeaderInformationVO);
     }
@@ -66,10 +63,7 @@ public class CollegeLeaderInformationController {
         }
         // 查询数据
         PageVO<CollegeLeaderInformationVO> collegeLeaderInformationVOPageVO = collegeLeaderInformationService.pageQueryCollegeLeaderInformation(collegeLeaderInformationROPageRO);
-        // 数据校验
-        if (Objects.isNull(collegeLeaderInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(collegeLeaderInformationVOPageVO);
     }

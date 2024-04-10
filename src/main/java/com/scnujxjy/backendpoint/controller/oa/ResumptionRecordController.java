@@ -4,22 +4,20 @@ package com.scnujxjy.backendpoint.controller.oa;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.oa.ResumptionRecordRO;
-import com.scnujxjy.backendpoint.model.ro.oa.SuspensionRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.oa.*;
+import com.scnujxjy.backendpoint.model.vo.oa.ResumptionRecordSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.oa.ResumptionRecordVO;
+import com.scnujxjy.backendpoint.model.vo.oa.ResumptionWithSuspensionVO;
 import com.scnujxjy.backendpoint.service.oa.ResumptionRecordService;
-import com.scnujxjy.backendpoint.service.oa.SuspensionRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 复学 Rest 接口
@@ -50,10 +48,7 @@ public class ResumptionRecordController {
         }
         // 查询数据
         PageVO<ResumptionRecordVO> resumptionInfos = resumptionRecordService.getResumptionInfos(resumptionRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(resumptionInfos)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(resumptionInfos).setCode(200);
     }
@@ -75,10 +70,7 @@ public class ResumptionRecordController {
         }
         // 查询数据
         ResumptionRecordSelectArgs resumptionRecordSelectArgs = resumptionRecordService.getResumptionInfosSelectArgs(resumptionRecordROPageRO.getEntity());
-//        // 校验数据
-        if (Objects.isNull(resumptionRecordSelectArgs)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(resumptionRecordSelectArgs).setCode(200);
     }

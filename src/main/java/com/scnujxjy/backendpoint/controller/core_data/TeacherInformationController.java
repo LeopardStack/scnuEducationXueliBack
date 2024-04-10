@@ -57,9 +57,6 @@ public class TeacherInformationController {
         // 参数校验
         // 数据查询
         TeacherInformationVO teacherInformationVO = teacherInformationService.detailById(userId);
-        if (Objects.isNull(teacherInformationVO)) {
-            throw dataNotFoundError();
-        }
         return SaResult.data(teacherInformationVO);
     }
 
@@ -72,9 +69,7 @@ public class TeacherInformationController {
 
         // 数据查询
         PageVO<TeacherInformationVO> teacherInformationVOPageVO = teacherInformationService.pageQueryTeacherInformation(teacherInformationROPageRO);
-        if (Objects.isNull(teacherInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(teacherInformationVOPageVO);
     }
 

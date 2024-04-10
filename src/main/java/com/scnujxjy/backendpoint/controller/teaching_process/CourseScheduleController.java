@@ -16,6 +16,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.*;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.teaching_process.CourseScheduleService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.*;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
@@ -90,10 +91,6 @@ public class CourseScheduleController {
         }
         // 查询数据
         CourseScheduleVO courseScheduleVO = courseScheduleService.detailById(id);
-        // 参数校验
-        if (Objects.isNull(courseScheduleVO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         return SaResult.data(courseScheduleVO);
     }
@@ -115,10 +112,7 @@ public class CourseScheduleController {
         }
         // 查询数据
         PageVO<CourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.pageQueryCourseSchedule(courseScheduleROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -141,10 +135,7 @@ public class CourseScheduleController {
         // 查询数据
         PageVO<TeacherCourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.
                 allPageQueryCourseScheduleFilter(courseScheduleROPageRO, collegeAdminFilter);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -167,10 +158,7 @@ public class CourseScheduleController {
         // 查询数据
         PageVO<TeacherSchedulesVO> courseScheduleVOPageVO = courseScheduleService.
                 getTeacherCourschedules(courseScheduleROPageRO, teacherFilter);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -193,10 +181,7 @@ public class CourseScheduleController {
         }
         // 查询数据
         PageVO courseScheduleVOPageVO = teacherFilter.getTeacherCourses(courseScheduleROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -219,10 +204,7 @@ public class CourseScheduleController {
         // 查询数据
         PageVO<TeacherCourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.
                 allPageQueryCourseScheduleFilter(courseScheduleROPageRO, studentFilter);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -295,10 +277,7 @@ public class CourseScheduleController {
         // 查询数据
         PageVO<TeacherCourseScheduleVO> courseScheduleVOPageVO = courseScheduleService.
                 allPageQueryCourseScheduleService(courseScheduleROPageRO);
-        // 数据校验
-        if (Objects.isNull(courseScheduleVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(courseScheduleVOPageVO);
     }
@@ -357,9 +336,7 @@ public class CourseScheduleController {
     @GetMapping("/select_course_schedules_args")
     public SaResult getSelectCourseScheduleArgs() {
         HashMap<String, List<String>> selectArgs = courseScheduleService.getSelectCourseScheduleArgs();
-        if (Objects.isNull(selectArgs) || selectArgs.isEmpty()) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(selectArgs);
     }
 
@@ -384,7 +361,7 @@ public class CourseScheduleController {
         PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 查询二级学院管理员权限范围内的考试信息
@@ -398,10 +375,6 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的考试信息
                 FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.filterCoursesInformationExams(courseScheduleFilterROPageRO, managerFilter);
@@ -414,10 +387,6 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的考试信息
                 FilterDataVO scheduleCoursesFilterDataVO = courseScheduleService.filterCoursesInformationExams(courseScheduleFilterROPageRO, teachingPointFilter);
@@ -430,10 +399,6 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) scheduleCoursesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             }
 
         }
@@ -483,7 +448,7 @@ public class CourseScheduleController {
         ScheduleCourseInformationSelectArgs scheduleCourseInformationSelectArgs = new ScheduleCourseInformationSelectArgs();
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_ALL_INFO_GET_FAIL.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 scheduleCourseInformationSelectArgs = courseScheduleService.getCoursesArgs(courseScheduleFilterRO, collegeAdminFilter);
@@ -518,7 +483,7 @@ public class CourseScheduleController {
         PageVO<FilterDataVO> filterDataVO = null;
         // 获取访问者 ID
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 查询二级学院管理员权限范围内的教学计划
@@ -532,10 +497,6 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的教学计划
                 FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, managerFilter);
@@ -548,15 +509,11 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 // 查询继续教育管理员权限范围内的教学计划
                 FilterDataVO schedulesFilterDataVO = courseScheduleService.allPageQuerySchedulesInformationFilter(courseScheduleFilterROPageRO, teachingPointFilter);
                 if (Objects.isNull(schedulesFilterDataVO)) {
-                    throw dataNotFoundError();
+                    return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
                 }
                 // 创建并返回分页信息
                 filterDataVO = new PageVO<>(schedulesFilterDataVO.getData());
@@ -566,10 +523,6 @@ public class CourseScheduleController {
                 filterDataVO.setPages((long) Math.ceil((double) schedulesFilterDataVO.getData().size()
                         / courseScheduleFilterROPageRO.getPageSize()));
 
-                // 数据校验
-                if (Objects.isNull(filterDataVO)) {
-                    throw dataNotFoundError();
-                }
             }
         }
         return SaResult.data(filterDataVO);

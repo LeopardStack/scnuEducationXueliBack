@@ -2,29 +2,23 @@ package com.scnujxjy.backendpoint.controller.oa;
 
 
 import cn.dev33.satoken.util.SaResult;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.oa.SuspensionRecordPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.oa.RetentionRecordRO;
 import com.scnujxjy.backendpoint.model.ro.oa.SuspensionRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.oa.*;
-import com.scnujxjy.backendpoint.service.oa.RetentionRecordService;
+import com.scnujxjy.backendpoint.model.vo.oa.SuspensionRecordVO;
+import com.scnujxjy.backendpoint.model.vo.oa.SuspensionSelectArgs;
+import com.scnujxjy.backendpoint.model.vo.oa.SuspensionWithResumptionVO;
 import com.scnujxjy.backendpoint.service.oa.SuspensionRecordService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.util.StringUtil;
-import org.apache.tika.utils.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 休学 Rest 接口
@@ -56,10 +50,7 @@ public class SuspensionRecordController {
         }
         // 查询数据
         PageVO<SuspensionRecordVO> suspensionInfos = suspensionRecordService.getSuspensionInfos(suspensionRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(suspensionInfos)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(suspensionInfos).setCode(200);
     }
@@ -81,10 +72,7 @@ public class SuspensionRecordController {
         }
         // 查询数据
         SuspensionSelectArgs suspensionInfosSelectArgs = suspensionRecordService.getSuspensionInfosSelectArgs(suspensionRecordROPageRO.getEntity());
-//        // 校验数据
-        if (Objects.isNull(suspensionInfosSelectArgs)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(suspensionInfosSelectArgs).setCode(200);
     }

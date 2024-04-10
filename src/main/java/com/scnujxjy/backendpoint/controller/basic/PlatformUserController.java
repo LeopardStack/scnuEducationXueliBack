@@ -9,7 +9,6 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.scnujxjy.backendpoint.constant.enums.AnnounceAttachmentEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
@@ -19,7 +18,6 @@ import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
@@ -45,7 +43,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_ERROR;
 import static com.scnujxjy.backendpoint.util.ResultCode.USER_LOGIN_FAIL;
 
@@ -222,10 +219,6 @@ public class PlatformUserController {
         }
         // 查询数据
         PlatformUserVO platformUserVO = platformUserService.detailById(userId);
-        // 校验返回数据
-        if (Objects.isNull(platformUserVO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         return SaResult.data(platformUserVO);
     }
@@ -266,11 +259,6 @@ public class PlatformUserController {
                 }
             }
         }
-
-        // 校验返回数据
-        if (Objects.isNull(platformUserVO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         platformUserVO.setIsNewStudent(isNewStudent);
         return SaResult.data(platformUserVO);
@@ -290,10 +278,6 @@ public class PlatformUserController {
         }
         // 查询数据
         UserRolePermissionBO userRolePermissionBO = platformUserService.rolePermissionDetailByUserId(userId);
-        // 返回参数校验
-        if (Objects.isNull(userRolePermissionBO)) {
-            throw dataNotFoundError();
-        }
         // 返回数据
         return SaResult.data(userRolePermissionBO);
     }
@@ -387,10 +371,7 @@ public class PlatformUserController {
         }
         // 查询数据
         PageVO<AdmissionInformationVO> admissionInformationVOPageVO = platformUserService.getPlatformUsersInformation(platformUserROPageRO);
-        // 校验数据
-        if (Objects.isNull(admissionInformationVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(admissionInformationVOPageVO);
     }

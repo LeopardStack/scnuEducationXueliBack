@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.ro.exam.SingleSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.service.exam.CourseExamInfoService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
@@ -22,7 +23,6 @@ import java.util.List;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.XUELIJIAOYUBU_ADMIN;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 考试信息获取
@@ -184,7 +184,7 @@ public class CourseExamInfoController {
             List<String> roleList = StpUtil.getRoleList();
             String userId = (String) StpUtil.getLoginId();
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 PageRO<BatchSetTeachersInfoRO> batchSetTeachersInfoROPageVO = new PageRO<>();
                 batchSetTeachersInfoROPageVO.setEntity(batchSetTeachersInfoRO);
@@ -226,7 +226,7 @@ public class CourseExamInfoController {
             List<String> roleList = StpUtil.getRoleList();
             String userId = (String) StpUtil.getLoginId();
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 PageRO<BatchSetTeachersInfoRO> batchSetTeachersInfoROPageVO = new PageRO<>();
                 batchSetTeachersInfoROPageVO.setEntity(batchSetTeachersInfoRO);

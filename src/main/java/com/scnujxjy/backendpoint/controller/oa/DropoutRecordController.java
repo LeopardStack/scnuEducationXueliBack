@@ -4,15 +4,13 @@ package com.scnujxjy.backendpoint.controller.oa;
 import cn.dev33.satoken.util.SaResult;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.oa.DropoutRecordRO;
-import com.scnujxjy.backendpoint.model.ro.oa.MajorChangeRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.oa.*;
+import com.scnujxjy.backendpoint.model.vo.oa.DropoutRecordWithClassInfoVO;
+import com.scnujxjy.backendpoint.model.vo.oa.DropoutSelectArgs;
 import com.scnujxjy.backendpoint.service.oa.DropoutRecordService;
-import com.scnujxjy.backendpoint.service.oa.MajorChangeRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 退学 Rest 接口
@@ -51,10 +48,7 @@ public class DropoutRecordController {
         }
         // 查询数据
         PageVO<DropoutRecordWithClassInfoVO> dropoutRecordVOPageVO = dropoutRecordService.getDropoutInfos(dropoutRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(dropoutRecordVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(dropoutRecordVOPageVO).setCode(200);
     }
@@ -76,10 +70,7 @@ public class DropoutRecordController {
         }
         // 查询数据
         DropoutSelectArgs dropoutSelectArgs = dropoutRecordService.getDropoutInfosSelectArgs(dropoutRecordROPageRO.getEntity());
-//        // 校验数据
-        if (Objects.isNull(dropoutSelectArgs)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(dropoutSelectArgs).setCode(200);
     }
@@ -102,10 +93,7 @@ public class DropoutRecordController {
         }
         // 查询数据
         List<DropoutRecordWithClassInfoVO> dropoutRecordVOPageVO = dropoutRecordService.getSingleDropoutInfos(dropoutRecordROPageRO);
-//        // 校验数据
-        if (Objects.isNull(dropoutRecordVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         // 返回数据
         return SaResult.data(dropoutRecordVOPageVO).setCode(200);
     }

@@ -11,6 +11,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.ScoreInformationSelectArgs;
 import com.scnujxjy.backendpoint.service.teaching_process.ScoreInformationService;
 import com.scnujxjy.backendpoint.util.MessageSender;
+import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
@@ -28,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
-import static com.scnujxjy.backendpoint.exception.DataException.dataNotFoundError;
 
 /**
  * 成绩信息管理
@@ -59,22 +59,6 @@ public class ScoreInformationController {
     @Resource
     private TeachingPointFilter teachingPointFilter;
 
-
-//    @GetMapping("/getGradeInfo")
-//    public SaResult getGradeInfo() {
-//        String loginId = (String) StpUtil.getLoginId();
-//        // 参数校验
-//        if (Objects.isNull(loginId) || loginId.trim().length() == 0) {
-//            throw dataMissError();
-//        }
-//        // 查询数据
-//        List<ScoreInformationPO> scoreInformationPOS = scoreInformationService.getBaseMapper().getGradeInfo(loginId);
-//        if (Objects.isNull(scoreInformationPOS)) {
-//            throw dataNotFoundError();
-//        }
-//        return SaResult.data(scoreInformationPOS);
-//    }
-
     /**
      * 学生获取自己的成绩信息
      *
@@ -95,9 +79,7 @@ public class ScoreInformationController {
         if (Objects.isNull(scoreInformationPOS)) {
             // 从数据库中查询数据
             scoreInformationPOS = scoreInformationService.getBaseMapper().getGradeInfo(loginId);
-            if (Objects.isNull(scoreInformationPOS)) {
-                throw dataNotFoundError();
-            }
+
             // 将查询结果存入 Redis，设置过期时间为1小时（可以根据实际需求调整）
             redisTemplate.opsForValue().set("score:" + loginId, scoreInformationPOS, 100, TimeUnit.HOURS);
         }
@@ -131,7 +113,7 @@ public class ScoreInformationController {
 
             List<String> roleList = StpUtil.getRoleList();
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     //二级学院教务员查询学生成绩信息
@@ -146,9 +128,6 @@ public class ScoreInformationController {
                     filterDataVO.setPages((long) Math.ceil((double) gradeInfoVOPageVO.getData().size()
                             / scoreInformationFilterROPageRO.getPageSize()));
 
-                    if (Objects.isNull(gradeInfoVOPageVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     // 继续教育学院教务员查询学生成绩信息
                     FilterDataVO gradeInfoVOPageVO = null;
@@ -162,9 +141,6 @@ public class ScoreInformationController {
                     filterDataVO.setPages((long) Math.ceil((double) gradeInfoVOPageVO.getData().size()
                             / scoreInformationFilterROPageRO.getPageSize()));
 
-                    if (Objects.isNull(gradeInfoVOPageVO)) {
-                        throw dataNotFoundError();
-                    }
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
 // 继续教育学院教务员查询学生成绩信息
                     FilterDataVO gradeInfoVOPageVO = null;
@@ -178,9 +154,6 @@ public class ScoreInformationController {
                     filterDataVO.setPages((long) Math.ceil((double) gradeInfoVOPageVO.getData().size()
                             / scoreInformationFilterROPageRO.getPageSize()));
 
-                    if (Objects.isNull(gradeInfoVOPageVO)) {
-                        throw dataNotFoundError();
-                    }
                 }
                 // 如果获取的数据不为空，则放入Redis
                 if (filterDataVO != null) {
@@ -215,7 +188,7 @@ public class ScoreInformationController {
 
         if (studentStatusSelectArgs == null) {
             if (roleList.isEmpty()) {
-                throw dataNotFoundError();
+                return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
             } else {
                 if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                     studentStatusSelectArgs = scoreInformationService.getStudentStatusArgs(loginId, collegeAdminFilter);
@@ -249,7 +222,7 @@ public class ScoreInformationController {
         // 获取访问者 ID
         String userId = (String) StpUtil.getLoginId();
         if (roleList.isEmpty()) {
-            throw dataNotFoundError();
+            return ResultCode.ROLE_INFO_FAIL1.generateErrorResultInfo();
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员

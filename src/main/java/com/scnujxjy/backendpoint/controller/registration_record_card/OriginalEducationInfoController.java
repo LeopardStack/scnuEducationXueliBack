@@ -40,9 +40,7 @@ public class OriginalEducationInfoController {
         }
         // 查询数据
         OriginalEducationInfoVO originalEducationInfoVO = originalEducationInfoService.detailById(id);
-        if (Objects.isNull(originalEducationInfoVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(originalEducationInfoVO);
     }
 
@@ -63,9 +61,7 @@ public class OriginalEducationInfoController {
         }
         // 查询数据
         PageVO<OriginalEducationInfoVO> originalEducationInfoVOPageVO = originalEducationInfoService.pageQueryOriginalEducationInfo(originalEducationInfoROPageRO);
-        if (Objects.isNull(originalEducationInfoVOPageVO)) {
-            throw dataNotFoundError();
-        }
+
         return SaResult.data(originalEducationInfoVOPageVO);
 
     }
