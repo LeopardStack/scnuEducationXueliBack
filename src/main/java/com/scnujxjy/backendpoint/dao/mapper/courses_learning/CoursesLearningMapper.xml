@@ -74,12 +74,20 @@
             </foreach>
         </if>
         <!-- 班级标识 而不是班级名称 -->
-        <if test="entity.classNameSet != null and !entity.classNameSet.isEmpty()">
-            AND ci.class_identifier IN
-            <foreach collection="entity.classNameSet" item="className" open="(" separator="," close=")">
-                #{className}
+<!--        <if test="entity.classNameSet != null and !entity.classNameSet.isEmpty()">-->
+<!--            AND ci.class_identifier IN-->
+<!--            <foreach collection="entity.classNameSet" item="className" open="(" separator="," close=")">-->
+<!--                #{className}-->
+<!--            </foreach>-->
+<!--        </if>-->
+        <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="entity.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
+
         <if test='entity.grade != null'>AND ci.grade = #{entity.grade}</if>
         <if test='entity.college != null'>AND ci.college = #{entity.college}</if>
         <if test='entity.majorName != null'>AND ci.major_name = #{entity.majorName}</if>

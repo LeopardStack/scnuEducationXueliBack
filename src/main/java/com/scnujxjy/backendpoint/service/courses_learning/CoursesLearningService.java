@@ -156,7 +156,11 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             courseScheduleROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
         } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
-            courseScheduleROPageRO.getEntity().setTeachingPointName(scnuXueliTools.getUserBelongTeachingPoint().getTeachingPointName());
+            Set<String> teachingPointClassNameSet = scnuXueliTools.getTeachingPointClassNameSet();
+            List<String> teachingPointClassNameList = teachingPointClassNameSet.stream().collect(Collectors.toList());
+
+            courseScheduleROPageRO.getEntity().setClassNameSet(teachingPointClassNameList);
+
         }
         List<CourseRecordBO> courseSections = (List<CourseRecordBO>) redisTemplate.
                 opsForValue().get("courseSections");
@@ -2517,6 +2521,22 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public PageQueryCoursesInfoParamsVO pageQueryCoursesInfoParams(CoursesLearningRO coursesLearningRO) {
+        List<String> roleList = StpUtil.getRoleList();
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+            // 学历教育部
+
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 二级学院
+            CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+            coursesLearningRO.setCollege(userBelongCollege.getCollegeName());
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+            Set<String> teachingPointClassNameSet = scnuXueliTools.getTeachingPointClassNameSet();
+            List<String> teachingPointClassNameList = teachingPointClassNameSet.stream().collect(Collectors.toList());
+
+            coursesLearningRO.setClassNameSet(teachingPointClassNameList);
+
+        }
+
         ExecutorService executor = Executors.newFixedThreadPool(9); // 根据需求调整线程池的大小
         try {
             // 提交查询到线程池并获取Future对象

@@ -45,12 +45,20 @@
         <if test='courseScheduleFilterROPageRO.batchIndex != null'>AND cs.batch_index =
             #{courseScheduleFilterROPageRO.batchIndex}
         </if>
+<!--        <if test='courseScheduleFilterROPageRO.classSet != null and courseScheduleFilterROPageRO.classSet.size() > 0'>-->
+<!--            AND cs.admin_class LIKE-->
+<!--            <foreach item="className" collection="courseScheduleFilterROPageRO.classSet" open="(" separator=","-->
+<!--                     close=")">-->
+<!--                CONCAT('%', #{className}, '%')-->
+<!--            </foreach>-->
+<!--        </if>-->
+
         <if test='courseScheduleFilterROPageRO.classSet != null and courseScheduleFilterROPageRO.classSet.size() > 0'>
-            AND cs.admin_class LIKE
-            <foreach item="className" collection="courseScheduleFilterROPageRO.classSet" open="(" separator=","
-                     close=")">
-                CONCAT('%', #{className}, '%')
+            AND (
+            <foreach collection="courseScheduleFilterROPageRO.classSet" item="className" separator=" OR ">
+                cs.admin_class LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
 
     </sql>

@@ -40,12 +40,19 @@
             </foreach>
         </if>
 
+<!--        <if test='entity.classSet != null and entity.classSet.size() > 0'>-->
+<!--            AND ci.class_name LIKE-->
+<!--            <foreach item="className" collection="entity.classSet" open="(" separator=","-->
+<!--                     close=")">-->
+<!--                CONCAT('%', #{className}, '%')-->
+<!--            </foreach>-->
+<!--        </if>-->
         <if test='entity.classSet != null and entity.classSet.size() > 0'>
-            AND ci.class_name LIKE
-            <foreach item="className" collection="entity.classSet" open="(" separator=","
-                     close=")">
-                CONCAT('%', #{className}, '%')
+            AND (
+            <foreach collection="entity.classSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
 
         <if test='entity.courseNames != null and !entity.courseNames.isEmpty()'>
@@ -87,11 +94,12 @@
         <if test='filter.semester != null'>AND ci.teaching_semester = #{filter.semester}</if>
         <if test='filter.courseCode != null'>AND c.course_code = #{filter.courseCode}</if>
         <if test='filter.className != null'>AND ci.class_name = #{filter.className}</if>
-        <if test='filter.classNameSet != null and !filter.classNameSet.isEmpty()'>
-            AND ci.class_name LIKE
-            <foreach item="className" collection="filter.classNameSet" open="(" separator="," close=")">
-                CONCAT('%', #{className}, '%')
+        <if test='filter.classNameSet != null and filter.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="filter.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
             </foreach>
+            )
         </if>
 
     </sql>

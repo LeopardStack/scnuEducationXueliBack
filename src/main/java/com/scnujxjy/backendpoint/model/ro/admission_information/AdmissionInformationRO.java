@@ -10,6 +10,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -150,6 +151,12 @@ public class AdmissionInformationRO implements Serializable {
      */
     @ExcelProperty(index=20, value = "教学点")
     private String teachingPoint;
+
+    /**
+     * 教学点集合
+     * 因为 存在一个教务员管理着两个教学点
+     */
+    private List<String> teachingPoints;
 
     /**
      * 报到地点（教学点地址）
