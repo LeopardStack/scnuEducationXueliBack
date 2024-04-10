@@ -60,8 +60,8 @@ public class Test1 {
     @Test
     public void test4(){
         try{
-            oldDataSynchronize.synchronizeStudentStatusData(2023,
-                    2023, true, true);
+            oldDataSynchronize.synchronizeStudentStatusData(2024,
+                    2024, true, false);
         }catch (Exception e){
             log.info("同步学籍数据失败");
         }
@@ -162,7 +162,7 @@ public class Test1 {
     @Test
     public void test9(){
         try {
-            oldDataSynchronize.synchronizeGradeInformationData(2024, 2022, true);
+            oldDataSynchronize.synchronizeGradeInformationData(2024, 2023, true);
         }catch (Exception e){
             log.info("同步新旧系统成绩数据失败 " + e.toString());
         }
