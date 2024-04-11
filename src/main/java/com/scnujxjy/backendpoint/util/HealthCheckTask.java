@@ -380,6 +380,7 @@ public class HealthCheckTask {
 
 
 //  @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+//    @Async
     public void updateWhiteList() {
         List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {
@@ -428,11 +429,12 @@ public class HealthCheckTask {
                         .map(CoursesClassMappingPO::getClassIdentifier)
                         .distinct()
                         .collect(Collectors.toList());
+                //如果课程对应的班级没有，就跳过
                 if (uniqueClassIdentifier.size() == 0) {
                     continue;
                 }
 
-                //找出所有行政班的学生
+                //找出所有在这些行政班的学生
                 List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(
                         Wrappers.<StudentStatusPO>lambdaQuery().in(StudentStatusPO::getClassIdentifier, uniqueClassIdentifier)
                 );

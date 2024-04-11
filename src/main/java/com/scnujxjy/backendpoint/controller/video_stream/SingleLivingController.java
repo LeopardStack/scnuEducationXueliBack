@@ -79,12 +79,12 @@ public class SingleLivingController {
     }
 
     //获取频道下或具体场次下的，观众观看数据详情，详情，详情
-    @GetMapping("/edit/getChannelView")
+    @PostMapping("/edit/getChannelView")
     public SaResult getChannelView(@RequestBody ChannelViewRequest channelViewRequest) throws IOException, NoSuchAlgorithmException {
         //要么传getCurrentDay，要么传getStartTime和getEndTime。不能三者同时为空
         if (StrUtil.isBlank(channelViewRequest.getChannelId()) ||
                 (StrUtil.isBlank(channelViewRequest.getCurrentDay()) && StrUtil.isBlank(channelViewRequest.getStartTime()) && StrUtil.isBlank(channelViewRequest.getEndTime()))) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
         return singleLivingService.getChannelCardPush(channelViewRequest);
     }
