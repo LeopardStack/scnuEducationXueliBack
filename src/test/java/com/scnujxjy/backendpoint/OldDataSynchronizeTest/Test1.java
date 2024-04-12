@@ -60,8 +60,8 @@ public class Test1 {
     @Test
     public void test4(){
         try{
-            oldDataSynchronize.synchronizeStudentStatusData(2024,
-                    2024, true, false);
+            oldDataSynchronize.synchronizeStudentStatusData(2020,
+                    2018, true, true);
         }catch (Exception e){
             log.info("同步学籍数据失败");
         }
@@ -69,24 +69,32 @@ public class Test1 {
     }
 
     /**
-     * 更新缴费数据 包括学籍异动的缴费数据
+     * 单个学籍数据 debug 测试
+     */
+    @Test
+    public void test4_1(){
+        try{
+            oldDataSynchronize.synchronizeStudentStatusDataSingleDebug(2020,true, true,
+                    "522122198106291701");
+        }catch (Exception e){
+            log.info("测试单个学籍数据失败");
+        }
+
+    }
+
+    /**
+     * 更新单个年级的缴费数据
      */
     @Test
     public void test5(){
         try {
-            for(int grade = 2024; grade >= 2020; grade--){
+            for(int grade = 2023; grade >= 2023; grade--){
                 int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
                         .eq(PaymentInfoPO::getGrade, "" + grade));
                 log.info("删除 " + grade + " 的缴费数据 " + delete);
             }
-//            ArrayList<String> specialGrades = new ArrayList<>(Arrays.asList("休学", "退学", "转学"));
-//            for(String grade: specialGrades){
-//                int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
-//                        .eq(PaymentInfoPO::getGrade, "" + grade));
-//                log.info("删除 " + grade + " 的缴费数据 " + delete);
-//            }
             oldDataSynchronize.synchronizePaymentInfoDataByInterval(
-                    true, 2024, 2020,
+                    true, 2023, 2023,
                     new ArrayList<>());
         }catch (Exception e){
             log.info("同步成教缴费数据失败 " + e);

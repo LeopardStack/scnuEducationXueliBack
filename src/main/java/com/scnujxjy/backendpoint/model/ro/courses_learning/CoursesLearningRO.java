@@ -41,6 +41,9 @@ public class CoursesLearningRO {
     @ApiModelProperty(value = "班级名称集合 存在一个教学点管理多个不同简称的班级", example = "广州达德")
     List<String> classNameSet;
 
+    @ApiModelProperty(value = "班级名称集合 用于学生获取班级信息", example = "广州达德")
+    List<String> classNames;
+
     @ApiModelProperty(value = "班级名称", example = "广州达德")
     String className;
 

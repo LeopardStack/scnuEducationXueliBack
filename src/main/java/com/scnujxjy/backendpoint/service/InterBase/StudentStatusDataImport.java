@@ -1,31 +1,24 @@
 package com.scnujxjy.backendpoint.service.InterBase;
 
-import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.*;
-import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.GraduationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.OriginalEducationInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.GraduationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.OriginalEducationInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusDataSynchronizeVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
-import org.springframework.dao.TransientDataAccessResourceException;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.sql.SQLTransientConnectionException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -35,11 +28,11 @@ import static com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize.CON
 
 
 @Data
-class ErrorStudentStatusExportExcel extends StudentStatusCommonPO {
+class ErrorStudentStatusExportExcel extends StudentStatusDataSynchronizeVO {
     /**
      * 插入失败原因
      */
-    @ExcelProperty(value = "插入失败原因", index = 26)
+    @ExcelProperty(value = "插入失败原因", index = 19)
     private String errorMsg;
 }
 
@@ -293,6 +286,9 @@ public class StudentStatusDataImport {
                 enrollDate = dateFormat5.parse(enrollDateString);
                 studentStatusPO.setEnrollmentDate(enrollDate);
                 studentStatusPO.setIdNumber(studentData.get("SFZH"));
+
+                String idNumber = studentData.get("SFZH");
+
                 studentStatusPO.setClassIdentifier(studentData.get("BSHI"));
 
 
@@ -317,9 +313,9 @@ public class StudentStatusDataImport {
 
                 List<AdmissionInformationPO> admissionInformationPOS = admissionInfoCache.get(ksh);
 
-                if (admissionInformationPOS.size() == 1) {
+                if (admissionInformationPOS != null && admissionInformationPOS.size() == 1) {
                     student =admissionInformationPOS.get(0);
-                } else if (admissionInformationPOS.size() > 1) {
+                } else if (admissionInformationPOS != null && admissionInformationPOS.size() > 1) {
                     for (int i = 0; i < admissionInformationPOS.size(); i++) {
                         AdmissionInformationPO admissionInformationPO = admissionInformationPOS.get(i);
                         String grade1 = admissionInformationPO.getGrade();

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Data
@@ -13,7 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class PlatformUserVO {
+public class PlatformUserVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /**
      * 用户id，自增
      */

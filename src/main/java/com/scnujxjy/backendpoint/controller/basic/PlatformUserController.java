@@ -231,6 +231,14 @@ public class PlatformUserController {
     @GetMapping("/detailUser")
     public SaResult detail() {
         String userName = StpUtil.getLoginIdAsString();
+        String cacheKey = "userDetail_" + userName;
+
+        // 尝试从缓存中获取数据
+        PlatformUserVO cachedPlatformUserVO = (PlatformUserVO) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedPlatformUserVO != null) {
+            return SaResult.data(cachedPlatformUserVO);
+        }
+
         List<String> roleList = StpUtil.getRoleList();
         boolean isNewStudent = false;
         // 查询数据
@@ -261,6 +269,10 @@ public class PlatformUserController {
         }
         // 返回数据
         platformUserVO.setIsNewStudent(isNewStudent);
+
+        // 将结果存入 Redis 缓存，并设置适当的过期时间
+        redisTemplate.opsForValue().set(cacheKey, platformUserVO, 10, TimeUnit.HOURS);
+
         return SaResult.data(platformUserVO);
     }
 

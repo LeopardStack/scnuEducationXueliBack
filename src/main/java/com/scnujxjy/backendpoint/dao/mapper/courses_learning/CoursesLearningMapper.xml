@@ -73,13 +73,14 @@
                 #{courseId}
             </foreach>
         </if>
-        <!-- 班级标识 而不是班级名称 -->
-<!--        <if test="entity.classNameSet != null and !entity.classNameSet.isEmpty()">-->
-<!--            AND ci.class_identifier IN-->
-<!--            <foreach collection="entity.classNameSet" item="className" open="(" separator="," close=")">-->
-<!--                #{className}-->
-<!--            </foreach>-->
-<!--        </if>-->
+        <!-- 这个班级名称集合用于学生获取自己的课程信息 并且这个是班级标识   -->
+        <if test="entity.classNames != null and !entity.classNames.isEmpty()">
+            AND ci.class_identifier IN
+            <foreach collection="entity.classNames" item="className" open="(" separator="," close=")">
+                #{className}
+            </foreach>
+        </if>
+        <!-- 这个班级名称集合用于管理员多选班级 或者一个教学点管理员管理多个教学点时  -->
         <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
             AND (
             <foreach collection="entity.classNameSet" item="className" separator=" OR ">
@@ -198,8 +199,34 @@
     </select>
     <select id="selectCourseLearningDataWithoutPaging"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO">
-        SELECT * FROM (
-        SELECT
+<!--        SELECT * FROM (-->
+<!--        SELECT-->
+<!--        cl.id,-->
+<!--        cl.grade,-->
+<!--        cl.course_name,-->
+<!--        cl.course_type,-->
+<!--        cl.course_description,-->
+<!--        cl.course_cover_url,-->
+<!--        cl.default_main_teacher_username,-->
+<!--        cl.course_identifier,-->
+<!--        cl.valid,-->
+<!--        cl.created_time,-->
+<!--        cl.updated_time,-->
+<!--        ti.name AS default_main_teacher_name,-->
+<!--        ss.start_time AS recent_course_schedule_time,-->
+<!--        ABS(TIMESTAMPDIFF(SECOND, ss.start_time, NOW())) AS time_difference-->
+<!--        <include refid="commonJoin" />-->
+<!--        WHERE-->
+<!--        1=1-->
+<!--        <include refid="commonFilters" />-->
+<!--        GROUP BY-->
+<!--        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,-->
+<!--        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,-->
+<!--        cl.valid, cl.created_time, cl.updated_time, ti.name, ss.start_time-->
+<!--        ORDER BY time_difference ASC-->
+<!--        LIMIT 1-->
+<!--        ) AS subquery;-->
+        SELECT DISTINCT
         cl.id,
         cl.grade,
         cl.course_name,
@@ -214,17 +241,24 @@
         ti.name AS default_main_teacher_name,
         ss.start_time AS recent_course_schedule_time,
         ABS(TIMESTAMPDIFF(SECOND, ss.start_time, NOW())) AS time_difference
-        <include refid="commonJoin" />
+        FROM courses_learning cl
+        LEFT JOIN (
+        SELECT course_id, MIN(start_time) as start_time
+        FROM sections
+        GROUP BY course_id
+        ) ss ON cl.id = ss.course_id
+        LEFT JOIN live_resources lr ON lr.course_id = cl.id AND lr.section_id IS NULL
+        LEFT JOIN teacher_information ti ON cl.default_main_teacher_username = ti.teacher_username
+        LEFT JOIN courses_class_mapping ccm ON cl.id = ccm.course_id
+        LEFT JOIN class_information ci ON ccm.class_identifier = ci.class_identifier
+        LEFT JOIN teaching_point_information tpi
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
         WHERE
         1=1
         <include refid="commonFilters" />
-        GROUP BY
-        cl.id, ci.grade, cl.course_name, cl.course_type, cl.course_description,
-        cl.course_cover_url, cl.default_main_teacher_username, cl.course_identifier,
-        cl.valid, cl.created_time, cl.updated_time, ti.name, ss.start_time
-        ORDER BY time_difference ASC
-        LIMIT 1
-        ) AS subquery;
+        ORDER BY time_difference ASC;
+
     </select>
     <select id="selectCourseRetakeStudentsInfo"
             resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningStudentInfoVO">

@@ -337,6 +337,51 @@ public class OldDataSynchronize {
 
     }
 
+
+    /**
+     * 单线程 debug
+     * @param year
+     * @param updateAny
+     * @param personalUpdate
+     * @param idNumber
+     * @throws InterruptedException
+     */
+    public void synchronizeStudentStatusDataSingleDebug(int year, boolean updateAny,
+                                                        boolean personalUpdate, String idNumber) throws InterruptedException {
+        StudentStatusDataImport studentStatusDataImport = new StudentStatusDataImport();
+        // 获取所有 AdmissionInformationPO 对象
+        List<AdmissionInformationPO> admissionInformationList = admissionInformationMapper.selectList(null); // 传入null获取所有记录
+        Map<String, List<AdmissionInformationPO>> admissionInfoCache = new HashMap<>();
+        // 根据考生号分组
+        for (AdmissionInformationPO admissionInfo : admissionInformationList) {
+            String admissionNumber = admissionInfo.getAdmissionNumber();
+
+            // 检查map中是否已经有这个考生号的列表，如果没有，创建一个
+            admissionInfoCache.computeIfAbsent(admissionNumber, k -> new ArrayList<>()).add(admissionInfo);
+        }
+        studentStatusDataImport.setAdmissionInfoCache(admissionInfoCache);
+
+        if(!personalUpdate){
+            studentStatusDataImport.setUpdatePersonalInfo(personalUpdate);
+        }
+        studentStatusDataImport.setUpdateAny(updateAny);
+
+        StringBuilder allGrades = new StringBuilder();
+
+        boolean updated = false;
+
+        ArrayList<HashMap<String, String>> studentStatusData = getStudentInfos(String.valueOf(year));
+        for (HashMap<String, String> studentData : studentStatusData) {
+            if (idNumber.equals(studentData.get("SFZH"))) {
+                // 找到了对应的HashMap，现在调用insertData函数
+                studentStatusDataImport.insertData(studentData); // Put the object in the queue
+                break; // 如果只需要找到第一个匹配的，找到后即可停止搜索
+            }
+        }
+
+
+    }
+
     /**
      * 同步旧系统与新系统的教学计划
      */

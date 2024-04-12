@@ -5,6 +5,9 @@ run:
   oldDataSynchronizeStatus: true  # 开启旧系统同步
   checkLivingStatusScan: true  # 开启直播状态
 
+scnu-cors:
+  open: true
+
 spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss

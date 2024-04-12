@@ -1,15 +1,10 @@
 package com.scnujxjy.backendpoint.service.core_data;
 
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.SM3;
 import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelReader;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
@@ -18,9 +13,7 @@ import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
-import com.scnujxjy.backendpoint.handler.excel.TeacherInformationExcelListener;
 import com.scnujxjy.backendpoint.inverter.core_data.TeachInformationInverter;
-import com.scnujxjy.backendpoint.model.bo.TeacherInformationExcelBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.TeacherInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
@@ -31,19 +24,21 @@ import com.scnujxjy.backendpoint.model.vo.core_data.TeacherSelectVO;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
-import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import com.scnujxjy.backendpoint.service.platform_message.UserUploadsService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.excelListener.TeacherInformationListener;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shardingsphere.infra.hint.HintManager;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -115,7 +110,9 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return 更新后的教师信息
      */
     public SaResult editById(TeacherInformationRO teacherInformationRO) {
-
+        try {
+            // 显示声明 从写数据库中 读取数据 因为从数据更新有延迟
+            HintManager.getInstance().setWriteRouteOnly();
         TeacherInformationPO teacherInformationPO1 = getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                 .eq(TeacherInformationPO::getUserId, teacherInformationRO.getUserId()));
         if(teacherInformationPO1 == null){
@@ -209,6 +206,9 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
             if(insert <= 0){
                 return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
             }
+        }
+        } finally {
+            HintManager.clear();
         }
 
         return SaResult.ok("修改教师信息成功");
@@ -319,6 +319,10 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
      * @return
      */
     public SaResult addNewTeacher(TeacherInformationRO teacherInformationRO) {
+        try {
+            // 显示声明 从写数据库中 读取数据 因为从数据更新有延迟
+            HintManager.getInstance().setWriteRouteOnly();
+
         if(StrUtil.isEmpty(teacherInformationRO.getName())){
             return ResultCode.TEACHER_INFORMATION_FAIL1.generateErrorResultInfo();
         }
@@ -398,6 +402,9 @@ public class TeacherInformationService extends ServiceImpl<TeacherInformationMap
             if(insert <= 0){
                 return ResultCode.DATABASE_INSERT_ERROR.generateErrorResultInfo();
             }
+        }
+        } finally {
+            HintManager.clear();
         }
 
         return SaResult.ok("新增教师成功");

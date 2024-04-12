@@ -75,10 +75,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1585,6 +1582,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      */
     public List<CourseInfoVO> getCourseInfo(StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
         String username = StpUtil.getLoginIdAsString();
+        // 使用 idNumber + "courseLearning" 构建缓存键
+        String cacheKey = username + "courseLearning";
+
+        // 检查缓存中是否有数据
+        List<CourseInfoVO> cachedData = (List<CourseInfoVO>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedData != null) {
+            // 如果缓存中有数据，直接返回缓存数据
+            return cachedData;
+        }
+
         // 因为存在多学籍学生 所以需要 获取最近的学籍信息 来匹配它的班级信息
         List<StudentStatusPO> studentStatusPOS = studentStatusService.getBaseMapper().selectList(new LambdaQueryWrapper<StudentStatusPO>()
                 .eq(StudentStatusPO::getIdNumber, username));
@@ -1624,10 +1631,10 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             // 使用 classNameList 创建 CoursesLearningRO 并设置 courseIds
             CoursesLearningRO coursesLearningRO = new CoursesLearningRO();
-            if(retakeStudentsPOS.size() > 0){
+            if(!retakeStudentsPOS.isEmpty()){
                 coursesLearningRO.setCourseIds(courseIds);
             }else{
-                coursesLearningRO = new CoursesLearningRO().setClassNameSet(classNameList);
+                coursesLearningRO = new CoursesLearningRO().setClassNames(classNameList);
                 coursesLearningRO.setCourseIds(courseIds);
             }
 
@@ -1636,6 +1643,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             // 现在 coursesLearningRO 包含了正确的列表，可以传递给 selectCourseLearningData 方法
             List<CourseLearningVO> courseLearningVOS = getBaseMapper().selectCourseLearningDataWithoutPaging(coursesLearningRO);
+
+            if(!classNameList.isEmpty() && !retakeStudentsPOS.isEmpty()){
+                // 她是补修学生 而且也有正常要上的课
+                CoursesLearningRO coursesLearningRO1 = new CoursesLearningRO();
+                coursesLearningRO1 = new CoursesLearningRO().setClassNames(classNameList);
+                List<CourseLearningVO> courseLearningVOS1 = getBaseMapper().selectCourseLearningDataWithoutPaging(coursesLearningRO1);
+                courseLearningVOS.addAll(courseLearningVOS1);
+
+            }
+
             for(CourseLearningVO courseLearningVO : courseLearningVOS){
                 setRecentCourseScheduleTime(courseLearningVO);
             }
@@ -1758,6 +1775,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             courseInfoVOS.forEach(courseInfo -> courseInfo.setState(StudentCoursesStatusEnum.COMPLETED_COURSE.getCourseStatus()));
         }
 
+        // 更新 Redis 缓存，设置过期时间为您认为合适的值，例如 10 分钟
+        redisTemplate.opsForValue().set(cacheKey, courseInfoVOS, 10, TimeUnit.HOURS);
 
         return courseInfoVOS;
     }
@@ -1768,7 +1787,13 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public List<CourseSectionVO> getStudentCourseSectionsInfo(CourseSectionRO courseSectionRO) {
-
+        Long courseId = courseSectionRO.getCourseId();
+        String cacheKey = "courseSections_" + courseId;
+        // 尝试从缓存中获取数据
+        List<CourseSectionVO> cachedCourseSections = (List<CourseSectionVO>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedCourseSections != null) {
+            return cachedCourseSections;
+        }
 
         CoursesLearningPO coursesLearningPO = getBaseMapper().selectOne(new LambdaQueryWrapper<CoursesLearningPO>()
                 .eq(CoursesLearningPO::getId, courseSectionRO.getCourseId()));
@@ -1815,6 +1840,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
 
             courseSectionVOs.add(courseSectionVO);
         }
+
+        // 将结果存入 Redis 缓存，并设置适当的过期时间
+        redisTemplate.opsForValue().set(cacheKey, courseSectionVOs, 10, TimeUnit.HOURS);
 
         return courseSectionVOs;
     }
@@ -1993,6 +2021,15 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
      * @return
      */
     public CourseInfoVO getSingleCourseInfo(StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+        Long courseId = studentsCoursesInfoSearchRO.getCourseId();
+        String cacheKey = "singleCourseInfo_" + courseId;
+
+        // 尝试从缓存中获取数据
+        CourseInfoVO cachedCourseInfoVO = (CourseInfoVO) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedCourseInfoVO != null) {
+            return cachedCourseInfoVO;
+        }
+
         String username = StpUtil.getLoginIdAsString();
         // 因为存在多学籍学生 所以需要 获取最近的学籍信息 来匹配它的班级信息
         List<StudentStatusPO> studentStatusPOS = studentStatusService.getBaseMapper().selectList(new LambdaQueryWrapper<StudentStatusPO>()
@@ -2054,6 +2091,9 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             TeacherInformationPO teacherInformationPO = teacherInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                     .eq(TeacherInformationPO::getTeacherUsername, courseLearningVO.getDefaultMainTeacherUsername()));
             courseInfoVO.setDefaultMainTeacherName(teacherInformationPO.getName());
+
+            // 将结果存入 Redis 缓存，并设置适当的过期时间 10 小时
+            redisTemplate.opsForValue().set(cacheKey, courseInfoVO, 10, TimeUnit.HOURS);
             return courseInfoVO;
         }
         return null;

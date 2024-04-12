@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -15,7 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 @Accessors(chain = true)
 @Builder
-public class CourseInfoVO {
+public class CourseInfoVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     @ApiModelProperty(value = "课程主键 ID", example = "1")
     private Long courseId;
 
