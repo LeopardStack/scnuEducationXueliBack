@@ -43,7 +43,7 @@ public class SingleLivingSetting {
     @Resource
     private VideoStreamUtils videoStreamUtils;
 
-    @Value("${singleLiving.category:123456}")
+    @Value("${singleLiving.category:520488}")
     private Integer category;
 
     /**

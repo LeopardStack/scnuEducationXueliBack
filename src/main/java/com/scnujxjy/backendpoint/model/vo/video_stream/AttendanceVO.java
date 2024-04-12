@@ -32,7 +32,10 @@ public class AttendanceVO {
     @ExcelProperty(value = {describe,"是否出勤"})
     private String Attendance;
 
-    @ExcelProperty(value = {describe,"观看时长,单位秒"})
+    @ExcelProperty(value = {describe,"直播观看时长,单位秒"})
     private String playDuration;
+
+    @ExcelProperty(value = {describe,"回放观看时长,单位秒"})
+    private String vodDuration;
 
 }

@@ -3,12 +3,14 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.RetakeStudentsPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
@@ -19,6 +21,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiRespons
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesClassMappingMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.RetakeStudentsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.PersonalInfoMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
@@ -108,6 +111,9 @@ public class HealthCheckTask {
 
     @Resource
     private PersonalInfoMapper personalInfoMapper;
+
+    @Resource
+    private RetakeStudentsMapper retakeStudentsMapper;
 
 
     @Scheduled(fixedRate = 1000000)  // 每100秒执行一次
@@ -380,6 +386,7 @@ public class HealthCheckTask {
 
 
 //  @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+//    @Async
     public void updateWhiteList() {
         List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {
@@ -428,14 +435,30 @@ public class HealthCheckTask {
                         .map(CoursesClassMappingPO::getClassIdentifier)
                         .distinct()
                         .collect(Collectors.toList());
+                //如果课程对应的班级没有，就跳过
                 if (uniqueClassIdentifier.size() == 0) {
                     continue;
                 }
 
-                //找出所有行政班的学生
+                //找出所有在这些行政班的学生
                 List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(
                         Wrappers.<StudentStatusPO>lambdaQuery().in(StudentStatusPO::getClassIdentifier, uniqueClassIdentifier)
                 );
+
+                //还有重修的学生
+                List<RetakeStudentsPO> retakeStudentsPOS = retakeStudentsMapper.selectByCourseId(liveResourcesPO.getCourseId());
+                //拿到所有重修学生的学号
+                List<String> uniqueRetakeStudents = retakeStudentsPOS.stream()
+                        .map(RetakeStudentsPO::getStudentNumber)
+                        .distinct()
+                        .collect(Collectors.toList());
+                if (retakeStudentsPOS.size()!=0){
+                    List<StudentStatusPO> retakeStudentStatusPOS = studentStatusMapper.selectList(
+                            Wrappers.<StudentStatusPO>lambdaQuery().in(StudentStatusPO::getStudentNumber, uniqueRetakeStudents)
+                    );
+                    studentStatusPOS.addAll(retakeStudentStatusPOS);
+                }
+
 
                 //只有白名单中不存在该学生时才需要去更新该频道的白名单
                 List<StudentWhiteListVO> studentWhiteList = studentStatusPOS.stream()

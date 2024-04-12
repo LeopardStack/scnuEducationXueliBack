@@ -80,11 +80,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1072,6 +1070,42 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             String startTime = format.format(exportStartTime);
             String endTime = format.format(exportEndTime);
 
+            //先拿到回放的数据
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            List<ViewLogResponse> viewLogResponseAllList=new ArrayList<>();
+            for (int month = 3; month <= 7; month++) {
+                LocalDateTime startDate = LocalDate.of(2024, month, 1).atStartOfDay();
+                LocalDate endDateLocalDate = LocalDate.of(2024, month, 1)
+                        .with(TemporalAdjusters.lastDayOfMonth());
+                LocalTime endOfDayTime = LocalTime.of(23, 59); // 设置为23:59
+                LocalDateTime endDate = endDateLocalDate.atTime(endOfDayTime);
+
+                ChannelViewRequest channelViewRequest1 = new ChannelViewRequest();
+                channelViewRequest1.setChannelId(live.getChannelId());
+                channelViewRequest1.setStartTime(startDate.format(formatter));
+                channelViewRequest1.setEndTime(endDate.format(formatter));
+                channelViewRequest1.setParam3("vod");
+                channelViewRequest1.setPageSize("10000");
+                // 处理channelViewRequest1，比如发送请求
+                SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
+                List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
+                viewLogResponseAllList.addAll(viewLogResponseList1);
+            }
+            if (viewLogResponseAllList.size() == 0) {
+                log.error("该排课时间段内没有学生观看回放数据，请联系管理员");
+            }
+
+            Map<String, List<ViewLogResponse>> groupByPhone = viewLogResponseAllList.stream()
+                    .collect(Collectors.groupingBy(ViewLogResponse::getParam1));
+
+            Map<String, Integer> vodMap = new HashMap<>();
+            for (Map.Entry<String, List<ViewLogResponse>> entry : groupByPhone.entrySet()) {
+                int totalPlayDuration = entry.getValue().stream()
+                        .mapToInt(ViewLogResponse::getPlayDuration)
+                        .sum();
+                vodMap.put(entry.getKey(), totalPlayDuration);
+            }
+
             ChannelViewRequest channelViewRequest = new ChannelViewRequest();
             channelViewRequest.setChannelId(live.getChannelId());
             channelViewRequest.setStartTime(startTime);
@@ -1083,7 +1117,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             SaResult channelCardPush = getChannelCardPush(channelViewRequest);
 
             List<ViewLogResponse> viewLogResponseList = (List<ViewLogResponse>) channelCardPush.getData();
-            if (viewLogResponseList.size() == 0) {
+            if (viewLogResponseList==null || viewLogResponseList.size() == 0) {
                 log.error("该排课时间段内没有学生观看数据，请联系管理员");
             }
             log.info("学生观看数据获取成功" + viewLogResponseList);
@@ -1123,6 +1157,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
+                if (vodMap.containsKey(viewLogResponse.getParam1())){
+                attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
+                }else {
+                    attendanceVO.setVodDuration("0");
+                }
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
                 if(studentStatusVO==null){
                     studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
@@ -1185,6 +1224,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
+                if (vodMap.containsKey(channelWhiteList.getPhone())){
+                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
+                }else {
+                    attendanceVO.setVodDuration("0");
+                }
+
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
                 if(studentStatusVO==null){
                     studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
@@ -1282,6 +1327,47 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 String startTime = format.format(exportStartTime);
                 String endTime = format.format(exportEndTime);
 
+
+                //先拿到回放的数据
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+                List<ViewLogResponse> viewLogResponseAllList=new ArrayList<>();
+                for (int month = 3; month <= 7; month++) {
+                    LocalDateTime startDate = LocalDate.of(2024, month, 1).atStartOfDay();
+                    LocalDate endDateLocalDate = LocalDate.of(2024, month, 1)
+                            .with(TemporalAdjusters.lastDayOfMonth());
+                    LocalTime endOfDayTime = LocalTime.of(23, 59); // 设置为23:59
+                    LocalDateTime endDate = endDateLocalDate.atTime(endOfDayTime);
+
+                    ChannelViewRequest channelViewRequest1 = new ChannelViewRequest();
+                    channelViewRequest1.setChannelId(live.getChannelId());
+                    channelViewRequest1.setStartTime(startDate.format(formatter));
+                    channelViewRequest1.setEndTime(endDate.format(formatter));
+                    channelViewRequest1.setParam3("vod");
+                    channelViewRequest1.setPageSize("10000");
+                    // 处理channelViewRequest1，比如发送请求
+                    SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
+                    List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
+                    viewLogResponseAllList.addAll(viewLogResponseList1);
+                }
+                if (viewLogResponseAllList.size() == 0) {
+                    log.error("该排课时间段内没有学生观看回放数据，请联系管理员");
+                }
+//            HashMap<String,Integer> vodMap=new HashMap<>();
+//            for (ViewLogResponse viewLogResponse:viewLogResponseAllList) {
+//                vodMap.put(viewLogResponse.getParam1(),viewLogResponse.getPlayDuration());
+//            }
+                Map<String, List<ViewLogResponse>> groupByPhone = viewLogResponseAllList.stream()
+                        .collect(Collectors.groupingBy(ViewLogResponse::getParam1));
+
+                Map<String, Integer> vodMap = new HashMap<>();
+                for (Map.Entry<String, List<ViewLogResponse>> entry : groupByPhone.entrySet()) {
+                    int totalPlayDuration = entry.getValue().stream()
+                            .mapToInt(ViewLogResponse::getPlayDuration)
+                            .sum();
+                    vodMap.put(entry.getKey(), totalPlayDuration);
+                }
+
+
                 ChannelViewRequest channelViewRequest = new ChannelViewRequest();
                 channelViewRequest.setChannelId(live.getChannelId());
                 channelViewRequest.setStartTime(startTime);
@@ -1333,6 +1419,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setName(viewLogResponse.getParam2());
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
+                    if (vodMap.containsKey(viewLogResponse.getParam1())){
+                        attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
+                    }else {
+                        attendanceVO.setVodDuration("0");
+                    }
+
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
                     if(studentStatusVO==null){
                         studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
@@ -1396,6 +1488,13 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setName(channelWhiteList.getName());
                     attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
+
+                    if (vodMap.containsKey(channelWhiteList.getPhone())){
+                        attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
+                    }else {
+                        attendanceVO.setVodDuration("0");
+                    }
+
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
                     if(studentStatusVO==null){
                         studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
