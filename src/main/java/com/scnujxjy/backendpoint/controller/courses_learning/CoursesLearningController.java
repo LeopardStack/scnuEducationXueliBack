@@ -426,6 +426,21 @@ public class CoursesLearningController {
         return SaResult.data(courseClassInfoVOS);
     }
 
+
+    /**
+     * 获取学生的课程学习数据
+     *
+     * @return 课程信息
+     */
+    @PostMapping("/get_student_course_learning_data")
+    @ApiOperation(value = "获取学生的课程学习数据")
+    public SaResult getStudentCoursesLearingData(@RequestBody StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+
+        List<StudentCourseLearningDataVO> studentCourseLearningDataVOS = coursesLearningService.getStudentCoursesLearingData(studentsCoursesInfoSearchRO);
+        // 转换并返回
+        return SaResult.data(studentCourseLearningDataVOS);
+    }
+
     /**
      * 获取学生的单门课程信息
      *

@@ -78,7 +78,7 @@
         <if test='filter.majorName != null'>AND ci.major_name = #{filter.majorName}</if>
         <if test='filter.level != null'>AND ci.level = #{filter.level}</if>
         <if test='filter.studyForm != null'>AND ci.study_form = #{filter.studyForm}</if>
-        <if test='filter.adminClass != null'>AND ci.admin_class = #{filter.adminClass}</if>
+        <if test='filter.adminClass != null'>AND c.admin_class = #{filter.adminClass}</if>
         <if test='filter.courseName != null'>AND c.course_name = #{filter.courseName}</if>
         <if test='filter.grades != null and !filter.grades.isEmpty()'>
             AND ci.grade IN

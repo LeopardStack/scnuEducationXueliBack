@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -331,7 +332,7 @@ public class HealthCheckTask {
     /**
      * 预热课程数据 便于查询和搜索
      */
-    @PostConstruct
+//    @PostConstruct
     public void init() {
         refreshCourseSectionsInRedis();
     }
@@ -385,8 +386,10 @@ public class HealthCheckTask {
     }
 
 
-//  @Scheduled(fixedRate = 3600_000) // 每1h触发一次
-//    @Async
+
+
+    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+    @Async
     public void updateWhiteList() {
         List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {

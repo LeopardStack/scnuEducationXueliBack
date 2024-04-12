@@ -18,6 +18,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInform
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoStreamRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewLogResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ViewStudentResponse.Content;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.getLivingInfo.ChannelInfoResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ApiResponse;
@@ -25,6 +26,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelRes
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CoursesLearningMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
+import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.TeacherInfo;
@@ -74,6 +76,8 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -1674,6 +1678,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                         .setDefaultMainTeacherUsername(courseLearningVO.getDefaultMainTeacherUsername())
                         .setRecentCourseScheduleTime(courseLearningVO.getRecentCourseScheduleTime())
                         .setNextCourseScheduleTime(courseLearningVO.getNextCourseScheduleTime())
+                        .setChannelId(getLiveCourseChannelId(courseLearningVO.getId()))
+                        .setCreatedTime(courseLearningVO.getCreatedTime())
                         ;
                 ClassInformationPO classInformationPO = classInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<ClassInformationPO>()
                         .eq(ClassInformationPO::getClassIdentifier, highestGradeStudent.getClassIdentifier()));
@@ -1775,7 +1781,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             courseInfoVOS.forEach(courseInfo -> courseInfo.setState(StudentCoursesStatusEnum.COMPLETED_COURSE.getCourseStatus()));
         }
 
-        // 更新 Redis 缓存，设置过期时间为您认为合适的值，例如 10 分钟
+        // 更新 Redis 缓存，设置过期时间为您认为合适的值，例如 10 小时
         redisTemplate.opsForValue().set(cacheKey, courseInfoVOS, 10, TimeUnit.HOURS);
 
         return courseInfoVOS;
@@ -2702,4 +2708,118 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         }
     }
 
+    /**
+     * 获取学生的指定课程 或者部分课程的 学习数据
+     * @param studentsCoursesInfoSearchRO
+     * @return
+     */
+    public List<StudentCourseLearningDataVO> getStudentCoursesLearingData(StudentsCoursesInfoSearchRO studentsCoursesInfoSearchRO) {
+        String username = StpUtil.getLoginIdAsString();
+        // 使用 idNumber + "courseLearning" 构建缓存键
+        String cacheKey = username + "courseLearningData" + studentsCoursesInfoSearchRO;
+
+        // 检查缓存中是否有数据
+        List<StudentCourseLearningDataVO> cachedData = (List<StudentCourseLearningDataVO>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedData != null) {
+            // 如果缓存中有数据，直接返回缓存数据
+            return cachedData;
+        }
+
+        List<StudentCourseLearningDataVO> studentCourseLearningDataVOList = new ArrayList<>();
+
+        List<CourseInfoVO> courseInfo = getCourseInfo(studentsCoursesInfoSearchRO);
+        String studentIdNumber = StpUtil.getLoginIdAsString();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        LocalDateTime now = LocalDateTime.now();
+        // 将LocalDateTime转换为Date
+        Date dateNow = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+
+        for(CourseInfoVO courseInfoVO : courseInfo){
+            StudentCourseLearningDataVO studentCourseLearningDataVO = new StudentCourseLearningDataVO()
+                    .setCourseId(courseInfoVO.getCourseId())
+                    .setChannelId(courseInfoVO.getChannelId())
+                    .setCourseName(courseInfoVO.getCourseName())
+                    .setLiveTimeCount(0L)
+                    .setVideoTimeCount(0L)
+                    ;
+            if(StringUtils.isEmpty(courseInfoVO.getChannelId())){
+                studentCourseLearningDataVOList.add(studentCourseLearningDataVO);
+                continue;
+            }
+            try{
+
+                List<ViewLogResponse> viewLogResponseList = queryDataMonthly(
+                        courseInfoVO.getChannelId(),
+                        courseInfoVO.getCreatedTime(),
+                        dateNow,
+                        studentIdNumber,
+                        dateFormat
+                );
+
+                // 把 viewLogResponseList 中 param3 为 live 的 逐个相加 存储到 LiveTimeCount
+                // param3 为 vod 的 逐个相加 存储到 VideoTimeCount
+                long liveTimeCount = 0;
+                long videoTimeCount = 0;
+                for (ViewLogResponse viewLog : viewLogResponseList) {
+                    if ("live".equals(viewLog.getParam3())) {
+                        liveTimeCount += viewLog.getPlayDuration();
+                    } else if ("vod".equals(viewLog.getParam3())) {
+                        videoTimeCount += viewLog.getPlayDuration();
+                    }
+                }
+
+                studentCourseLearningDataVO.setLiveTimeCount(liveTimeCount);
+                studentCourseLearningDataVO.setVideoTimeCount(videoTimeCount);
+                studentCourseLearningDataVOList.add(studentCourseLearningDataVO);
+
+            }catch (Exception e){
+                log.error("获取该课程学习数据失败 " + e);
+            }
+        }
+
+
+        // 更新 Redis 缓存，设置过期时间为您认为合适的值，例如 10 小时
+        redisTemplate.opsForValue().set(cacheKey, studentCourseLearningDataVOList, 10, TimeUnit.HOURS);
+        return studentCourseLearningDataVOList;
+    }
+
+    public List<ViewLogResponse> queryDataMonthly(String channelId, Date start,
+                                                  Date end, String studentIdNumber,
+                                                  SimpleDateFormat dateFormat) throws Exception {
+        LocalDate startDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        List<ViewLogResponse> combinedResults = new ArrayList<>();
+
+        while (!startDate.isAfter(endDate)) {
+            LocalDate lastDayOfMonth = startDate.withDayOfMonth(startDate.lengthOfMonth());
+            if (lastDayOfMonth.isAfter(endDate)) {
+                lastDayOfMonth = endDate;
+            }
+            String formattedStart = dateFormat.format(Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+            String formattedEnd = dateFormat.format(Date.from(lastDayOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+            SaResult channelCardPush = singleLivingService.getChannelCardPush(new ChannelViewRequest()
+                    .setChannelId(channelId)
+                    .setStartTime(formattedStart)
+                    .setEndTime(formattedEnd)
+                    .setParam1(studentIdNumber)
+            );
+
+            List<ViewLogResponse> monthlyResults = extractData(channelCardPush);
+            combinedResults.addAll(monthlyResults);
+
+            // Move to the first day of the next month
+            startDate = lastDayOfMonth.plusDays(1);
+        }
+
+        return combinedResults;
+    }
+
+    private List<ViewLogResponse> extractData(SaResult result) {
+        // Assuming result.getData() returns List<ViewLogResponse> directly
+        if (result.getData() instanceof List<?>) {
+            return (List<ViewLogResponse>) result.getData();
+        }
+        return new ArrayList<>();
+    }
 }
