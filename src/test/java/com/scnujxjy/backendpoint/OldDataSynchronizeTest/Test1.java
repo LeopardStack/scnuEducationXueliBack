@@ -60,8 +60,8 @@ public class Test1 {
     @Test
     public void test4(){
         try{
-            oldDataSynchronize.synchronizeStudentStatusData(2020,
-                    2018, true, true);
+            oldDataSynchronize.synchronizeStudentStatusData(2024,
+                    2023, true, false);
         }catch (Exception e){
             log.info("同步学籍数据失败");
         }
