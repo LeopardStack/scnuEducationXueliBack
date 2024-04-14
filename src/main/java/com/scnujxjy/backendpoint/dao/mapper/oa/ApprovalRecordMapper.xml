@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.oa.ApprovalRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.oa.ApprovalRecordPO">
+        <id column="id" property="id" />
+        <result column="application_type_id" property="applicationTypeId" />
+        <result column="user_id" property="userId" />
+        <result column="current_step_id" property="currentStepId" />
+        <result column="current_status" property="currentStatus" />
+        <result column="application_form_id" property="applicationFormId" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, application_type_id, user_id, current_step_id, current_status, application_form_id, created_at, updated_at
+    </sql>
+
+</mapper>

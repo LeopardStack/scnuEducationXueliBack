@@ -60,10 +60,10 @@ public class CodeGenerator {
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.courses_learning");
-        pc.setEntity("dao.entity.courses_learning");
-        pc.setController("controller.courses_learning");
-        pc.setXml("dao.mapper.courses_learning");
+        pc.setMapper("dao.mapper.oa");
+        pc.setEntity("dao.entity.oa");
+        pc.setController("controller.oa");
+        pc.setXml("dao.mapper.oa");
         mpg.setPackageInfo(pc);
 
         // 策略配置

@@ -1,7 +1,15 @@
 package com.scnujxjy.backendpoint.service.oa;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.constant.enums.OAEnum;
+import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalTypePO;
+import com.scnujxjy.backendpoint.dao.mongoEntity.OAApplicationForm;
 import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplication;
 import com.scnujxjy.backendpoint.dao.repository.StudentTransferApplicationRepository;
+import lombok.extern.slf4j.Slf4j;
+import net.polyv.vod.v1.App;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -10,14 +18,77 @@ import javax.annotation.Resource;
  * 转专业服务
  */
 @Service
-public class StudentTransferApplicationService {
+@Slf4j
+public class StudentTransferApplicationService extends OATaskExecutorService {
     @Resource
     private StudentTransferApplicationRepository repository;
 
+    @Resource
+    private MongoTemplate mongoTemplate;
 
-    // 添加一个新的转专业申请
-    public StudentTransferApplication addNewTransferApplication(StudentTransferApplication application) {
-        return repository.save(application);
+    @Resource
+    private ApprovalTypeService approvalTypeService;
+
+    @Resource
+    private ApprovalRecordService approvalRecordService;
+
+
+    /**
+     *
+     * 添加一个新的转专业申请
+     * @param application 转专业表单
+     */
+    @Override
+    public boolean application(OAApplicationForm application) {
+        try {
+            if (application instanceof StudentTransferApplication) {
+                StudentTransferApplication studentTransferApplication = (StudentTransferApplication) application;
+                StudentTransferApplication savedApplication = mongoTemplate.save(studentTransferApplication, "studentTransferApplications");
+
+                if(savedApplication.getId() == null){
+                    return false;
+                }
+
+                ApprovalTypePO approvalTypePO = approvalTypeService.getBaseMapper().selectOne(new LambdaQueryWrapper<ApprovalTypePO>()
+                        .eq(ApprovalTypePO::getApplicationName, OAEnum.OLD_STUDENT_MAJOR_CHANGE3.getOaType()));
+
+
+
+                ApprovalRecordPO approvalRecordPO = new ApprovalRecordPO()
+                        .setApplicationFormId(savedApplication.getId())
+                        .setApplicationTypeId(approvalTypePO.getId())
+                        .setUserIdentify(studentTransferApplication.getStudentId())
+                        .setCurrentStepId(1)
+                        .setCurrentStatus(OAEnum.APPROVAL_STATUS1.getOaType())
+                        ;
+                int insert = approvalRecordService.getBaseMapper().insert(approvalRecordPO);
+                if(insert > 0){
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("插入学生转专业表单到数据库失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+    @Override
+    protected void process(String applicationId) {
+
+    }
+
+    @Override
+    protected void success(String applicationId) {
+
+    }
+
+    @Override
+    protected void failed(String applicationId) {
+
     }
 
     // 根据学生ID更新专业

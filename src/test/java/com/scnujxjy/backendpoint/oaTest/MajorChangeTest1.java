@@ -20,7 +20,7 @@ public class MajorChangeTest1 {
         StudentTransferApplication application = new StudentTransferApplication();
         application.setCandidateNumber("2244130111110626");
         application.setName("叶凯文");
-        StudentTransferApplication application1 = service.addNewTransferApplication(application);
+//        StudentTransferApplication application1 = service.addNewTransferApplication(application);
         log.info("新增一个转专业实例 " + application.getId());
     }
 
