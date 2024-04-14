@@ -23,7 +23,7 @@ public enum OfficeAutomationStepStatus {
     /**
      * 匹配状态
      *
-     * @param name 状态名称
+     * @param status 状态名称
      * @return
      */
     public static OfficeAutomationStepStatus match(String status) {

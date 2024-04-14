@@ -264,7 +264,8 @@ public abstract class OfficeAutomationHandler {
             if (CollUtil.isEmpty(approvalRecordWithStepInformations)) {
                 continue;
             }
-            Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus).filter(StrUtil::isNotBlank).collect(Collectors.toSet());
+            Set<String> statusSet = approvalRecordWithStepInformations.stream().map(ApprovalRecordWithStepInformation::getStatus)
+                    .filter(StrUtil::isNotBlank).collect(Collectors.toSet());
             if (!statusSet.contains(SUCCESS.getStatus())) {
                 orderId = order;
                 break;
@@ -322,7 +323,8 @@ public abstract class OfficeAutomationHandler {
                 .set(ApprovalStepRecordPO::getUpdateAt, date)
                 .set(ApprovalStepRecordPO::getComment, approvalStepRecordPO.getComment())
                 .set(ApprovalStepRecordPO::getStatus, approvalStepRecordPO.getStatus())
-                .set(StrUtil.equals(TRANSFER.getStatus(), approvalStepRecordPO.getStatus()), ApprovalStepRecordPO::getNextStepId, approvalStepRecordPO.getNextStepId());
+                .set(StrUtil.equals(TRANSFER.getStatus(), approvalStepRecordPO.getStatus()),
+                        ApprovalStepRecordPO::getNextStepId, approvalStepRecordPO.getNextStepId());
         int count = approvalStepRecordMapper.update(null, wrapper);
         if (count == 0) {
             throw new BusinessException("更新当前步骤失败");
