@@ -52,3 +52,4 @@ db_data
 
 src/main/resources/application.yml
 data_export
+.mvn

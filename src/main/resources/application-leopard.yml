@@ -6,6 +6,8 @@ run:
   oldDataSynchronizeStatus: false  # 开启旧系统同步
   checkLivingStatusScan: false  # 开启直播状态
 
+scnu-cors:
+  open: true
 
 flowable:
   database-schema-update: false
