@@ -17,7 +17,9 @@ public enum OAEnum {
     APPROVAL_STATUS1("等待审批中"),
     APPROVAL_STATUS2("审批通过"),
     APPROVAL_STATUS3("审批不通过"),
-    APPROVAL_STATUS4("打回")
+    APPROVAL_STATUS4("打回"),
+    APPROVAL_STATUS5("修改成功"),
+    APPROVAL_STATUS6("审批异常")
     ;
 
 

@@ -61,7 +61,11 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
                         .setCurrentStepId(1)
                         .setCurrentStatus(OAEnum.APPROVAL_STATUS1.getOaType())
                         ;
+
                 int insert = approvalRecordService.getBaseMapper().insert(approvalRecordPO);
+
+                // 构造审批步骤记录
+
                 if(insert > 0){
                     return true;
                 }else{
@@ -81,6 +85,10 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
 
     }
 
+    /**
+     * 对审批流程中的每一步 都要做判断 看它是否符合 期望
+     * @param applicationId 表单 ID
+     */
     @Override
     protected void success(String applicationId) {
 
