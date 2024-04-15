@@ -3,12 +3,15 @@ package com.scnujxjy.backendpoint.dao.entity.oa;
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
+import java.util.List;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -19,8 +22,12 @@ import lombok.EqualsAndHashCode;
  * @since 2024-04-14
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@TableName("approval_step_record")
+@TableName(value = "approval_step_record", autoResultMap = true)
 public class ApprovalStepRecordPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -31,7 +38,7 @@ public class ApprovalStepRecordPO implements Serializable {
     /**
      * 事务申请记录 ID
      */
-    private Integer applicationRecordId;
+    private Long applicationRecordId;
 
     /**
      * 步骤 ID
@@ -41,7 +48,8 @@ public class ApprovalStepRecordPO implements Serializable {
     /**
      * 用户 ID
      */
-    private Integer userId;
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> processUserIds;
 
     /**
      * 审批意见

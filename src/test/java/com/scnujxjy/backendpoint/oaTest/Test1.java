@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.oaTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalTypePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
@@ -9,6 +10,7 @@ import com.scnujxjy.backendpoint.dao.entity.registration_record_card.PersonalInf
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplication;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
+import com.scnujxjy.backendpoint.service.oa.ApprovalRecordService;
 import com.scnujxjy.backendpoint.service.oa.ApprovalStepService;
 import com.scnujxjy.backendpoint.service.oa.ApprovalTypeService;
 import com.scnujxjy.backendpoint.service.oa.StudentTransferApplicationService;
@@ -43,6 +45,9 @@ public class Test1 {
 
     @Resource
     private ApprovalStepService approvalStepService;
+
+    @Resource
+    private ApprovalRecordService approvalRecordService;
 
     @Test
     public void test1(){
@@ -236,5 +241,24 @@ public class Test1 {
         }
 
 
+    }
+
+    /**
+     * 学生获取自己的申请表单 并查询目前的审批状态
+     */
+    @Test
+    public void test3(){
+        // 这里要先假设她查询的是 在籍生转专业 否则不知道 user_identify 是啥
+
+        String studentNumber = "236325146003";
+
+        List<ApprovalRecordPO> approvalRecordPOS = approvalRecordService.getBaseMapper().selectList(new LambdaQueryWrapper<ApprovalRecordPO>()
+                .eq(ApprovalRecordPO::getUserIdentify, studentNumber));
+        for(ApprovalRecordPO approvalRecordPO : approvalRecordPOS){
+            String applicationFormId = approvalRecordPO.getApplicationFormId();
+            StudentTransferApplication studentTransferApplication = mongoTemplate.findById(applicationFormId, StudentTransferApplication.class);
+            log.info("获取到了自己的申请表单 \n" + studentTransferApplication);
+            log.info("目前的审批状态是 " + approvalRecordPO.getCurrentStatus());
+        }
     }
 }
