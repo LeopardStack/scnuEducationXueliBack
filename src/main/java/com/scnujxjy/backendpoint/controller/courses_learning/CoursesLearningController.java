@@ -126,7 +126,7 @@ public class CoursesLearningController {
             @ModelAttribute CourseLearningCreateRO coursesLearningROPageRO) {
         // 校验参数 traceId
         if (Objects.isNull(coursesLearningROPageRO)) {
-            throw dataMissError();
+            return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
         }
 
         // 查询数据

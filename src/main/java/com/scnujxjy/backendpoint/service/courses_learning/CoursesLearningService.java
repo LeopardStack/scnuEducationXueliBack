@@ -2783,20 +2783,24 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         return studentCourseLearningDataVOList;
     }
 
-    public List<ViewLogResponse> queryDataMonthly(String channelId, Date start,
-                                                  Date end, String studentIdNumber,
-                                                  SimpleDateFormat dateFormat) throws Exception {
-        LocalDate startDate = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    public List<ViewLogResponse> queryDataMonthly(String channelId, Date start, Date end, String studentIdNumber
+            , SimpleDateFormat dateFormat) throws Exception {
+
+        LocalDateTime startDateTime = LocalDateTime.ofInstant(start.toInstant(), ZoneId.systemDefault());
+        LocalDateTime endDateTime = LocalDateTime.ofInstant(end.toInstant(), ZoneId.systemDefault());
         List<ViewLogResponse> combinedResults = new ArrayList<>();
 
-        while (!startDate.isAfter(endDate)) {
-            LocalDate lastDayOfMonth = startDate.withDayOfMonth(startDate.lengthOfMonth());
-            if (lastDayOfMonth.isAfter(endDate)) {
-                lastDayOfMonth = endDate;
+        while (!startDateTime.toLocalDate().isAfter(endDateTime.toLocalDate())) {
+            LocalDate lastDayOfMonth = startDateTime.toLocalDate().withDayOfMonth(startDateTime.toLocalDate().lengthOfMonth());
+            LocalDateTime endOfMonthDateTime = lastDayOfMonth.atTime(23, 59); // Set to the last minute of the month
+
+            if (endOfMonthDateTime.isAfter(endDateTime)) {
+                endOfMonthDateTime = endDateTime; // If the calculated end of month is past the overall end date, use the end date
             }
-            String formattedStart = dateFormat.format(Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-            String formattedEnd = dateFormat.format(Date.from(lastDayOfMonth.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+            String formattedStart = DATE_TIME_FORMATTER.format(startDateTime);
+            String formattedEnd = DATE_TIME_FORMATTER.format(endOfMonthDateTime);
 
             SaResult channelCardPush = singleLivingService.getChannelCardPush(new ChannelViewRequest()
                     .setChannelId(channelId)
@@ -2808,8 +2812,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             List<ViewLogResponse> monthlyResults = extractData(channelCardPush);
             combinedResults.addAll(monthlyResults);
 
-            // Move to the first day of the next month
-            startDate = lastDayOfMonth.plusDays(1);
+            // Move to the first second of the next month
+            startDateTime = lastDayOfMonth.plusDays(1).atStartOfDay();
         }
 
         return combinedResults;

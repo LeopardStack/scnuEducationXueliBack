@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 
 /**
  * <p>
- * 课程资料表
+ * 课程作业提交表
  * </p>
  *
  * @author 谢辉龙
@@ -20,8 +20,8 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@TableName("course_materials")
-public class CourseMaterialsPO implements Serializable {
+@TableName("course_assignment_submissions")
+public class CourseAssignmentSubmissionsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,29 +37,19 @@ public class CourseMaterialsPO implements Serializable {
     private Long courseId;
 
     /**
-     * 文件名称
+     * 用户ID
      */
-    private String fileName;
+    private Long userId;
 
     /**
-     * 上传者ID
+     * 作业ID
      */
-    private Long uploaderId;
+    private Long assignmentId;
 
     /**
-     * 文件大小
+     * 作业提交附件集合
      */
-    private Long fileSize;
-
-    /**
-     * Minio存储地址
-     */
-    private String minioStorageUrl;
-
-    /**
-     * 权限信息 1 代表可读 2 代表 可下载 0 代表可读可下载 -1 表示不可读 不可下载
-     */
-    private Integer permissionInfo;
+    private String submissionAttachments;
 
     /**
      * 创建时间

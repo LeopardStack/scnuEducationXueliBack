@@ -1,6 +1,6 @@
-package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
+package com.scnujxjy.backendpoint.dao.mapper.courses_learning;
 
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseAssignmentSubmissionsPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssignmentSubmissionsPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -9,7 +9,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * </p>
  *
  * @author 谢辉龙
- * @since 2023-12-07
+ * @since 2024-04-15
  */
 public interface CourseAssignmentSubmissionsMapper extends BaseMapper<CourseAssignmentSubmissionsPO> {
 

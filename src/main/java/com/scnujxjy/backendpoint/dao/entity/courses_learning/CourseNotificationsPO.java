@@ -3,25 +3,32 @@ package com.scnujxjy.backendpoint.dao.entity.courses_learning;
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
+import java.util.List;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
- * 课程资料表
+ * 课程通知表
  * </p>
  *
  * @author 谢辉龙
  * @since 2024-04-15
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@TableName("course_materials")
-public class CourseMaterialsPO implements Serializable {
+@TableName(value = "course_notifications", autoResultMap = true)
+public class CourseNotificationsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,29 +44,25 @@ public class CourseMaterialsPO implements Serializable {
     private Long courseId;
 
     /**
-     * 文件名称
+     * 通知标题
      */
-    private String fileName;
+    private String notificationTitle;
 
     /**
-     * 上传者ID
+     * 通知内容（富文本）
      */
-    private Long uploaderId;
+    private String notificationContent;
 
     /**
-     * 文件大小
+     * 通知集合
      */
-    private Long fileSize;
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> notificationAttachment;
 
     /**
-     * Minio存储地址
+     * 是否置顶
      */
-    private String minioStorageUrl;
-
-    /**
-     * 权限信息 1 代表可读 2 代表 可下载 0 代表可读可下载 -1 表示不可读 不可下载
-     */
-    private Integer permissionInfo;
+    private Boolean isPinned;
 
     /**
      * 创建时间

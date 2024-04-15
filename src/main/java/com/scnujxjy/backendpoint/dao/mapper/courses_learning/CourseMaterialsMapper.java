@@ -5,11 +5,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * <p>
- *  Mapper 接口
+ * 课程资料表 Mapper 接口
  * </p>
  *
  * @author 谢辉龙
- * @since 2024-03-05
+ * @since 2024-04-15
  */
 public interface CourseMaterialsMapper extends BaseMapper<CourseMaterialsPO> {
 

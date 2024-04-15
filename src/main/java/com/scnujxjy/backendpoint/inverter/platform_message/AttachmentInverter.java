@@ -17,7 +17,7 @@ public abstract class AttachmentInverter {
     protected PlatformUserService platformUserService;
 
     @Mappings({
-            @Mapping(target = "name", expression = "java(platformUserService.getNameByUserId(attachmentPO.getUserId()))")
+            @Mapping(target = "name", expression = "java(attachmentPO.getUsername())")
     })
     public abstract AttachmentVO po2VO(AttachmentPO attachmentPO);
 

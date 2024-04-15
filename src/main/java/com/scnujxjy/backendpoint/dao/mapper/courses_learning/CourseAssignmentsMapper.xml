@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseAssignmentsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssignmentsPO">
+        <id column="id" property="id" />
+        <result column="course_id" property="courseId" />
+        <result column="assignment_name" property="assignmentName" />
+        <result column="assignment_description" property="assignmentDescription" />
+        <result column="assignment_attachments" property="assignmentAttachments" />
+        <result column="due_date" property="dueDate" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, course_id, assignment_name, assignment_description, assignment_attachments, due_date, created_at, updated_at
+    </sql>
+
+</mapper>

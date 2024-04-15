@@ -145,7 +145,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                         .attachmentMinioPath(filePath)
                         .attachmentName(filename)
                         .attachmentSize(file.getSize())
-                        .userId(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))
+                        .username(StpUtil.getLoginIdAsString())
                         .build());
             }
         }

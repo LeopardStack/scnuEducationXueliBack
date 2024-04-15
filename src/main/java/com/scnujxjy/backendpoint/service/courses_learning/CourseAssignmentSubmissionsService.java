@@ -1,9 +1,9 @@
-package com.scnujxjy.backendpoint.service.teaching_process;
+package com.scnujxjy.backendpoint.service.courses_learning;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssignmentSubmissionsPO;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseAssignmentSubmissionsPO;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseAssignmentSubmissionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseAssignmentSubmissionsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * @author 谢辉龙
- * @since 2023-12-07
+ * @since 2024-04-15
  */
 @Service
 @Slf4j

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseNotificationsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseNotificationsPO">
+        <id column="id" property="id" />
+        <result column="course_id" property="courseId" />
+        <result column="notification_title" property="notificationTitle" />
+        <result column="notification_content" property="notificationContent" />
+        <result column="is_pinned" property="isPinned" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+        <result column="notification_attachment" property="notificationAttachment"
+                jdbcType="VARCHAR"
+                typeHandler="com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, course_id, notification_title, notification_content, notification_attachment, is_pinned, created_at, updated_at
+    </sql>
+
+    <update id="updateUser">
+        UPDATE course_notifications
+        SET notification_attachment = #{courseNotificationsPO.notificationAttachment,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
+        WHERE id = #{courseNotificationsPO.id}
+    </update>
+
+</mapper>

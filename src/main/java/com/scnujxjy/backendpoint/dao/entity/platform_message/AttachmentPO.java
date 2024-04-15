@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -66,9 +67,18 @@ public class AttachmentPO implements Serializable {
     private Long attachmentSize;
 
     /**
-     * 用户 id
+     * 用户 名
      */
-    private Long userId;
+    private String username;
 
+    /**
+     * 创建时间
+     */
+    private Date createdAt;
+
+    /**
+     * 更新时间
+     */
+    private Date updatedAt;
 
 }

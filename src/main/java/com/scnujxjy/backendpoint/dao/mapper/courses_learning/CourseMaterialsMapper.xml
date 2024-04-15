@@ -7,17 +7,17 @@
         <id column="id" property="id" />
         <result column="course_id" property="courseId" />
         <result column="file_name" property="fileName" />
-        <result column="file_description" property="fileDescription" />
         <result column="uploader_id" property="uploaderId" />
         <result column="file_size" property="fileSize" />
         <result column="minio_storage_url" property="minioStorageUrl" />
-        <result column="created_time" property="createdTime" />
-        <result column="updated_time" property="updatedTime" />
+        <result column="permission_info" property="permissionInfo" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, course_id, file_name, file_description, uploader_id, file_size, minio_storage_url, created_time, updated_time
+        id, course_id, file_name, uploader_id, file_size, minio_storage_url, permission_info, created_at, updated_at
     </sql>
 
 </mapper>

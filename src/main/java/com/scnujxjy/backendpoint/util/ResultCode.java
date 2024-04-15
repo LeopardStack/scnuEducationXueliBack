@@ -81,6 +81,18 @@ public enum ResultCode {
     UPDATE_COURSE_FAI9(21015, "添加重修名单时，该学生已经在重修库中"),
     UPDATE_COURSE_FAI10(21016, "添加白名单失败"),
     UPDATE_COURSE_FAI11(21017, "添加重修学生失败"),
+    UPDATE_COURSE_FAI12(21018, "课程公告发布失败，根据课程ID 找不到课程信息"),
+    UPDATE_COURSE_FAI13(21019, "课程公告发布失败，上传公告附件到 Minio 失败"),
+    UPDATE_COURSE_FAI14(21020, "课程公告发布失败，公告信息插入数据库失败"),
+    UPDATE_COURSE_FAI15(21021, "课程公告发布失败，公告信息更新附件列表失败"),
+    UPDATE_COURSE_FAI16(21022, "获取课程公告详情信息失败，根据 公告 ID 查询不到信息"),
+    UPDATE_COURSE_FAI17(21023, "删除课程公告信息时，删除附件信息失败"),
+    UPDATE_COURSE_FAI18(21024, "删除课程公告信息失败"),
+    UPDATE_COURSE_FAI19(21025, "课程公告更新失败，根据课程ID 找不到课程信息"),
+    UPDATE_COURSE_FAI20(21026, "课程公告更新失败，根据公告ID 找不到原始课程公告信息"),
+    UPDATE_COURSE_FAI21(21027, "课程公告更新失败，插入到数据库出现失败"),
+    UPDATE_COURSE_FAI22(21028, "课程公告更新失败，公告信息更新附件列表失败"),
+    UPDATE_COURSE_FAI23(21029, "课程公告更新失败，更新公告附件到 Minio 失败"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

@@ -1,14 +1,14 @@
-package com.scnujxjy.backendpoint.dao.entity.teaching_process;
+package com.scnujxjy.backendpoint.dao.entity.courses_learning;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 
-import lombok.*;
-import lombok.experimental.Accessors;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * <p>
@@ -16,39 +16,40 @@ import lombok.experimental.Accessors;
  * </p>
  *
  * @author 谢辉龙
- * @since 2023-12-07
+ * @since 2024-04-15
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@Accessors(chain = true)
 @TableName("course_assignments")
 public class CourseAssignmentsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 自增主键
+     * 自增ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
-     * 课程代码
+     * 课程ID
      */
-    private String batchId;
+    private Long courseId;
 
     /**
-     * 作业标题
+     * 作业名
      */
-    private String assignmentTitle;
+    private String assignmentName;
 
     /**
      * 作业描述
      */
-    private String description;
+    private String assignmentDescription;
+
+    /**
+     * 作业所需附件集合
+     */
+    private String assignmentAttachments;
 
     /**
      * 截止日期
@@ -56,19 +57,14 @@ public class CourseAssignmentsPO implements Serializable {
     private Date dueDate;
 
     /**
-     * 作业文件路径
+     * 创建时间
      */
-    private String filePath;
+    private Date createdAt;
 
     /**
-     * 发布时间
+     * 更新时间
      */
-    private Date postedTime;
-
-    /**
-     * 发布者用户ID
-     */
-    private Long postedBy;
+    private Date updatedAt;
 
 
 }

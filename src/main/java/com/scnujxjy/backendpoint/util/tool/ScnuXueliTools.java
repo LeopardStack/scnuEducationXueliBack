@@ -28,6 +28,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.index.qual.SameLen;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
@@ -321,6 +322,16 @@ public class ScnuXueliTools {
         field.setType(type);
         field.setLength(length);
         return field;
+    }
+
+    public static String getFileExtension(MultipartFile file) {
+        if (file != null && !file.isEmpty()) {
+            String fileName = file.getOriginalFilename();
+            if (fileName != null && fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0) {
+                return fileName.substring(fileName.lastIndexOf(".") + 1);
+            }
+        }
+        return "未知文件";
     }
 
 }

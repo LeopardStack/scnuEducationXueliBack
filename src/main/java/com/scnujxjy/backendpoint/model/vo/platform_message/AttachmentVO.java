@@ -35,6 +35,11 @@ public class AttachmentVO {
     private String attachmentMinioPath;
 
     /**
+     * 附件Minio访问地址
+     */
+    private String attachmentMinioViewPath;
+
+    /**
      * 附件名称
      */
     private String attachmentName;
