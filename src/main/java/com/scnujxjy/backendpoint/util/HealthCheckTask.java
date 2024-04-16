@@ -474,7 +474,12 @@ public class HealthCheckTask {
 //                        })
 //                        .collect(Collectors.toList());
                 //只有不相等的时候才需要更新白名单
-                if (studentStatusPOS.size() == whiteCodeList.size()) {
+                List<String> idNumbers = studentStatusPOS.stream()
+                        .map(StudentStatusPO::getIdNumber) // Extracting idNumber
+                        .collect(Collectors.toList());
+
+                //只有二者大小和内容都一致时，才不需要去更新白名单
+                if (whiteCodeList.containsAll(idNumbers) && idNumbers.containsAll(whiteCodeList)) {
                     continue;
                 }
 
