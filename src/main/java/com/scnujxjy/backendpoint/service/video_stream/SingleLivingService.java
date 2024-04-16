@@ -14,6 +14,8 @@ import java.util.List;
 
 public interface SingleLivingService {
 
+    SaResult createTeacherAndTutorUrl(String channelId,String loginId);
+
     SaResult getChannelInformation(Long sectionId);
 
     SaResult createChannel(ChannelCreateRequestBO channelCreateRequestBO, CourseSchedulePO courseSchedulePO) throws IOException, NoSuchAlgorithmException;

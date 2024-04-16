@@ -50,6 +50,8 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
     @Select("SELECT * FROM teacher_information WHERE phone = #{phone}")
     List<TeacherInformationPO> selectByPhone(String phone);
 
+    @Select("SELECT * FROM teacher_information WHERE teacher_username = #{username} limit 1")
+    TeacherInformationPO selectByUserName(String username);
 
     /**
      * 根据 姓名查找教师

@@ -69,6 +69,12 @@ public class SingleLivingController {
         return singleLivingService.getChannelInformation(sectionId);
     }
 
+    @PostMapping("/edit/createTeacherAndTutorUrl")
+    public SaResult createTeacherAndTutorUrl(String channelId) {
+        Object loginId = StpUtil.getLoginId();
+        return singleLivingService.createTeacherAndTutorUrl(channelId,loginId.toString());
+    }
+
     //不能获取不存在的直播间会报错
     @PostMapping("/edit/getChannelStatus")
     public SaResult deleteChannels(@RequestBody ChannelInfoRequest channelInfoRequest) {
