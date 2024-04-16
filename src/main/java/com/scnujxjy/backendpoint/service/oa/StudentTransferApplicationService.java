@@ -3,6 +3,8 @@ package com.scnujxjy.backendpoint.service.oa;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.constant.enums.OAEnum;
 import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalStepPO;
+import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalTypePO;
 import com.scnujxjy.backendpoint.dao.mongoEntity.OAApplicationForm;
 import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferApplication;
@@ -13,6 +15,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 转专业服务
@@ -32,6 +36,12 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
     @Resource
     private ApprovalRecordService approvalRecordService;
 
+    @Resource
+    private ApprovalStepService approvalStepService;
+
+    @Resource
+    private ApprovalStepRecordService approvalStepRecordService;
+
 
     /**
      *
@@ -41,6 +51,7 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
     @Override
     public boolean application(OAApplicationForm application) {
         try {
+            // 对申请表单类型进行判断 判断其是否是 在籍生转专业
             if (application instanceof StudentTransferApplication) {
                 StudentTransferApplication studentTransferApplication = (StudentTransferApplication) application;
                 StudentTransferApplication savedApplication = mongoTemplate.save(studentTransferApplication, "studentTransferApplications");
@@ -49,11 +60,12 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
                     return false;
                 }
 
+                // 根据申请表单类型 来确定审批类型
                 ApprovalTypePO approvalTypePO = approvalTypeService.getBaseMapper().selectOne(new LambdaQueryWrapper<ApprovalTypePO>()
                         .eq(ApprovalTypePO::getApplicationName, OAEnum.OLD_STUDENT_MAJOR_CHANGE3.getOaType()));
 
 
-
+                // 根据确定的审批类型来建立一条审批记录
                 ApprovalRecordPO approvalRecordPO = new ApprovalRecordPO()
                         .setApplicationFormId(savedApplication.getId())
                         .setApplicationTypeId(approvalTypePO.getId())
@@ -64,9 +76,24 @@ public class StudentTransferApplicationService extends OATaskExecutorService {
 
                 int insert = approvalRecordService.getBaseMapper().insert(approvalRecordPO);
 
-                // 构造审批步骤记录
+                // 获取该审批类型的所有步骤 并将第一步插入审批步骤记录表
+                List<ApprovalStepPO> sortedApprovalSteps = approvalStepService.getBaseMapper().selectList(
+                        new LambdaQueryWrapper<ApprovalStepPO>()
+                                .eq(ApprovalStepPO::getApplicationTypeId, approvalTypePO.getId())
+                                .orderByAsc(ApprovalStepPO::getStepOrder) // 按 stepOrder 升序排序
+                );
+                // 构造审批步骤记录 将第一步插入进去 状态取决于 用户是保存 还是提交了 这里默认提交了
+                int startStep = 0;
+                ApprovalStepRecordPO approvalStepRecordPO = new ApprovalStepRecordPO()
+                        .setApplicationRecordId(approvalRecordPO.getId())
+                        .setStepId(sortedApprovalSteps.get(startStep).getStepOrder())
+                        .setNextStepId(sortedApprovalSteps.get(startStep + 1).getStepOrder())
+                        .setProcessUserIds(Arrays.asList(1L))  // 这个地方应该是一个步骤处理用户集合 包含了 每一步可以操作的用户
+                        .setStatus(OAEnum.APPROVAL_STATUS6.getOaType())
+                        ;
+                int insert1 = approvalStepRecordService.getBaseMapper().insert(approvalStepRecordPO);
 
-                if(insert > 0){
+                if(insert > 0 && insert1 > 0){
                     return true;
                 }else{
                     return false;
