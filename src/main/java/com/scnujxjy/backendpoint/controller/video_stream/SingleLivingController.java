@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.video_stream;
 
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
@@ -100,6 +101,7 @@ public class SingleLivingController {
 
     //导出考勤表接口
     @PostMapping("/edit/exportStudentSituation")
+    @SaCheckPermission("导出考勤表")
     public SaResult exportStudentSituation(@RequestParam Long sectionId) {
         // 校验参数
         if (Objects.isNull(sectionId)) {
