@@ -69,6 +69,12 @@
             </foreach>
             )
         </if>
+        <if test="entity.classIdentifiers != null and !entity.classIdentifiers.isEmpty()">
+            AND ci.class_identifier IN
+            <foreach collection="entity.classIdentifiers" item="classIdentifier" open="(" separator="," close=")">
+                #{classIdentifier}
+            </foreach>
+        </if>
     </sql>
 
     <sql id="commonFiltersForTeachingPoint">

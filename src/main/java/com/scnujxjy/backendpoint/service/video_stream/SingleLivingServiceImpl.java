@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
@@ -16,6 +17,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.scnujxjy.backendpoint.constant.enums.DownloadFileNameEnum;
 import com.scnujxjy.backendpoint.constant.enums.MinioBucketEnum;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
@@ -53,6 +55,7 @@ import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
 import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import com.scnujxjy.backendpoint.util.polyv.PolyvHttpUtil;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import com.scnujxjy.backendpoint.util.video_stream.VideoStreamUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.polyv.common.v1.exception.PloyvSdkException;
@@ -128,6 +131,9 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Resource
     private MinioService minioService;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Resource
     private DownloadMessageMapper downloadMessageMapper;
@@ -1145,6 +1151,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             }
 
             //考勤导出attendanceVOList,拥有出勤的所有学生数据
+            // 需要根据下载用户的身份来确定哪些数据需要显示 这里是拿到教学点的身份
+            List<String> roleList = StpUtil.getRoleList(loginId);
+            Set<String> teachingPointClassIdetifierSet = new HashSet<>();
+            if(roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())){
+                // 目前只做 教学点的判别
+                teachingPointClassIdetifierSet = scnuXueliTools.getTeachingPointClassIdetifierSet(loginId);
+            }
+
             List<AttendanceVO> attendanceVOList = new ArrayList<>();
             for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                 AttendanceVO attendanceVO = new AttendanceVO();
@@ -1175,6 +1189,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
+                // 对教学点做筛选
+                if(!teachingPointClassIdetifierSet.isEmpty()){
+                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                        attendanceVOList.add(attendanceVO);
+                        continue;
+                    }else{
+                        continue;
+                    }
+                }
+
                 attendanceVOList.add(attendanceVO);
             }
             attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
@@ -1211,7 +1235,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     noAttendList.add(channel);
                 }
             }
-            //这样就拿到了没有出勤的学生数据noAttendList
+            //这样就拿到了没有出勤的学生数据 noAttendList
+            // 拿到这个 noAttendList 后 需要根据 下载用户的 身份来确定哪些人要展示
 
             for (LiveChannelWhiteListResponse.ChannelWhiteList channelWhiteList : noAttendList) {
                 AttendanceVO attendanceVO = new AttendanceVO();
@@ -1241,6 +1266,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
                     if (classInformationPOS.size() != 0) {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                    }
+                }
+
+                // 对教学点做筛选
+                if(!teachingPointClassIdetifierSet.isEmpty()){
+                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                        attendanceVOList.add(attendanceVO);
+                        continue;
+                    }else{
+                        continue;
                     }
                 }
                 attendanceVOList.add(attendanceVO);
@@ -1407,6 +1442,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 }
 
                 //考勤导出attendanceVOList,拥有出勤的所有学生数据
+                // 需要根据下载用户的身份来确定哪些数据需要显示 这里是拿到教学点的身份
+                List<String> roleList = StpUtil.getRoleList(loginId);
+                Set<String> teachingPointClassIdetifierSet = new HashSet<>();
+                if(roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())){
+                    // 目前只做 教学点的判别
+                    teachingPointClassIdetifierSet = scnuXueliTools.getTeachingPointClassIdetifierSet(loginId);
+                }
+
                 List<AttendanceVO> attendanceVOList = new ArrayList<>();
                 for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                     AttendanceVO attendanceVO = new AttendanceVO();
@@ -1437,6 +1480,15 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
                         if (classInformationPOS.size() != 0) {
                             attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                        }
+                    }
+                    // 对教学点做筛选
+                    if(!teachingPointClassIdetifierSet.isEmpty()){
+                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                            attendanceVOList.add(attendanceVO);
+                            continue;
+                        }else{
+                            continue;
                         }
                     }
                     attendanceVOList.add(attendanceVO);
@@ -1506,6 +1558,15 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         List<ClassInformationPO> classInformationPOS = classInformationMapper.selectList(queryWrapper);
                         if (classInformationPOS.size() != 0) {
                             attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
+                        }
+                    }
+                    // 对教学点做筛选
+                    if(!teachingPointClassIdetifierSet.isEmpty()){
+                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                            attendanceVOList.add(attendanceVO);
+                            continue;
+                        }else{
+                            continue;
                         }
                     }
                     attendanceVOList.add(attendanceVO);

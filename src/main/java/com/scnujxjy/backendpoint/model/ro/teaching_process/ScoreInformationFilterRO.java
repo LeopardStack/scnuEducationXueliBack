@@ -37,6 +37,11 @@ public class ScoreInformationFilterRO {
     private String classIdentifier;
 
     /**
+     * 班级标识集合
+     */
+    private Set<String> classIdentifiers;
+
+    /**
      * 年级
      */
     private String grade;

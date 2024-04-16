@@ -224,9 +224,19 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         }
 
         // 新增基于 classNameSet 的过滤条件
+//        if (filter.getClassNameSet() != null && !filter.getClassNameSet().isEmpty()) {
+//            List<String> classNameSet = filter.getClassNameSet();
+//            filteredStream = filteredStream.filter(c -> classNameSet.contains(c.getClassName()));
+//        }
+
+        // 新增基于 classNameSet 的模糊匹配过滤条件
         if (filter.getClassNameSet() != null && !filter.getClassNameSet().isEmpty()) {
-            List<String> classNameSet = filter.getClassNameSet();
-            filteredStream = filteredStream.filter(c -> classNameSet.contains(c.getClassName()));
+            List<String> classNameSet = filter.getClassNameSet(); // 获取班级名称集合
+            filteredStream = filteredStream.filter(c ->
+                    classNameSet.stream().anyMatch(className ->
+                            c.getClassName() != null && c.getClassName().contains(className)
+                    )
+            );
         }
 
         if (filter.getCollege() != null) {

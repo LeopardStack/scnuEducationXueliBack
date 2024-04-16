@@ -18,10 +18,13 @@ import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import lombok.Data;
@@ -33,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author hp
@@ -58,6 +62,9 @@ public class ScnuXueliTools {
 
     @Resource
     private TeachingPointInformationMapper teachingPointInformationMapper;
+
+    @Resource
+    private ClassInformationMapper classInformationMapper;
 
     public PlatformMessagePO generateMessage(String username) {
         PlatformMessagePO platformMessagePO = new PlatformMessagePO();
@@ -105,6 +112,90 @@ public class ScnuXueliTools {
             throw new BusinessException("查询班级集合为空，查询失败");
         }
         return classNameSet;
+    }
+
+
+    /**
+     * 根据 loginId 获取教学点班级标识信息
+     *
+     * @return
+     */
+    public Set<String> getTeachingPointClassIdetifierSet() {
+        // 通过username查询userId，再查询对应教学点
+        String loginId = StpUtil.getLoginIdAsString();
+        if (StrUtil.isBlank(loginId)) {
+            throw new BusinessException("获取用户id失败");
+        }
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, loginId));
+        if (Objects.isNull(platformUserPO)) {
+            throw new BusinessException("获取用户信息失败");
+        }
+        Long userId = platformUserPO.getUserId();
+        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
+        Set<String> classNameSet = new HashSet<>();
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(Wrappers.<TeachingPointAdminInformationPO>lambdaQuery()
+                .eq(TeachingPointAdminInformationPO::getUserId, userId));
+        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
+            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(Wrappers.<TeachingPointInformationPO>lambdaQuery()
+                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
+            String alias = teachingPointInformationPO.getAlias();
+            classNameSet.add(alias);
+        }
+
+        List<ClassInformationVO> classInformationVOList = classInformationMapper.
+                selectClassInfoData(new ClassInformationRO().setClassNames(new ArrayList<>(classNameSet)));
+        classInformationVOList.get(0).getClassIdentifier();
+        // 使用 Stream API 提取 classIdentifier 并存储为 Set
+        Set<String> classIdentifierSet = classInformationVOList.stream()  // 将 List 转换为 Stream
+                .map(ClassInformationVO::getClassIdentifier)  // 提取每个 ClassInformationVO 的 classIdentifier
+                .collect(Collectors.toSet());  // 收集结果到 Set
+
+        if (CollUtil.isEmpty(classIdentifierSet)) {
+            throw new BusinessException("查询班级标识符集合为空，查询失败");
+        }
+        return classIdentifierSet;
+    }
+
+
+    /**
+     * 根据 loginId 获取教学点班级标识信息
+     *
+     * @return
+     */
+    public Set<String> getTeachingPointClassIdetifierSet(String username) {
+
+        PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery()
+                .eq(PlatformUserPO::getUsername, username));
+        if (Objects.isNull(platformUserPO)) {
+            throw new BusinessException("获取用户信息失败");
+        }
+        Long userId = platformUserPO.getUserId();
+        // 获取教学点教务员的 teaching_id 进而他所管理的教学点的简称
+        Set<String> classNameSet = new HashSet<>();
+        List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(Wrappers.<TeachingPointAdminInformationPO>lambdaQuery()
+                .eq(TeachingPointAdminInformationPO::getUserId, userId));
+        for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
+            String teachingPointId = teachingPointAdminInformationPO.getTeachingPointId();
+            TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectOne(Wrappers.<TeachingPointInformationPO>lambdaQuery()
+                    .eq(TeachingPointInformationPO::getTeachingPointId, teachingPointId));
+            String alias = teachingPointInformationPO.getAlias();
+            classNameSet.add(alias);
+        }
+
+        List<ClassInformationVO> classInformationVOList = classInformationMapper.
+                selectClassInfoData(new ClassInformationRO().setClassNames(new ArrayList<>(classNameSet)));
+        classInformationVOList.get(0).getClassIdentifier();
+        // 使用 Stream API 提取 classIdentifier 并存储为 Set
+        Set<String> classIdentifierSet = classInformationVOList.stream()  // 将 List 转换为 Stream
+                .map(ClassInformationVO::getClassIdentifier)  // 提取每个 ClassInformationVO 的 classIdentifier
+                .collect(Collectors.toSet());  // 收集结果到 Set
+
+        if (CollUtil.isEmpty(classIdentifierSet)) {
+            throw new BusinessException("查询班级标识符集合为空，查询失败");
+        }
+        return classIdentifierSet;
     }
 
     public TeachingPointInformationPO getUserBelongTeachingPoint(){

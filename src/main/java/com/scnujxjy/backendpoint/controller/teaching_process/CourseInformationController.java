@@ -24,6 +24,7 @@ import com.scnujxjy.backendpoint.util.excelListener.CourseInformationListener;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,6 +58,9 @@ public class CourseInformationController {
 
     @Resource
     private ManagerFilter managerFilter;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Resource
     private TeachingPointFilter teachingPointFilter;
@@ -341,7 +345,14 @@ public class CourseInformationController {
                 bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, collegeAdminFilter);
 
 
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+            }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+                log.info("现在登录的是学历教育部的管理员");
+                courseInformationROPageRO.getEntity().setClassNameSet(scnuXueliTools.getTeachingPointClassNameSet());
+                // 查询继续教育学院管理员权限范围内的教学计划
+                bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, managerFilter);
+            }
+
+            else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 log.info("现在登录的是学历教育部的管理员");
                 // 查询继续教育学院管理员权限范围内的教学计划
                 bytes = courseInformationService.downloadTeachingPlans(courseInformationROPageRO, managerFilter);

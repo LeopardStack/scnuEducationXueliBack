@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.controller.teaching_process;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
@@ -15,6 +16,7 @@ import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +27,7 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
@@ -58,6 +61,9 @@ public class ScoreInformationController {
 
     @Resource
     private TeachingPointFilter teachingPointFilter;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     /**
      * 学生获取自己的成绩信息
@@ -226,16 +232,21 @@ public class ScoreInformationController {
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
-
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+                CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+                scoreInformationFilterROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
+            }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+                Set<String> teachingPointClassNameSet = scnuXueliTools.getTeachingPointClassNameSet();
+                scoreInformationFilterROPageRO.getEntity().setClassNameSet(teachingPointClassNameSet);
+            }
+            else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
-                boolean send = messageSender.sendExportMsg(scoreInformationFilterROPageRO, managerFilter, userId);
-                if (send) {
-                    return SaResult.ok("导出学籍数据成功");
-                }
+            }
+            boolean send = messageSender.sendExportMsg(scoreInformationFilterROPageRO, managerFilter, userId);
+            if (send) {
+                return SaResult.ok("导出成绩数据成功");
             }
         }
-        return SaResult.error("导出学籍数据失败！");
+        return SaResult.error("导出成绩数据失败！");
     }
 
 
