@@ -1054,7 +1054,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public void exportStudentSituation(Long sectionId, String loginId) throws IOException {
+    public void exportStudentSituation(Long sectionId, String loginId, PlatformMessagePO platformMessagePO) throws IOException {
         log.info("传入的节点id为" + sectionId);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
@@ -1307,16 +1307,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 if (insert>0){
                     log.info("插入导出表成功");
                 }
-                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
-                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
-                        .messageType(DOWNLOAD_MSG.getMessageName())
-                        .userId(String.valueOf(platformUserPO.getUserId()))
-                        .relatedMessageId(downloadMessagePO.getId())
-                        .createdAt(DateUtil.date())
-                        .isRead(false)
-                        .build();
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                if (insert1>0) {
+
+                platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
+                int update = platformMessageMapper.updateById(platformMessagePO);
+                if (update>0) {
                     log.info("插入消息表成功");
                 }
                 outputStream.close();
@@ -1333,7 +1327,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     }
 
     @Override
-    public void exportAllCourseSituation(Long courseId, String loginId) throws IOException {
+    public void exportAllCourseSituation(Long courseId, String loginId, PlatformMessagePO platformMessagePO) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
@@ -1598,17 +1592,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     log.info("插入导出表成功");
                 }
 
-                PlatformUserPO platformUserPO = platformUserMapper.selectByUserName(loginId);
-                PlatformMessagePO platformMessagePO = PlatformMessagePO.builder()
-                        .messageType(DOWNLOAD_MSG.getMessageName())
-                        .userId(String.valueOf(platformUserPO.getUserId()))
-                        .relatedMessageId(downloadMessagePO.getId())
-                        .createdAt(DateUtil.date())
-                        .isRead(false)
-                        .build();
-                int insert1 = platformMessageMapper.insert(platformMessagePO);
-                if (insert1>0){
+                platformMessagePO.setRelatedMessageId(downloadMessagePO.getId());
+                int update = platformMessageMapper.updateById(platformMessagePO);
+                if (update>0){
                     log.info("插入消息表成功");
+
                 }
             }
             outputStream.close();

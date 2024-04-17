@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import java.util.Set;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -50,4 +52,7 @@ public class CourseStudentSearchRO {
 
     @ApiModelProperty(value = "是否补修 Y/N Y 代表重修", example = "true")
     private String isRetake;
+
+    @ApiModelProperty(value = "教学点管理的班级集合", example = "true")
+    private Set<String> classNameSet;
 }

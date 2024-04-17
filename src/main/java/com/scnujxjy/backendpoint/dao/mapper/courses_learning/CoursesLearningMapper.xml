@@ -175,6 +175,14 @@
 
         <if test='entity.name != null'>AND pi.name = #{entity.name}</if>
 
+        <if test='entity.classNameSet != null and entity.classNameSet.size() > 0'>
+            AND (
+            <foreach collection="entity.classNameSet" item="className" separator=" OR ">
+                ci.class_name LIKE CONCAT('%', #{className}, '%')
+            </foreach>
+            )
+        </if>
+
     </sql>
 
 

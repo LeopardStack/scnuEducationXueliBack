@@ -269,10 +269,14 @@ public class MessageReceiver {
                 Long sectionId = message.getLong("data");
                 String loginId = message.getString("loginId");
                 Integer integer = message.getInteger("exportType");
+
+                // 先生成消息 再生成附件
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(loginId);
+
                 if (integer==1){
-                    singleLivingService.exportStudentSituation(sectionId, loginId);
+                    singleLivingService.exportStudentSituation(sectionId, loginId, platformMessagePO);
                 }else if (integer==2){
-                    singleLivingService.exportAllCourseSituation(sectionId,loginId);
+                    singleLivingService.exportAllCourseSituation(sectionId,loginId, platformMessagePO);
                 }
 
 

@@ -866,7 +866,12 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             courseStudentSearchROPageRO.getEntity().setCollege(userBelongCollege.getCollegeName());
         } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
             TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-            courseStudentSearchROPageRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            Integer userBelongTeachingPointCount = scnuXueliTools.getUserBelongTeachingPointCount();
+            if(userBelongTeachingPointCount > 1){
+                courseStudentSearchROPageRO.getEntity().setClassNameSet(scnuXueliTools.getTeachingPointClassNameSet());
+            }else{
+                courseStudentSearchROPageRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            }
         }
 
         List<CourseLearningStudentInfoVO> courseLearningStudentInfoVOList = new ArrayList<>();
@@ -898,7 +903,8 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
         int startIndex = (int) ((pageNumber - 1) * pageSize);
         int endIndex = (int) Math.min(startIndex + pageSize, total);
 
-        List<CourseLearningStudentInfoVO> pagedCourseLearningStudentInfoVOList = courseLearningStudentInfoVOList.subList(startIndex, endIndex);
+        List<CourseLearningStudentInfoVO> pagedCourseLearningStudentInfoVOList = courseLearningStudentInfoVOList
+                .subList(startIndex, endIndex);
 
         // 构造分页对象
         PageVO<CourseLearningStudentInfoVO> pageVO = new PageVO<>();
@@ -2333,6 +2339,25 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
     }
 
     public CourseStudentInfoSearchParamsVO getCourseStudentsInfoSelectParams(CourseStudentSearchRO courseStudentSearchRO) {
+
+        List<String> roleList = StpUtil.getRoleList();
+        if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
+            // 学历教育部
+
+        } else if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 二级学院
+            CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+            courseStudentSearchRO.setCollege(userBelongCollege.getCollegeName());
+        } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+            Integer userBelongTeachingPointCount = scnuXueliTools.getUserBelongTeachingPointCount();
+            if(userBelongTeachingPointCount > 1){
+                courseStudentSearchRO.setClassNameSet(scnuXueliTools.getTeachingPointClassNameSet());
+            }else{
+                courseStudentSearchRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            }
+        }
+
 
         CourseStudentInfoSearchParamsVO courseStudentInfoSearchParamsVO = new CourseStudentInfoSearchParamsVO();
 

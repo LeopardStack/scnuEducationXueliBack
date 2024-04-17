@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.service.video_stream;
 
 import cn.dev33.satoken.util.SaResult;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
@@ -46,9 +47,9 @@ public interface SingleLivingService {
 
     SaResult deleteChannelWhiteStudent(ChannelInfoRequest channelInfoRequest);
 
-    void exportStudentSituation(Long sectionId,  String loginId) throws IOException;
+    void exportStudentSituation(Long sectionId,  String loginId, PlatformMessagePO platformMessagePO) throws IOException;
 
-    void exportAllCourseSituation(Long courseId, String loginId) throws IOException;
+    void exportAllCourseSituation(Long courseId, String loginId, PlatformMessagePO platformMessagePO) throws IOException;
 
     List<TutorAllInformation> selectTutorInformationByBatchIndex(Long batchIndex);
 
