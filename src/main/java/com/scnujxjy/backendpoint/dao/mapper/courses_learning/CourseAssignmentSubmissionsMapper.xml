@@ -8,14 +8,22 @@
         <result column="course_id" property="courseId" />
         <result column="user_id" property="userId" />
         <result column="assignment_id" property="assignmentId" />
-        <result column="submission_attachments" property="submissionAttachments" />
         <result column="created_at" property="createdAt" />
         <result column="updated_at" property="updatedAt" />
+        <result column="submission_attachments" property="submissionAttachments"
+                jdbcType="VARCHAR"
+                typeHandler="com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         id, course_id, user_id, assignment_id, submission_attachments, created_at, updated_at
     </sql>
+
+    <update id="updateUser">
+        UPDATE course_assignment_submissions
+        SET submission_attachments = #{courseAssignmentSubmissionsPO.submissionAttachments,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
+        WHERE id = #{courseAssignmentSubmissionsPO.id}
+    </update>
 
 </mapper>

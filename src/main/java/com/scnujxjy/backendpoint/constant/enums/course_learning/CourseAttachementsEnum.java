@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public enum CourseAttachementsEnum {
-    COURSE_ATTACHEMENTS("course_attachment");
+    COURSE_ATTACHEMENTS("course_attachment"),
+    COURSE_POST_ASSIGNMENTS_ATTACHEMENTS("course_post_assignment"),
+    COURSE_ASSIGNMENTS_ATTACHEMENTS("course_assignment");
 
     String attachmentPrefix;
 }

@@ -3,12 +3,15 @@ package com.scnujxjy.backendpoint.dao.entity.courses_learning;
 import com.baomidou.mybatisplus.annotation.IdType;
 import java.util.Date;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
+import java.util.List;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -19,8 +22,12 @@ import lombok.EqualsAndHashCode;
  * @since 2024-04-15
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@TableName("course_assignments")
+@TableName(value = "course_assignments", autoResultMap = true)
 public class CourseAssignmentsPO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -49,7 +56,8 @@ public class CourseAssignmentsPO implements Serializable {
     /**
      * 作业所需附件集合
      */
-    private String assignmentAttachments;
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> assignmentAttachments;
 
     /**
      * 截止日期
