@@ -102,6 +102,12 @@ public class CourseAssignmentSubmissionsService extends ServiceImpl<CourseAssign
                 .eq(CourseAssignmentSubmissionsPO::getAssignmentId, courseAssignmentsPO.getId())
                 .eq(CourseAssignmentSubmissionsPO::getUsername, StpUtil.getLoginIdAsString())
         );
+
+        if(courseAssignmentSubmissionsPO1 != null && courseAssignmentSubmissionsPO1.getScore() != null){
+            // 老师已打分 虽然没过截止时间 但不允许提交了
+            return ResultCode.COURSE_POST_ASSIGNMENT_FAI17.generateErrorResultInfo();
+        }
+
         if(courseAssignmentSubmissionsPO1 != null){
             // 如果不为空 就要删除覆盖
             List<Long> submissionAttachments = courseAssignmentSubmissionsPO1.getSubmissionAttachments();

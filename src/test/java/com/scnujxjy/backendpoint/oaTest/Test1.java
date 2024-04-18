@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.oaTest;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.oa.ApprovalRecordPO;
@@ -152,6 +153,8 @@ public class Test1 {
      */
     @Test
     public void studentApplyMajorChange(){
+        String username = StpUtil.getLoginIdAsString();  // 学生的身份证号码
+
         List<ClassInformationPO> classInformationPOList = classInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<ClassInformationPO>()
                 .eq(ClassInformationPO::getCollege, "心理学院")
                 .eq(ClassInformationPO::getGrade, "2023")

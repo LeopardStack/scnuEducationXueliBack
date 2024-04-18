@@ -7,8 +7,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -19,6 +19,10 @@ import lombok.EqualsAndHashCode;
  * @since 2024-04-15
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
 @TableName("course_materials")
 public class CourseMaterialsPO implements Serializable {
@@ -42,9 +46,9 @@ public class CourseMaterialsPO implements Serializable {
     private String fileName;
 
     /**
-     * 上传者ID
+     * 上传者用户名
      */
-    private Long uploaderId;
+    private String username;
 
     /**
      * 文件大小

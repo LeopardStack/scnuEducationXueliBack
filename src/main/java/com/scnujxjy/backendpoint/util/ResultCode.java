@@ -153,6 +153,16 @@ public enum ResultCode {
             "课程作业提交失败， 删除历史提交作业附件失败"),
     COURSE_POST_ASSIGNMENT_FAI16(25016,
             "课程作业提交失败， 删除历史提交作业记录失败"),
+    COURSE_POST_ASSIGNMENT_FAI17(25017,
+            "课程作业提交失败， 老师已对作业打分"),
+
+    COURSE_POST_MATERIALS_FAI1(25201,"添加课程资料失败，课程 ID 不能为空"),
+    COURSE_POST_MATERIALS_FAI2(25202,"添加课程资料失败，根据课程 ID 找不到课程信息"),
+    COURSE_POST_MATERIALS_FAI3(25203,"添加课程资料失败，课程资料不能为空"),
+    COURSE_POST_MATERIALS_FAI4(25204,"添加课程资料失败，上传课程资料文件到 Minio 失败"),
+    COURSE_POST_MATERIALS_FAI5(25205,"添加课程资料失败，插入课程资料信息到数据库失败"),
+    COURSE_POST_MATERIALS_FAI6(25206,"查询课程资料失败，根据课程 ID 找不到课程信息"),
+    COURSE_POST_MATERIALS_FAI7(25207,"删除课程资料失败，数据库删除失败"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
