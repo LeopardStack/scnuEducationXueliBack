@@ -107,7 +107,7 @@ public class RetakeStudentsService extends ServiceImpl<RetakeStudentsMapper, Ret
                 LiveResourcesPO liveResourcesPO = liveResourceService.getBaseMapper().selectLiveResource(courseRetakeRO.getCourseId());
                 channelInfoRequest.setChannelId(liveResourcesPO.getChannelId());
                 channelInfoRequest.setStudentWhiteList(studentWhiteListVOS);
-                SaResult saResult = singleLivingService.addChannelWhiteStudent(channelInfoRequest);
+                SaResult saResult = singleLivingService.addChannelWhiteStudentByFile(channelInfoRequest);
                 if(saResult.getCode().equals(ResultCode.SUCCESS.getCode())){
                     return SaResult.ok("添加成功");
                 }
