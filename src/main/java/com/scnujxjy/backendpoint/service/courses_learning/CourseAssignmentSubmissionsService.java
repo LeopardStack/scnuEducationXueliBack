@@ -12,11 +12,14 @@ import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesLearningPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.AttachmentPO;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.CourseAssignmentSubmissionsMapper;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseAssignmentRO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseAssignmentSubmissionVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.AttachmentService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -208,7 +211,28 @@ public class CourseAssignmentSubmissionsService extends ServiceImpl<CourseAssign
             return ResultCode.COURSE_POST_ASSIGNMENT_FAI13.generateErrorResultInfo();
         }
 
-        return SaResult.ok().setData(courseAssignmentSubmissionsPO);
+        CourseAssignmentSubmissionVO courseAssignmentSubmissionVO = new CourseAssignmentSubmissionVO()
+                .setId(courseAssignmentSubmissionsPO.getId())
+                .setCourseId(courseAssignmentSubmissionsPO.getCourseId())
+                .setAssignmentId(courseAssignmentSubmissionsPO.getAssignmentId())
+                .setScore(courseAssignmentSubmissionsPO.getScore())
+                ;
+
+        List<Long> submissionAttachments = courseAssignmentSubmissionsPO.getSubmissionAttachments();
+        List<AttachmentVO> attachmentVOList = new ArrayList<>();
+        for(Long submissionAttachmentId : submissionAttachments){
+            AttachmentPO attachmentPO = attachmentService.getById(submissionAttachmentId);
+            AttachmentVO attachmentVO = new AttachmentVO();
+            BeanUtils.copyProperties(attachmentPO, attachmentVO);
+            String minioViewUrl = minioService.generatePresignedUrl(attachmentPO.getAttachmentMinioPath());
+            attachmentVO.setAttachmentMinioViewPath(minioViewUrl);
+            attachmentVOList.add(attachmentVO);
+        }
+
+        courseAssignmentSubmissionVO.setAssignmentSubmissionList(attachmentVOList);
+
+
+        return SaResult.ok().setData(courseAssignmentSubmissionVO);
     }
 
     /**
@@ -256,6 +280,19 @@ public class CourseAssignmentSubmissionsService extends ServiceImpl<CourseAssign
             return ResultCode.COURSE_POST_ASSIGNMENT_FAI14.generateErrorResultInfo();
         }
 
-        return SaResult.ok().setData(courseAssignmentSubmissionsPO);
+        List<Long> submissionAttachments = courseAssignmentSubmissionsPO.getSubmissionAttachments();
+        List<AttachmentVO> attachmentVOList = new ArrayList<>();
+        for(Long submissionAttachmentId : submissionAttachments){
+            AttachmentPO attachmentPO = attachmentService.getById(submissionAttachmentId);
+            AttachmentVO attachmentVO = new AttachmentVO();
+            BeanUtils.copyProperties(attachmentPO, attachmentVO);
+            attachmentVOList.add(attachmentVO);
+        }
+
+        CourseAssignmentSubmissionVO courseAssignmentSubmissionVO = new CourseAssignmentSubmissionVO();
+        BeanUtils.copyProperties(courseAssignmentSubmissionsPO, courseAssignmentSubmissionVO);
+        courseAssignmentSubmissionVO.setAssignmentSubmissionList(attachmentVOList);
+
+        return SaResult.ok().setData(courseAssignmentSubmissionVO);
     }
 }

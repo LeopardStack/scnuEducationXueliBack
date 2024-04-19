@@ -8,11 +8,7 @@ import com.scnujxjy.backendpoint.service.courses_learning.CourseAssignmentSubmis
 import com.scnujxjy.backendpoint.util.ResultCode;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -63,7 +59,7 @@ public class CourseAssignmentSubmissionsController {
     @ApiOperation(value = "查询课程作业提交情况")
     public SaResult queryCourseAssignmentSubmissionInfo(
             @ApiParam(value = "课程作业提交情况查询参数", required = true)
-            @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
+            @RequestBody CourseAssignmentRO courseAssignmentRO) {
         // 校验参数 traceId
         if (Objects.isNull(courseAssignmentRO)) {
             return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
@@ -84,7 +80,7 @@ public class CourseAssignmentSubmissionsController {
     @ApiOperation(value = "学生查询自己的作业打分情况")
     public SaResult queryStudentCourseAssignmentMarking(
             @ApiParam(value = "学生查询自己的作业打分情况参数", required = true)
-            @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
+            @RequestBody CourseAssignmentRO courseAssignmentRO) {
         // 校验参数 traceId
         if (Objects.isNull(courseAssignmentRO)) {
             return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();

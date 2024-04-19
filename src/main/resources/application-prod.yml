@@ -117,7 +117,8 @@ logging:
 
 
 minio:
-  url: http://113.108.140.173:8000/
+  #  url: http://113.108.140.173:8000/
+  url: https://scnuXueliBack.gdou.com/
   accessKey: WU2D2LUC4BM0KHDLESAH
   secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
   bucketName: xuelistudentpictures

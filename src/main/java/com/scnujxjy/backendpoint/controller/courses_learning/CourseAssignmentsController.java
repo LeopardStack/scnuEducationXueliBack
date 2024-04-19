@@ -37,7 +37,7 @@ public class CourseAssignmentsController {
      */
     @PostMapping("/create_course_assignment")
     @ApiOperation(value = "创建课程学习中的课程作业")
-    @SaCheckPermission("课程学习.创建课程作业")
+    @SaCheckPermission("课程学习.课程作业")
     public SaResult createCourseAssignment(
             @ApiParam(value = "课程作业创建参数", required = true)
             @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
@@ -60,7 +60,7 @@ public class CourseAssignmentsController {
      */
     @PostMapping("/edit_course_assignment")
     @ApiOperation(value = "编辑课程学习中的课程作业")
-    @SaCheckPermission("课程学习.创建课程作业")
+    @SaCheckPermission("课程学习.课程作业")
     public SaResult editCourseAssignment(
             @ApiParam(value = "课程作业编辑参数", required = true)
             @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
@@ -85,7 +85,7 @@ public class CourseAssignmentsController {
     @ApiOperation(value = "查询课程学习中的课程作业")
     public SaResult queryCourseAssignment(
             @ApiParam(value = "课程作业查询参数", required = true)
-            @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
+            @RequestBody CourseAssignmentRO courseAssignmentRO) {
         // 校验参数 traceId
         if (Objects.isNull(courseAssignmentRO)) {
             return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
@@ -106,7 +106,7 @@ public class CourseAssignmentsController {
     @ApiOperation(value = "查询某门课程的作业布置总数")
     public SaResult queryCourseAssignmentTotalInfo(
             @ApiParam(value = "查询某门课程的作业布置总数参数", required = true)
-            @ModelAttribute CourseAssignmentRO courseAssignmentRO) {
+            @RequestBody CourseAssignmentRO courseAssignmentRO) {
         // 校验参数 traceId
         if (Objects.isNull(courseAssignmentRO)) {
             return ResultCode.PARAM_IS_NULL.generateErrorResultInfo();
@@ -126,7 +126,7 @@ public class CourseAssignmentsController {
      */
     @DeleteMapping("/delete_course_assignment")
     @ApiOperation(value = "删除课程学习中的课程作业")
-    @SaCheckPermission("课程学习.创建课程作业")
+    @SaCheckPermission("课程学习.课程作业")
     public SaResult deleteCourseAssignment(
             @ApiParam(value = "课程作业删除参数", required = true)
             Long courseAssignmentId) {

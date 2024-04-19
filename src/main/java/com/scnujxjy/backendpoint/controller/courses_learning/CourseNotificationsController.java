@@ -40,7 +40,7 @@ public class CourseNotificationsController {
      */
     @PostMapping("/create_course_notification")
     @ApiOperation(value = "创建课程学习中的课程通知")
-    @SaCheckPermission("课程学习.创建课程公告")
+    @SaCheckPermission("课程学习.课程公告")
     public SaResult createCourseNotification(
             @ApiParam(value = "课程公告创建参数", required = true)
             @ModelAttribute CourseNotificationsRO courseNotificationsRO) {
@@ -62,7 +62,7 @@ public class CourseNotificationsController {
      */
     @PostMapping("/edit_course_notification")
     @ApiOperation(value = "编辑课程学习中的课程通知")
-    @SaCheckPermission("课程学习.创建课程公告")
+    @SaCheckPermission("课程学习.课程公告")
     public SaResult editCourseNotification(
             @ApiParam(value = "课程公告编辑参数", required = true)
             @ModelAttribute CourseNotificationsRO courseNotificationsRO) {
@@ -85,7 +85,7 @@ public class CourseNotificationsController {
      */
     @DeleteMapping("/delete_course_notification")
     @ApiOperation(value = "删除课程学习中的课程通知")
-    @SaCheckPermission("课程学习.创建课程公告")
+    @SaCheckPermission("课程学习.课程公告")
     public SaResult deleteCourseNotification(
             @ApiParam(value = "课程公告删除参数", required = true)
             Long courseNotificationId) {

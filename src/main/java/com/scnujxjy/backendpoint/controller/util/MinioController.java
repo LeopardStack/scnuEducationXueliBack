@@ -7,15 +7,23 @@ import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.Resource;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Minio 分部署存储
@@ -29,6 +37,15 @@ import java.util.Objects;
 public class MinioController {
     @Resource
     private MinioService minioService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${minio.url}")
+    private String minioRequestHead;
 
     /**
      * 获取用户下载消息列表
@@ -57,7 +74,7 @@ public class MinioController {
 
 
     /**
-     * 获取用户下载消息列表
+     * 根据 minioURL 下载图片
      *
      * @param requestBody 消息类型
      * @return 下载消息列表
@@ -110,8 +127,36 @@ public class MinioController {
      */
     @PostMapping("/get_minio_attachment")
     public SaResult getMinioAttachment(@RequestParam("minioUrl") String minioUrl){
-        String s = minioService.generatePresignedUrl(minioUrl);
-        return SaResult.data(s).setCode(200);
+        ValueOperations<String, String> ops = stringRedisTemplate.opsForValue();
+        // 尝试从 Redis 获取 URL
+        String cachedUrl = ops.get(minioUrl);
+        if (cachedUrl != null) {
+            return SaResult.ok().setData(cachedUrl);
+        } else {
+            String s = minioService.generatePresignedUrl(minioUrl);
+            if (s != null) {
+                // 存储新生成的 URL 到 Redis 并设置过期时间
+                ops.set(minioUrl, s, 7, TimeUnit.DAYS);
+
+                // 远程调用转码队列接口
+                addToPreviewQueue(s);
+            }
+            return SaResult.data(s).setCode(s != null ? 200 : 500);
+        }
+    }
+
+
+    private void addToPreviewQueue(String fileUrl) {
+        String localServiceUrl = minioRequestHead + "preview/addTask";
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(localServiceUrl)
+                .queryParam("url", fileUrl);
+
+        try {
+            restTemplate.getForObject(builder.toUriString(), String.class);
+        } catch (RestClientException e) {
+            e.printStackTrace();
+            // 可以添加更多的错误处理逻辑
+        }
     }
 
 }

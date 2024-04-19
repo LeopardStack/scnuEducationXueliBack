@@ -317,7 +317,7 @@ public class CourseAssignmentsService extends ServiceImpl<CourseAssignmentsMappe
     public SaResult queryCourseAssignment(CourseAssignmentRO courseAssignmentRO) {
         Long courseId = courseAssignmentRO.getCourseId();
         if(courseId == null){
-            return ResultCode.UPDATE_COURSE_FAI41.generateErrorResultInfo();
+            return ResultCode.UPDATE_COURSE_FAI43.generateErrorResultInfo();
         }
         CoursesLearningPO coursesLearningPO = coursesLearningService.getBaseMapper().selectById(courseId);
         if (coursesLearningPO == null) {
@@ -330,7 +330,7 @@ public class CourseAssignmentsService extends ServiceImpl<CourseAssignmentsMappe
 
         for(CourseAssignmentsPO courseAssignmentsPO : courseAssignmentsPOS){
             CourseAssignmentVO courseAssignmentVO = new CourseAssignmentVO()
-                    .setCourseId(coursesLearningPO.getId())
+                    .setId(courseAssignmentsPO.getId())
                     .setCourseId(courseId)
                     .setAssignmentName(courseAssignmentsPO.getAssignmentName())
                     .setAssignmentDescription(courseAssignmentsPO.getAssignmentDescription())
