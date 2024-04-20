@@ -215,6 +215,16 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
             filteredStream = filteredStream.filter(c -> c.getGrade().equals(filter.getGrade()));
         }
 
+        // 先检查过滤条件的开始时间和结束时间是否非空
+        if (filter.getCourseStartTime() != null && filter.getCourseEndTime() != null) {
+            // 过滤 Stream，包含开始时间和结束时间内的课程
+            filteredStream = filteredStream.filter(c ->
+                    c.getStartTime() != null &&
+                            c.getStartTime().after(filter.getCourseStartTime()) &&
+                            c.getStartTime().before(filter.getCourseEndTime()));
+        }
+
+
         if (filter.getYear() != null) {
             filteredStream = filteredStream.filter(c -> c.getYear().equals(filter.getYear()));
         }

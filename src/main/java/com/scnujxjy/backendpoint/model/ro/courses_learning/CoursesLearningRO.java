@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 import java.util.List;
@@ -69,8 +70,10 @@ public class CoursesLearningRO {
     private String defaultMainTeacherUsername;
 
     @ApiModelProperty(value = "上课时间 Start", example = "2024 03 15 00:00:00")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     Date courseStartTime;
 
     @ApiModelProperty(value = "上课时间 End", example = "2024 04 15 00:00:00")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     Date courseEndTime;
 }
