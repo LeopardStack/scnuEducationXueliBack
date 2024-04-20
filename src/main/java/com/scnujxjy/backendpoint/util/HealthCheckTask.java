@@ -411,7 +411,7 @@ public class HealthCheckTask {
                 return;
             }
             //建议只有当天有直播的才需要去更新白名单
-            for (String channelId:channelIdList) {
+            for (String channelId : channelIdList) {
                 for (int i = 1; i < 10; i++) {
                     LiveChannelWhiteListRequest liveChannelWhiteListRequest = new LiveChannelWhiteListRequest();
                     liveChannelWhiteListRequest.setChannelId(channelId)
@@ -455,7 +455,7 @@ public class HealthCheckTask {
                         .map(RetakeStudentsPO::getStudentNumber)
                         .distinct()
                         .collect(Collectors.toList());
-                if (retakeStudentsPOS.size()!=0){
+                if (retakeStudentsPOS.size() != 0) {
                     List<StudentStatusPO> retakeStudentStatusPOS = studentStatusMapper.selectList(
                             Wrappers.<StudentStatusPO>lambdaQuery().in(StudentStatusPO::getStudentNumber, uniqueRetakeStudents)
                     );
@@ -464,28 +464,50 @@ public class HealthCheckTask {
 
 
                 //只有白名单中不存在该学生时才需要去更新该频道的白名单
-                List<StudentWhiteListVO> studentWhiteList = studentStatusPOS.stream()
-                        .filter(studentStatusPO -> !whiteCodeList.contains(studentStatusPO.getIdNumber()))
-                        .map(studentStatusPO -> {
-                            StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO();
-                            studentWhiteListVO.setCode(studentStatusPO.getIdNumber());
-                            PersonalInfoPO personalInfoPO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(studentStatusPO.getIdNumber());
-                            if (personalInfoPO != null && StringUtils.isNotBlank(personalInfoPO.getName())) {
-                                studentWhiteListVO.setName(personalInfoPO.getName());
-                            }
-                            return studentWhiteListVO;
-                        })
+//                List<StudentWhiteListVO> studentWhiteList = studentStatusPOS.stream()
+//                        .filter(studentStatusPO -> !whiteCodeList.contains(studentStatusPO.getIdNumber()))
+//                        .map(studentStatusPO -> {
+//                            StudentWhiteListVO studentWhiteListVO = new StudentWhiteListVO();
+//                            studentWhiteListVO.setCode(studentStatusPO.getIdNumber());
+//                            PersonalInfoPO personalInfoPO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(studentStatusPO.getIdNumber());
+//                            if (personalInfoPO != null && StringUtils.isNotBlank(personalInfoPO.getName())) {
+//                                studentWhiteListVO.setName(personalInfoPO.getName());
+//                            }
+//                            return studentWhiteListVO;
+//                        })
+//                        .collect(Collectors.toList());
+                //只有不相等的时候才需要更新白名单
+                List<String> idNumbers = studentStatusPOS.stream()
+                        .map(StudentStatusPO::getIdNumber) // Extracting idNumber
                         .collect(Collectors.toList());
-                if (studentWhiteList.size() == 0) {
+
+                //只有二者大小和内容都一致时，才不需要去更新白名单
+                if (whiteCodeList.containsAll(idNumbers) && idNumbers.containsAll(whiteCodeList)) {
                     continue;
                 }
 
+                List<StudentWhiteListVO> studentWhiteList = new ArrayList<>();
+                for (StudentStatusPO studentStatusPO : studentStatusPOS) {
+                    StudentWhiteListVO listVO = new StudentWhiteListVO();
+                    listVO.setCode(studentStatusPO.getIdNumber());
+                    PersonalInfoPO personalInfoPO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(studentStatusPO.getIdNumber());
+                    if (personalInfoPO != null && StringUtils.isNotBlank(personalInfoPO.getName())) {
+                        listVO.setName(personalInfoPO.getName());
+                    }
+                    studentWhiteList.add(listVO);
+                }
+
+                ChannelInfoRequest channelInfoRequest1 = new ChannelInfoRequest();
+                channelInfoRequest1.setChannelId(channelId);
+                channelInfoRequest1.setIsClear("Y");
+                singleLivingService.deleteChannelWhiteStudent(channelInfoRequest1);
+                //先清除全部再添加
                 ChannelInfoRequest channelInfoRequest = new ChannelInfoRequest();
                 channelInfoRequest.setChannelId(channelId);
                 channelInfoRequest.setStudentWhiteList(studentWhiteList);
                 SaResult saResult = singleLivingService.addChannelWhiteStudentByFile(channelInfoRequest);
                 if (saResult.getCode() == 200) {
-                    log.info(channelId+"更新白名单成功");
+                    log.info(channelId + "更新白名单成功");
                 }
             }
 

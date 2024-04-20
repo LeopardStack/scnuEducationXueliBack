@@ -187,6 +187,25 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
 
     @Override
+    public SaResult createTeacherAndTutorUrl(String channelId,String loginId){
+
+        List<StudentWhiteListVO> studentWhiteList=new ArrayList<>();
+        StudentWhiteListVO studentWhiteListVO=new StudentWhiteListVO();
+        TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectByUserName(loginId);
+        if (teacherInformationPO==null || StringUtils.isBlank(teacherInformationPO.getName())){
+            return SaResult.error("找不到对应老师信息");
+        }
+        studentWhiteListVO.setName(teacherInformationPO.getName());
+        studentWhiteListVO.setCode(loginId);
+        studentWhiteList.add(studentWhiteListVO);
+
+        ChannelInfoRequest channelInfoRequest=new ChannelInfoRequest();
+        channelInfoRequest.setChannelId(channelId);
+        channelInfoRequest.setStudentWhiteList(studentWhiteList);
+        return addChannelWhiteStudentByFile(channelInfoRequest);
+    }
+
+    @Override
     public SaResult getChannelInformation(Long sectionId) {
 
         ChannelInformation channelInformation = new ChannelInformation();

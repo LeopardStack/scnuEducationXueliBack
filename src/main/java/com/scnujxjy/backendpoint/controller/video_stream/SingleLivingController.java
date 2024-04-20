@@ -71,6 +71,12 @@ public class SingleLivingController {
         return singleLivingService.getChannelInformation(sectionId);
     }
 
+    @PostMapping("/edit/createTeacherAndTutorUrl")
+    public SaResult createTeacherAndTutorUrl(String channelId) {
+        Object loginId = StpUtil.getLoginId();
+        return singleLivingService.createTeacherAndTutorUrl(channelId,loginId.toString());
+    }
+
     @PostMapping("/edit/getChannelBasicInformation")
     public SaResult getChannelInformation(String channelId) {
         if (Objects.isNull(channelId)) {

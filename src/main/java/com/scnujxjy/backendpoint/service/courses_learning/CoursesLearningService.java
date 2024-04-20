@@ -1061,7 +1061,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     listVOS.add(studentWhiteListVO);
                 }
 
-                SaResult saResult = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest()
+                SaResult saResult = singleLivingService.addChannelWhiteStudentByFile(new ChannelInfoRequest()
                         .setChannelId(getLiveCourseChannelId(coursesLearningPO.getId()))
                         .setStudentWhiteList(listVOS));
             }
@@ -1118,7 +1118,7 @@ public class CoursesLearningService extends ServiceImpl<CoursesLearningMapper, C
                     studentWhiteListVOList.add(studentWhiteListVO);
                 }
 
-                SaResult saResult1 = singleLivingService.addChannelWhiteStudent(new ChannelInfoRequest().setChannelId(liveCourseChannelId)
+                SaResult saResult1 = singleLivingService.addChannelWhiteStudentByFile(new ChannelInfoRequest().setChannelId(liveCourseChannelId)
                         .setStudentWhiteList(studentWhiteListVOList));
             }
         }
