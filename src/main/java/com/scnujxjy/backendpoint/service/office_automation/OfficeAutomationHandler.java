@@ -165,9 +165,8 @@ public abstract class OfficeAutomationHandler {
             throw new BusinessException("流转状态下必须给出下一个步骤");
         }
         // 检查是否有审核权限
-        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
         ApprovalStepRecordPO stepRecordPO = approvalStepRecordMapper.selectById(approvalStepRecordPO.getId());
-        if (!CollUtil.contains(stepRecordPO.getUserApprovalSet(), userId)) {
+        if (!CollUtil.contains(stepRecordPO.getApprovalUsernameSet(), StpUtil.getLoginIdAsString())) {
             throw new BusinessException("当前用户无审核权限");
         }
         return true;
@@ -314,12 +313,11 @@ public abstract class OfficeAutomationHandler {
         }
         // 基本参数
         String username = StpUtil.getLoginIdAsString();
-        Long userId = platformUserService.getUserIdByUsername(username);
         DateTime date = DateUtil.date();
         // 更新当前步骤记录状态
         LambdaUpdateWrapper<ApprovalStepRecordPO> wrapper = Wrappers.<ApprovalStepRecordPO>lambdaUpdate()
                 .eq(ApprovalStepRecordPO::getId, approvalStepRecordPO.getId())
-                .set(ApprovalStepRecordPO::getUserId, userId)
+                .set(ApprovalStepRecordPO::getUsername, username)
                 .set(ApprovalStepRecordPO::getUpdateAt, date)
                 .set(ApprovalStepRecordPO::getComment, approvalStepRecordPO.getComment())
                 .set(ApprovalStepRecordPO::getStatus, approvalStepRecordPO.getStatus())

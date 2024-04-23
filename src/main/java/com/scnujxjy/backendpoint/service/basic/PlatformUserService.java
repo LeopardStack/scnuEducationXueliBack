@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.basic;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -18,15 +19,15 @@ import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PermissionVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -401,6 +402,27 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
             return null;
         }
         return platformUserVO.getUserId();
+    }
+
+    /**
+     * 根据userId批量查询username
+     *
+     * @param userId 用户编号
+     * @return {@link Map} key - userId value - username
+     */
+    public Map<Long, String> getUsernameByUserId(List<Long> userId) {
+        if (CollUtil.isEmpty(userId)) {
+            return MapUtil.newHashMap();
+        }
+        HashSet<Long> userIdSet = CollUtil.newHashSet(userId);
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectBatchIds(userIdSet);
+        if (CollUtil.isEmpty(platformUserPOS)) {
+            return MapUtil.newHashMap();
+        }
+        return platformUserPOS.stream()
+                .filter(Objects::nonNull)
+                .filter(user -> StrUtil.isNotBlank(user.getUsername()))
+                .collect(Collectors.toMap(PlatformUserPO::getUserId, PlatformUserPO::getUsername));
     }
 
 

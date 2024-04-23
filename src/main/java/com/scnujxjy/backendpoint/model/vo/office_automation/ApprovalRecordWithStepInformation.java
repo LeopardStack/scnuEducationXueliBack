@@ -1,5 +1,7 @@
 package com.scnujxjy.backendpoint.model.vo.office_automation;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +10,7 @@ import lombok.experimental.Accessors;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -27,10 +30,9 @@ public class ApprovalRecordWithStepInformation {
      * 步骤id
      */
     private Long stepId;
-    /**
-     * 审批用户id
-     */
-    private String userId;
+
+    @ApiModelProperty("审批用户id")
+    private String username;
     /**
      * 最后一次更新时间
      */
@@ -71,8 +73,6 @@ public class ApprovalRecordWithStepInformation {
      */
     private String description;
 
-    /**
-     * 用户审批集合
-     */
-    private List<Long> userApprovalSet;
+    @ApiModelProperty("审批username集合")
+    private Set<String> approvalUsernameSet;
 }

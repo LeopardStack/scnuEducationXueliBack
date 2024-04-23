@@ -151,7 +151,7 @@ public class OfficeAutomationService {
         }
         LambdaQueryWrapper<ApprovalRecordPO> wrapper = Wrappers.<ApprovalRecordPO>lambdaQuery()
                 .eq(Objects.nonNull(approvalRecordPO.getApprovalTypeId()), ApprovalRecordPO::getApprovalTypeId, approvalRecordPO.getApprovalTypeId())
-                .eq(Objects.nonNull(approvalRecordPO.getInitiatorUserId()), ApprovalRecordPO::getInitiatorUserId, approvalRecordPO.getInitiatorUserId())
+                .eq(Objects.nonNull(approvalRecordPO.getInitiatorUsername()), ApprovalRecordPO::getInitiatorUsername, approvalRecordPO.getInitiatorUsername())
                 .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus())
                 .and(lambdaQueryWrapper -> {
                     lambdaQueryWrapper.last(String.format("JSON_CONTAINS(user_watch_set, JSON_ARRAY(%s))", String.valueOf(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))));
@@ -209,7 +209,7 @@ public class OfficeAutomationService {
         ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalId);
         if (Objects.isNull(approvalRecordPO)
                 || Objects.isNull(approvalRecordPO.getApprovalTypeId())
-                || CollUtil.isEmpty(approvalRecordPO.getUserWatchSet())) {
+                || CollUtil.isEmpty(approvalRecordPO.getWatchUsernameSet())) {
             throw new BusinessException("获取审批记录失败");
         }
         PlatformUserVO platformUserVO = platformUserService.detailByUsername(StpUtil.getLoginIdAsString());
@@ -217,7 +217,7 @@ public class OfficeAutomationService {
                 || Objects.isNull(platformUserVO.getUserId())) {
             throw new BusinessException("无法查询到账户信息");
         }
-        if (!CollUtil.contains(approvalRecordPO.getUserWatchSet(), platformUserVO.getUserId())) {
+        if (!CollUtil.contains(approvalRecordPO.getWatchUsernameSet(), platformUserVO.getUsername())) {
             throw new BusinessException("该账户无权限查询");
         }
         List<ApprovalStepPO> approvalStepPOS = selectStepByType(approvalRecordPO.getApprovalTypeId());

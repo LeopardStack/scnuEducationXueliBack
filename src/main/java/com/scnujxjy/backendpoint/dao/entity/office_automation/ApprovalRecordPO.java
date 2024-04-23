@@ -4,15 +4,17 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
+import com.scnujxjy.backendpoint.handler.type_handler.set.StringSetTypeHandler;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.apache.ibatis.type.StringTypeHandler;
 
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -30,10 +32,9 @@ public class ApprovalRecordPO {
      * 审批类型id
      */
     private Long approvalTypeId;
-    /**
-     * 发起人id
-     */
-    private Long initiatorUserId;
+
+    @ApiModelProperty("发起人username")
+    private String initiatorUsername;
     /**
      * 审批发起时间
      */
@@ -57,9 +58,7 @@ public class ApprovalRecordPO {
      */
     private String documentId;
 
-    /**
-     * 用户查看集合
-     */
-    @TableField(typeHandler = LongTypeHandler.class)
-    private List<Long> userWatchSet;
+    @ApiModelProperty("查看username集合")
+    @TableField(typeHandler = StringSetTypeHandler.class)
+    private Set<String> watchUsernameSet;
 }

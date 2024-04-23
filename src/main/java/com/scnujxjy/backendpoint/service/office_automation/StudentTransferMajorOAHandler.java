@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -20,6 +21,7 @@ import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -28,10 +30,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_TRANSFER_MAJOR;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
@@ -84,11 +83,11 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
             throw new BusinessException("学生装专业表单为空");
         }
         // 根据转出学院以及转入学院 id 来获取可见用户名单
-        List<Long> watchUserIdSet = ListUtil.toList(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getToCollegeId()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
-        approvalRecordPO.setUserWatchSet(watchUserIdSet);
+        Set<String> watchUserIdSet = CollUtil.newHashSet(StpUtil.getLoginIdAsString());
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
+        approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
         List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
@@ -98,8 +97,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         // 填充记录表数据
         DateTime date = DateUtil.date();
         ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
-        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
-        approvalRecordPO.setInitiatorUserId(userId)
+        approvalRecordPO.setInitiatorUsername(StpUtil.getLoginIdAsString())
                 .setCreatedAt(date)
                 .setUpdateAt(date)
                 .setStatus(WAITING.getStatus())
@@ -167,25 +165,24 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(approvalStepPO)) {
             throw new BusinessException("获取下一个步骤失败，流转失败");
         }
-        List<Long> userApprovalSet = ListUtil.toList();
 
         // 根据不同步骤填充不同的审核用户群
+        Set<String> usernameSet = CollUtil.newHashSet();
         if (stepId == 1) {
-            userApprovalSet.add(studentTransferMajorDocument.getStudentUserId());
+            Map<Long, String> userId2UsernameMap = platformUserService.getUsernameByUserId(ListUtil.toList(studentTransferMajorDocument.getStudentUserId()));
+            if (MapUtil.isNotEmpty(userId2UsernameMap)) {
+                usernameSet.addAll(userId2UsernameMap.values());
+            }
         } else if (stepId == 2) {
-            List<Long> userIdSet = collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getFromCollegeId());
-            CollUtil.addAll(userApprovalSet, userIdSet);
+            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
         } else if (stepId == 3) {
-            List<Long> userIdSet = collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getToCollegeId());
-            CollUtil.addAll(userApprovalSet, userIdSet);
+            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
         } else if (stepId == 4) {
-            List<Long> userIdSet = collegeAdminInformationService.adminUserIdByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId());
-            CollUtil.addAll(userApprovalSet, userIdSet);
+            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
         } else if (stepId == 5) {
             // 财务处审批
         } else {
             // 成功不需要人审核
-            CollUtil.addAll(userApprovalSet, ListUtil.of());
         }
         // 填充步骤记录
         ApprovalStepRecordPO recordPO = ApprovalStepRecordPO.builder()
@@ -194,7 +191,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                 .updateAt(date)
                 .status(WAITING.getStatus())
                 .approvalTypeId(approvalStepPO.getApprovalTypeId())
-                .userApprovalSet(userApprovalSet)
+                .approvalUsernameSet(usernameSet)
                 .build();
         int count = approvalStepRecordMapper.insert(recordPO);
         if (count == 0) {

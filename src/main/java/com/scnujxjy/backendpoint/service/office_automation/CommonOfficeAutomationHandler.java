@@ -167,8 +167,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         // 填充记录表数据
         DateTime date = DateUtil.date();
         ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
-        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
-        approvalRecordPO.setInitiatorUserId(userId)
+        approvalRecordPO.setInitiatorUsername(StpUtil.getLoginIdAsString())
                 .setCreatedAt(date)
                 .setCreatedAt(date)
                 .setStatus(WAITING.getStatus())

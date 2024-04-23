@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.college;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -16,12 +17,13 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeAdminInformationVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +40,8 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
 
     @Resource
     private CollegeAdminInformationInverter collegeAdminInformationInverter;
+    @Autowired
+    private PlatformUserService platformUserService;
 
     /**
      * 通过userId查询教务员信息
@@ -139,12 +143,12 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
     }
 
     /**
-     * 根据学院查询学院管理员 userId
+     * 根据学院查询学院管理员 username
      *
      * @param collegeId 学院 id
      * @return
      */
-    public List<Long> adminUserIdByCollegeId(String collegeId) {
+    public List<String> adminUsernameByCollegeId(String collegeId) {
         if (Objects.isNull(collegeId)) {
             throw new BusinessException("学院 id 为空");
         }
@@ -154,9 +158,14 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
         if (CollUtil.isEmpty(collegeAdminInformationPOS)) {
             return ListUtil.of();
         }
-        return ListUtil.toList(collegeAdminInformationPOS.stream()
+        List<Long> userIdList = collegeAdminInformationPOS.stream()
                 .map(CollegeAdminInformationPO::getUserId)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toList());
+        Map<Long, String> userId2UsernameMap = platformUserService.getUsernameByUserId(userIdList);
+        if (MapUtil.isEmpty(userId2UsernameMap)) {
+            return ListUtil.of();
+        }
+        return ListUtil.toList(userId2UsernameMap.values());
     }
 
 
