@@ -39,7 +39,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
      */
 
     @Override
-    public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO) {
+    public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
         log.info("审核后的处理参数: {}", approvalStepRecordPO);
     }
 
@@ -160,7 +160,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         }
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
-        List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
+        List<ApprovalStepPO> approvalStepPOS = selectApprovalStepByTypeId(typeId);
         if (CollUtil.isEmpty(approvalStepPOS)) {
             throw new BusinessException("当前OA类型无步骤");
         }

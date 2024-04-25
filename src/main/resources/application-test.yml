@@ -47,9 +47,9 @@ spring:
   ## mysql
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://124.71.34.208:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: Xueli2024
-    password: Xueli2024@
+    url: jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: xhl2023@
     hikari:
       maximum-pool-size: 1000 # 设置最大连接数为1000
       idleTimeout: 300000  # set to 5 minutes for example

@@ -7,6 +7,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
@@ -76,9 +77,9 @@ public abstract class OfficeAutomationHandler {
      * <p>需要重写处理后每个事务需要执行的逻辑都不一样</p>
      *
      * @param approvalStepRecordPO
-     * @see CommonOfficeAutomationHandler#afterProcess(ApprovalStepRecordPO)
+     * @see CommonOfficeAutomationHandler#afterProcess(ApprovalStepRecordPO, ApprovalRecordPO)
      */
-    public abstract void afterProcess(ApprovalStepRecordPO approvalStepRecordPO);
+    public abstract void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO);
 
     /**
      * 处理完所有审核流程后会执行的方法
@@ -110,7 +111,7 @@ public abstract class OfficeAutomationHandler {
      * @param typeId 类型 id
      * @return 所属类型的步骤列表
      */
-    protected List<ApprovalStepPO> selectApprovalStep(Long typeId) {
+    protected List<ApprovalStepPO> selectApprovalStepByTypeId(Long typeId) {
         if (Objects.isNull(typeId)) {
             throw new BusinessException("审批类型id缺失");
         }
@@ -121,6 +122,19 @@ public abstract class OfficeAutomationHandler {
             throw new BusinessException("获取审批步骤失败");
         }
         return approvalRecordPOS;
+    }
+
+    /**
+     * 根据步骤id查询步骤详细信息
+     *
+     * @param stepId 步骤id
+     * @return 步骤信息
+     */
+    protected ApprovalStepPO selectApprovalStep(Long stepId) {
+        if (Objects.isNull(stepId)) {
+            throw new BusinessException("步骤id缺失");
+        }
+        return approvalStepMapper.selectById(stepId);
     }
 
     /**
@@ -166,7 +180,8 @@ public abstract class OfficeAutomationHandler {
         }
         // 检查是否有审核权限
         ApprovalStepRecordPO stepRecordPO = approvalStepRecordMapper.selectById(approvalStepRecordPO.getId());
-        if (!CollUtil.contains(stepRecordPO.getApprovalUsernameSet(), StpUtil.getLoginIdAsString())) {
+        if (!CollUtil.contains(stepRecordPO.getApprovalUsernameSet(), approvalStepRecordPO.getUsername())
+                && !SystemConstant.SYSTEM_NAME.equals(approvalStepRecordPO.getUsername())) {
             throw new BusinessException("当前用户无审核权限");
         }
         return true;
@@ -276,14 +291,12 @@ public abstract class OfficeAutomationHandler {
             Long nextStepId = approvalRecordWithStepInformations.get(0).getStepId();
             createApprovalStepRecord(approvalId, date, nextStepId);
             updateApprovalRecord(approvalId, date, nextStepId, WAITING);
-            return true;
         } else {
             // 没有跳过的记录，那就判断是不是最后一个步骤，如果是这说明已经结束了
-            List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
+            List<ApprovalStepPO> approvalStepPOS = selectApprovalStepByTypeId(typeId);
             if (approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
                 // 已经结束
                 updateApprovalRecord(approvalId, date, null, SUCCESS);
-                return true;
             } else {
                 // 未结束：获取下一个步骤
                 Long nextStepId = null;
@@ -295,9 +308,9 @@ public abstract class OfficeAutomationHandler {
                 }
                 createApprovalStepRecord(approvalId, date, nextStepId);
                 updateApprovalRecord(approvalId, date, nextStepId, WAITING);
-                return true;
             }
         }
+        return true;
     }
 
     /**
@@ -317,7 +330,7 @@ public abstract class OfficeAutomationHandler {
         // 更新当前步骤记录状态
         LambdaUpdateWrapper<ApprovalStepRecordPO> wrapper = Wrappers.<ApprovalStepRecordPO>lambdaUpdate()
                 .eq(ApprovalStepRecordPO::getId, approvalStepRecordPO.getId())
-                .set(ApprovalStepRecordPO::getUsername, username)
+                .set(ApprovalStepRecordPO::getUsername, approvalStepRecordPO.getUsername())
                 .set(ApprovalStepRecordPO::getUpdateAt, date)
                 .set(ApprovalStepRecordPO::getComment, approvalStepRecordPO.getComment())
                 .set(ApprovalStepRecordPO::getStatus, approvalStepRecordPO.getStatus())
@@ -340,14 +353,13 @@ public abstract class OfficeAutomationHandler {
             default:
                 return false;
         }
-        afterProcess(approvalStepRecordPO);
+        // 查询更新完的审批记录
+        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalStepRecordPO.getApprovalId());
+        // 执行当前步骤完成后的函数
+        afterProcess(approvalStepRecordPO, approvalRecordPO);
         // 如果当前审批记录为success或者failed状态则说明已经完成，执行完成的步骤
-        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectOne(Wrappers.<ApprovalRecordPO>lambdaQuery()
-                .eq(ApprovalRecordPO::getId, approvalStepRecordPO.getApprovalId())
-                .eq(ApprovalRecordPO::getStatus, SUCCESS.getStatus())
-                .or()
-                .eq(ApprovalRecordPO::getStatus, FAILED.getStatus()));
-        if (Objects.nonNull(approvalRecordPO)) {
+        if (Objects.nonNull(approvalRecordPO)
+                && (SUCCESS.getStatus().equals(approvalRecordPO.getStatus()) || FAILED.getStatus().equals(approvalRecordPO.getStatus()))) {
             afterApproval(approvalRecordPO, approvalStepRecordPO);
         }
         return true;
@@ -376,7 +388,7 @@ public abstract class OfficeAutomationHandler {
      * @param id
      * @return
      */
-    public abstract Map<String, Object> selectDocument(String id);
+    public abstract Object selectDocument(String id);
 
     /**
      * 根据 id 更新表单信息
@@ -385,5 +397,5 @@ public abstract class OfficeAutomationHandler {
      * @param id  表单 id
      * @return
      */
-    public abstract Map<String, Object> updateById(Map<String, Object> map, String id);
+    public abstract Object updateById(Map<String, Object> map, String id);
 }

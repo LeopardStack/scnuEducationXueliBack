@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.dao.mongoEntity;
 
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -8,9 +9,16 @@ import java.time.LocalDate;
 
 @Document(collection = "student_transfer_major_document")
 @Data
+@Builder
 public class StudentTransferMajorDocument {
     @Id
     private String id;
+
+    /**
+     * 审批类型id，用来区分新生省内、新生省外、新生校内、
+     */
+    private Integer transferType;
+
     /**
      * 学生在系统中的 user_id
      */

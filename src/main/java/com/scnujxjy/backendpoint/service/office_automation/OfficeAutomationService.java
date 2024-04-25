@@ -264,6 +264,7 @@ public class OfficeAutomationService {
         if (Objects.isNull(automationHandler)) {
             throw new BusinessException("后台出错，请详细管理员");
         }
+        approvalStepRecordPO.setUsername(StpUtil.getLoginIdAsString());
         return automationHandler.process(approvalStepRecordPO);
     }
 

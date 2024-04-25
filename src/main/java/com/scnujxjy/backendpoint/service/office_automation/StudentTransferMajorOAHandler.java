@@ -2,15 +2,13 @@ package com.scnujxjy.backendpoint.service.office_automation;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.mongodb.client.result.UpdateResult;
+import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
@@ -21,7 +19,6 @@ import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Lists;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -32,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.util.*;
 
+import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_TRANSFER_MAJOR;
+import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
 @Component
@@ -90,7 +89,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
-        List<ApprovalStepPO> approvalStepPOS = selectApprovalStep(typeId);
+        List<ApprovalStepPO> approvalStepPOS = selectApprovalStepByTypeId(typeId);
         if (CollUtil.isEmpty(approvalStepPOS)) {
             throw new BusinessException("当前OA类型无步骤");
         }
@@ -116,10 +115,36 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      * <p>需要重写处理后每个事务需要执行的逻辑都不一样</p>
      *
      * @param approvalStepRecordPO
-     * @see CommonOfficeAutomationHandler#afterProcess(ApprovalStepRecordPO)
+     * @see CommonOfficeAutomationHandler#afterProcess(ApprovalStepRecordPO, ApprovalRecordPO)
      */
     @Override
-    public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO) {
+    public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
+        log.info("学生转专业步骤流转，目前步骤 {} 目前记录 {}", approvalStepRecordPO, approvalRecordPO);
+        // 如果在财务处审批,请判断是否学费相同,学费相同再次流转
+        ApprovalStepPO approvalStepPO = selectApprovalStep(approvalRecordPO.getCurrentStepId());
+        if (Objects.isNull(approvalStepPO)) {
+            log.warn("after process 中当前步骤记录查询为空 current step id {}", approvalRecordPO.getCurrentStepId());
+            return;
+        }
+        if (Objects.equals(FOUR_INT, approvalStepPO.getStepOrder())) {
+            StudentTransferMajorDocument studentTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
+            if (Objects.equals(studentTransferMajorDocument.getOriginalTuitionFee(), studentTransferMajorDocument.getCurrentTuitionFee())) {
+                process(ApprovalStepRecordPO.builder()
+                        .id(approvalStepRecordPO.getId())
+                        .username(SystemConstant.SYSTEM_NAME)
+                        .approvalId(approvalRecordPO.getId())
+                        .comment("原学费标准与现学费标准相同,跳过财务处审核")
+                        .status(SUCCESS.getStatus())
+                        .stepId(approvalRecordPO.getCurrentStepId())
+                        .build());
+                // 更新mongoDB
+                updateById(JSON.parseObject(JSON.toJSONString(StudentTransferMajorDocument.builder()
+                        .feeSettlementStatus("原学费标准与现学费标准相同")
+                        .build()), new TypeReference<Map<String, Object>>() {
+                }), studentTransferMajorDocument.getId());
+            }
+        }
+        // TODO 发送通知
 
     }
 
@@ -160,29 +185,35 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(studentTransferMajorDocument)) {
             throw new BusinessException("审核表单不存在");
         }
-        // 获取下一个流程步骤
+        // 获取当前步骤信息
         ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepId);
         if (Objects.isNull(approvalStepPO)) {
             throw new BusinessException("获取下一个步骤失败，流转失败");
         }
-
         // 根据不同步骤填充不同的审核用户群
         Set<String> usernameSet = CollUtil.newHashSet();
-        if (stepId == 1) {
-            Map<Long, String> userId2UsernameMap = platformUserService.getUsernameByUserId(ListUtil.toList(studentTransferMajorDocument.getStudentUserId()));
-            if (MapUtil.isNotEmpty(userId2UsernameMap)) {
-                usernameSet.addAll(userId2UsernameMap.values());
-            }
-        } else if (stepId == 2) {
-            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
-        } else if (stepId == 3) {
-            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
-        } else if (stepId == 4) {
-            usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
-        } else if (stepId == 5) {
-            // 财务处审批
-        } else {
-            // 成功不需要人审核
+        switch (approvalStepPO.getStepOrder()) {
+            case ONE_INT:
+                usernameSet.add(StpUtil.getLoginIdAsString());
+                break;
+            case TWO_INT:
+                // 转出学院审核
+                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
+                break;
+            case THREE_INT:
+                // 转入学院审核
+                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
+                break;
+            case FOUR_INT:
+                // 财务处审核 TODO 根据角色获取财务人员，在platform_user_service中
+                break;
+            case FIVE_INT:
+                // 继续学院审核
+                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
+                break;
+            default:
+                log.info("审核完成");
+                break;
         }
         // 填充步骤记录
         ApprovalStepRecordPO recordPO = ApprovalStepRecordPO.builder()
@@ -251,14 +282,13 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      * @return
      */
     @Override
-    public Map<String, Object> selectDocument(String id) {
+    public StudentTransferMajorDocument selectDocument(String id) {
         if (StrUtil.isBlank(id)) {
             throw new BusinessException("表单 id 为空");
         }
-        StudentTransferMajorDocument studentTransferMajorDocument = studentTransferMajorRepository.findById(id).orElseThrow(() -> new BusinessException("查询表单为空"));
-        return JSON.parseObject(JSON.toJSONString(studentTransferMajorDocument), new TypeReference<Map<String, Object>>() {
-        });
+        return studentTransferMajorRepository.findById(id).orElseThrow(() -> new BusinessException("查询表单为空"));
     }
+
 
     /**
      * 根据 id 更新表单信息
@@ -268,7 +298,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      * @return
      */
     @Override
-    public Map<String, Object> updateById(Map<String, Object> map, String id) {
+    public Object updateById(Map<String, Object> map, String id) {
         if (StrUtil.isBlank(id)) {
             throw new BusinessException("表单 id 为空");
         }
@@ -279,10 +309,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                 update.set(key, value);
             }
         });
-        UpdateResult updateResult = mongoTemplate.updateMulti(query, update, StudentTransferMajorDocument.class);
-        if (Objects.nonNull(updateResult) && updateResult.wasAcknowledged() && updateResult.getModifiedCount() > 0) {
-            return selectDocument(id);
-        }
-        throw new BusinessException("更新失败");
+        mongoTemplate.updateMulti(query, update, StudentTransferMajorDocument.class);
+        return selectDocument(id);
     }
 }

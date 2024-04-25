@@ -115,7 +115,7 @@ public class OfficeAutomationController {
 
     @PostMapping("/create-document")
     public SaResult createDocument(@RequestBody Map<String, Object> map) {
-        if (Objects.isNull(map) || map.containsKey("typeId") == false) {
+        if (Objects.isNull(map) || !map.containsKey("typeId")) {
             return SaResult.error("插入信息缺失");
         }
         String id = officeAutomationService.insertDocument(map, Long.valueOf((String) map.get("typeId")));
