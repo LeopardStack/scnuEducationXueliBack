@@ -16,6 +16,7 @@ import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -207,7 +208,7 @@ public class ClassInformationController {
                     if (Objects.isNull(filterDataVO)) {
                         return SaResult.error("未找到任何班级信息");
                     }
-                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     // 查询继续教育管理员权限范围内的班级信息
                     FilterDataVO filterDataVO1 = null;
                     filterDataVO1 = classInformationService.allPageQueryPayInfoFilter(classInformationFilterROPageRO, teachingPointFilter);
@@ -264,7 +265,7 @@ public class ClassInformationController {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, managerFilter);
-                }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
+                } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                     classInformationSelectArgs = classInformationService.getClassInformationArgs((String) loginId, teachingPointFilter);
                 }
 
@@ -322,6 +323,10 @@ public class ClassInformationController {
         return SaResult.data(classInformationVOS);
     }
 
-
+    @GetMapping("/transfer-major-selector")
+    @ApiOperation(value = "转专业查询拟转信息", notes = "拟转专业、现学费标准、学习形式、学制、拟转年级班别")
+    public SaResult transferMajorSelector() {
+        return SaResult.data(classInformationService.transferMajorSelector());
+    }
 }
 
