@@ -4,6 +4,7 @@ import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMapping
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseClassMappingRO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CoursesInfoByClassMappingVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -26,4 +27,7 @@ public interface CoursesClassMappingMapper extends BaseMapper<CoursesClassMappin
 
     @Select("select * from courses_class_mapping where course_id = #{courseId}")
     List<CoursesClassMappingPO> selectByCourseId(Long courseId);
+
+    List<CoursesInfoByClassMappingVO> selectCoursesInfo(@Param("entity") CourseClassMappingRO courseClassMappingRO);
+
 }

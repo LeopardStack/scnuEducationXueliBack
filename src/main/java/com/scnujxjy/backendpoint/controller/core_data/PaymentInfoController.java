@@ -460,7 +460,11 @@ public class PaymentInfoController {
                 }
             }else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
                 // 教学点管理员
-                paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getAlias());
+//                paymentInfoFilterROPageRO.getEntity().setTeachingPoint(scnuXueliTools.getUserBelongTeachingPoint().getAlias());
+
+                // 存在一个教学点管理着多个教学点 也许是历史教学点
+                paymentInfoFilterROPageRO.getEntity().setClassNameSet(scnuXueliTools.getTeachingPointClassNameSet());
+
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
                 if(platformMessagePO != null) {
                     boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);

@@ -436,8 +436,13 @@ public class TeachingPointFilter extends AbstractFilter {
                 (classInformationFilterROPageRO.getPageNumber() - 1) * classInformationFilterROPageRO.getPageSize()
         );
         long countStudentPayInfoByFilter = classInformationMapper.getCountClassInfoByFilter(classInformationFilterROPageRO.getEntity());
-//        long countStudentPayInfoByFilter = 100L;
         classInformationVOFilterDataVO.setTotal(countStudentPayInfoByFilter);
+        // 设置一下班级人数
+        for(ClassInformationVO classInformationVO: classInformationVOList){
+            Integer studentCount = studentStatusMapper.selectCount(new LambdaQueryWrapper<StudentStatusPO>()
+                    .eq(StudentStatusPO::getClassIdentifier, classInformationVO.getClassIdentifier()));
+            classInformationVO.setClassStudentCounts(studentCount);
+        }
         classInformationVOFilterDataVO.setData(classInformationVOList);
 
         return classInformationVOFilterDataVO;

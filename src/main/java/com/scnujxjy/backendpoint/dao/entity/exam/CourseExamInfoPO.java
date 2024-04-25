@@ -77,4 +77,15 @@ public class CourseExamInfoPO implements Serializable {
      */
     private String teachingSemester;
 
+
+    /**
+     * 是否有效 Y/N  无效的无法再编辑
+     */
+    private String isValid;
+
+    /**
+     * 课程 ID
+     */
+    private Long courseId;
+
 }

@@ -296,7 +296,8 @@ public class MinioTest1 {
     public void testFileExist(){
         try {
             boolean exists = minioClient
-                    .statObject(StatObjectArgs.builder().bucket("xueli-system-config").object("学历教育导入模板/新生信息导出模板.xlsx").build()) != null;
+                    .statObject(StatObjectArgs.builder().bucket("xueli-system-config")
+                            .object("学历教育导入模板/附件1：各专业课程机考信息收集表.xlsx").build()) != null;
 //            boolean exists = minioClient
 //                    .statObject(StatObjectArgs.builder().bucket("dataexport").object("成绩数据/xuelijiaoyuTest1_20231113_224443_864_CourseScheduleStudentInformationDate.xlsx").build()) != null;
 

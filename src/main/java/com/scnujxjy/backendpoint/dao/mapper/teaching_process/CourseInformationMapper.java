@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.dao.mapper.teaching_process;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.model.bo.exam.ExamDataBO;
@@ -439,4 +440,6 @@ public interface CourseInformationMapper extends BaseMapper<CourseInformationPO>
     List<CourseClassInfoVO> getCourseClassInfo(@Param("filter") CourseInformationRO courseInformationRO);
 
     List<CourseClassInfoVO> selectClassByCourseCreateCondition(@Param("filter") CourseInformationRO courseInformationRO);
+
+    List<CourseInformationVO> selectCourseInformationWithClassInfo(@Param("filter") CourseInformationRO courseInformationRO);
 }

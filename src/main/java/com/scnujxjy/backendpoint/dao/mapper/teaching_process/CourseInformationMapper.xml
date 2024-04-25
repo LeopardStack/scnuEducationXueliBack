@@ -145,6 +145,14 @@
         </if>
     </select>
 
+    <select id="selectCourseInformationWithClassInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO">
+        SELECT c.*, ci.class_name, ci.college
+        <include refid="commonJoin"/>
+        WHERE 1=1
+        <include refid="commonFilters"/>
+    </select>
+
 
     <select id="getCountByFilterAndPage" resultType="Long">
         SELECT count(*)
@@ -317,6 +325,7 @@
         WHERE 1=1
         <include refid="commonFilters"/>
     </select>
+
 
 
 </mapper>

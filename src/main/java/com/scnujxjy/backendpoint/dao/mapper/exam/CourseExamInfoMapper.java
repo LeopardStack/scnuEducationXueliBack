@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.model.ro.exam.BatchSetTeachersInfoRO;
 import com.scnujxjy.backendpoint.model.vo.exam.ExamTeachersInfoVO;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -29,4 +30,8 @@ public interface CourseExamInfoMapper extends BaseMapper<CourseExamInfoPO> {
      * 获取考试信息
      */
     List<ExamTeachersInfoVO> downloadExamTeachersInfoByManager0(@Param("entity") BatchSetTeachersInfoRO entity);
+
+    @Select("TRUNCATE TABLE course_exam_info")
+    void truncateTableInfo();
+
 }

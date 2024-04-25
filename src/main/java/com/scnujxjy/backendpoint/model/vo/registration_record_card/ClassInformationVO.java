@@ -117,4 +117,9 @@ public class ClassInformationVO implements Serializable {
      * 是否为师范生，1是，0否
      */
     private Boolean isTeacherStudent;
+
+    /**
+     * 班级人数
+     */
+    private Integer classStudentCounts;
 }
