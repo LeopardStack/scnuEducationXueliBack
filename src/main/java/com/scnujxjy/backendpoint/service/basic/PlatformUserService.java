@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.service.basic;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.SM3;
@@ -12,9 +13,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.scnujxjy.backendpoint.dao.entity.basic.PermissionPO;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformRolePO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.RolePermissionPO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PermissionMapper;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformRoleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.basic.RolePermissionMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
@@ -68,6 +71,8 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
     private RolePermissionMapper rolePermissionMapper;
     @Autowired
     private PlatformUserMapper platformUserMapper;
+    @Autowired
+    private PlatformRoleMapper platformRoleMapper;
 
     /**
      * 根据userId批量更新用户信息
@@ -435,6 +440,43 @@ public class PlatformUserService extends ServiceImpl<PlatformUserMapper, Platfor
                 .collect(Collectors.toMap(PlatformUserPO::getUserId, PlatformUserPO::getUsername));
     }
 
+    /**
+     * 根据角色名称查询username
+     * <p>会匹配用户的补充角色</p>
+     *
+     * @param roleNameSet
+     * @return
+     */
+    public Set<String> selectUsernameByRoleName(Set<String> roleNameSet) {
+        if (CollUtil.isEmpty(roleNameSet)) {
+            return Sets.newHashSet();
+        }
+        List<PlatformRolePO> platformRolePOS = platformRoleMapper.selectList(Wrappers.<PlatformRolePO>lambdaQuery()
+                .in(PlatformRolePO::getRoleName, roleNameSet));
+        if (CollUtil.isEmpty(platformRolePOS)) {
+            return Sets.newHashSet();
+        }
+        Set<Long> roleIdSet = platformRolePOS.stream()
+                .map(PlatformRolePO::getRoleId)
+                .collect(Collectors.toSet());
+        List<PlatformUserPO> platformUserPOS = baseMapper.selectPlatformUserList(PlatformUserRO.builder()
+                .roleIds(ListUtil.toList(roleIdSet))
+                .build());
+        if (CollUtil.isEmpty(platformUserPOS)) {
+            return Sets.newHashSet();
+        }
+        return platformUserPOS.stream()
+                .map(PlatformUserPO::getUsername)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 根据permission中的resource获取用户名集合
+     * <p>会根据用户的补充角色判断</p>
+     *
+     * @param permissionResources
+     * @return
+     */
     public Set<String> selectUsernameByPermissionResource(Set<String> permissionResources) {
         List<PermissionPO> permissionPOS = permissionMapper.selectList(Wrappers.<PermissionPO>lambdaQuery()
                 .in(PermissionPO::getResource, permissionResources));

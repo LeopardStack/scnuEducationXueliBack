@@ -12,6 +12,7 @@ import com.google.common.collect.Sets;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
+import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
@@ -216,7 +217,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                 usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
                 break;
             case FOUR_INT:
-                // 财务处审核 TODO 根据角色获取财务人员，在platform_user_service中
+                // 财务处审核
+                usernameSet.addAll(platformUserService.selectUsernameByRoleName(Sets.newHashSet(RoleEnum.CAIWUBU_ADMIN.getRoleName())));
                 break;
             case FIVE_INT:
                 // 继续学院审核

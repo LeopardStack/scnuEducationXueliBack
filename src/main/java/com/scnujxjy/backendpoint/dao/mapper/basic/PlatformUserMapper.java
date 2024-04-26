@@ -50,5 +50,11 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
      */
     Integer updateUser(@Param("platformUserPO") PlatformUserPO platformUserPO);
 
+    /**
+     * 批量查询用户信息
+     *
+     * @param platformUserRO
+     * @return
+     */
     List<PlatformUserPO> selectPlatformUserList(@Param("entity") PlatformUserRO platformUserRO);
 }
