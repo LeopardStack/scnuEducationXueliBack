@@ -1,14 +1,16 @@
 package com.scnujxjy.backendpoint.dao.entity.platform_message;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import java.util.Date;
-
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
-
-import lombok.*;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * <p>
@@ -40,7 +42,7 @@ public class PlatformMessagePO implements Serializable {
     private String userId;
 
     /**
-     * 消息类型
+     * 消息类型（上传，下载，系统消息）
      */
     private String messageType;
 
@@ -59,5 +61,9 @@ public class PlatformMessagePO implements Serializable {
      */
     private Boolean isRead;
 
+    /**
+     * 是否弹窗(系统消息,Y表示弹窗，N表示不弹窗)
+     */
+    private String isPopup;
 
 }
