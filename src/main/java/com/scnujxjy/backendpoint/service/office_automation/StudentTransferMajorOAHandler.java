@@ -204,7 +204,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         Set<String> usernameSet = CollUtil.newHashSet();
         switch (approvalStepPO.getStepOrder()) {
             case ONE_INT:
-                usernameSet.add(StpUtil.getLoginIdAsString());
+                // 提交学生审核
+                usernameSet.add(studentTransferMajorDocument.getStudentUsername());
                 break;
             case TWO_INT:
                 // 转出学院审核
@@ -257,8 +258,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(studentTransferMajorDocument)) {
             throw new BusinessException("转专业表单为空");
         }
-        if (Objects.isNull(studentTransferMajorDocument.getStudentUserId())) {
-            studentTransferMajorDocument.setStudentUserId(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()));
+        if (StrUtil.isBlank(studentTransferMajorDocument.getStudentUsername())) {
+            studentTransferMajorDocument.setStudentUsername(StpUtil.getLoginIdAsString());
         }
         if (Objects.isNull(studentTransferMajorDocument.getFromCollegeId())) {
             throw new BusinessException("转出学院 id 不能为空");

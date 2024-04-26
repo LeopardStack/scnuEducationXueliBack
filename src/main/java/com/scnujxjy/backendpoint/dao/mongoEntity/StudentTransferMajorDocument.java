@@ -22,11 +22,10 @@ public class StudentTransferMajorDocument {
     /**
      * 学生在系统中的 user_id
      */
-    private Long studentUserId;
+    private String studentUsername;
     private String name; // 姓名
     private String gender; // 性别
     private String candidateNumber; // 考生号
-    private String studentId; // 学号
     private LocalDate admissionDate; // 入学时间
     private double admissionScore; // 入学总分
     private String educationLevel; // 培养层次
