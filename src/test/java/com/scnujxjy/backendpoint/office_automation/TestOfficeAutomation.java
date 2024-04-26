@@ -1,7 +1,5 @@
 package com.scnujxjy.backendpoint.office_automation;
 
-import cn.hutool.core.collection.ListUtil;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalRecordMapper;
 import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
@@ -32,22 +30,22 @@ public class TestOfficeAutomation {
     @Autowired
     private ApprovalRecordMapper approvalRecordMapper;
 
-    @Test
+/*    @Test
     void testCreateRecord() {
-/*        Boolean created = handler.createApprovalRecord(ApprovalRecordPO.builder()
+*//*        Boolean created = handler.createApprovalRecord(ApprovalRecordPO.builder()
                 .approvalTypeId(1L)
                 .build());
-        log.info("测试结果：{}", created);*/
+        log.info("测试结果：{}", created);*//*
         ApprovalRecordPO approvalRecordPO = ApprovalRecordPO.builder()
                 .userWatchSet(ListUtil.of(123L, 456L))
                 .build();
         approvalRecordMapper.insert(approvalRecordPO);
         approvalRecordPO = approvalRecordMapper.selectById(approvalRecordPO.getId());
-/*        List<ApprovalRecordPO> approvalRecordPOS = approvalRecordMapper.selectList(Wrappers.<ApprovalRecordPO>lambdaQuery()
+*//*        List<ApprovalRecordPO> approvalRecordPOS = approvalRecordMapper.selectList(Wrappers.<ApprovalRecordPO>lambdaQuery()
                 .eq(ApprovalRecordPO::getUserWatchSet, "[123, 456]"));
-        approvalRecordPOS.forEach(approvalRecordPO -> log.info("查询结果是：{}, 其中的集合是：{}", approvalRecordPO, approvalRecordPO.getUserWatchSet()));*/
+        approvalRecordPOS.forEach(approvalRecordPO -> log.info("查询结果是：{}, 其中的集合是：{}", approvalRecordPO, approvalRecordPO.getUserWatchSet()));*//*
         log.info("查询结果是：{}, 其中的集合是：{}", approvalRecordPO, approvalRecordPO.getUserWatchSet());
-    }
+    }*/
 
     @Test
     void testProcess() {

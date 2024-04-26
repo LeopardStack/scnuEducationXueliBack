@@ -8,8 +8,10 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.google.common.collect.Sets;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
@@ -85,7 +87,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         Set<String> watchUserIdSet = CollUtil.newHashSet(StpUtil.getLoginIdAsString());
         CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
         CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
+        CollUtil.addAll(watchUserIdSet, platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_WATCH.getPermissionSource(),
+                PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
         approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
@@ -129,13 +132,20 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.equals(FOUR_INT, approvalStepPO.getStepOrder())) {
             StudentTransferMajorDocument studentTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
             if (Objects.equals(studentTransferMajorDocument.getOriginalTuitionFee(), studentTransferMajorDocument.getCurrentTuitionFee())) {
+                // 获取最新一步的审核步骤
+                List<ApprovalStepRecordPO> approvalStepRecordPOS = selectApprovalStepRecordByApprovalId(approvalRecordPO.getId());
+                if (CollUtil.isEmpty(approvalStepRecordPOS)) {
+                    log.warn("after process获取当前审批所有步骤为空");
+                    return;
+                }
+                ApprovalStepRecordPO currentStepRecordPO = approvalStepRecordPOS.get(approvalStepRecordPOS.size() - 1);
                 process(ApprovalStepRecordPO.builder()
-                        .id(approvalStepRecordPO.getId())
+                        .id(currentStepRecordPO.getId())
                         .username(SystemConstant.SYSTEM_NAME)
-                        .approvalId(approvalRecordPO.getId())
+                        .approvalId(currentStepRecordPO.getApprovalId())
                         .comment("原学费标准与现学费标准相同,跳过财务处审核")
                         .status(SUCCESS.getStatus())
-                        .stepId(approvalRecordPO.getCurrentStepId())
+                        .stepId(currentStepRecordPO.getStepId())
                         .build());
                 // 更新mongoDB
                 updateById(JSON.parseObject(JSON.toJSONString(StudentTransferMajorDocument.builder()
@@ -209,12 +219,13 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                 break;
             case FIVE_INT:
                 // 继续学院审核
-                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getContinuingEducationCollegeId()));
+                usernameSet.addAll(platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
                 break;
             default:
                 log.info("审核完成");
                 break;
         }
+        log.info("下一步审核用户群 {}", usernameSet);
         // 填充步骤记录
         ApprovalStepRecordPO recordPO = ApprovalStepRecordPO.builder()
                 .approvalId(approvalId)

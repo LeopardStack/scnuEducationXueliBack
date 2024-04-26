@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.basic;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -48,4 +49,6 @@ public interface PlatformUserMapper extends BaseMapper<PlatformUserPO> {
      * @return
      */
     Integer updateUser(@Param("platformUserPO") PlatformUserPO platformUserPO);
+
+    List<PlatformUserPO> selectPlatformUserList(@Param("entity") PlatformUserRO platformUserRO);
 }

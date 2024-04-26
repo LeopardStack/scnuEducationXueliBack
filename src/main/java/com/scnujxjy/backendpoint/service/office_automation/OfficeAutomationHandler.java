@@ -101,7 +101,7 @@ public abstract class OfficeAutomationHandler {
      * @param stepId     步骤 id
      * @see CommonOfficeAutomationHandler#createApprovalStepRecord(Long, Date, Long)
      */
-    public abstract int createApprovalStepRecord(Long approvalId, Date date, Long stepId);
+    protected abstract int createApprovalStepRecord(Long approvalId, Date date, Long stepId);
 
 
     /**
@@ -124,6 +124,15 @@ public abstract class OfficeAutomationHandler {
         return approvalRecordPOS;
     }
 
+    protected List<ApprovalStepRecordPO> selectApprovalStepRecordByApprovalId(Long approvalId) {
+        if (Objects.isNull(approvalId)) {
+            throw new BusinessException("审核记录编号为空");
+        }
+        return approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
+                .eq(ApprovalStepRecordPO::getApprovalId, approvalId)
+                .orderBy(true, true, ApprovalStepRecordPO::getId));
+    }
+
     /**
      * 根据步骤id查询步骤详细信息
      *
@@ -140,16 +149,16 @@ public abstract class OfficeAutomationHandler {
     /**
      * 根据类型id 获取步骤记录及其补充信息
      *
-     * @param typeId 类型 id
+     * @param approvalRecordId 类型 id
      * @return 步骤记录极其补充信息
      */
-    protected List<ApprovalRecordWithStepInformation> selectApprovalRecordWithStep(Long typeId) {
-        if (Objects.isNull(typeId)) {
+    protected List<ApprovalRecordWithStepInformation> selectApprovalRecordWithApprovalRecordId(Long approvalRecordId) {
+        if (Objects.isNull(approvalRecordId)) {
             throw new BusinessException("审批类型id缺失");
         }
 
         List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
-                .eq(ApprovalStepRecordPO::getApprovalTypeId, typeId));
+                .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordId));
         if (CollUtil.isEmpty(approvalStepRecordPOS)) {
             return null;
         }
@@ -264,9 +273,8 @@ public abstract class OfficeAutomationHandler {
         ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepId);
         Long typeId = approvalStepPO.getApprovalTypeId();
         // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
-        List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithStep(typeId);
+        List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = selectApprovalRecordWithApprovalRecordId(approvalId);
         Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
-                .filter(ele -> approvalId.equals(ele.getApprovalId()))
                 .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
         Integer orderId = null;
         for (Integer order : stepOrder2InformationMap.keySet()) {

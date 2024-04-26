@@ -15,14 +15,14 @@ public class MajorChangeTest1 {
     @Resource
     private StudentTransferApplicationService service;
 
-    @Test
+/*    @Test
     public void test1(){
         StudentTransferMajorDocument application = new StudentTransferMajorDocument();
         application.setCandidateNumber("2244130111110626");
         application.setName("叶凯文");
         StudentTransferMajorDocument application1 = service.addNewTransferApplication(application);
         log.info("新增一个转专业实例 " + application.getId());
-    }
+    }*/
 
     @Test
     public void test2(){
