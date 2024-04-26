@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.office_automation;
 
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
@@ -113,12 +114,36 @@ public class OfficeAutomationController {
         return SaResult.ok();
     }
 
-    @PostMapping("/create-document")
+    @PostMapping("/document/create")
     public SaResult createDocument(@RequestBody Map<String, Object> map) {
         if (Objects.isNull(map) || !map.containsKey("typeId")) {
             return SaResult.error("插入信息缺失");
         }
         String id = officeAutomationService.insertDocument(map, Long.valueOf((String) map.get("typeId")));
         return SaResult.data(JSONObject.of("id", id));
+    }
+
+    @PostMapping("/document/update")
+    public SaResult updateDocument(@RequestBody Map<String, Object> map) {
+        if (Objects.isNull(map) || !map.containsKey("typeId")) {
+            return SaResult.error("更新信息缺失");
+        }
+        return SaResult.data(officeAutomationService.updateDocument(map, Long.valueOf((String) map.get("typeId"))));
+    }
+
+    @GetMapping("/document/detail")
+    public SaResult selectDocumentById(String id, Long typeId) {
+        if (StrUtil.isBlank(id) || Objects.isNull(typeId)) {
+            return SaResult.error("表单 id 或类型 id 缺失");
+        }
+        return SaResult.data(officeAutomationService.selectDocumentById(id, typeId));
+    }
+
+    @GetMapping("/document/delete")
+    public SaResult deleteDocumentById(String id, Long typeId) {
+        if (StrUtil.isBlank(id) || Objects.isNull(typeId)) {
+            return SaResult.error("表单 id 或类型 id 缺失");
+        }
+        return SaResult.data(officeAutomationService.deleteDocument(id, typeId));
     }
 }

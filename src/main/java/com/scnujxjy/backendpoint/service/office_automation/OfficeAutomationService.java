@@ -301,4 +301,34 @@ public class OfficeAutomationService {
         }
         return id;
     }
+
+    public Object updateDocument(Map<String, Object> map, Long typeId) {
+        if (Objects.isNull(typeId)) {
+            throw new BusinessException("类型 id 为空");
+        }
+        if (!map.containsKey("id")) {
+            throw new BusinessException("表单 id 为空");
+        }
+        return getHandler(typeId).updateById(map, String.valueOf(map.get("id")));
+    }
+
+    public Object selectDocumentById(String id, Long typeId) {
+        if (Objects.isNull(typeId)) {
+            throw new BusinessException("类型 id 为空");
+        }
+        if (StrUtil.isBlank(id)) {
+            throw new BusinessException("表单 id 为空");
+        }
+        return getHandler(typeId).selectDocument(id);
+    }
+
+    public Integer deleteDocument(String id, Long typeId) {
+        if (Objects.isNull(typeId)) {
+            throw new BusinessException("类型 id 为空");
+        }
+        if (StrUtil.isBlank(id)) {
+            throw new BusinessException("表单 id 为空");
+        }
+        return getHandler(typeId).deleteDocument(id);
+    }
 }
