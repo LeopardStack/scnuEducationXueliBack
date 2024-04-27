@@ -3,35 +3,29 @@ package com.scnujxjy.backendpoint.service.college;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.map.MapUtil;
-import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
-import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeAdminInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.college.CollegeAdminInformationMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.college.CollegeAdminInformationInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.college.CollegeAdminInformationRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.college.CollegeAdminInformationVO;
-import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
-import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -168,6 +162,7 @@ public class CollegeAdminInformationService extends ServiceImpl<CollegeAdminInfo
         }
         List<Long> userIdList = collegeAdminInformationPOS.stream()
                 .map(CollegeAdminInformationPO::getUserId)
+                .map(Long::valueOf)
                 .collect(Collectors.toList());
         Map<Long, String> userId2UsernameMap = platformUserService.getUsernameByUserId(userIdList);
         if (MapUtil.isEmpty(userId2UsernameMap)) {

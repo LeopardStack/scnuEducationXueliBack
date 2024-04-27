@@ -1,15 +1,14 @@
 package com.scnujxjy.backendpoint.dao.mongoEntity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.*;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -53,20 +52,24 @@ public class StudentTransferMajorDocument {
     private List<Long> attachmentIds; // 申请人上传的附件
     private Date applicationDate; // 申请时间
 
-    // 转出学院意见
-    private String transferOutCollegeOpinion;
-    private String transferOutApprover;
-    private Date transferOutApprovalDate;
-
     // 转入学院意见
-    private String transferInCollegeOpinion;
-    private String transferInApprover;
-    private Date transferInApprovalDate;
+    private String toCollegeOpinion;
+    private String toCollegeReviewer;
+    private Date toCollegeDate;
+    // 转出学院意见
+    private String fromCollegeOpinion;
+    private String fromCollegeReviewer;
+    private Date fromCollegeApprovalDate;
 
     /**
      * 转入学院 id
      */
     private String toCollegeId;
+
+    /**
+     * 转出学院id
+     */
+    private String fromCollegeId;
 
     /**
      * 转入学院名称

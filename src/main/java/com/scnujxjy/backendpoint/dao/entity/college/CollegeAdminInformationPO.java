@@ -32,7 +32,7 @@ public class CollegeAdminInformationPO implements Serializable {
      * 用户代码
      */
     @TableId(value = "user_id")
-    private Long userId;
+    private String userId;
 
 
     /**

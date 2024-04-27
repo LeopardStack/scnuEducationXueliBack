@@ -324,7 +324,7 @@ public class AdmissionInformationService extends ServiceImpl<AdmissionInformatio
                 }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) ||
                     roleList.contains(CAIWUBU_ADMIN.getRoleName()) ||
-                    roleList.contains(ADMISSION_ADMIN.getRoleName())
+                    roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
             ) {
                 // 继续教育学院管理员
                 PageRO<AdmissionInformationRO> pageVO = new PageRO<>();
