@@ -12,13 +12,13 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-@Document(collection = "student_transfer_major_document")
+@Document(collection = "student_school_in_transfer_major_document")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
 @Builder
-public class StudentTransferMajorDocument {
+public class StudentSchoolInTransferMajorDocument {
     @Id
     private String id;
 

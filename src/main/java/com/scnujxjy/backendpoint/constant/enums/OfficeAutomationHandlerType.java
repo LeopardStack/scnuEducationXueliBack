@@ -18,7 +18,8 @@ public enum OfficeAutomationHandlerType {
     /**
      * 保证数据库中的name与枚举类中的name一致
      */
-    STUDENT_TRANSFER_MAJOR("student-transfer-major", "转专业"),
+    STUDENT_SCHOOL_IN_TRANSFER_MAJOR("student-school-in-transfer-major", "新生校内转专业"),
+    STUDENT_SCHOOL_OUT_TRANSFER_MAJOR("student-school-out-transfer-major", "新生校外转专业"),
     COMMON("common", "默认审批流程");
     String type;
 

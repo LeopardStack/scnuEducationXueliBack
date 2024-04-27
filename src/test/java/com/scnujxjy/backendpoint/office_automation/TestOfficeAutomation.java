@@ -3,7 +3,7 @@ package com.scnujxjy.backendpoint.office_automation;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalRecordMapper;
 import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
-import com.scnujxjy.backendpoint.service.office_automation.StudentTransferMajorOAHandler;
+import com.scnujxjy.backendpoint.service.office_automation.StudentSchoolINTransferMajorOAHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatu
 public class TestOfficeAutomation {
 
     @Autowired
-    private StudentTransferMajorOAHandler handler;
+    private StudentSchoolINTransferMajorOAHandler handler;
 
     @Autowired
     private MockMvc mockMvc;

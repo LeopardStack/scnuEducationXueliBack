@@ -52,7 +52,8 @@ public abstract class OfficeAutomationHandler {
     protected PlatformUserService platformUserService;
 
     @Resource
-    private MongoTemplate mongoTemplate;
+    protected MongoTemplate mongoTemplate;
+
 
     /**
      * 获取支持类型

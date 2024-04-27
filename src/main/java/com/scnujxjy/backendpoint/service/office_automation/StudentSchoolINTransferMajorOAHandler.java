@@ -16,13 +16,12 @@ import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
-import com.scnujxjy.backendpoint.dao.mongoEntity.StudentTransferMajorDocument;
-import com.scnujxjy.backendpoint.dao.repository.StudentTransferMajorRepository;
+import com.scnujxjy.backendpoint.dao.mongoEntity.StudentSchoolInTransferMajorDocument;
+import com.scnujxjy.backendpoint.dao.repository.StudentSchoolInTransferMajorRepository;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -33,20 +32,17 @@ import javax.annotation.Resource;
 import java.util.*;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_TRANSFER_MAJOR;
+import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
 @Component
 @Slf4j
 @Transactional
-public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
+public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandler {
 
     @Resource
-    private StudentTransferMajorRepository studentTransferMajorRepository;
-
-    @Resource
-    private MongoTemplate mongoTemplate;
+    private StudentSchoolInTransferMajorRepository studentSchoolInTransferMajorRepository;
 
     @Resource
     private PlatformUserService platformUserService;
@@ -61,7 +57,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      */
     @Override
     public OfficeAutomationHandlerType supportType() {
-        return STUDENT_TRANSFER_MAJOR;
+        return STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
     }
 
     /**
@@ -80,14 +76,14 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
             throw new BusinessException("OA记录为空或OA类型id为空");
         }
         // 获取申请表单
-        StudentTransferMajorDocument studentTransferMajorDocument = studentTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
-        if (Objects.isNull(studentTransferMajorDocument)) {
+        StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
+        if (Objects.isNull(studentSchoolInTransferMajorDocument)) {
             throw new BusinessException("学生装专业表单为空");
         }
         // 根据转出学院以及转入学院 id 来获取可见用户名单
         Set<String> watchUserIdSet = CollUtil.newHashSet(StpUtil.getLoginIdAsString());
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
-        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentSchoolInTransferMajorDocument.getFromCollegeId()));
+        CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentSchoolInTransferMajorDocument.getToCollegeId()));
         CollUtil.addAll(watchUserIdSet, platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_WATCH.getPermissionSource(),
                 PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
         approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
@@ -131,8 +127,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
             return;
         }
         if (Objects.equals(FOUR_INT, approvalStepPO.getStepOrder())) {
-            StudentTransferMajorDocument studentTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
-            if (Objects.equals(studentTransferMajorDocument.getOriginalTuitionFee(), studentTransferMajorDocument.getCurrentTuitionFee())) {
+            StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
+            if (Objects.equals(studentSchoolInTransferMajorDocument.getOriginalTuitionFee(), studentSchoolInTransferMajorDocument.getCurrentTuitionFee())) {
                 // 获取最新一步的审核步骤
                 List<ApprovalStepRecordPO> approvalStepRecordPOS = selectApprovalStepRecordByApprovalId(approvalRecordPO.getId());
                 if (CollUtil.isEmpty(approvalStepRecordPOS)) {
@@ -149,10 +145,10 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                         .stepId(currentStepRecordPO.getStepId())
                         .build());
                 // 更新mongoDB
-                updateById(JSON.parseObject(JSON.toJSONString(StudentTransferMajorDocument.builder()
+                updateById(JSON.parseObject(JSON.toJSONString(StudentSchoolInTransferMajorDocument.builder()
                         .feeSettlementStatus("原学费标准与现学费标准相同")
                         .build()), new TypeReference<Map<String, Object>>() {
-                }), studentTransferMajorDocument.getId());
+                }), studentSchoolInTransferMajorDocument.getId());
             }
         }
         // TODO 发送通知
@@ -192,8 +188,8 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(approvalRecordPO)) {
             throw new BusinessException("获取记录失败");
         }
-        StudentTransferMajorDocument studentTransferMajorDocument = studentTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
-        if (Objects.isNull(studentTransferMajorDocument)) {
+        StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
+        if (Objects.isNull(studentSchoolInTransferMajorDocument)) {
             throw new BusinessException("审核表单不存在");
         }
         // 获取当前步骤信息
@@ -206,15 +202,15 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         switch (approvalStepPO.getStepOrder()) {
             case ONE_INT:
                 // 提交学生审核
-                usernameSet.add(studentTransferMajorDocument.getStudentUsername());
+                usernameSet.add(studentSchoolInTransferMajorDocument.getStudentUsername());
                 break;
             case TWO_INT:
                 // 转出学院审核
-                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getFromCollegeId()));
+                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentSchoolInTransferMajorDocument.getFromCollegeId()));
                 break;
             case THREE_INT:
                 // 转入学院审核
-                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentTransferMajorDocument.getToCollegeId()));
+                usernameSet.addAll(collegeAdminInformationService.adminUsernameByCollegeId(studentSchoolInTransferMajorDocument.getToCollegeId()));
                 break;
             case FOUR_INT:
                 // 财务处审核
@@ -256,22 +252,22 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(map)) {
             throw new BusinessException("专业表单为空");
         }
-        StudentTransferMajorDocument studentTransferMajorDocument = JSONObject.parseObject(JSONObject.toJSONString(map), StudentTransferMajorDocument.class);
-        if (Objects.isNull(studentTransferMajorDocument)) {
+        StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = JSONObject.parseObject(JSONObject.toJSONString(map), StudentSchoolInTransferMajorDocument.class);
+        if (Objects.isNull(studentSchoolInTransferMajorDocument)) {
             throw new BusinessException("转专业表单为空");
         }
-        if (StrUtil.isBlank(studentTransferMajorDocument.getStudentUsername())) {
-            studentTransferMajorDocument.setStudentUsername(StpUtil.getLoginIdAsString());
+        if (StrUtil.isBlank(studentSchoolInTransferMajorDocument.getStudentUsername())) {
+            studentSchoolInTransferMajorDocument.setStudentUsername(StpUtil.getLoginIdAsString());
         }
-        if (Objects.isNull(studentTransferMajorDocument.getFromCollegeId())) {
+        if (Objects.isNull(studentSchoolInTransferMajorDocument.getFromCollegeId())) {
             throw new BusinessException("转出学院 id 不能为空");
         }
-        if (Objects.isNull(studentTransferMajorDocument.getToCollegeId())) {
+        if (Objects.isNull(studentSchoolInTransferMajorDocument.getToCollegeId())) {
             throw new BusinessException("转出学院 id 不能为空");
         }
 
-        studentTransferMajorDocument = studentTransferMajorRepository.insert(studentTransferMajorDocument);
-        return studentTransferMajorDocument.getId();
+        studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.insert(studentSchoolInTransferMajorDocument);
+        return studentSchoolInTransferMajorDocument.getId();
     }
 
     /**
@@ -285,7 +281,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
         if (StrUtil.isBlank(id)) {
             throw new BusinessException("表单 id 为空");
         }
-        studentTransferMajorRepository.deleteById(id);
+        studentSchoolInTransferMajorRepository.deleteById(id);
         return 1;
     }
 
@@ -296,11 +292,11 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      * @return
      */
     @Override
-    public StudentTransferMajorDocument selectDocument(String id) {
+    public StudentSchoolInTransferMajorDocument selectDocument(String id) {
         if (StrUtil.isBlank(id)) {
             throw new BusinessException("表单 id 为空");
         }
-        return studentTransferMajorRepository.findById(id).orElseThrow(() -> new BusinessException("查询表单为空"));
+        return studentSchoolInTransferMajorRepository.findById(id).orElseThrow(() -> new BusinessException("查询表单为空"));
     }
 
 
@@ -312,7 +308,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
      * @return
      */
     @Override
-    public Object updateById(Map<String, Object> map, String id) {
+    public StudentSchoolInTransferMajorDocument updateById(Map<String, Object> map, String id) {
         if (StrUtil.isBlank(id)) {
             throw new BusinessException("表单 id 为空");
         }
@@ -323,7 +319,7 @@ public class StudentTransferMajorOAHandler extends OfficeAutomationHandler {
                 update.set(key, value);
             }
         });
-        mongoTemplate.updateMulti(query, update, StudentTransferMajorDocument.class);
+        mongoTemplate.updateMulti(query, update, StudentSchoolInTransferMajorDocument.class);
         return selectDocument(id);
     }
 }
