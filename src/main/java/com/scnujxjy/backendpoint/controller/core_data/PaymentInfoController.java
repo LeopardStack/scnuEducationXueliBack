@@ -3,10 +3,8 @@ package com.scnujxjy.backendpoint.controller.core_data;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoFilterRO;
 import com.scnujxjy.backendpoint.model.ro.core_data.PaymentInfoRO;
@@ -226,7 +224,7 @@ public class PaymentInfoController {
 
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
                 ) {
                     // 查询继续教育管理员权限范围内的教学计划
                     FilterDataVO paymentInfoVOPageVO = null;
@@ -303,7 +301,7 @@ public class PaymentInfoController {
                             allPageQueryNewStudentPayInfoFilter(paymentInfoFilterROPageRO, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
                 ) {
                     // 查询继续教育管理员权限范围内的教学计划
                     paymentInfoVOPageVO = paymentInfoService.
@@ -360,7 +358,7 @@ public class PaymentInfoController {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
                 ) {
                     paymentInformationSelectArgs = paymentInfoService.getStudentStatusArgs((String) loginId, managerFilter);
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
@@ -405,7 +403,7 @@ public class PaymentInfoController {
                     paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, collegeAdminFilter);
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                         || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                        || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                        || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
                 ) {
                     paymentInformationSelectArgs = paymentInfoService.getNewStudentPaymentInfoArgs(paymentInfoFilterRO, managerFilter);
                 } else if (roleList.contains(TEACHING_POINT_ADMIN.getRoleName())) {
@@ -452,7 +450,7 @@ public class PaymentInfoController {
 
                 } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                     || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                    || roleList.contains(ADMISSION_ADMIN.getRoleName())) {
+                    || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
                 // 继续教育学院管理员
                 boolean send = messageSender.sendExportMsg(paymentInfoFilterROPageRO, managerFilter, userId);
                 if (send) {
@@ -502,7 +500,7 @@ public class PaymentInfoController {
                 }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                     || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                    || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
             ) {
                 // 继续教育学院管理员
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
@@ -549,7 +547,7 @@ public class PaymentInfoController {
                 }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
                     || roleList.contains(CAIWUBU_ADMIN.getRoleName())
-                    || roleList.contains(ADMISSION_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())
             ) {
                 // 继续教育学院管理员
                 PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);

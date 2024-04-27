@@ -29,6 +29,16 @@ public class PageRO<T> {
      * 一页数据量
      */
     private Long pageSize = 10L;
+
+    /**
+     * 分页查询开始
+     */
+    private Long pageStart;
+
+    /**
+     * 分页查询结束
+     */
+    private Long pageEnd;
     /**
      * 排序字段
      */
@@ -47,6 +57,17 @@ public class PageRO<T> {
      * 模糊搜索的关键词
      */
     private String keyword;
+
+    public Long getPageStart() {
+        if (pageNumber == 0) {
+            return pageNumber * pageSize;
+        }
+        return (pageNumber - 1) * pageSize;
+    }
+
+    public Long getPageEnd() {
+        return getPageStart() + pageSize;
+    }
 
     /**
      * 获取一个分页对象
