@@ -19,8 +19,6 @@ import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecord
 import com.scnujxjy.backendpoint.dao.mongoEntity.StudentSchoolInTransferMajorDocument;
 import com.scnujxjy.backendpoint.dao.repository.StudentSchoolInTransferMajorRepository;
 import com.scnujxjy.backendpoint.exception.BusinessException;
-import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
-import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -29,7 +27,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
@@ -43,12 +44,6 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
 
     @Resource
     private StudentSchoolInTransferMajorRepository studentSchoolInTransferMajorRepository;
-
-    @Resource
-    private PlatformUserService platformUserService;
-
-    @Resource
-    private CollegeAdminInformationService collegeAdminInformationService;
 
     /**
      * 获取支持类型
@@ -89,7 +84,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
         approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
-        List<ApprovalStepPO> approvalStepPOS = selectApprovalStepByTypeId(typeId);
+        List<ApprovalStepPO> approvalStepPOS = approvalStepService.selectByTypeId(typeId);
         if (CollUtil.isEmpty(approvalStepPOS)) {
             throw new BusinessException("当前OA类型无步骤");
         }
@@ -101,7 +96,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
                 .setUpdateAt(date)
                 .setStatus(WAITING.getStatus())
                 .setCurrentStepId(approvalStepPO.getId());
-        int count = approvalRecordMapper.insert(approvalRecordPO);
+        int count = approvalRecordService.create(approvalRecordPO);
         if (count == 0) {
             throw new BusinessException("插入OA记录表失败");
         }
@@ -121,7 +116,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
         log.info("学生转专业步骤流转，目前步骤 {} 目前记录 {}", approvalStepRecordPO, approvalRecordPO);
         // 如果在财务处审批,请判断是否学费相同,学费相同再次流转
-        ApprovalStepPO approvalStepPO = selectApprovalStep(approvalRecordPO.getCurrentStepId());
+        ApprovalStepPO approvalStepPO = approvalStepService.selectById(approvalRecordPO.getCurrentStepId());
         if (Objects.isNull(approvalStepPO)) {
             log.warn("after process 中当前步骤记录查询为空 current step id {}", approvalRecordPO.getCurrentStepId());
             return;
@@ -130,7 +125,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
             StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
             if (Objects.equals(studentSchoolInTransferMajorDocument.getOriginalTuitionFee(), studentSchoolInTransferMajorDocument.getCurrentTuitionFee())) {
                 // 获取最新一步的审核步骤
-                List<ApprovalStepRecordPO> approvalStepRecordPOS = selectApprovalStepRecordByApprovalId(approvalRecordPO.getId());
+                List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordService.selectByApprovalRecordId(approvalRecordPO.getId());
                 if (CollUtil.isEmpty(approvalStepRecordPOS)) {
                     log.warn("after process获取当前审批所有步骤为空");
                     return;
@@ -167,35 +162,11 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
         log.info("学生转专业审核完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
     }
 
-    /**
-     * 根据信息插入步骤记录
-     * <p>需要重写拥有审核权限用户的集合的逻辑</p>
-     * 请参阅下面的示例方法来实现
-     *
-     * @param approvalId 事件记录 Id
-     * @param date       添加时间
-     * @param stepId     步骤 id
-     * @see CommonOfficeAutomationHandler#createApprovalStepRecord(Long, Date, Long)
-     */
     @Override
-    public int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
-        if (Objects.isNull(approvalId)
-                || Objects.isNull(date)
-                || Objects.isNull(stepId)) {
-            throw new BusinessException("新建步骤记录失败，缺失审核记录id、日期、步骤id等信息");
-        }
-        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalId);
-        if (Objects.isNull(approvalRecordPO)) {
-            throw new BusinessException("获取记录失败");
-        }
-        StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
+    protected Set<String> buildApprovalUsernameSet(ApprovalStepPO approvalStepPO, String documentId) {
+        StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.findById(documentId).orElse(null);
         if (Objects.isNull(studentSchoolInTransferMajorDocument)) {
             throw new BusinessException("审核表单不存在");
-        }
-        // 获取当前步骤信息
-        ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepId);
-        if (Objects.isNull(approvalStepPO)) {
-            throw new BusinessException("获取下一个步骤失败，流转失败");
         }
         // 根据不同步骤填充不同的审核用户群
         Set<String> usernameSet = CollUtil.newHashSet();
@@ -225,20 +196,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
                 break;
         }
         log.info("下一步审核用户群 {}", usernameSet);
-        // 填充步骤记录
-        ApprovalStepRecordPO recordPO = ApprovalStepRecordPO.builder()
-                .approvalId(approvalId)
-                .stepId(approvalStepPO.getId())
-                .updateAt(date)
-                .status(WAITING.getStatus())
-                .approvalTypeId(approvalStepPO.getApprovalTypeId())
-                .approvalUsernameSet(usernameSet)
-                .build();
-        int count = approvalStepRecordMapper.insert(recordPO);
-        if (count == 0) {
-            throw new BusinessException("插入新的步骤记录失败");
-        }
-        return count;
+        return usernameSet;
     }
 
     /**

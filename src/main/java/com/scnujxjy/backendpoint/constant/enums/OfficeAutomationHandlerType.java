@@ -23,7 +23,7 @@ public enum OfficeAutomationHandlerType {
     COMMON("common", "默认审批流程");
     String type;
 
-    String name;
+    String description;
 
     /**
      * 根据类型id查找数据库中的数据
@@ -35,11 +35,11 @@ public enum OfficeAutomationHandlerType {
     public static OfficeAutomationHandlerType match(Long typeId) {
         ApprovalTypeMapper approvalTypeMapper = ApplicationContextProvider.getApplicationContext().getBean(ApprovalTypeMapper.class);
         ApprovalTypePO approvalTypePO = approvalTypeMapper.selectById(typeId);
-        if (Objects.isNull(approvalTypePO) || StrUtil.isBlank(approvalTypePO.getName())) {
+        if (Objects.isNull(approvalTypePO) || StrUtil.isBlank(approvalTypePO.getDescription())) {
             return null;
         }
         for (OfficeAutomationHandlerType value : OfficeAutomationHandlerType.values()) {
-            if (approvalTypePO.getName().equals(value.getName())) {
+            if (approvalTypePO.getDescription().equals(value.getDescription())) {
                 return value;
             }
         }

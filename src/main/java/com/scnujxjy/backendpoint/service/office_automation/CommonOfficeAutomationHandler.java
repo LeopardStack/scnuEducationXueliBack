@@ -14,10 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
@@ -55,42 +52,10 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         log.info("审批完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
     }
 
-
-    /**
-     * 根据信息插入步骤记录
-     *
-     * @param approvalId 事件记录 Id
-     * @param date       添加时间
-     * @param stepId     步骤 id
-     */
-
     @Override
-    public int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
-        if (Objects.isNull(approvalId)
-                || Objects.isNull(date)
-                || Objects.isNull(stepId)) {
-            throw new BusinessException("新建步骤记录失败，缺失审核记录id、日期、步骤id等信息");
-        }
-        // 获取下一个流程步骤
-        ApprovalStepPO approvalStepPO = approvalStepMapper.selectById(stepId);
-        if (Objects.isNull(approvalStepPO)) {
-            throw new BusinessException("获取下一个步骤失败，流转失败");
-        }
-        // 填充步骤记录
-        ApprovalStepRecordPO recordPO = ApprovalStepRecordPO.builder()
-                .approvalId(approvalId)
-                .stepId(approvalStepPO.getId())
-                .updateAt(date)
-                .status(WAITING.getStatus())
-                .approvalTypeId(approvalStepPO.getApprovalTypeId())
-                .build();
-        int count = approvalStepRecordMapper.insert(recordPO);
-        if (count == 0) {
-            throw new BusinessException("插入新的步骤记录失败");
-        }
-        return count;
+    protected Set<String> buildApprovalUsernameSet(ApprovalStepPO approvalStepPO, String documentId) {
+        return Collections.emptySet();
     }
-
 
     /**
      * 插入表单
@@ -160,7 +125,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
         }
         // 根据类型id获取步骤
         Long typeId = approvalRecordPO.getApprovalTypeId();
-        List<ApprovalStepPO> approvalStepPOS = selectApprovalStepByTypeId(typeId);
+        List<ApprovalStepPO> approvalStepPOS = approvalStepService.selectByTypeId(typeId);
         if (CollUtil.isEmpty(approvalStepPOS)) {
             throw new BusinessException("当前OA类型无步骤");
         }
@@ -172,7 +137,7 @@ public class CommonOfficeAutomationHandler extends OfficeAutomationHandler {
                 .setCreatedAt(date)
                 .setStatus(WAITING.getStatus())
                 .setCurrentStepId(approvalStepPO.getId());
-        int count = approvalRecordMapper.insert(approvalRecordPO);
+        int count = approvalRecordService.create(approvalRecordPO);
         if (count == 0) {
             throw new BusinessException("插入OA记录表失败");
         }

@@ -20,13 +20,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
 @Component
 @Transactional
@@ -56,24 +54,12 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
 
     }
 
+
     @Override
-    protected int createApprovalStepRecord(Long approvalId, Date date, Long stepId) {
-        if (Objects.isNull(approvalId)
-                || Objects.isNull(date)
-                || Objects.isNull(stepId)) {
-            throw new BusinessException("新建步骤记录失败，缺失审核记录id、日期、步骤id等信息");
-        }
-        ApprovalRecordPO approvalRecordPO = approvalRecordMapper.selectById(approvalId);
-        if (Objects.isNull(approvalRecordPO)) {
-            throw new BusinessException("获取记录失败");
-        }
-        StudentSchoolOutTransferMajorDocument studentSchoolOutTransferMajorDocument = selectDocument(approvalRecordPO.getDocumentId());
+    protected Set<String> buildApprovalUsernameSet(ApprovalStepPO approvalStepPO, String documentId) {
+        StudentSchoolOutTransferMajorDocument studentSchoolOutTransferMajorDocument = selectDocument(documentId);
         if (Objects.isNull(studentSchoolOutTransferMajorDocument)) {
             throw new BusinessException("审核表单不存在");
-        }
-        ApprovalStepPO approvalStepPO = selectApprovalStep(stepId);
-        if (Objects.isNull(approvalStepPO)) {
-            throw new BusinessException("获取下一个步骤失败，流转失败");
         }
         Set<String> usernameSet = Sets.newHashSet();
         switch (approvalStepPO.getStepOrder()) {
@@ -91,19 +77,7 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
             default:
                 break;
         }
-        ApprovalStepRecordPO approvalStepRecordPO = ApprovalStepRecordPO.builder()
-                .approvalId(approvalId)
-                .stepId(approvalStepPO.getId())
-                .updateAt(date)
-                .status(WAITING.getStatus())
-                .approvalTypeId(approvalStepPO.getApprovalTypeId())
-                .approvalUsernameSet(usernameSet)
-                .build();
-        int count = approvalStepRecordMapper.insert(approvalStepRecordPO);
-        if (count == 0) {
-            throw new BusinessException("插入新的步骤记录失败");
-        }
-        return count;
+        return usernameSet;
     }
 
     @Override
