@@ -9,7 +9,7 @@
         <result column="username" property="username"/>
         <result column="name" property="name"/>
         <result column="wechat_open_id" property="wechatOpenId"/>
-        <result column="supplementary_permission_id_set" property="supplementaryPermissionIdSet"
+        <result column="supplementary_permission_id_set" property="supplementaryRoleIdSet"
                 jdbcType="VARCHAR"
                 typeHandler="com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler"/>
     </resultMap>
@@ -19,5 +19,17 @@
         WHERE user_id = #{platformUserPO.userId}
     </update>
 
-
+    <select id="selectPlatformUserList" resultMap="PlatformUserPO">
+        SELECT *
+        FROM platform_user
+        WHERE TRUE
+        <if test="entity.roleIds != null and entity.roleIds.size() > 0">
+            AND role_id IN
+            <foreach collection="entity.roleIds" open="(" close=")" separator="," item="item">
+                #{item}
+            </foreach>
+            OR JSON_CONTAINS(supplementary_role_id_set,
+            #{entity.roleIds, typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler})
+        </if>
+    </select>
 </mapper>

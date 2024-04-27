@@ -1,25 +1,37 @@
 package com.scnujxjy.backendpoint.dao.mongoEntity;
 
+import lombok.Builder;
+import lombok.Data;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
+@Document(collection = "student_transfer_major_document")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
 @Builder
-@EqualsAndHashCode(callSuper = true)
-@Document(collection = "studentTransferApplications")
-public class StudentTransferApplication extends OAApplicationForm{
+public class StudentTransferMajorDocument {
     @Id
     private String id;
+
+    /**
+     * 审批类型id，用来区分新生省内、新生省外、新生校内、
+     */
+    private Integer transferType;
+
+    /**
+     * 学生在系统中的 user_id
+     */
+    private String studentUsername;
     private String name; // 姓名
     private String gender; // 性别
     private String candidateNumber; // 考生号
@@ -51,7 +63,21 @@ public class StudentTransferApplication extends OAApplicationForm{
     private String transferInApprover;
     private Date transferInApprovalDate;
 
+    /**
+     * 转入学院 id
+     */
+    private String toCollegeId;
+
+    /**
+     * 转入学院名称
+     */
+    private String toCollegeName;
+
     // 继续教育学院意见
+    /**
+     * 继续教育学院 id
+     */
+    private String continuingEducationCollegeId;
     private String continuingEducationCollegeOpinion;
     private String continuingEducationApprover;
     private Date continuingEducationApprovalDate;

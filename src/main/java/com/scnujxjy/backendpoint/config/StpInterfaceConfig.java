@@ -85,6 +85,8 @@ public class StpInterfaceConfig implements StpInterface {
         // 参数校验
         PlatformUserVO platformUserVO = platformUserService.detailByUsername((String) loginUserName);
 
+
+
         // 角色信息校验
         if (Objects.isNull(platformUserVO)) {
             log.error("获取角色信息失败，userId：{}", loginUserName);
