@@ -120,11 +120,13 @@ public abstract class OfficeAutomationHandler {
         }
         // 查询更新完的审批记录
         ApprovalRecordPO approvalRecordPO = approvalRecordService.selectById(approvalStepRecordPO.getApprovalId());
+        if (Objects.isNull(approvalRecordPO)) {
+            throw new BusinessException("获取审核记录失败");
+        }
         // 执行当前步骤完成后的函数
         afterProcess(approvalStepRecordPO, approvalRecordPO);
         // 如果当前审批记录为success或者failed状态则说明已经完成，执行完成的步骤
-        if (Objects.nonNull(approvalRecordPO)
-                && (SUCCESS.getStatus().equals(approvalRecordPO.getStatus()) || FAILED.getStatus().equals(approvalRecordPO.getStatus()))) {
+        if (SUCCESS.getStatus().equals(approvalRecordPO.getStatus()) || FAILED.getStatus().equals(approvalRecordPO.getStatus())) {
             afterApproval(approvalRecordPO, approvalStepRecordPO);
         }
         return true;
@@ -203,6 +205,9 @@ public abstract class OfficeAutomationHandler {
         }
         // 检查是否有审核权限
         ApprovalStepRecordPO stepRecordPO = approvalStepRecordService.selectById(approvalStepRecordPO.getId());
+        if (Objects.isNull(stepRecordPO)) {
+            throw new BusinessException("获取审核步骤记录失败");
+        }
         if (!CollUtil.contains(stepRecordPO.getApprovalUsernameSet(), approvalStepRecordPO.getUsername())
                 && !SystemConstant.SYSTEM_NAME.equals(approvalStepRecordPO.getUsername())) {
             throw new BusinessException("当前用户无审核权限");
@@ -261,9 +266,15 @@ public abstract class OfficeAutomationHandler {
      */
     protected Boolean success(Long approvalId, Long stepId, Date date) {
         ApprovalStepPO approvalStepPO = approvalStepService.selectById(stepId);
+        if (Objects.isNull(approvalStepPO)) {
+            throw new BusinessException("获取审核步骤失败");
+        }
         Long typeId = approvalStepPO.getApprovalTypeId();
         // 在已经有的记录中查看是否存在已经成功的，跳过成功的步骤
         List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformation = approvalStepRecordService.selectApprovalRecordWithApprovalRecordId(approvalId);
+        if (CollUtil.isEmpty(approvalRecordWithStepInformation)) {
+            throw new BusinessException("获取审核步骤记录失败");
+        }
         Map<Integer, List<ApprovalRecordWithStepInformation>> stepOrder2InformationMap = approvalRecordWithStepInformation.stream()
                 .collect(Collectors.groupingBy(ApprovalRecordWithStepInformation::getStepOrder));
         Integer orderId = null;
@@ -284,28 +295,41 @@ public abstract class OfficeAutomationHandler {
             }
         }
         // 如果有的话要找出当前这个 order 对应的步骤，从这里开始申请
+        Long nextStepId = null;
         if (Objects.nonNull(orderId)) {
             List<ApprovalRecordWithStepInformation> approvalRecordWithStepInformations = stepOrder2InformationMap.get(orderId);
-            Long nextStepId = approvalRecordWithStepInformations.get(0).getStepId();
-            createApprovalStepRecord(approvalId, date, nextStepId);
-            approvalRecordService.updateApprovalRecordById(approvalId, date, nextStepId, WAITING);
+            nextStepId = approvalRecordWithStepInformations.get(0).getStepId();
         } else {
             // 没有跳过的记录，那就判断是不是最后一个步骤，如果是这说明已经结束了
             List<ApprovalStepPO> approvalStepPOS = approvalStepService.selectByTypeId(typeId);
-            if (approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
-                // 已经结束
-                approvalRecordService.updateApprovalRecordById(approvalId, date, null, SUCCESS);
-            } else {
+            if (CollUtil.isEmpty(approvalStepPOS)) {
+                throw new BusinessException("根据审批类型获取审批步骤失败");
+            }
+            if (!approvalStepPO.getStepOrder().equals(approvalStepPOS.get(approvalStepPOS.size() - 1).getStepOrder())) {
                 // 未结束：获取下一个步骤
-                Long nextStepId = null;
                 for (ApprovalStepPO stepPO : approvalStepPOS) {
                     if (stepPO.getStepOrder() > approvalStepPO.getStepOrder()) {
                         nextStepId = stepPO.getId();
                         break;
                     }
                 }
-                createApprovalStepRecord(approvalId, date, nextStepId);
-                approvalRecordService.updateApprovalRecordById(approvalId, date, nextStepId, WAITING);
+            }
+        }
+        // 没有下一步
+        if (Objects.isNull(nextStepId)) {
+            Integer count = approvalRecordService.updateApprovalRecordById(approvalId, date, null, SUCCESS);
+            if (count == 0) {
+                throw new BusinessException("更新最后一步审核记录失败");
+            }
+        } else {
+            // 有下一步
+            int created = createApprovalStepRecord(approvalId, date, nextStepId);
+            if (created == 0) {
+                throw new BusinessException("添加审核步骤记录失败");
+            }
+            Integer count = approvalRecordService.updateApprovalRecordById(approvalId, date, nextStepId, WAITING);
+            if (count == 0) {
+                throw new BusinessException("更新审核记录失败");
             }
         }
         return true;

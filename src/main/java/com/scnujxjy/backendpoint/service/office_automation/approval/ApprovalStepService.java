@@ -6,8 +6,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalStepMapper;
-import com.scnujxjy.backendpoint.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,13 +26,13 @@ public class ApprovalStepService extends ServiceImpl<ApprovalStepMapper, Approva
      */
     public List<ApprovalStepPO> selectByTypeId(Long typeId) {
         if (Objects.isNull(typeId)) {
-            throw new BusinessException("审批类型id缺失");
+            return Lists.newArrayList();
         }
         List<ApprovalStepPO> approvalRecordPOS = baseMapper.selectList(Wrappers.<ApprovalStepPO>lambdaQuery()
                 .eq(ApprovalStepPO::getApprovalTypeId, typeId)
                 .orderBy(true, true, ApprovalStepPO::getStepOrder));
         if (CollUtil.isEmpty(approvalRecordPOS)) {
-            throw new BusinessException("获取审批步骤失败");
+            return Lists.newArrayList();
         }
         return approvalRecordPOS;
     }
@@ -45,7 +45,7 @@ public class ApprovalStepService extends ServiceImpl<ApprovalStepMapper, Approva
      */
     public ApprovalStepPO selectById(Long id) {
         if (Objects.isNull(id)) {
-            throw new BusinessException("步骤id缺失");
+            return null;
         }
         return baseMapper.selectById(id);
     }

@@ -149,19 +149,15 @@ public class OfficeAutomationService {
         if (Objects.isNull(approvalRecordPO)) {
             approvalRecordPO = new ApprovalRecordPO();
         }
-        LambdaQueryWrapper<ApprovalRecordPO> wrapper = Wrappers.<ApprovalRecordPO>lambdaQuery()
-                .eq(Objects.nonNull(approvalRecordPO.getApprovalTypeId()), ApprovalRecordPO::getApprovalTypeId, approvalRecordPO.getApprovalTypeId())
-                .eq(Objects.nonNull(approvalRecordPO.getInitiatorUsername()), ApprovalRecordPO::getInitiatorUsername, approvalRecordPO.getInitiatorUsername())
-                .eq(StrUtil.isNotBlank(approvalRecordPO.getStatus()), ApprovalRecordPO::getStatus, approvalRecordPO.getStatus())
-                .and(lambdaQueryWrapper -> {
-                    lambdaQueryWrapper.last(String.format("JSON_CONTAINS(user_watch_set, JSON_ARRAY(%s))", String.valueOf(platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString()))));
-                });
-        Page<ApprovalRecordPO> approvalRecordPOPage = approvalRecordMapper.selectPage(approvalRecordPOPageRO.getPage(), wrapper);
-        if (Objects.isNull(approvalRecordPOPage) || CollUtil.isEmpty(approvalRecordPOPage.getRecords())) {
+        Long count = approvalRecordMapper.selectApprovalRecordCount(approvalRecordPOPageRO.getEntity());
+        if (count == 0) {
+            return new PageVO<>(approvalRecordPOPageRO.getPage(), Collections.emptyList());
+        }
+        List<ApprovalRecordPO> approvalRecordPOS = approvalRecordMapper.selectApprovalRecordPage(approvalRecordPOPageRO.getEntity(), approvalRecordPOPageRO);
+        if (CollUtil.isEmpty(approvalRecordPOS)) {
             throw new BusinessException("OA 记录数据查询为空");
         }
-        List<ApprovalRecordAllInformation> result = approvalRecordPOPage.getRecords()
-                .stream()
+        List<ApprovalRecordAllInformation> result = approvalRecordPOS.stream()
                 .map(record -> {
                     // 查询排序好的步骤
                     List<ApprovalStepPO> approvalStepPOS = selectStepByType(record.getApprovalTypeId());
@@ -177,7 +173,7 @@ public class OfficeAutomationService {
                     return approvalInverter.approvalRecordStep2Information(record, approvalStepWithRecordLists);
                 })
                 .collect(Collectors.toList());
-        return new PageVO<>(approvalRecordPOPage, result);
+        return new PageVO<>(approvalRecordPOPageRO, count, result);
     }
 
     /**

@@ -7,10 +7,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalStepRecordMapper;
-import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordWithStepInformation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Lists;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -52,7 +52,7 @@ public class ApprovalStepRecordService extends ServiceImpl<ApprovalStepRecordMap
      */
     public List<ApprovalStepRecordPO> selectByApprovalRecordId(Long approvalRecordId) {
         if (Objects.isNull(approvalRecordId)) {
-            throw new BusinessException("审核记录编号为空");
+            return Lists.newArrayList();
         }
         return baseMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
                 .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordId)
@@ -90,13 +90,13 @@ public class ApprovalStepRecordService extends ServiceImpl<ApprovalStepRecordMap
      */
     public List<ApprovalRecordWithStepInformation> selectApprovalRecordWithApprovalRecordId(Long approvalRecordId) {
         if (Objects.isNull(approvalRecordId)) {
-            throw new BusinessException("审批类型id缺失");
+            return Lists.newArrayList();
         }
 
         List<ApprovalStepRecordPO> approvalStepRecordPOS = baseMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
                 .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordId));
         if (CollUtil.isEmpty(approvalStepRecordPOS)) {
-            return null;
+            return Lists.newArrayList();
         }
         return approvalStepRecordPOS.stream()
                 .map(ele -> approvalInverter.stepWithRecord2Information(ele, approvalStepService.selectById(ele.getStepId())))
