@@ -2,8 +2,8 @@ package com.scnujxjy.backendpoint.oldSysDataExport;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.oa.MajorChangeRecordPO;
-import com.scnujxjy.backendpoint.dao.mapper.oa.MajorChangeRecordMapper;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval_result.MajorChangeRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval_result.MajorChangeRecordMapper;
 import com.scnujxjy.backendpoint.model.vo.oa.MajorChangeRecordExcelVO;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -11,12 +11,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import static com.scnujxjy.backendpoint.util.DataImportScnuOldSys.getStudentLuqus;
 

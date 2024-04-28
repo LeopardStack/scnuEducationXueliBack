@@ -1,9 +1,9 @@
 package com.scnujxjy.backendpoint.office_automation;
 
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
-import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalRecordMapper;
-import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
-import com.scnujxjy.backendpoint.service.office_automation.StudentSchoolINTransferMajorOAHandler;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval.ApprovalRecordMapper;
+import com.scnujxjy.backendpoint.service.office_automation.handler.OfficeAutomationService;
+import com.scnujxjy.backendpoint.service.office_automation.handler.StudentSchoolINTransferMajorOAHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +58,7 @@ public class TestOfficeAutomation {
         Boolean processed = handler.process(ApprovalStepRecordPO.builder()
                 .comment("审批成功")
                 .status(SUCCESS.getStatus())
-                .approvalId(3L)
+                .approvalRecordId(3L)
                 .stepId(6L)
                 .id(28L)
 //                .nextStepId(3L)

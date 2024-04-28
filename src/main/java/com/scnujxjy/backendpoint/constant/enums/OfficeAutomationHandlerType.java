@@ -1,8 +1,8 @@
 package com.scnujxjy.backendpoint.constant.enums;
 
 import cn.hutool.core.util.StrUtil;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalTypePO;
-import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalTypeMapper;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalTypePO;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval.ApprovalTypeMapper;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

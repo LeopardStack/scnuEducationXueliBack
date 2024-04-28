@@ -3,14 +3,14 @@ package com.scnujxjy.backendpoint.controller.office_automation;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalRecordPO;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalTypePO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalTypePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
-import com.scnujxjy.backendpoint.service.office_automation.OfficeAutomationService;
+import com.scnujxjy.backendpoint.service.office_automation.handler.OfficeAutomationService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

@@ -1,7 +1,10 @@
-package com.scnujxjy.backendpoint.model.vo.office_automation;
+package com.scnujxjy.backendpoint.dao.entity.office_automation.approval;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.set.StringSetTypeHandler;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +13,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 @Data
@@ -18,13 +20,8 @@ import java.util.Set;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class ApprovalRecordAllInformation {
-
-    /**
-     * 该事件下的步骤以及对应记录
-     */
-    List<ApprovalStepWithRecord> approvalStepWithRecordList;
-
+@TableName(value = "approval_record", autoResultMap = true)
+public class ApprovalRecordPO {
     /**
      * 主键id
      */
@@ -54,6 +51,13 @@ public class ApprovalRecordAllInformation {
      */
     private String status;
 
+    /**
+     * 审核表单 id
+     * <p>存储在 MongoDB 中</p>
+     */
+    private String documentId;
+
     @ApiModelProperty("查看username集合")
+    @TableField(typeHandler = StringSetTypeHandler.class)
     private Set<String> watchUsernameSet;
 }

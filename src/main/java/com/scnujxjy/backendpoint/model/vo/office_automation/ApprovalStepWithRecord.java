@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.office_automation;
 
-import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,31 +9,34 @@ import lombok.experimental.Accessors;
 
 import java.util.List;
 
-/**
- * 审批类型所有信息；
- * <p>展示类型及其说对应的所有步骤</p>
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class ApprovalTypeAllInformation {
+public class ApprovalStepWithRecord {
+    /**
+     * 包含该步骤的记录
+     */
+    List<ApprovalStepRecordPO> approvalStepRecordList;
     /**
      * 主键id
      */
     private Long id;
     /**
-     * 类型名称
+     * 步骤顺序
      */
-    private String name;
+    private Integer stepOrder;
     /**
-     * 审批类型描述
+     * 审核逻辑：0-与，1-或
+     */
+    private Integer logic;
+    /**
+     * 步骤描述
      */
     private String description;
     /**
-     * 步骤列表
+     * 事件类型id
      */
-    private List<ApprovalStepPO> approvalStepList;
-
+    private Long approvalTypeId;
 }

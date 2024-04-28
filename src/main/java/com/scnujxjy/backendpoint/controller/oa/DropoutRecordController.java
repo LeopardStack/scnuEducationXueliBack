@@ -7,7 +7,7 @@ import com.scnujxjy.backendpoint.model.ro.oa.DropoutRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.oa.DropoutRecordWithClassInfoVO;
 import com.scnujxjy.backendpoint.model.vo.oa.DropoutSelectArgs;
-import com.scnujxjy.backendpoint.service.oa.DropoutRecordService;
+import com.scnujxjy.backendpoint.service.office_automation.approval_result.DropoutRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

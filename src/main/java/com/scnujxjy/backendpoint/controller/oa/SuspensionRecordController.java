@@ -8,7 +8,7 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.oa.SuspensionRecordVO;
 import com.scnujxjy.backendpoint.model.vo.oa.SuspensionSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.oa.SuspensionWithResumptionVO;
-import com.scnujxjy.backendpoint.service.oa.SuspensionRecordService;
+import com.scnujxjy.backendpoint.service.office_automation.approval_result.SuspensionRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

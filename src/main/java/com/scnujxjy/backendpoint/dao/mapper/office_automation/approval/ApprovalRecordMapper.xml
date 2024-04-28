@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.office_automation.approval.ApprovalRecordMapper">
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO">
+        <id column="id" property="id"/>
+        <result column="watch_username_set" property="watchUsernameSet"
+                typeHandler="com.scnujxjy.backendpoint.handler.type_handler.set.StringSetTypeHandler"/>
+    </resultMap>
+
+    <select id="selectApprovalRecordPage"
+            resultMap="BaseResultMap">
+        SELECT *
+        FROM approval_record
+        WHERE TRUE
+        <if test="entity.approvalTypeId != null">
+            AND approval_type_id = #{entity.approvalTypeId}
+        </if>
+        <if test="entity.initiatorUsername != null">
+            AND initiator_username = #{entity.initiatorUsername}
+        </if>
+        <if test="entity.status != null">
+            AND status =#{entity.status}
+        </if>
+        <if test="entity.watchUsernameSet != null and entity.watchUsernameSet.size() > 0">
+            AND JSON_CONTAINS(watch_username_set,
+            #{entity.watchUsernameSet,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.set.StringSetTypeHandler}
+        </if>
+        <if test="page.pageStart != null and page.pageEnd != null">
+            LIMIT #{page.pageStart}, #{page.pageEnd}
+        </if>
+    </select>
+    <select id="selectApprovalRecordCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM approval_record
+        WHERE TRUE
+        <if test="entity.approvalTypeId != null">
+            AND approval_type_id = #{entity.approvalTypeId}
+        </if>
+        <if test="entity.initiatorUsername != null">
+            AND initiator_username = #{entity.initiatorUsername}
+        </if>
+        <if test="entity.status != null">
+            AND status =#{entity.status}
+        </if>
+        <if test="entity.watchUsernameSet != null and entity.watchUsernameSet.size() > 0">
+            AND JSON_CONTAINS(watch_username_set,
+            #{entity.watchUsernameSet,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.set.StringSetTypeHandler}
+        </if>
+    </select>
+</mapper>

@@ -1,6 +1,6 @@
 package com.scnujxjy.backendpoint.oldSysDataExport;
 
-import com.scnujxjy.backendpoint.dao.mapper.oa.*;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval_result.*;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import com.scnujxjy.backendpoint.util.DataImportScnuOldSys;
 import lombok.extern.slf4j.Slf4j;

@@ -5,10 +5,10 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus;
-import com.scnujxjy.backendpoint.dao.entity.office_automation.ApprovalStepRecordPO;
-import com.scnujxjy.backendpoint.dao.mapper.office_automation.ApprovalStepRecordMapper;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval.ApprovalStepRecordMapper;
 import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;
-import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordWithStepInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepRecordWithStepInformation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.Lists;
 import org.springframework.stereotype.Service;
@@ -55,7 +55,7 @@ public class ApprovalStepRecordService extends ServiceImpl<ApprovalStepRecordMap
             return Lists.newArrayList();
         }
         return baseMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
-                .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordId)
+                .eq(ApprovalStepRecordPO::getApprovalRecordId, approvalRecordId)
                 .orderBy(true, true, ApprovalStepRecordPO::getId));
     }
 
@@ -88,19 +88,19 @@ public class ApprovalStepRecordService extends ServiceImpl<ApprovalStepRecordMap
      * @param approvalRecordId 类型 id
      * @return 步骤记录极其补充信息
      */
-    public List<ApprovalRecordWithStepInformation> selectApprovalRecordWithApprovalRecordId(Long approvalRecordId) {
+    public List<ApprovalStepRecordWithStepInformation> selectApprovalRecordWithApprovalRecordId(Long approvalRecordId) {
         if (Objects.isNull(approvalRecordId)) {
             return Lists.newArrayList();
         }
 
         List<ApprovalStepRecordPO> approvalStepRecordPOS = baseMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
-                .eq(ApprovalStepRecordPO::getApprovalId, approvalRecordId));
+                .eq(ApprovalStepRecordPO::getApprovalRecordId, approvalRecordId));
         if (CollUtil.isEmpty(approvalStepRecordPOS)) {
             return Lists.newArrayList();
         }
         return approvalStepRecordPOS.stream()
                 .map(ele -> approvalInverter.stepWithRecord2Information(ele, approvalStepService.selectById(ele.getStepId())))
-                .sorted(Comparator.comparing(ApprovalRecordWithStepInformation::getStepOrder))
+                .sorted(Comparator.comparing(ApprovalStepRecordWithStepInformation::getStepOrder))
                 .collect(Collectors.toList());
     }
 
