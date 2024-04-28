@@ -1,9 +1,11 @@
 package com.scnujxjy.backendpoint.service.oa;
 
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scnujxjy.backendpoint.dao.entity.oa.SystemMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.oa.SystemPopOutMessagePO;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.oa.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.vo.oa.SystemMessageVO;
 
@@ -17,6 +19,6 @@ public interface SystemMessageService {
 
     boolean updateSystemMessageStatus(Long messageId, String messageStatus);
 
-    Page<SystemMessageVO> getSystemMessagesByPage(Page<SystemMessageVO> page, SystemMessageRO searchParams);
+    IPage<SystemMessageVO> getSystemMessagesByPage(PageRO<SystemMessageRO> pageRO);
 
 }

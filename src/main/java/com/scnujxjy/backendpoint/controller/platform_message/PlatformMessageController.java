@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.controller.platform_message;
 
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -174,13 +175,15 @@ public class PlatformMessageController {
      * @param userMessagePageRO 筛选参数
      * @return 用户消息列表
      */
-    @GetMapping("/get_system_msg")
+    @GetMapping("/get_system_messages")
     public SaResult getSystemMessages(PageRO<SystemMessageRO> userMessagePageRO) {
-        Page<SystemMessageRO> page = userMessagePageRO.getPage(); // 创建分页对象
-        SystemMessageRO searchParams = userMessagePageRO.getEntity(); // 获取查询条件
+        // 校验参数
+        if (Objects.isNull(userMessagePageRO)) {
+            return SaResult.error("消息筛选参数不能为空");
+        }
 
         // 调用服务层方法执行查询
-        Page<SystemMessageVO> result = systemMessageService.getSystemMessagesByPage(page, searchParams);
+        IPage<SystemMessageVO> result = systemMessageService.getSystemMessagesByPage(userMessagePageRO);
 
         if (result == null) {
             return SaResult.error("查询失败");

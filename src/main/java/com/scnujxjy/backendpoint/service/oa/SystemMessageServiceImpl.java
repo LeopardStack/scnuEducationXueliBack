@@ -1,6 +1,7 @@
 package com.scnujxjy.backendpoint.service.oa;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
@@ -13,10 +14,12 @@ import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
 import com.scnujxjy.backendpoint.dao.mapper.oa.SystemMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
+import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.oa.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.vo.oa.SystemMessageVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
@@ -45,6 +48,7 @@ public class SystemMessageServiceImpl  extends ServiceImpl<SystemMessageMapper, 
      * @param systemMessageRO
      * @return
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean generateSystemMessage(SystemMessageRO systemMessageRO) {
         if (Objects.isNull(systemMessageRO)) {
             log.error("systemMessageRO is null");
@@ -197,11 +201,12 @@ public class SystemMessageServiceImpl  extends ServiceImpl<SystemMessageMapper, 
     }
 
     /**
-     * 获取系统消息列表
-     * @param searchParams 包含分页信息和筛选条件的请求对象
-     * @return 分页的系统消息视图对象
+     * 分页查询系统消息，并转换成VO对象返回
+     * @param pageRO 包含分页信息和筛选条件的PageRO对象
+     * @return 分页的系统消息视图对象（IPage接口类型）
      */
-    public Page<SystemMessageVO> getSystemMessagesByPage(SystemMessageRO searchParams) {
+    public IPage<SystemMessageVO> getSystemMessagesByPage(PageRO<SystemMessageRO> pageRO) {
+        SystemMessageRO searchParams = pageRO.getEntity();
         LambdaQueryWrapper<SystemMessagePO> queryWrapper = new LambdaQueryWrapper<>();
 
         // 添加筛选条件
@@ -219,16 +224,22 @@ public class SystemMessageServiceImpl  extends ServiceImpl<SystemMessageMapper, 
                 queryWrapper.eq(SystemMessagePO::getSystemRelatedId, searchParams.getSystemRelatedId());
             }
         }
-
-        // 使用 PageRO 信息进行分页和排序
-        Page<SystemMessagePO> poPage = searchParams.getPage();
-        queryWrapper.orderBy(true, searchParams.getOrderType().equals("ASC"), searchParams.getOrderBy());
+        // 设置排序
+        if (pageRO.getOrderBy() != null && !pageRO.getOrderBy().isEmpty()) {
+            if ("ASC".equalsIgnoreCase(pageRO.getOrderType())) {
+                queryWrapper.orderBy(true, true, SystemMessagePO::getCreatedAt);
+            } else {
+                queryWrapper.orderBy(true, false, SystemMessagePO::getCreatedAt);
+            }
+        }
+        // 获取分页配置
+        Page<SystemMessagePO> poPage = new Page<>(pageRO.getPageNumber(), pageRO.getPageSize());
 
         // 执行查询
-        Page<SystemMessagePO> result = systemMessageMapper.selectPage(poPage, queryWrapper);
+        IPage<SystemMessagePO> resultPage = systemMessageMapper.selectPage(poPage, queryWrapper);
 
         // 转换结果到VO
-        Page<SystemMessageVO> voPage = result.convert(po -> {
+        IPage<SystemMessageVO> voPage = resultPage.convert(po -> {
             PlatformUserPO platformUserPO = platformUserMapper.selectById(po.getSystemRelatedId());
             return SystemMessageVO.builder()
                     .systemMessageType1(po.getSystemMessageType1())
@@ -243,11 +254,6 @@ public class SystemMessageServiceImpl  extends ServiceImpl<SystemMessageMapper, 
 
         return voPage;
     }
-    /**
-     * 根据主键更新当前系统消息（SystemMessage）的状态
-     * @param record
-     * @return
-     */
-
 }
+
 
