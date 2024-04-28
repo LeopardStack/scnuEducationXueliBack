@@ -2,13 +2,10 @@ package com.scnujxjy.backendpoint.controller.platform_message;
 
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.oa.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsFilesGetRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.oa.SystemMessageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
@@ -175,7 +172,7 @@ public class PlatformMessageController {
      * @param userMessagePageRO 筛选参数
      * @return 用户消息列表
      */
-    @GetMapping("/get_system_messages")
+    @GetMapping("/get-system-messages")
     public SaResult getSystemMessages(PageRO<SystemMessageRO> userMessagePageRO) {
         // 校验参数
         if (Objects.isNull(userMessagePageRO)) {

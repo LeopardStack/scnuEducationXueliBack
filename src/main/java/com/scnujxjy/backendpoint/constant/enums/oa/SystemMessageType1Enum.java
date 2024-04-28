@@ -18,4 +18,13 @@ public enum SystemMessageType1Enum {
 
     String typeName;
 
+    public static SystemMessageType1Enum match(String typeName){
+        for(SystemMessageType1Enum systemMessageType1Enum : SystemMessageType1Enum.values()){
+            if(systemMessageType1Enum.getTypeName().equals(typeName)){
+                return systemMessageType1Enum;
+            }
+        }
+        return null;
+    }
+
 }

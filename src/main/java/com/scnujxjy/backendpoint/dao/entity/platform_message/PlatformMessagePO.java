@@ -37,7 +37,7 @@ public class PlatformMessagePO implements Serializable {
     private Long id;
 
     /**
-     * 用户ID
+     * 用户ID 这里存储的 username
      */
     private String userId;
 

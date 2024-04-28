@@ -27,13 +27,13 @@ public class SystemMessagePO implements Serializable {
     private Long id;
 
     /**
-     * 系统消息类型1
+     * 系统消息类型1，例如：事务消息，系统消息
      */
     @ApiModelProperty(value = "系统消息类型1")
     private String systemMessageType1;
 
     /**
-     * 系统消息类型2
+     * 系统消息类型2，例如：开班申请，校内转专业申请
      */
     @ApiModelProperty(value = "系统消息类型2")
     private String systemMessageType2;

@@ -22,4 +22,13 @@ public enum SystemMessageType2Enum {
 
     String typeName;
 
+    public static SystemMessageType2Enum match(String typeName){
+        for(SystemMessageType2Enum systemMessageType2Enum : SystemMessageType2Enum.values()){
+            if(systemMessageType2Enum.getTypeName().equals(typeName)){
+                return systemMessageType2Enum;
+            }
+        }
+        return null;
+    }
+
 }
