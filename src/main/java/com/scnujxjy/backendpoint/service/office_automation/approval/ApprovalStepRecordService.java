@@ -4,7 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval.ApprovalStepRecordMapper;
 import com.scnujxjy.backendpoint.inverter.office_automation.ApprovalInverter;

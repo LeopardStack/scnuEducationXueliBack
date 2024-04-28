@@ -6,7 +6,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
@@ -23,7 +23,7 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.*;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus.*;
 
 /**
  * OA系统的抽象实现类

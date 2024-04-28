@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.constant.enums;
+package com.scnujxjy.backendpoint.constant.enums.office_automation;
 
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalTypePO;

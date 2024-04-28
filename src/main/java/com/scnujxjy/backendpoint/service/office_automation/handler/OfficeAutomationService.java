@@ -6,7 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;

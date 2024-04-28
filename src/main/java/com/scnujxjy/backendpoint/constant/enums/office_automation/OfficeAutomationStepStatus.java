@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.constant.enums;
+package com.scnujxjy.backendpoint.constant.enums.office_automation;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;

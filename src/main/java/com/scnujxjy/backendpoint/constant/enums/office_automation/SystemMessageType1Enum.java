@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.constant.enums.oa;
+package com.scnujxjy.backendpoint.constant.enums.office_automation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

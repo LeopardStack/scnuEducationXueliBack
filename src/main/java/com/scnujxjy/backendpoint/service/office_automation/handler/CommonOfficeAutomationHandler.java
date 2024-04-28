@@ -1,7 +1,7 @@
 
 package com.scnujxjy.backendpoint.service.office_automation.handler;
 
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.COMMON;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType.COMMON;
 
 
 /**

@@ -11,7 +11,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus.SUCCESS;
 
 @SpringBootTest
 @Slf4j

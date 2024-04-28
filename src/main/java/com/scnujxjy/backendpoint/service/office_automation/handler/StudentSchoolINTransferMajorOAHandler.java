@@ -8,9 +8,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Sets;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
-import com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
@@ -31,8 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus.SUCCESS;
 
 @Component
 @Slf4j
