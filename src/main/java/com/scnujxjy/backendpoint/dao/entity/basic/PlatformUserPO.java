@@ -60,7 +60,6 @@ public class PlatformUserPO implements Serializable {
      */
     private String name;
 
-
     /**
      * 微信 openId
      */
