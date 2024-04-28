@@ -66,7 +66,37 @@ public abstract class OfficeAutomationHandler {
      * @return 新增的审批记录
      * @see CommonOfficeAutomationHandler#createApprovalRecord(ApprovalRecordPO)
      */
-    protected abstract Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO);
+    protected Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
+        if (Objects.isNull(approvalRecordPO)
+                || Objects.isNull(approvalRecordPO.getApprovalTypeId())
+                || Objects.isNull(approvalRecordPO.getDocumentId())) {
+            throw new BusinessException("OA记录为空或OA类型id为空");
+        }
+        // 获取可见人群
+        Set<String> watchUsernameSet = buildWatchUsernameSet(approvalRecordPO);
+        // 根据类型id获取步骤
+        Long typeId = approvalRecordPO.getApprovalTypeId();
+        List<ApprovalStepPO> approvalStepPOS = approvalStepService.selectByTypeId(typeId);
+        if (CollUtil.isEmpty(approvalStepPOS)) {
+            throw new BusinessException("当前OA类型无步骤");
+        }
+        // 填充记录表数据
+        DateTime date = DateUtil.date();
+        ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
+        approvalRecordPO.setInitiatorUsername(StpUtil.getLoginIdAsString())
+                .setCreatedAt(date)
+                .setUpdateAt(date)
+                .setStatus(WAITING.getStatus())
+                .setWatchUsernameSet(watchUsernameSet)
+                .setCurrentStepId(approvalStepPO.getId());
+        int count = approvalRecordService.create(approvalRecordPO);
+        if (count == 0) {
+            throw new BusinessException("插入OA记录表失败");
+        }
+        // 插入步骤记录表
+        createApprovalStepRecord(approvalRecordPO.getId(), date, approvalRecordPO.getCurrentStepId());
+        return true;
+    }
 
     /**
      * 处理后的过程
@@ -183,6 +213,13 @@ public abstract class OfficeAutomationHandler {
      */
     protected abstract Set<String> buildApprovalUsernameSet(ApprovalStepPO approvalStepPO, String documentId);
 
+    /**
+     * 构建审核记录可见人群
+     *
+     * @param approvalRecordPO 审核记录
+     * @return 可见人群的文档编号
+     */
+    protected abstract Set<String> buildWatchUsernameSet(ApprovalRecordPO approvalRecordPO);
 
     /**
      * 检查参数以及操作合法性

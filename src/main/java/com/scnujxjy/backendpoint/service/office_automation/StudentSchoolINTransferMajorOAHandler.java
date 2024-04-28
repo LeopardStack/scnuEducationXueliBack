@@ -2,8 +2,6 @@ package com.scnujxjy.backendpoint.service.office_automation;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -35,7 +33,6 @@ import java.util.Set;
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
 import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.SUCCESS;
-import static com.scnujxjy.backendpoint.constant.enums.OfficeAutomationStepStatus.WAITING;
 
 @Component
 @Slf4j
@@ -55,21 +52,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
         return STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
     }
 
-    /**
-     * 新增一个审批记录
-     * <p>需要添加可以审核用户的集合</p>
-     *
-     * @param approvalRecordPO 审批记录
-     * @return 新增的审批记录
-     * @see CommonOfficeAutomationHandler#createApprovalRecord(ApprovalRecordPO)
-     */
-    @Override
-    protected Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
-        if (Objects.isNull(approvalRecordPO)
-                || Objects.isNull(approvalRecordPO.getApprovalTypeId())
-                || Objects.isNull(approvalRecordPO.getDocumentId())) {
-            throw new BusinessException("OA记录为空或OA类型id为空");
-        }
+    protected Set<String> buildWatchUsernameSet(ApprovalRecordPO approvalRecordPO) {
         // 获取申请表单
         StudentSchoolInTransferMajorDocument studentSchoolInTransferMajorDocument = studentSchoolInTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElse(null);
         if (Objects.isNull(studentSchoolInTransferMajorDocument)) {
@@ -81,28 +64,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
         CollUtil.addAll(watchUserIdSet, collegeAdminInformationService.adminUsernameByCollegeId(studentSchoolInTransferMajorDocument.getToCollegeId()));
         CollUtil.addAll(watchUserIdSet, platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_WATCH.getPermissionSource(),
                 PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
-        approvalRecordPO.setWatchUsernameSet(watchUserIdSet);
-        // 根据类型id获取步骤
-        Long typeId = approvalRecordPO.getApprovalTypeId();
-        List<ApprovalStepPO> approvalStepPOS = approvalStepService.selectByTypeId(typeId);
-        if (CollUtil.isEmpty(approvalStepPOS)) {
-            throw new BusinessException("当前OA类型无步骤");
-        }
-        // 填充记录表数据
-        DateTime date = DateUtil.date();
-        ApprovalStepPO approvalStepPO = approvalStepPOS.get(0);
-        approvalRecordPO.setInitiatorUsername(StpUtil.getLoginIdAsString())
-                .setCreatedAt(date)
-                .setUpdateAt(date)
-                .setStatus(WAITING.getStatus())
-                .setCurrentStepId(approvalStepPO.getId());
-        int count = approvalRecordService.create(approvalRecordPO);
-        if (count == 0) {
-            throw new BusinessException("插入OA记录表失败");
-        }
-        // 插入步骤记录表
-        createApprovalStepRecord(approvalRecordPO.getId(), date, approvalRecordPO.getCurrentStepId());
-        return true;
+        return watchUserIdSet;
     }
 
     /**

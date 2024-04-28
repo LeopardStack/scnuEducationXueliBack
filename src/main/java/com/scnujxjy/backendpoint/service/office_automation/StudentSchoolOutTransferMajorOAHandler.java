@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -37,11 +38,6 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
     @Override
     public OfficeAutomationHandlerType supportType() {
         return OfficeAutomationHandlerType.STUDENT_SCHOOL_OUT_TRANSFER_MAJOR;
-    }
-
-    @Override
-    protected Boolean createApprovalRecord(ApprovalRecordPO approvalRecordPO) {
-        return null;
     }
 
     @Override
@@ -78,6 +74,11 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
                 break;
         }
         return usernameSet;
+    }
+
+    @Override
+    protected Set<String> buildWatchUsernameSet(ApprovalRecordPO approvalRecordPO) {
+        return Collections.emptySet();
     }
 
     @Override
