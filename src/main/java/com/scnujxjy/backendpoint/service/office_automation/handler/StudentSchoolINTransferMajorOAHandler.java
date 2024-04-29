@@ -10,13 +10,17 @@ import com.google.common.collect.Sets;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.constant.enums.SystemMessageStatus;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType1Enum;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.mongoEntity.oa.StudentSchoolInTransferMajorDocument;
 import com.scnujxjy.backendpoint.dao.repository.StudentSchoolInTransferMajorRepository;
 import com.scnujxjy.backendpoint.exception.BusinessException;
+import com.scnujxjy.backendpoint.model.ro.platform_message.SystemMessageRO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -25,10 +29,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
 import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
@@ -108,7 +110,8 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
                 }), studentSchoolInTransferMajorDocument.getId());
             }
         }
-        // TODO 发送通知
+        // 更新原来有的消息
+
 
     }
 
@@ -122,6 +125,35 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
     @Override
     public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
         log.info("学生转专业审核完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
+        // 拉取所有步骤的审核人，然后都通知一次
+        List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordService.selectByApprovalRecordId(approvalRecordPO.getId());
+        if (CollUtil.isEmpty(approvalStepRecordPOS)) {
+            return;
+        }
+        Set<String> usernameSet = approvalStepRecordPOS.stream()
+                .map(ApprovalStepRecordPO::getApprovalUsernameSet)
+                .filter(CollUtil::isNotEmpty)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        // 发送消息
+        SystemMessageRO systemMessageRO = SystemMessageRO.builder()
+                .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
+                .systemMessageType2(SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR.getTypeName())
+                .senderUsername(SystemConstant.SYSTEM_NAME)
+                .systemRelatedId(approvalRecordPO.getId())
+                .receiverUsernameSet(usernameSet)
+                .build();
+        if (SUCCESS.getStatus().equals(approvalRecordPO.getStatus())) {
+            // 发送成功消息
+            systemMessageRO.setMessageStatus(SystemMessageStatus.SUCCESS.getName());
+        } else {
+            systemMessageRO.setMessageStatus(SystemMessageStatus.FAILED.getName());
+        }
+        boolean sendSuccess = systemMessageService.createSystemMessage(systemMessageRO);
+        if (!sendSuccess) {
+            log.error("发送系统消息失败 {}", systemMessageRO);
+            throw new BusinessException("发送系统消息失败");
+        }
     }
 
     @Override

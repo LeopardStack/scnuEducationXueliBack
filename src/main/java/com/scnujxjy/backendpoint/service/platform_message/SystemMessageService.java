@@ -98,12 +98,8 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         }
 
         Date date = new Date();
-        if (Objects.isNull(systemMessageRO.getCreatedAt())) {
-            systemMessageRO.setCreatedAt(date);
-        }
-        if (Objects.isNull(systemMessageRO.getUpdatedAt())) {
-            systemMessageRO.setUpdatedAt(date);
-        }
+        systemMessageRO.setCreatedAt(date);
+        systemMessageRO.setUpdatedAt(date);
 
         // 创建系统消息实体并保存
         SystemMessagePO systemMessagePO = systemMessageInverter.ro2PO(systemMessageRO);
@@ -142,6 +138,43 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         SystemMessagePO systemMessagePO = systemMessageInverter.ro2PO(systemMessageRO);
         int count = baseMapper.updateById(systemMessagePO);
         return count > 0;
+    }
+
+    /**
+     * 新增或更新系统消息
+     *
+     * @param systemMessageRO
+     * @return
+     */
+    public Long saveOrUpdateBySystemRelatedId(SystemMessageRO systemMessageRO) {
+        if (Objects.isNull(systemMessageRO)
+                || Objects.isNull(systemMessageRO.getSystemRelatedId())
+                || Objects.isNull(systemMessageRO.getSystemMessageType1())
+                || Objects.isNull(systemMessageRO.getSystemMessageType2())) {
+            log.warn("系统消息部分为空 {}", systemMessageRO);
+            return null;
+        }
+        SystemMessagePO po = systemMessageInverter.ro2PO(systemMessageRO);
+        Date date = new Date();
+        po.setCreatedAt(date);
+        po.setUpdatedAt(date);
+        SystemMessagePO systemMessagePO = baseMapper.selectOne(Wrappers.<SystemMessagePO>lambdaQuery()
+                .eq(SystemMessagePO::getSystemRelatedId, systemMessageRO.getSystemRelatedId())
+                .eq(SystemMessagePO::getSystemMessageType1, systemMessageRO.getSystemMessageType1())
+                .eq(SystemMessagePO::getSystemMessageType2, systemMessageRO.getSystemMessageType2()));
+        if (Objects.isNull(systemMessagePO)) {
+            boolean count = createSystemMessage(systemMessageRO);
+            if (count) {
+                return po.getId();
+            }
+        } else {
+            po.setId(systemMessagePO.getId());
+            Boolean updated = updateById(systemMessageRO);
+            if (updated) {
+                return po.getId();
+            }
+        }
+        return null;
     }
 
     /**
