@@ -68,4 +68,7 @@ public class SystemMessagePO implements Serializable {
     @ApiModelProperty(value = "更新时间，自动更新")
     private Date updatedAt;
 
+    @ApiModelProperty("发送者username")
+    private String senderUsername;
+
 }

@@ -25,6 +25,9 @@ public class SystemMessageRO {
     @ApiModelProperty("发送者username")
     private String senderUsername;
 
+    @ApiModelProperty("接收者username")
+    private String receiverUsername;
+
     /**
      * 自增主键ID
      */

@@ -101,6 +101,9 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         if (Objects.isNull(systemMessageRO.getCreatedAt())) {
             systemMessageRO.setCreatedAt(date);
         }
+        if (Objects.isNull(systemMessageRO.getUpdatedAt())) {
+            systemMessageRO.setUpdatedAt(date);
+        }
 
         // 创建系统消息实体并保存
         SystemMessagePO systemMessagePO = systemMessageInverter.ro2PO(systemMessageRO);
