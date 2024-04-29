@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.constant.enums.office_automation;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,9 +23,12 @@ public enum SystemMessageType2Enum {
 
     String typeName;
 
-    public static SystemMessageType2Enum match(String typeName){
-        for(SystemMessageType2Enum systemMessageType2Enum : SystemMessageType2Enum.values()){
-            if(systemMessageType2Enum.getTypeName().equals(typeName)){
+    public static SystemMessageType2Enum match(String typeName) {
+        if (StrUtil.isBlank(typeName)) {
+            return null;
+        }
+        for (SystemMessageType2Enum systemMessageType2Enum : SystemMessageType2Enum.values()) {
+            if (systemMessageType2Enum.getTypeName().equals(typeName)) {
                 return systemMessageType2Enum;
             }
         }

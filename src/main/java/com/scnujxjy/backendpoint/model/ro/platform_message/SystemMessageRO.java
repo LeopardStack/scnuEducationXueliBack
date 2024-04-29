@@ -1,29 +1,34 @@
-package com.scnujxjy.backendpoint.dao.entity.oa;
+package com.scnujxjy.backendpoint.model.ro.platform_message;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.Date;
+import java.util.Set;
 
 /**
- * 系统消息表
+ * @author lth
+ * @version 1.0
+ * @description TODO
+ * @date 2024/4/26 15:15
  */
-@ApiModel(description = "系统消息表")
+
 @Data
-@Setter
-@Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("system_message")
-public class SystemMessagePO implements Serializable {
+@Builder
+public class SystemMessageRO {
+
+    @ApiModelProperty("发送者username")
+    private String senderUsername;
+
     /**
      * 自增主键ID
      */
-    @ApiModelProperty(value = "自增主键ID")
+    @ApiModelProperty(value = "自增主键id")
     private Long id;
 
     /**
@@ -62,5 +67,10 @@ public class SystemMessagePO implements Serializable {
     @ApiModelProperty(value = "更新时间，自动更新")
     private Date updatedAt;
 
-    private static final long serialVersionUID = 1L;
+    @ApiModelProperty("接受者username集合")
+    private Set<String> receiverUsernameSet;
+
+    @ApiModelProperty("是否已读")
+    private Boolean isRead;
 }
+
