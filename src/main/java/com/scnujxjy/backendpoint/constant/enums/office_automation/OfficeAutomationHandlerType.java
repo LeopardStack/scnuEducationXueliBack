@@ -20,6 +20,7 @@ public enum OfficeAutomationHandlerType {
      */
     STUDENT_SCHOOL_IN_TRANSFER_MAJOR("student-school-in-transfer-major", "新生校内转专业"),
     STUDENT_SCHOOL_OUT_TRANSFER_MAJOR("student-school-out-transfer-major", "新生校外转专业"),
+    STUDENT_SUSPENSION_OF_STUDY("student-suspension-of-study", "学生休学"),
     COMMON("common", "默认审批流程");
     String type;
 
