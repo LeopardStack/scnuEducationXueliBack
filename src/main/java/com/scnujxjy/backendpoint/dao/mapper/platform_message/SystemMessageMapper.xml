@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.platform_message.SystemMessageMapper">
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.platform_message.SystemMessagePO">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="system_message_type1" jdbcType="VARCHAR" property="systemMessageType1" />
+        <result column="system_message_type2" jdbcType="VARCHAR" property="systemMessageType2" />
+        <result column="message_status" jdbcType="VARCHAR" property="messageStatus" />
+        <result column="system_related_id" jdbcType="BIGINT" property="systemRelatedId" />
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt" />
+    </resultMap>
+    <select id="selectEntities" resultType="com.scnujxjy.backendpoint.model.vo.platform_message.SystemMessageVO">
+        SELECT *
+        FROM platform_message
+        LEFT JOIN system_message ON platform_message.related_message_id = system_message.id
+        WHERE TRUE
+        AND platform_message.message_type ='系统消息'
+        <if test="entity.senderUsername != null and entity.senderUsername != ''">
+            AND platform_message.user_id = #{entity.senderUsername}
+        </if>
+        <if test="entity.systemMessageType1 != null and entity.systemMessageType1 != ''">
+            AND system_message.system_message_type1 = #{entity.systemMessageType1}
+        </if>
+        <if test="entity.systemMessageType2 != null and entity.systemMessageType2 != ''">
+            AND system_message.system_message_type2 = #{entity.systemMessageType2}
+        </if>
+        <if test="entity.messageStatus != null and entity.messageStatus != ''">
+            AND system_message.message_status = #{messageStatus}
+        </if>
+        <if test="entity.isRead != null">
+            AND platform_message.is_read = #{entity.isRead}
+        </if>
+        ORDER BY system_message.updated_at desc
+        <if test="page.pageStart != null and page.pageEnd != null">
+            LIMIT #{page.pageStart}, #{page.pageEnd}
+        </if>
+    </select>
+    <select id="selectEntitiesCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM platform_message
+        LEFT JOIN system_message ON platform_message.related_message_id = system_message.id
+        WHERE TRUE
+        AND platform_message.message_type ='系统消息'
+        <if test="entity.senderUsername != null and entity.senderUsername != ''">
+            AND platform_message.user_id = #{entity.senderUsername}
+        </if>
+        <if test="entity.systemMessageType1 != null and entity.systemMessageType1 != ''">
+            AND system_message.system_message_type1 = #{entity.systemMessageType1}
+        </if>
+        <if test="entity.systemMessageType2 != null and entity.systemMessageType2 != ''">
+            AND system_message.system_message_type2 = #{entity.systemMessageType2}
+        </if>
+        <if test="entity.messageStatus != null and entity.messageStatus != ''">
+            AND system_message.message_status = #{messageStatus}
+        </if>
+        <if test="entity.isRead != null">
+            AND platform_message.is_read = #{entity.isRead}
+        </if>
+    </select>
+</mapper>
