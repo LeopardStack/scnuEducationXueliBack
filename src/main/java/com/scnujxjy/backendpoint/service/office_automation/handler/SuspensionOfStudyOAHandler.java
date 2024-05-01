@@ -4,6 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Sets;
+import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
@@ -24,6 +26,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
+
 @Component
 @Slf4j
 @Transactional
@@ -42,8 +46,12 @@ public class SuspensionOfStudyOAHandler extends OfficeAutomationHandler {
         if (Objects.isNull(document)) {
             throw new BusinessException("休学申请表单为空");
         }
+        // 监听人群：学生本人
         Set<String> watchUsernameSet = CollUtil.newHashSet(StpUtil.getLoginIdAsString());
-        watchUsernameSet.addAll(platformUserService.selectUsernameByRoleName(Sets.newHashSet(RoleEnum.ACADEMIC_ADMIN.getRoleName())));
+        // 监听人群：学生所属学院的教务员
+        CollUtil.addAll(collegeAdminInformationService.adminUsernameByCollegeId(document.getCollegeId()), watchUsernameSet);
+        // 监听人群：其他有相同资源配置的人
+        CollUtil.addAll(watchUsernameSet, platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_SUSPENSION_WATCH.getPermissionSource(),PermissionSourceEnum.APPROVAL_SUSPENSION_APPROVAL.getPermissionSource())));
         return watchUsernameSet;
     }
 
@@ -63,14 +71,29 @@ public class SuspensionOfStudyOAHandler extends OfficeAutomationHandler {
 
         Set<String> usernameSet = CollUtil.newHashSet();
         // 根据步骤顺序，设置不同的审核人群
-        // 例如：根据学院ID添加院系管理员等
+
+        switch (approvalStepPO.getStepOrder()){
+            case ONE_INT:
+                // 提交学生审核
+                usernameSet.add(document.getStudentUsername());
+                break;
+            case TWO_INT:
+            case THREE_INT:
+                // 学院教务员审核
+                CollUtil.addAll(collegeAdminInformationService.adminUsernameByCollegeId(document.getCollegeId()), usernameSet);
+                break;
+            default:
+                log.info("审核完成");
+                break;
+        }
+        log.info("下一步审核用户群 {}", usernameSet);
         return usernameSet;
     }
 
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
         log.info("处理休学申请步骤完成, 当前步骤: {}, 当前记录: {}", approvalStepRecordPO, approvalRecordPO);
-        // 这里可以添加更多逻辑处理休学申请的细节
+        // TODO: 发送信息
     }
 
     @Override

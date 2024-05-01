@@ -40,8 +40,11 @@ public class SuspensionOfStudyDocument {
     // 办学形式
     private String educationMode;
 
+    // 院系ID
+    private String collegeId;
+
     // 院系名称
-    private String departmentName;
+    private String collegeName;
 
     // 学制
     private String educationalSystem;
