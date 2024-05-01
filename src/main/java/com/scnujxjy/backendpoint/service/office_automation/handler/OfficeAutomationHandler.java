@@ -6,6 +6,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
+import com.scnujxjy.backendpoint.constant.enums.SystemMessageStatus;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType1Enum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
@@ -105,6 +106,20 @@ public abstract class OfficeAutomationHandler {
         }
         // 插入步骤记录表
         createApprovalStepRecord(approvalRecordPO.getId(), date, approvalRecordPO.getCurrentStepId());
+        // 新增或更新信息
+        SystemMessageRO systemMessageRO = SystemMessageRO.builder()
+                .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
+                .systemMessageType2(SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR.getTypeName())
+                .senderUsername(approvalRecordPO.getInitiatorUsername())
+                .messageStatus(SystemMessageStatus.WAITING.getDescription())
+                .systemRelatedId(approvalRecordPO.getId())
+                .receiverUsernameSet(approvalRecordPO.getWatchUsernameSet())
+                .build();
+        boolean isSendSuccess = systemMessageService.createSystemMessage(systemMessageRO);
+        if (!isSendSuccess) {
+            log.warn("发送系统消息失败 {}", systemMessageRO);
+            throw new BusinessException("发送系统消息失败");
+        }
         return true;
     }
 
@@ -210,19 +225,6 @@ public abstract class OfficeAutomationHandler {
         int count = approvalStepRecordService.create(approvalStepRecordPO);
         if (count == 0) {
             throw new BusinessException("插入新的步骤记录失败");
-        }
-        // 新增消息
-        SystemMessageRO systemMessageRO = SystemMessageRO.builder()
-                .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
-                .systemMessageType2(SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR.getTypeName())
-                .senderUsername(approvalRecordPO.getInitiatorUsername())
-                .systemRelatedId(approvalRecordPO.getId())
-                .receiverUsernameSet(usernameSet)
-                .build();
-        boolean sendSuccess = systemMessageService.createSystemMessage(systemMessageRO);
-        if (!sendSuccess) {
-            log.warn("发送系统消息失败 {}", systemMessageRO);
-            throw new BusinessException("发送系统消息失败");
         }
         return count;
     }

@@ -6,10 +6,13 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.constant.enums.SystemMessageStatus;
 import com.scnujxjy.backendpoint.constant.enums.YesOrNoEnum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType1Enum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.SystemMessagePO;
 import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
@@ -19,20 +22,21 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.SystemMessageVO;
+import com.scnujxjy.backendpoint.service.office_automation.approval.ApprovalStepRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus.*;
 
 
 @Service
 @Slf4j
+@Transactional(rollbackFor = Exception.class)
 public class SystemMessageService extends ServiceImpl<SystemMessageMapper, SystemMessagePO> implements IService<SystemMessagePO> {
 
     @Resource
@@ -47,13 +51,15 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
     @Resource
     private SystemMessageInverter systemMessageInverter;
 
+    @Resource
+    private ApprovalStepRecordService approvalStepRecordService;
+
     /**
      * 生成系统消息
      *
      * @param systemMessageRO
      * @return
      */
-    @Transactional
     public boolean createSystemMessage(SystemMessageRO systemMessageRO) {
         if (Objects.isNull(systemMessageRO)) {
             log.warn("systemMessageRO is null");
@@ -142,6 +148,7 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
 
     /**
      * 新增或更新系统消息
+     * <p>根据systemType1、systemType2、systemRelateId来判断消息是否存在</p>
      *
      * @param systemMessageRO
      * @return
@@ -178,6 +185,56 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
     }
 
     /**
+     * 新增或更新审批信息
+     * <p>当usernameSet为空时，默认发送给所有审批人</p>
+     * <p>底层调用 {@link SystemMessageService#saveOrUpdateBySystemRelatedId(SystemMessageRO)}</p>
+     *
+     * @param approvalRecordPO       审批记录
+     * @param usernameSet            接收人群username
+     * @param systemMessageType2Enum 系统消息类型2-指定OA类型
+     *                               {@link com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus}
+     * @return 系统消息id
+     */
+    public Long saveOrUpdateApprovalMessage(ApprovalRecordPO approvalRecordPO, Set<String> usernameSet, SystemMessageType2Enum systemMessageType2Enum) {
+        if (Objects.isNull(approvalRecordPO)
+                || Objects.isNull(approvalRecordPO.getId())
+                || Objects.isNull(approvalRecordPO.getStatus())) {
+            log.info("审批记录信息校验失败 {}", approvalRecordPO);
+            return null;
+        }
+        if (CollUtil.isEmpty(usernameSet)) {
+            // 拉取所有步骤的审核人，然后都通知一次
+            List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordService.selectByApprovalRecordId(approvalRecordPO.getId());
+            if (CollUtil.isEmpty(approvalStepRecordPOS)) {
+                log.info("获取审批步骤记录失败");
+                return null;
+            }
+            usernameSet = approvalStepRecordPOS.stream()
+                    .map(ApprovalStepRecordPO::getApprovalUsernameSet)
+                    .filter(CollUtil::isNotEmpty)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+        }
+        // 发送消息
+        SystemMessageRO systemMessageRO = SystemMessageRO.builder()
+                .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
+                .systemMessageType2(systemMessageType2Enum.getTypeName())
+                .senderUsername(approvalRecordPO.getInitiatorUsername())
+                .systemRelatedId(approvalRecordPO.getId())
+                .receiverUsernameSet(usernameSet)
+                .build();
+        if (SUCCESS.getStatus().equals(approvalRecordPO.getStatus())) {
+            // 发送成功消息
+            systemMessageRO.setMessageStatus(SystemMessageStatus.SUCCESS.getDescription());
+        } else if (FAILED.getStatus().equals(approvalRecordPO.getStatus())) {
+            systemMessageRO.setMessageStatus(SystemMessageStatus.FAILED.getDescription());
+        } else if (WAITING.getStatus().equals(approvalRecordPO.getStatus())) {
+            systemMessageRO.setMessageStatus(SystemMessageStatus.WAITING.getDescription());
+        }
+        return saveOrUpdateBySystemRelatedId(systemMessageRO);
+    }
+
+    /**
      * 分页查询系统消息，并转换成VO对象返回
      *
      * @param systemMessageROPageRO 包含分页信息和筛选条件的PageRO对象
@@ -204,6 +261,3 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         return new PageVO<>(systemMessageROPageRO, count, systemMessageVOS);
     }
 }
-
-
-
