@@ -17,7 +17,10 @@
         WHERE TRUE
         AND platform_message.message_type ='系统消息'
         <if test="entity.senderUsername != null and entity.senderUsername != ''">
-            AND platform_message.user_id = #{entity.senderUsername}
+            AND system_message.sender_username = #{entity.senderUsername}
+        </if>
+        <if test="entity.senderUsername != null and entity.senderUsername != ''">
+            AND platform_message.user_id = #{entity.receiverUsername}
         </if>
         <if test="entity.systemMessageType1 != null and entity.systemMessageType1 != ''">
             AND system_message.system_message_type1 = #{entity.systemMessageType1}
@@ -43,7 +46,7 @@
         WHERE TRUE
         AND platform_message.message_type ='系统消息'
         <if test="entity.senderUsername != null and entity.senderUsername != ''">
-            AND platform_message.user_id = #{entity.senderUsername}
+            AND system_message.sender_username = #{entity.senderUsername}
         </if>
         <if test="entity.systemMessageType1 != null and entity.systemMessageType1 != ''">
             AND system_message.system_message_type1 = #{entity.systemMessageType1}

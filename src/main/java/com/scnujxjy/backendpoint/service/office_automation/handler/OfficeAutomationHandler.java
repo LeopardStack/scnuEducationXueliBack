@@ -6,17 +6,24 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.scnujxjy.backendpoint.constant.SystemConstant;
+import com.scnujxjy.backendpoint.constant.enums.SystemMessageStatus;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType1Enum;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.exception.BusinessException;
+import com.scnujxjy.backendpoint.model.ro.platform_message.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepRecordWithStepInformation;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.college.CollegeAdminInformationService;
 import com.scnujxjy.backendpoint.service.office_automation.approval.ApprovalRecordService;
 import com.scnujxjy.backendpoint.service.office_automation.approval.ApprovalStepRecordService;
 import com.scnujxjy.backendpoint.service.office_automation.approval.ApprovalStepService;
+import com.scnujxjy.backendpoint.service.platform_message.SystemMessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 import javax.annotation.Resource;
@@ -30,6 +37,7 @@ import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeA
  */
 public abstract class OfficeAutomationHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(OfficeAutomationHandler.class);
     @Resource
     protected ApprovalRecordService approvalRecordService;
 
@@ -48,6 +56,9 @@ public abstract class OfficeAutomationHandler {
 
     @Resource
     protected CollegeAdminInformationService collegeAdminInformationService;
+
+    @Resource
+    protected SystemMessageService systemMessageService;
 
 
     /**
@@ -95,6 +106,20 @@ public abstract class OfficeAutomationHandler {
         }
         // 插入步骤记录表
         createApprovalStepRecord(approvalRecordPO.getId(), date, approvalRecordPO.getCurrentStepId());
+        // 新增或更新信息
+        SystemMessageRO systemMessageRO = SystemMessageRO.builder()
+                .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
+                .systemMessageType2(SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR.getTypeName())
+                .senderUsername(approvalRecordPO.getInitiatorUsername())
+                .messageStatus(SystemMessageStatus.WAITING.getDescription())
+                .systemRelatedId(approvalRecordPO.getId())
+                .receiverUsernameSet(approvalRecordPO.getWatchUsernameSet())
+                .build();
+        boolean isSendSuccess = systemMessageService.createSystemMessage(systemMessageRO);
+        if (!isSendSuccess) {
+            log.warn("发送系统消息失败 {}", systemMessageRO);
+            throw new BusinessException("发送系统消息失败");
+        }
         return true;
     }
 

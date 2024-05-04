@@ -3,7 +3,6 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -51,7 +50,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -159,7 +157,7 @@ public class HealthCheckTask {
     /**
      * 使用@PostConstruct注解确保在SpringBoot启动时执行此方法
      */
-    @PostConstruct
+//    @PostConstruct
     public void clearRedisDataOnStartup() {
         try {
             // 清除Redis中的所有数据

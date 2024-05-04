@@ -1,10 +1,14 @@
 package com.scnujxjy.backendpoint.service.office_automation.handler;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
+import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
@@ -20,7 +24,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -42,12 +46,23 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
 
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
-
+        log.info("学生校外转专业步骤流转，目前步骤 {} 目前记录 {}", approvalStepRecordPO, approvalRecordPO);
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, approvalStepRecordPO.getApprovalUsernameSet(), SystemMessageType2Enum.SCHOOL_OUT_TRANSFER_MAJOR);
+        if (Objects.isNull(messageId)) {
+            log.info("发送系统消息失败");
+            throw new BusinessException("发送系统消息失败");
+        }
     }
 
     @Override
     public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
-
+        log.info("校外转专业完成 审批记录 {} 最后一步记录 {}", approvalRecordPO, approvalStepRecordPO);
+        // 新增或更新信息
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, Sets.newHashSet(), SystemMessageType2Enum.SCHOOL_OUT_TRANSFER_MAJOR);
+        if (Objects.isNull(messageId)) {
+            log.error("发送系统消息失败");
+            throw new BusinessException("发送系统消息失败");
+        }
     }
 
 
@@ -65,10 +80,11 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
                 break;
             case TWO_INT:
                 // 确认表单并打印
-
+                usernameSet.add(studentSchoolOutTransferMajorDocument.getStudentUsername());
                 break;
             case THREE_INT:
                 // 继续教育学院确认
+                usernameSet.addAll(platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
                 break;
             default:
                 break;
@@ -78,7 +94,12 @@ public class StudentSchoolOutTransferMajorOAHandler extends OfficeAutomationHand
 
     @Override
     protected Set<String> buildWatchUsernameSet(ApprovalRecordPO approvalRecordPO) {
-        return Collections.emptySet();
+        StudentSchoolOutTransferMajorDocument studentSchoolOutTransferMajorDocument = studentSchoolOutTransferMajorRepository.findById(approvalRecordPO.getDocumentId()).orElseThrow(() -> new BusinessException("无法查询到表单信息"));
+        HashSet<String> watchUsernameSet = CollUtil.newHashSet(StpUtil.getLoginIdAsString());
+        watchUsernameSet.add(studentSchoolOutTransferMajorDocument.getStudentUsername());
+        watchUsernameSet.addAll(platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_WATCH.getPermissionSource(),
+                PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource())));
+        return watchUsernameSet;
     }
 
     @Override

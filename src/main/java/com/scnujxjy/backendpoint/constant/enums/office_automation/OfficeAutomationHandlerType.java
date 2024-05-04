@@ -18,13 +18,13 @@ public enum OfficeAutomationHandlerType {
     /**
      * 保证数据库中的name与枚举类中的name一致
      */
-    STUDENT_SCHOOL_IN_TRANSFER_MAJOR("student-school-in-transfer-major", "新生校内转专业"),
-    STUDENT_SCHOOL_OUT_TRANSFER_MAJOR("student-school-out-transfer-major", "新生校外转专业"),
     STUDENT_SUSPENSION_OF_STUDY("student-suspension-of-study", "学生休学"),
+    STUDENT_SCHOOL_IN_TRANSFER_MAJOR("student-school-in-transfer-major", "校内转专业"),
+    STUDENT_SCHOOL_OUT_TRANSFER_MAJOR("student-school-out-transfer-major", "校外转专业"),
     COMMON("common", "默认审批流程");
     String type;
 
-    String description;
+    String name;
 
     /**
      * 根据类型id查找数据库中的数据
@@ -36,11 +36,11 @@ public enum OfficeAutomationHandlerType {
     public static OfficeAutomationHandlerType match(Long typeId) {
         ApprovalTypeMapper approvalTypeMapper = ApplicationContextProvider.getApplicationContext().getBean(ApprovalTypeMapper.class);
         ApprovalTypePO approvalTypePO = approvalTypeMapper.selectById(typeId);
-        if (Objects.isNull(approvalTypePO) || StrUtil.isBlank(approvalTypePO.getDescription())) {
+        if (Objects.isNull(approvalTypePO) || StrUtil.isBlank(approvalTypePO.getName())) {
             return null;
         }
         for (OfficeAutomationHandlerType value : OfficeAutomationHandlerType.values()) {
-            if (approvalTypePO.getDescription().equals(value.getDescription())) {
+            if (approvalTypePO.getName().equals(value.getName())) {
                 return value;
             }
         }
