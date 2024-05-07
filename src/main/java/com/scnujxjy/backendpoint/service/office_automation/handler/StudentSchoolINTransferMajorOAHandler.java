@@ -11,7 +11,6 @@ import com.scnujxjy.backendpoint.constant.SystemConstant;
 import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
-import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalRecordPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
@@ -110,7 +109,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
             }
         }
         // 新增或更新信息
-        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, approvalStepRecordPO.getApprovalUsernameSet(), SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR);
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, approvalStepRecordPO.getApprovalUsernameSet(), STUDENT_SCHOOL_IN_TRANSFER_MAJOR);
         if (Objects.isNull(messageId)) {
             log.warn("发送系统消息失败");
             throw new BusinessException("发送系统消息失败");
@@ -128,7 +127,7 @@ public class StudentSchoolINTransferMajorOAHandler extends OfficeAutomationHandl
     @Override
     public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
         log.info("学生转专业审核完成，审批记录：{}，最后一步记录：{}", approvalRecordPO, approvalStepRecordPO);
-        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, Sets.newHashSet(), SystemMessageType2Enum.SCHOOL_IN_TRANSFER_MAJOR);
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, Sets.newHashSet(), STUDENT_SCHOOL_IN_TRANSFER_MAJOR);
         if (Objects.isNull(messageId)) {
             log.error("发送系统消息失败");
             throw new BusinessException("发送系统消息失败");

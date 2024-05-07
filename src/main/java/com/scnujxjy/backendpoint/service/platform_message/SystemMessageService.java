@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.SystemMessageStatus;
 import com.scnujxjy.backendpoint.constant.enums.YesOrNoEnum;
+import com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType1Enum;
 import com.scnujxjy.backendpoint.constant.enums.office_automation.SystemMessageType2Enum;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
@@ -189,13 +190,12 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
      * <p>当usernameSet为空时，默认发送给所有审批人</p>
      * <p>底层调用 {@link SystemMessageService#saveOrUpdateBySystemRelatedId(SystemMessageRO)}</p>
      *
-     * @param approvalRecordPO       审批记录
-     * @param usernameSet            接收人群username
-     * @param systemMessageType2Enum 系统消息类型2-指定OA类型
-     *                               {@link com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationStepStatus}
+     * @param approvalRecordPO            审批记录
+     * @param usernameSet                 接收人群username
+     * @param officeAutomationHandlerType {@link OfficeAutomationHandlerType}
      * @return 系统消息id
      */
-    public Long saveOrUpdateApprovalMessage(ApprovalRecordPO approvalRecordPO, Set<String> usernameSet, SystemMessageType2Enum systemMessageType2Enum) {
+    public Long saveOrUpdateApprovalMessage(ApprovalRecordPO approvalRecordPO, Set<String> usernameSet, OfficeAutomationHandlerType officeAutomationHandlerType) {
         if (Objects.isNull(approvalRecordPO)
                 || Objects.isNull(approvalRecordPO.getId())
                 || Objects.isNull(approvalRecordPO.getStatus())) {
@@ -218,7 +218,7 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         // 发送消息
         SystemMessageRO systemMessageRO = SystemMessageRO.builder()
                 .systemMessageType1(SystemMessageType1Enum.TRANSACTION_APPROVAL.getTypeName())
-                .systemMessageType2(systemMessageType2Enum.getTypeName())
+                .systemMessageType2(SystemMessageType2Enum.match(officeAutomationHandlerType).getTypeName())
                 .senderUsername(approvalRecordPO.getInitiatorUsername())
                 .systemRelatedId(approvalRecordPO.getId())
                 .receiverUsernameSet(usernameSet)
