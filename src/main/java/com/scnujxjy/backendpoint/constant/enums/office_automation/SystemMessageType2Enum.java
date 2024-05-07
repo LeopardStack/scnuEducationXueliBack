@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 /**
  * @author lth
  * @version 1.0
@@ -17,8 +19,12 @@ import lombok.NoArgsConstructor;
 public enum SystemMessageType2Enum {
 
     SCHOOL_IN_TRANSFER_MAJOR("校内转专业"),
-    SCHOOL_OUT_TRANSFER_MAJOR("校外转专业");
+    SCHOOL_OUT_TRANSFER_MAJOR("校外转专业"),
+    COMMON("默认审批流程");
 
+    /**
+     * 此处的typeName要与{@link OfficeAutomationHandlerType#getName()}相同
+     */
     String typeName;
 
     public static SystemMessageType2Enum match(String typeName) {
@@ -33,4 +39,15 @@ public enum SystemMessageType2Enum {
         return null;
     }
 
+    public static SystemMessageType2Enum match(OfficeAutomationHandlerType type) {
+        if (Objects.isNull(type)) {
+            return COMMON;
+        }
+        for (SystemMessageType2Enum systemMessageType2Enum : SystemMessageType2Enum.values()) {
+            if (StrUtil.equals(systemMessageType2Enum.getTypeName(), type.name())) {
+                return systemMessageType2Enum;
+            }
+        }
+        return COMMON;
+    }
 }
