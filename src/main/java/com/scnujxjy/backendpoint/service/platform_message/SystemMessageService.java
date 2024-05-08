@@ -61,26 +61,26 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
      * @param systemMessageRO
      * @return
      */
-    public boolean createSystemMessage(SystemMessageRO systemMessageRO) {
+    public Long createSystemMessage(SystemMessageRO systemMessageRO) {
         if (Objects.isNull(systemMessageRO)) {
             log.warn("systemMessageRO is null");
-            return false;
+            return null;
         }
         if (StrUtil.isBlank(systemMessageRO.getSenderUsername())) {
             log.warn("发送人username不能为空");
-            return false;
+            return null;
         }
         Set<String> receiverUsernameSet = systemMessageRO.getReceiverUsernameSet();
         if (CollUtil.isEmpty(receiverUsernameSet)) {
             log.warn("接收人username集合为空");
-            return false;
+            return null;
         }
         List<PlatformUserPO> platformUserPOS = platformUserMapper.selectList(Wrappers.<PlatformUserPO>lambdaQuery()
                 .select(PlatformUserPO::getUsername)
                 .in(PlatformUserPO::getUsername, receiverUsernameSet));
         if (CollUtil.isEmpty(platformUserPOS)) {
             log.warn("接收人username集合不存在");
-            return false;
+            return null;
         }
         Set<String> existUsernameSet = platformUserPOS.stream()
                 .map(PlatformUserPO::getUsername)
@@ -88,20 +88,20 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         Set<String> notExistUsernameSet = receiverUsernameSet.stream().filter(username -> !existUsernameSet.contains(username)).collect(Collectors.toSet());
         if (CollUtil.isNotEmpty(notExistUsernameSet)) {
             log.warn("不存在的username集合 {}", notExistUsernameSet);
-            return false;
+            return null;
         }
 
         String messageStatus = systemMessageRO.getMessageStatus();
         if (Objects.isNull(messageStatus)) {
             log.warn("消息状态为空");
-            return false;
+            return null;
         }
 
         SystemMessageType1Enum match1 = SystemMessageType1Enum.match(systemMessageRO.getSystemMessageType1());
         SystemMessageType2Enum match2 = SystemMessageType2Enum.match(systemMessageRO.getSystemMessageType2());
         if (Objects.isNull(match1) || Objects.isNull(match2)) {
             log.warn("消息类型1或消息类型2不匹配");
-            return false;
+            return null;
         }
 
         Date date = new Date();
@@ -114,9 +114,13 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
         int res = systemMessageMapper.insert(systemMessagePO);
         if (res == 0) {
             log.warn("系统消息插入失败");
-            return false;
+            return null;
         }
         Long messagePOId = systemMessagePO.getId();
+        if (Objects.isNull(messagePOId)) {
+            log.warn("系统消息id为空");
+            return null;
+        }
         //为每个审批用户插入一条平台消息
         List<PlatformMessagePO> platformMessagePOS = existUsernameSet.stream()
                 .map(username ->
@@ -130,7 +134,12 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
                                 .build())
                 .collect(Collectors.toList());
 
-        return platformMessageService.saveBatch(platformMessagePOS);
+        boolean saveBatch = platformMessageService.saveBatch(platformMessagePOS);
+        if (!saveBatch) {
+            log.warn("平台消息插入失败");
+            return null;
+        }
+        return systemMessagePO.getId();
     }
 
     /**
@@ -171,10 +180,11 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
                 .eq(SystemMessagePO::getSystemMessageType1, systemMessageRO.getSystemMessageType1())
                 .eq(SystemMessagePO::getSystemMessageType2, systemMessageRO.getSystemMessageType2()));
         if (Objects.isNull(systemMessagePO)) {
-            boolean count = createSystemMessage(systemMessageRO);
-            if (count) {
-                return po.getId();
+            Long messageId = createSystemMessage(systemMessageRO);
+            if (Objects.isNull(messageId)) {
+                return null;
             }
+            return messageId;
         } else {
             po.setId(systemMessagePO.getId());
             Boolean updated = updateById(systemMessageRO);

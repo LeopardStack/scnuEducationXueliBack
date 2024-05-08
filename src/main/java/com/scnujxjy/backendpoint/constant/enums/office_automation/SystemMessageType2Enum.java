@@ -20,6 +20,7 @@ public enum SystemMessageType2Enum {
 
     SCHOOL_IN_TRANSFER_MAJOR("校内转专业"),
     SCHOOL_OUT_TRANSFER_MAJOR("校外转专业"),
+    STUDENT_SUSPENSION_OF_STUDY("学生休学"),
     COMMON("默认审批流程");
 
     /**
@@ -44,7 +45,7 @@ public enum SystemMessageType2Enum {
             return COMMON;
         }
         for (SystemMessageType2Enum systemMessageType2Enum : SystemMessageType2Enum.values()) {
-            if (StrUtil.equals(systemMessageType2Enum.getTypeName(), type.name())) {
+            if (systemMessageType2Enum.getTypeName().equals(type.getName())) {
                 return systemMessageType2Enum;
             }
         }
