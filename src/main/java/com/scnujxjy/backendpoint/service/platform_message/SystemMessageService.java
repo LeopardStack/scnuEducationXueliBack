@@ -186,10 +186,10 @@ public class SystemMessageService extends ServiceImpl<SystemMessageMapper, Syste
             }
             return messageId;
         } else {
-            po.setId(systemMessagePO.getId());
+            systemMessageRO.setId(systemMessagePO.getId());
             Boolean updated = updateById(systemMessageRO);
             if (updated) {
-                return po.getId();
+                return systemMessageRO.getId();
             }
         }
         return null;

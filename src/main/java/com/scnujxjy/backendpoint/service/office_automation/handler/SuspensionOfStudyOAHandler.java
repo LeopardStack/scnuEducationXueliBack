@@ -80,6 +80,9 @@ public class SuspensionOfStudyOAHandler extends OfficeAutomationHandler {
                 usernameSet.add(document.getStudentUsername());
                 break;
             case TWO_INT:
+                // 学院教务员审核
+                CollUtil.addAll(collegeAdminInformationService.adminUsernameByCollegeId(document.getCollegeId()), usernameSet);
+                break;
             case THREE_INT:
                 // 学院教务员审核
                 CollUtil.addAll(collegeAdminInformationService.adminUsernameByCollegeId(document.getCollegeId()), usernameSet);
