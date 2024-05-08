@@ -109,6 +109,7 @@ spring:
 
   elasticsearch:
     uris: 124.71.34.208:9200
+    ip: 124.71.34.208
     port: 9200
     username: elastic
     password: elastic
@@ -132,14 +133,22 @@ logging:
 #    org.apache.ibatis: DEBUG
 #    com.scnujxjy.backendpoint.dao.mapper: DEBUG
 
-
 minio:
-  url: http://124.71.34.208:9000/
-  accessKey: LZUTGX5G7ESR7UPBQ6XG
-  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
+  #  url: http://113.108.140.173:8000/
+  url: https://scnuXueliBack.gdou.com/
+  accessKey: WU2D2LUC4BM0KHDLESAH
+  secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
   bucketName: xuelistudentpictures
-  courseCoverDir: xueli-course-resources
-  importBucketName: dataimport
+  courseCoverDir: xueli-course-resources-test
+  importBucketName: dataimport-test
+
+#minio:
+#  url: http://124.71.34.208:9000/
+#  accessKey: LZUTGX5G7ESR7UPBQ6XG
+#  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
+#  bucketName: xuelistudentpictures
+#  courseCoverDir: xueli-course-resources
+#  importBucketName: dataimport
 
 
 sa-token:
