@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.scnujxjy.backendpoint.constant.NumberConstant.*;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType.STUDENT_SCHOOL_IN_TRANSFER_MAJOR;
+import static com.scnujxjy.backendpoint.constant.enums.office_automation.OfficeAutomationHandlerType.STUDENT_SUSPENSION_OF_STUDY;
 
 @Component
 @Slf4j
@@ -93,13 +95,23 @@ public class SuspensionOfStudyOAHandler extends OfficeAutomationHandler {
     @Override
     public void afterProcess(ApprovalStepRecordPO approvalStepRecordPO, ApprovalRecordPO approvalRecordPO) {
         log.info("处理休学申请步骤完成, 当前步骤: {}, 当前记录: {}", approvalStepRecordPO, approvalRecordPO);
-        // TODO: 发送信息
+        // 新增或更新信息
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, approvalStepRecordPO.getApprovalUsernameSet(), STUDENT_SUSPENSION_OF_STUDY);
+        if (Objects.isNull(messageId)) {
+            log.warn("发送系统消息失败");
+            throw new BusinessException("发送系统消息失败");
+        }
     }
 
     @Override
     public void afterApproval(ApprovalRecordPO approvalRecordPO, ApprovalStepRecordPO approvalStepRecordPO) {
         log.info("休学申请审核完成, 审批记录: {}, 最后一步记录: {}", approvalRecordPO, approvalStepRecordPO);
         // 发送通知等后续操作
+        Long messageId = systemMessageService.saveOrUpdateApprovalMessage(approvalRecordPO, Sets.newHashSet(), STUDENT_SUSPENSION_OF_STUDY);
+        if (Objects.isNull(messageId)) {
+            log.error("发送系统消息失败");
+            throw new BusinessException("发送系统消息失败");
+        }
     }
 
     /**
