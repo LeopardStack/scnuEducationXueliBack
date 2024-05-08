@@ -15,4 +15,10 @@ import lombok.experimental.Accessors;
 public class CourseClassMappingRO {
     @ApiModelProperty(value = "课程ID", example = "1")
     private Long courseId;
+
+    @ApiModelProperty(value = "课程名称", example = "教育学")
+    private String courseName;
+
+    @ApiModelProperty(value = "班级标识", example = "240311")
+    private String classIdentifier;
 }

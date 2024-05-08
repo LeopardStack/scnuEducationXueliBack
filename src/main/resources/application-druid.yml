@@ -1,0 +1,181 @@
+server:
+  port: 40000
+
+run:
+  schedule: false  # 设置为 true 以启动定时任务，设置为 false 则不运行
+  oldDataSynchronizeStatus: false  # 开启旧系统同步
+  checkLivingStatusScan: false  # 开启直播状态
+
+scnu-cors:
+  open: false
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+  data:
+    mongodb:
+      uri: mongodb://scnuXueli:ScnuXueliDB2023@113.108.140.172:27017,113.108.140.174:27017,113.108.140.173:27017/scnuXueliDB?replicaSet=rs0
+
+  redis:
+    host: 113.108.140.172
+    port: 6379
+    password: 12345A
+
+  # rabbitmq
+  rabbitmq:
+    host: 113.108.140.173
+    port: 8003
+    username: rabbitmq
+    password: password
+    queue1: data_synchronize_dev
+    queue2: test1_dev
+    queue3: data_export_dev
+    queue4: data_export2_dev
+    queue5: data_system_msg_dev
+    queue6: data_upload_dev
+    # 这个队列是用来发送操作消息给 CDN 服务
+    cdn_queue1: cdn_file_operation1_alice
+    # 这个队列是用来监听 CDN 服务发送过来的响应消息的
+    cdn_queue2: cdn_file_operation1_blob
+
+  servlet:
+    multipart:
+      maxFileSize: 10GB
+      maxRequestSize: 10GB
+  shardingsphere:
+    # 属性配置
+    props:
+      # 显示修改以后的sql语句
+      sql-show: false  # 是否打印sql
+      sql-simple: false  # 打印简单的sql
+    datasource:
+      names: master,slave
+      master:
+        type: com.alibaba.druid.pool.DruidDataSource  # 更改数据源类型为Druid
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: xhl2023@
+        druid:
+          max-active: 2000  # Druid的最大连接数设置
+          min-idle: 10  # 最小空闲连接数
+          initial-size: 10  # 初始化建立物理连接的个数
+          max-wait: 60000  # 获取连接时最大等待时间，单位毫秒
+          time-between-eviction-runs-millis: 60000  # 有两个含义：1. Destroy线程会检测连接的间隔时间；2. testWhileIdle的时间间隔
+          min-evictable-idle-time-millis: 300000  # 连接在池中最小生存的时间
+      slave:
+        type: com.alibaba.druid.pool.DruidDataSource  # 更改数据源类型为Druid
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://113.108.140.173:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: xhl2023@
+        druid:
+          max-active: 2000
+          min-idle: 10
+          initial-size: 10
+          max-wait: 60000
+          time-between-eviction-runs-millis: 60000
+          min-evictable-idle-time-millis: 300000
+    rules:
+      readwrite-splitting:
+        data-sources:
+          mds:
+            type: static
+            props:
+              auto-aware-data-source-name: master
+              write-data-source-name: master
+              read-data-source-names: master, slave
+            load-balancer-name: read-random
+        load-balancers:
+          read-random:
+            type: ROUND_ROBIN
+
+  elasticsearch:
+    uris: 113.108.140.170
+    port: 9200
+    username: elastic
+    password: elastic
+    scheme: http
+    index_name: es_xueli_index
+    pipelineName: es_xueli_pipeline
+
+#配置日志
+mybatis-plus:
+  mapper-locations: classpath*:mappers/**/*xml
+  type-aliases-package: com.scnujxjy.backendpoint.dao.entity
+  configuration:
+    map-underscore-to-camel-case: true
+#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出到控制台
+#    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl # 使用 SLF4J 和 Logback
+
+
+# 设置日志输出
+logging:
+  config: src/main/resources/logback.xml
+#  level:
+#    org.apache.ibatis: DEBUG
+#    com.scnujxjy.backendpoint.dao.mapper: DEBUG
+#    org:
+#      springframework: DEBUG
+
+
+minio:
+  #  url: http://113.108.140.173:8000/
+  url: https://scnuXueliBack.gdou.com/
+  accessKey: WU2D2LUC4BM0KHDLESAH
+  secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
+  bucketName: xuelistudentpictures
+  courseCoverDir: xueli-course-resources
+  importBucketName: dataimport
+
+
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: xl_token
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 30000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false
+
+# 开启 springboot exporter 能够被普罗米修斯监控到
+management:
+  server:
+    port: 10024 # 管理端口
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus" # 只在管理端口上暴露 Prometheus 端点
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+wechat:
+  request-url: https://api.weixin.qq.com/sns/jscode2session
+  app-secret: 0ec180d59b9b076454e09a4fa4eff865
+  app-id: wxf06ee34ae8ba2687
+
+
+knife4j:
+  # 开启增强配置
+  enable: true
+  # 开启Swagger的Basic认证功能,默认是false
+  basic:
+    enable: true
+    # Basic认证用户名
+    username: scnuAdmin
+    # Basic认证密码
+    password: scnuAdmin2024@

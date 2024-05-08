@@ -1,13 +1,8 @@
 package com.scnujxjy.backendpoint.service.InterBase;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.scnujxjy.backendpoint.dao.entity.oa.*;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
-import com.scnujxjy.backendpoint.dao.mapper.oa.*;
-import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
-import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval_result.*;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval_result.*;
 import com.scnujxjy.backendpoint.model.bo.interbase.OldStudentStatusChangeDataBO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.ApplicationContextProvider;
@@ -15,7 +10,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.context.ApplicationContext;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.*;

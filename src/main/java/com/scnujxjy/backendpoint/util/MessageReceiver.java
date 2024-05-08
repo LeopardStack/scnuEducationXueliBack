@@ -228,6 +228,10 @@ public class MessageReceiver {
                 String loginId = message.getString("userId");
                 String dataType = message.getString("dataType");
                 List<String> roleList = StpUtil.getRoleList(loginId);
+
+                // 生成下载消息
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(loginId);
+
                 if (roleList.contains(RoleEnum.XUELIJIAOYUBU_ADMIN.getRoleName())) {
                     // 学历教育部管理员
                     AbstractFilter managerFilter = JSON.parseObject(message.getString("filter"), new TypeReference<ManagerFilter>() {
@@ -235,9 +239,9 @@ public class MessageReceiver {
 
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
                     if(dataType.equals("机考名单")){
-                        managerFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId);
+                        managerFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId, platformMessagePO);
                     }else{
-                        managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                        managerFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId, platformMessagePO);
                     }
 
                 } else if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
@@ -246,9 +250,9 @@ public class MessageReceiver {
                     });
                     log.info("接收到批量导出考试信息消息，开始准备数据 ");
                     if(dataType.equals("机考名单")){
-                        collegeAdminFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId);
+                        collegeAdminFilter.exportExamStudentsInfo(pageRO.getEntity(), loginId, platformMessagePO);
                     }else{
-                        collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId);
+                        collegeAdminFilter.exportExamTeachersInfo(pageRO.getEntity(), loginId, platformMessagePO);
                     }
                 }
 

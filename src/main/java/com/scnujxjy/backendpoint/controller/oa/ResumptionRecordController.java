@@ -8,7 +8,7 @@ import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.oa.ResumptionRecordSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.oa.ResumptionRecordVO;
 import com.scnujxjy.backendpoint.model.vo.oa.ResumptionWithSuspensionVO;
-import com.scnujxjy.backendpoint.service.oa.ResumptionRecordService;
+import com.scnujxjy.backendpoint.service.office_automation.approval_result.ResumptionRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

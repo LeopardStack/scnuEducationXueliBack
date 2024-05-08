@@ -83,4 +83,12 @@ public class PageVO<T> implements Serializable {
         this.current = 1L;
         this.records = data;
     }
+
+    public static Boolean isPageVONull(PageVO pageVO) {
+        if (Objects.isNull(pageVO)
+                || CollUtil.isEmpty(pageVO.getRecords())) {
+            return true;
+        }
+        return false;
+    }
 }

@@ -4,6 +4,8 @@ import cn.hutool.core.collection.ListUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.digest.SM3;
 import cn.hutool.crypto.symmetric.SM4;
+import com.google.common.collect.Sets;
+import com.scnujxjy.backendpoint.constant.enums.PermissionSourceEnum;
 import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import javax.annotation.Resource;
 import javax.crypto.SecretKey;
 import java.util.List;
+import java.util.Set;
 
 @SpringBootTest
 @Slf4j
@@ -50,5 +53,11 @@ public class PlatformUserServiceTests {
         log.info("插入前的信息：{}", platformUserROS);
         List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROS);
         log.info("插入后的信息：{}", platformUserVOS);
+    }
+
+    @Test
+    void testSelectUsernameByPermissionSource() {
+        Set<String> usernameList = platformUserService.selectUsernameByPermissionResource(Sets.newHashSet(PermissionSourceEnum.APPROVAL_APPROVAL.getPermissionSource(), PermissionSourceEnum.APPROVAL_WATCH.getPermissionSource()));
+        log.info("username list {}", usernameList);
     }
 }

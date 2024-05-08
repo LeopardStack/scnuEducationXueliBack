@@ -650,11 +650,11 @@ public abstract class AbstractFilter {
      * @param entity
      * @param username
      */
-    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String username) {
+    public void exportExamTeachersInfo(BatchSetTeachersInfoRO entity, String username, PlatformMessagePO platformMessagePO) {
 
     }
 
-    public void exportExamStudentsInfo(BatchSetTeachersInfoRO entity, String loginId) {
+    public void exportExamStudentsInfo(BatchSetTeachersInfoRO entity, String loginId, PlatformMessagePO platformMessagePO) {
 
     }
 

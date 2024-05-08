@@ -59,8 +59,24 @@ public class CourseExamInfoController {
      */
     @GetMapping("/singleSetExamType/{id}")
     @SaCheckPermission("修改考试信息")
-    public SaResult getImportPhoto(@PathVariable Long id) {
+    public SaResult singleSetExamType(@PathVariable Long id) {
         boolean b = courseExamInfoService.singleSetExamType(id);
+        if(b){
+            return SaResult.ok("更新考试方式成功!");
+        }
+        return SaResult.error("更新考试方式失败!").setCode(2001);
+    }
+
+    /**
+     * 单个课程设置为闭卷
+     *
+     * @param id 年级
+     * @return
+     */
+    @GetMapping("/singleSetExamMethod/{id}")
+    @SaCheckPermission("修改考试信息")
+    public SaResult singleSetExamMethod(@PathVariable Long id) {
+        boolean b = courseExamInfoService.singleSetExamMethod(id);
         if(b){
             return SaResult.ok("更新考试方式成功!");
         }
@@ -83,6 +99,20 @@ public class CourseExamInfoController {
     }
 
     /**
+     * 根据参数批量设置闭卷
+     * @param batchSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/batch_set_exam_method")
+    @SaCheckPermission("修改考试信息")
+    public SaResult batchSetExamMethod(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
+        // 将前端 this.form 字段里为 空字符串的属性 设置为 null
+        scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
+        boolean b = courseExamInfoService.batchSetExamMethod(batchSetTeachersInfoRO);
+        return SaResult.ok("批量设置闭卷结果为  " + b);
+    }
+
+    /**
      * 根据参数批量取消机考
      * @param batchSetTeachersInfoRO
      * @return
@@ -92,7 +122,20 @@ public class CourseExamInfoController {
     public SaResult batchUnSetExamType(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
 
         boolean b = courseExamInfoService.batchUnSetExamType(batchSetTeachersInfoRO);
-        return SaResult.ok("批量设置机考结果为  " + b);
+        return SaResult.ok("批量取消机考结果为  " + b);
+    }
+
+    /**
+     * 根据参数批量取消闭卷
+     * @param batchSetTeachersInfoRO
+     * @return
+     */
+    @PostMapping("/batch_unset_exam_method")
+    @SaCheckPermission("修改考试信息")
+    public SaResult batchUnSetExamMethod(@RequestBody BatchSetTeachersInfoRO batchSetTeachersInfoRO) {
+
+        boolean b = courseExamInfoService.batchUnSetExamMethod(batchSetTeachersInfoRO);
+        return SaResult.ok("批量取消闭卷结果为  " + b);
     }
 
     /**
@@ -251,6 +294,19 @@ public class CourseExamInfoController {
             log.error("批量导出考试名单信息失败 " + batchSetTeachersInfoRO + "\n" + e.toString());
             return SaResult.error("批量导出考试名单信息失败").setCode(2001);
         }
+    }
+
+
+    /**
+     * 批量更新机考名单信息
+     * @return
+     */
+    @PostMapping("/batch_update_exam_infos")
+    @SaCheckPermission("机考信息.整体刷新")
+    public SaResult batchUpdateExamInfo() {
+        log.info(StpUtil.getLoginIdAsString() + " 批量刷新了机考信息");
+        courseExamInfoService.batchUpdateExamInfo();
+        return SaResult.ok("批量更新成功，请稍后");
     }
 }
 

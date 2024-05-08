@@ -1,14 +1,16 @@
 package com.scnujxjy.backendpoint.controller.platform_message;
 
 import cn.dev33.satoken.util.SaResult;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsFilesGetRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
-import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
+import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.SystemMessageVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
+import com.scnujxjy.backendpoint.service.platform_message.SystemMessageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -16,9 +18,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import javax.annotation.Resource;
 import java.util.Map;
 import java.util.Objects;
 
@@ -34,6 +37,9 @@ import java.util.Objects;
 public class PlatformMessageController {
     @Resource
     private PlatformMessageService platformMessageService;
+
+    @Resource
+    private SystemMessageService systemMessageService;
 
     @Resource
     private MinioService minioService;
@@ -78,7 +84,7 @@ public class PlatformMessageController {
         PlatformMessageVO platformMessageVO = null;
         try {
             platformMessageVO = platformMessageService.getUserMessage(userUploadsROPageRO);
-        }catch (Exception e){
+        } catch (Exception e) {
             return SaResult.error("获取消息失败 " + e.toString());
         }
         if (Objects.isNull(platformMessageVO)) {
@@ -125,7 +131,7 @@ public class PlatformMessageController {
     @PostMapping("/get_upload_file")
     public ResponseEntity<byte[]> getUploadFiles(@RequestBody UserUploadsFilesGetRO userUploadsFilesGetRO) {
         String fileURL = importBucketName + "/";
-        if(userUploadsFilesGetRO.getUploadFileUrl() != null){
+        if (userUploadsFilesGetRO.getUploadFileUrl() != null) {
             fileURL += userUploadsFilesGetRO.getUploadFileUrl();
         } else if (userUploadsFilesGetRO.getUploadResultFileUrl() != null) {
             fileURL += userUploadsFilesGetRO.getUploadResultFileUrl();
@@ -157,10 +163,29 @@ public class PlatformMessageController {
                     .build());
 
             return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("返回文件失败 " + e.toString());
         }
         return null;
+    }
+
+    /**
+     * 分页获取用户系统消息列表
+     *
+     * @param userMessagePageRO 筛选参数
+     * @return 用户消息列表
+     */
+    @PostMapping("/system-message/page")
+    public SaResult getSystemMessages(PageRO<SystemMessageRO> userMessagePageRO) {
+        // 校验参数
+        if (Objects.isNull(userMessagePageRO)) {
+            return SaResult.error("消息筛选参数不能为空");
+        }
+        // 调用服务层方法执行查询
+        PageVO<SystemMessageVO> systemMessagesByPage = systemMessageService.getSystemMessagesByPage(userMessagePageRO);
+
+        // 将结果封装并返回
+        return SaResult.ok().setData(systemMessagesByPage).setMsg("查询成功");
     }
 
 }

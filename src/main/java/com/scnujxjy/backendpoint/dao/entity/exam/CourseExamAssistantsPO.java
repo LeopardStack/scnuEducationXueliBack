@@ -48,4 +48,8 @@ public class CourseExamAssistantsPO implements Serializable {
     private String teacherUsername;
 
 
+    /**
+     * 考试信息ID
+     */
+    private Long examId;
 }

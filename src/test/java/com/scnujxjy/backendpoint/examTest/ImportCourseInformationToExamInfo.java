@@ -1,13 +1,13 @@
 package com.scnujxjy.backendpoint.examTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.Update;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.scnujxjy.backendpoint.constant.enums.CourseContentType;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.CourseAssistantsPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamAssistantsPO;
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamInfoPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
-import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.TeachingAssistantsCourseSchedulePO;
@@ -18,17 +18,26 @@ import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInform
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.TeachingAssistantsCourseScheduleMapper;
+import com.scnujxjy.backendpoint.model.ro.courses_learning.CourseClassMappingRO;
+import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseInformationRO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CourseLearningVO;
+import com.scnujxjy.backendpoint.model.vo.course_learning.CoursesInfoByClassMappingVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationVO;
+import com.scnujxjy.backendpoint.service.courses_learning.CourseAssignmentsService;
+import com.scnujxjy.backendpoint.service.courses_learning.CourseAssistantsService;
+import com.scnujxjy.backendpoint.service.courses_learning.CoursesClassMappingService;
+import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 将教学计划中的数据导入到考试信息中
@@ -233,6 +242,7 @@ public class ImportCourseInformationToExamInfo {
 
     /**
      * 将考试信息加入授课学期字段 进行课程的锁死
+     *
      */
     @Test
     public void test2(){
@@ -263,6 +273,250 @@ public class ImportCourseInformationToExamInfo {
             }else{
                 log.error("该考试信息无法找到教学计划 " + courseExamInfoPO);
             }
+        }
+    }
+
+
+    // 课程学习模块经过了升级  目前需要从 courses_learning courses_class_mapping
+    // course_assistants 获取课程学习数据、班级映射数据、主讲老师信息、助教信息
+
+    @Resource
+    private CoursesLearningService coursesLearningService;
+
+    @Resource
+    private CoursesClassMappingService coursesClassMappingService;
+
+    @Resource
+    private CourseAssistantsService courseAssistantsService;
+
+
+    /**
+     * 看一下多少的考试信息被修改了教学计划
+     */
+    @Test
+    public void checkExamInfoToTeachingPlansInfo(){
+        List<CourseExamInfoPO> courseExamInfoPOS = examInfoMapper.selectList(null);
+        for(CourseExamInfoPO courseExamInfoPO : courseExamInfoPOS){
+            String classIdentifier = courseExamInfoPO.getClassIdentifier();
+            List<CourseInformationPO> courseInformationPOS = courseInformationMapper.selectList(new LambdaQueryWrapper<CourseInformationPO>()
+                    .eq(CourseInformationPO::getAdminClass, classIdentifier)
+                    .eq(CourseInformationPO::getCourseName, courseExamInfoPO.getClassName())
+            );
+            if(courseExamInfoPO.getExamMethod().equals("机考")){
+                // 目前只考虑去年设置过机考的
+                if(courseInformationPOS.isEmpty()){
+                    log.error("该门课的考试信息 找不到当初的教学计划信息 " + courseExamInfoPO);
+                }
+                if(courseInformationPOS.size() > 1){
+                    log.error("该门考试信息中的班级和课程名称在教学计划中可以找到 1 条以上的教学计划 " + courseExamInfoPO);
+                }
+            }
+
+        }
+    }
+
+    /**
+     * 清空机考信息 还有考试助教信息
+     */
+    @Test
+    public void clearExamInfo(){
+        examInfoMapper.truncateTableInfo();
+        courseExamAssistantsMapper.truncateTableInfo();
+    }
+
+    /**
+     * 导入机考信息
+     */
+    @Test
+    public void importExamInfoFromCourseLearning(){
+        for(int grade = 2024; grade >= 2020; grade --) {
+            List<CourseInformationVO> courseInformationVOList = courseInformationMapper.
+                    selectCourseInformationWithClassInfo(new CourseInformationRO().setGrade(""+ grade));
+
+            for(CourseInformationVO courseInformationVO : courseInformationVOList){
+                CourseExamInfoPO courseExamInfoPO = new CourseExamInfoPO()
+                        .setClassName(courseInformationVO.getClassName())
+                        .setClassIdentifier(courseInformationVO.getAdminClass())
+                        .setCourse(courseInformationVO.getCourseName())
+                        .setExamMethod("线下")    // 默认值
+                        .setExamType("闭卷")  // 默认值
+                        .setIsValid("Y")   // 默认有效
+                        .setExamStatus("未开始")   // 默认有效
+                        .setTeachingSemester(courseInformationVO.getTeachingSemester())
+                         ;
+                // 查看课程学习表 看是否有主讲信息、助教信息 有的话 直接写入
+                CoursesInfoByClassMappingVO coursesInfoByClassMappingVO = null;
+                List<CoursesInfoByClassMappingVO> coursesInfoByClassMappingVOS = coursesClassMappingService.getBaseMapper()
+                        .selectCoursesInfo(new CourseClassMappingRO()
+                        .setCourseName(courseInformationVO.getCourseName())
+                        .setClassIdentifier(courseInformationVO.getAdminClass())
+                );
+                if(!coursesInfoByClassMappingVOS.isEmpty()){
+                    if(coursesInfoByClassMappingVOS.size() > 1){
+                        log.error("该门教学计划存在多个课程学习记录 "+ courseInformationVO);
+                    }
+                    coursesInfoByClassMappingVO = coursesInfoByClassMappingVOS.get(0);
+                }
+
+                // 设置主讲教师信息
+                if (coursesInfoByClassMappingVO != null) {
+
+                    if(!coursesInfoByClassMappingVO.getCourseType().equals(CourseContentType.LIVING.getContentType())){
+                        continue;
+                    }
+                    courseExamInfoPO.setCourseId(coursesInfoByClassMappingVO.getCourseId());
+                    courseExamInfoPO.setExamMethod("机考");
+
+                    String defaultMainTeacherUsername = coursesInfoByClassMappingVO.getDefaultMainTeacherUsername();
+                    TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                            .eq(TeacherInformationPO::getTeacherUsername, defaultMainTeacherUsername));
+                    if(teacherInformationPO != null){
+                        courseExamInfoPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+                        courseExamInfoPO.setMainTeacher(teacherInformationPO.getName());
+                    }else{
+                        if(coursesInfoByClassMappingVO.getCourseType().equals(CourseContentType.LIVING.getContentType())){
+                            log.error("该直播课没有设置主讲老师 " + coursesInfoByClassMappingVO + "\n 教学计划为 "
+                                    + courseInformationVO);
+                        }
+                    }
+
+                    int insert = examInfoMapper.insert(courseExamInfoPO);
+                    if(insert <= 0){
+                        log.error("数据库插入考试信息失败 " + courseExamInfoPO);
+                    }
+
+                    // 设置考试助教信息
+                    List<CourseAssistantsPO> courseAssistantsPOS = courseAssistantsService.getBaseMapper().selectList(new LambdaQueryWrapper<CourseAssistantsPO>()
+                            .eq(CourseAssistantsPO::getCourseId, coursesInfoByClassMappingVO.getCourseId()));
+
+                    for(CourseAssistantsPO courseAssistantsPO : courseAssistantsPOS){
+                        TeacherInformationPO teacherInformationPO1 = null;
+                        try{
+                            teacherInformationPO1 = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                                    .eq(TeacherInformationPO::getTeacherUsername, courseAssistantsPO.getUsername()));
+                        }catch (Exception e){
+                            log.error("获取考试助教信息失败 " + e);
+                        }
+                        if(teacherInformationPO1 != null){
+                            CourseExamAssistantsPO courseExamAssistantsPO = new CourseExamAssistantsPO()
+                                    .setCourseId(coursesInfoByClassMappingVO.getCourseId())
+                                    .setExamId(courseExamInfoPO.getId())
+                                    .setTeacherUsername(courseAssistantsPO.getUsername())
+                                    .setAssistantName(teacherInformationPO1.getName())
+                                    ;
+
+                            CourseExamAssistantsPO courseExamAssistantsPO1 = courseExamAssistantsMapper.selectOne(new LambdaQueryWrapper<CourseExamAssistantsPO>()
+                                    .eq(CourseExamAssistantsPO::getCourseId, coursesInfoByClassMappingVO.getCourseId())
+                                    .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId())
+                                    .eq(CourseExamAssistantsPO::getTeacherUsername,
+                                            courseExamAssistantsPO.getTeacherUsername())
+                            );
+                            if (courseExamAssistantsPO1 != null) {
+                                // 无需对同一门课的助教重复插入
+                            }else{
+                                int insert1 = courseExamAssistantsMapper.insert(courseExamAssistantsPO);
+                                if(insert1 <= 0){
+                                    log.error("插入考试助教信息失败");
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+
+
+            }
+
+
+        }
+    }
+
+
+    @Test
+    public void importExamInfoFromCourseLearningBetter() {
+        ExecutorService executorService = Executors.newFixedThreadPool(100);
+
+        for (int grade = 2024; grade >= 2020; grade--) {
+            List<CourseInformationVO> courseInformationVOList = courseInformationMapper
+                    .selectCourseInformationWithClassInfo(new CourseInformationRO().setGrade("" + grade));
+            int size = courseInformationVOList.size();
+            int partSize = size < 100 ? 1 : size / 100;
+
+            CountDownLatch latch = new CountDownLatch(100);
+            for (int i = 0; i < 100; i++) {
+                final int finalI = i;
+                executorService.submit(() -> {
+                    try {
+                        int start = finalI * partSize;
+                        int end = (finalI + 1) * partSize;
+                        if (finalI == 99) { // last thread takes care of the remainder
+                            end = size;
+                        }
+
+                        for (int j = start; j < end; j++) {
+                            CourseInformationVO courseInformationVO = courseInformationVOList.get(j);
+                            processCourseInformation(courseInformationVO);
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            try {
+                latch.await(); // Wait for all threads to finish
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Thread interrupted", e);
+            }
+        }
+
+        executorService.shutdown();
+    }
+
+    private void processCourseInformation(CourseInformationVO courseInformationVO) {
+        CourseExamInfoPO courseExamInfoPO = new CourseExamInfoPO()
+                .setClassName(courseInformationVO.getClassName())
+                .setClassIdentifier(courseInformationVO.getAdminClass())
+                .setCourse(courseInformationVO.getCourseName())
+                .setExamMethod("线下")    // 默认值
+                .setExamType("闭卷")  // 默认值
+                .setIsValid("Y")   // 默认有效
+                .setTeachingSemester(courseInformationVO.getTeachingSemester());
+
+        // 查看课程学习表 看是否有主讲信息、助教信息
+        List<CoursesInfoByClassMappingVO> coursesInfoByClassMappingVOS = coursesClassMappingService.getBaseMapper()
+                .selectCoursesInfo(new CourseClassMappingRO()
+                        .setCourseName(courseInformationVO.getCourseName())
+                        .setClassIdentifier(courseInformationVO.getAdminClass()));
+
+        if (!coursesInfoByClassMappingVOS.isEmpty()) {
+            CoursesInfoByClassMappingVO coursesInfoByClassMappingVO = coursesInfoByClassMappingVOS.get(0);
+            if (coursesInfoByClassMappingVOS.size() > 1) {
+                log.error("该门教学计划存在多个课程学习记录 " + courseInformationVO);
+            }
+
+            // 设置主讲教师信息
+            if (coursesInfoByClassMappingVO != null) {
+                String defaultMainTeacherUsername = coursesInfoByClassMappingVO.getDefaultMainTeacherUsername();
+                TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
+                        .eq(TeacherInformationPO::getTeacherUsername, defaultMainTeacherUsername));
+                if (teacherInformationPO != null) {
+                    courseExamInfoPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
+                    courseExamInfoPO.setMainTeacher(teacherInformationPO.getName());
+                } else {
+                    if (coursesInfoByClassMappingVO.getCourseType().equals(CourseContentType.LIVING.getContentType())) {
+                        log.error("该直播课没有设置主讲老师 " + coursesInfoByClassMappingVO + "\n 教学计划为 "
+                                + courseInformationVO);
+                    }
+                }
+            }
+        }
+
+        int insert = examInfoMapper.insert(courseExamInfoPO);
+        if (insert <= 0) {
+            log.error("数据库插入考试信息失败 " + courseExamInfoPO);
         }
     }
 }

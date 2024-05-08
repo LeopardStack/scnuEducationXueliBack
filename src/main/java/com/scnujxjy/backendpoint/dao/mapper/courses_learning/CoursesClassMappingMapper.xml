@@ -21,5 +21,24 @@
         ON ccm.class_identifier = ci.class_identifier
         WHERE ccm.course_id = #{entity.courseId}
     </select>
+    <select id="selectCoursesInfo"
+            resultType="com.scnujxjy.backendpoint.model.vo.course_learning.CoursesInfoByClassMappingVO">
+        select *
+        FROM courses_class_mapping ccm
+        INNER JOIN courses_learning cl
+        ON ccm.course_id = cl.id
+        WHERE 1=1
+        <if test="entity.classIdentifier != null">
+            AND ccm.class_identifier = #{entity.classIdentifier}
+        </if>
+        <if test="entity.courseName != null">
+            AND (
+            CASE
+            WHEN INSTR(cl.course_name, ',') > 0 THEN cl.course_name LIKE CONCAT('%', #{entity.courseName}, '%')
+            ELSE cl.course_name = #{entity.courseName}
+            END
+            )
+        </if>
+    </select>
 
 </mapper>

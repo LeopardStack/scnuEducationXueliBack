@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.exam;
 
 import com.scnujxjy.backendpoint.dao.entity.exam.CourseExamAssistantsPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Select;
 
 /**
  * <p>
@@ -13,4 +14,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface CourseExamAssistantsMapper extends BaseMapper<CourseExamAssistantsPO> {
 
+    @Select("TRUNCATE TABLE course_exam_assistants")
+    void truncateTableInfo();
 }

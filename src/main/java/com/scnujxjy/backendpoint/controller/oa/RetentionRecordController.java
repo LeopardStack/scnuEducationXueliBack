@@ -7,7 +7,7 @@ import com.scnujxjy.backendpoint.model.ro.oa.RetentionRecordRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.oa.RetentionRecordVO;
 import com.scnujxjy.backendpoint.model.vo.oa.RetentionSelectArgs;
-import com.scnujxjy.backendpoint.service.oa.RetentionRecordService;
+import com.scnujxjy.backendpoint.service.office_automation.approval_result.RetentionRecordService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

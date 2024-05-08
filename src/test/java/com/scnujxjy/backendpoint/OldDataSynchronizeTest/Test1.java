@@ -2,9 +2,9 @@ package com.scnujxjy.backendpoint.OldDataSynchronizeTest;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.PaymentInfoPO;
-import com.scnujxjy.backendpoint.dao.entity.oa.MajorChangeRecordPO;
+import com.scnujxjy.backendpoint.dao.entity.office_automation.approval_result.MajorChangeRecordPO;
 import com.scnujxjy.backendpoint.dao.mapper.core_data.PaymentInfoMapper;
-import com.scnujxjy.backendpoint.dao.mapper.oa.MajorChangeRecordMapper;
+import com.scnujxjy.backendpoint.dao.mapper.office_automation.approval_result.MajorChangeRecordMapper;
 import com.scnujxjy.backendpoint.service.InterBase.OldDataSynchronize;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
