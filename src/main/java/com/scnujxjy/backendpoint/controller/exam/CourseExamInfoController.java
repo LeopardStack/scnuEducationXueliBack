@@ -197,7 +197,8 @@ public class CourseExamInfoController {
             // 将前端 this.form 字段里为 空字符串的属性 设置为 null
             scnuXueliTools.convertEmptyStringsToNull(batchSetTeachersInfoRO);
             // 处理完非空 直接调用消息队列 异步处理 前端直接返回 OK
-            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(), MessageEnum.BATCH_SET_Exam_Teachers.getMessageName());
+            boolean b1 = messageSender.sendSystemMsg(batchSetTeachersInfoRO, StpUtil.getLoginIdAsString(),
+                    MessageEnum.BATCH_SET_Exam_Teachers.getMessageName());
 
 //            boolean b = courseExamInfoService.batchSetTeachers(batchSetTeachersInfoRO);
             if(b1){

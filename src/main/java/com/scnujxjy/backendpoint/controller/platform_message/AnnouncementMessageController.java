@@ -3,13 +3,16 @@ package com.scnujxjy.backendpoint.controller.platform_message;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.scnujxjy.backendpoint.constant.enums.AnnounceAttachmentEnum;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceAttachmentEnum;
 import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMessageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
@@ -17,12 +20,16 @@ import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformat
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.AnnouncementMessageService;
+import com.scnujxjy.backendpoint.util.ResultCode;
+import com.scnujxjy.backendpoint.util.annotations.UserFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.utils.StringUtils;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -47,6 +54,70 @@ public class AnnouncementMessageController {
 
     @Resource
     private AdmissionInformationService admissionInformationService;
+
+    // 公告模块重构 支持全系统所有用户群体的公告发布 编辑 保存草稿
+    @PostMapping("/create_announcement")
+    public SaResult createAnnouncement(@ModelAttribute AnnouncementMessageUsersRO announcementMessageRO) {
+        if (Objects.isNull(announcementMessageRO)) {
+            return SaResult.error("公告参数缺失，无法插入");
+        }
+        // 参数的详细校验
+        if(StringUtils.isBlank(announcementMessageRO.getTitle()) ){
+            return ResultCode.ANNOUNCEMENT_MSG_FAIL1.generateErrorResultInfo();
+        }
+
+        List<MultipartFile> announcementAttachments = announcementMessageRO.getAnnouncementAttachments();
+        if(announcementAttachments != null){
+            if (announcementAttachments.size() > 3) {
+                return ResultCode.ANNOUNCEMENT_MSG_FAIL2.generateErrorResultInfo();
+            }
+
+            for (MultipartFile file : announcementAttachments) {
+                log.info("接收到的文件 " + file.getOriginalFilename());
+                if (file.getSize() > 100_000_000) { // 文件大小超过100MB
+                    return ResultCode.ANNOUNCEMENT_MSG_FAIL2.generateErrorResultInfo();
+                }
+            }
+        }
+
+        try{
+            // 手动解析announcementMsgUserFilterRO
+            announcementMessageRO.parseUserFilter();
+        }catch (Exception e){
+            log.error("解析筛选实体失败 " + e);
+            return SaResult.error("解析筛选实体失败");
+        }
+
+
+        log.info("实体参数为 " + announcementMessageRO.getAnnouncementMsgUserFilterRO());
+
+        AnnouncementMessageVO announcementMessageVO = announcementMessageService.createAnnouncementMsg(announcementMessageRO);
+        return SaResult.data(announcementMessageVO);
+    }
+
+    /**
+     * 获取用户群体信息
+     * @param platformUserFilterRO
+     * @return
+     */
+    @PostMapping("/get_users_info")
+    public SaResult getUsersInfo(@RequestBody PlatformUserFilterRO platformUserFilterRO) {
+        if (Objects.isNull(platformUserFilterRO)) {
+            return SaResult.error("获取用户群体信息失败，筛选参数不能为空");
+        }
+        try{
+            // 手动解析announcementMsgUserFilterRO
+            platformUserFilterRO.parseUserFilter();
+        }catch (Exception e){
+            log.error("解析筛选实体失败 " + e);
+            return SaResult.error("解析筛选实体失败");
+        }
+
+        log.info("获取用户群体的参数 " + platformUserFilterRO);
+
+        return SaResult.ok("获取用户成功");
+    }
+
 
     @GetMapping("/detail")
     public SaResult detail(Long announcementId) {

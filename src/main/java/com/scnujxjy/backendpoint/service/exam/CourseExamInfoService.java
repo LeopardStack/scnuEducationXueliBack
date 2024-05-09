@@ -308,7 +308,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
 
         if(entity.getAssistants() != null && entity.getAssistants().size() > 0){
             int delete = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
-                    .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                    .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId()));
             log.info("删除指定教学计划所对应的考试计划的所有助教信息 " + delete);
         }
         int count = 0;
@@ -317,7 +317,8 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
             TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                     .eq(TeacherInformationPO::getUserId, userId));
             CourseExamAssistantsPO courseExamAssistantsPO = new CourseExamAssistantsPO();
-            courseExamAssistantsPO.setCourseId(courseExamInfoPO.getId());
+            courseExamAssistantsPO.setCourseId(courseExamInfoPO.getCourseId());
+            courseExamAssistantsPO.setExamId(courseExamInfoPO.getId());
             courseExamAssistantsPO.setAssistantName(teacherInformationPO.getName());
             courseExamAssistantsPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
             int insert = courseExamAssistantsMapper.insert(courseExamAssistantsPO);
@@ -353,7 +354,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
 
         int delete2 = 0;
         int delete_ = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
-                .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId()));
         if(delete_ > 0){
             delete2 += delete_;
         }
@@ -400,7 +401,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
 
             if(batchSetTeachersInfoRO.getAssistants() != null && !batchSetTeachersInfoRO.getAssistants().isEmpty()){
                 int delete = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
-                        .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                        .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId()));
                 log.info("删除指定教学计划所对应的考试计划的所有助教信息 " + delete);
             }
             int count = 0;
@@ -410,7 +411,8 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
                     TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
                             .eq(TeacherInformationPO::getUserId, userId));
                     CourseExamAssistantsPO courseExamAssistantsPO = new CourseExamAssistantsPO();
-                    courseExamAssistantsPO.setCourseId(courseExamInfoPO.getId());
+                    courseExamAssistantsPO.setCourseId(courseExamInfoPO.getCourseId());
+                    courseExamAssistantsPO.setExamId(courseExamInfoPO.getId());
                     courseExamAssistantsPO.setAssistantName(teacherInformationPO.getName());
                     courseExamAssistantsPO.setTeacherUsername(teacherInformationPO.getTeacherUsername());
                     int insert = courseExamAssistantsMapper.insert(courseExamAssistantsPO);
@@ -425,7 +427,7 @@ public class CourseExamInfoService extends ServiceImpl<CourseExamInfoMapper, Cou
                 if(batchSetTeachersInfoRO.getClearAllTeachers()){
                     // 清除阅卷助教老师信息
                     int delete_ = courseExamAssistantsMapper.delete(new LambdaQueryWrapper<CourseExamAssistantsPO>()
-                            .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                            .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId()));
 
                 }
             }

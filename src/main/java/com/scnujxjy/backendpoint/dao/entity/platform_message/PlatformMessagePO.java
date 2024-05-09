@@ -60,4 +60,10 @@ public class PlatformMessagePO implements Serializable {
     private Boolean isRead;
 
 
+    /**
+     * 是否弹框 是否弹框 Y 表示弹框 N 或者 空 表示不弹框
+     */
+    private String isPopup;
+
+
 }

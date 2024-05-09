@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.scnujxjy.backendpoint.constant.enums.RedisKeysEnum;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.CoursesClassMappingPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.RetakeStudentsPO;
@@ -31,6 +32,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMappe
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelCreateRequestBO;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.course_learning.CourseRecordBO;
+import com.scnujxjy.backendpoint.model.bo.platform_message.ManagerInfoBO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
 import com.scnujxjy.backendpoint.service.courses_learning.CoursesLearningService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
@@ -386,10 +388,25 @@ public class HealthCheckTask {
     }
 
 
-
-
-    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+    @Scheduled(cron = "0 0 1 * * ?") // 每天凌晨1点触发
     @Async
+    public void updateManagerInfoBO(){
+        log.info("更新 平台的管理员信息");
+        String tempKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix() + ":temp";
+        String mainKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
+
+        List<ManagerInfoBO> managerInfoList = scnuXueliTools.getManagerInfoList();
+        redisTemplate.opsForValue().set(tempKey, managerInfoList);
+
+        // 使用 Redis 的 RENAME 命令，这个操作是原子的
+        redisTemplate.rename(tempKey, mainKey);
+    }
+
+
+
+
+//    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+//    @Async
     public void updateWhiteList() {
         List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {
@@ -490,7 +507,8 @@ public class HealthCheckTask {
                 for (StudentStatusPO studentStatusPO : studentStatusPOS) {
                     StudentWhiteListVO listVO = new StudentWhiteListVO();
                     listVO.setCode(studentStatusPO.getIdNumber());
-                    PersonalInfoPO personalInfoPO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(studentStatusPO.getIdNumber());
+                    PersonalInfoPO personalInfoPO = personalInfoMapper.
+                            selectInfoByGradeAndIdNumberOne1(studentStatusPO.getIdNumber());
                     if (personalInfoPO != null && StringUtils.isNotBlank(personalInfoPO.getName())) {
                         listVO.setName(personalInfoPO.getName());
                     }

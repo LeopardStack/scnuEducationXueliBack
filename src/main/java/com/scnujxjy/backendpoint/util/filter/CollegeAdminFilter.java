@@ -524,6 +524,7 @@ public class CollegeAdminFilter extends AbstractFilter {
             courseScheduleFilterRO.setStudyForm(courseInformationVO.getStudyForm());
             courseScheduleFilterRO.setAdminClassName(courseInformationVO.getClassName());
             courseScheduleFilterRO.setCourseName(courseInformationVO.getCourseName());
+
             List<ScheduleCourseInformationVO> scheduleCourseInformationVOS = courseScheduleMapper.selectCoursesInformationWithoutPage(courseScheduleFilterRO);
 
             // 通过考试信息表和阅卷助教表来获取主讲和助教老师
@@ -536,11 +537,12 @@ public class CollegeAdminFilter extends AbstractFilter {
             }
             examInfoVO.setExamMethod(courseExamInfoPO.getExamMethod());
             examInfoVO.setExamStatus(courseExamInfoPO.getExamStatus());
+            examInfoVO.setExamType(courseExamInfoPO.getExamType());
             examInfoVO.setMainTeacherName(courseExamInfoPO.getMainTeacher());
             examInfoVO.setMainTeacherUsername(courseExamInfoPO.getTeacherUsername());
 
             List<CourseExamAssistantsPO> courseExamAssistantsPOS = courseExamAssistantsMapper.selectList(new LambdaQueryWrapper<CourseExamAssistantsPO>()
-                    .eq(CourseExamAssistantsPO::getCourseId, courseExamInfoPO.getId()));
+                    .eq(CourseExamAssistantsPO::getExamId, courseExamInfoPO.getId()));
             for (CourseExamAssistantsPO courseExamAssistantsPO : courseExamAssistantsPOS) {
                 String teacherUsername = courseExamAssistantsPO.getTeacherUsername();
                 TeacherInformationPO teacherInformationPO = teacherInformationMapper.selectOne(new LambdaQueryWrapper<TeacherInformationPO>()
@@ -1154,6 +1156,7 @@ public class CollegeAdminFilter extends AbstractFilter {
             examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
             examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
             examTeachersInfoVO.setClassName(courseExamInfoPO.getClassName());
+            examTeachersInfoVO.setExamType(courseExamInfoPO.getExamType());
 
             // 20240425 课程学习模块做了调整 目前需要从 courseLearning 里面拿到信息
 //            List<CourseSchedulePO> courseSchedulePOS = courseScheduleMapper1.selectList(new LambdaQueryWrapper<CourseSchedulePO>()

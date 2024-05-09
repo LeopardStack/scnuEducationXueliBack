@@ -54,8 +54,11 @@ public class TestUserInfoChange {
 
     @Test
     public void changePassword() {
-        PlatformUserVO platformUserVO = platformUserService.detailByUsername("T2022020790");
-        Boolean aBoolean = platformUserService.changePassword(platformUserVO.getUserId(), "020790");
+        PlatformUserVO platformUserVO = platformUserService
+                .detailByUsername("M839655(3)");
+        Boolean aBoolean = platformUserService.
+                changePassword(platformUserVO.getUserId(),
+                        "655(3)");
 //        Boolean aBoolean1 = platformUserService.changePassword(3L, "123456");
 //        Boolean aBoolean2 = platformUserService.changePassword(4L, "123456");
         log.info("修改密码 " + aBoolean);
@@ -70,8 +73,8 @@ public class TestUserInfoChange {
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("scnuXueliAdmin");
-        platformUserRO.setPassword("scnuXueliAdmin2023@");
+        platformUserRO.setUsername("wangtiancai");
+        platformUserRO.setPassword("wangtiancai2024@");
         platformUserRO.setRoleId(8L);
         platformUserROList.add(platformUserRO);
         List<PlatformUserVO> platformUserVOS = platformUserService.batchCreateUser(platformUserROList);
@@ -104,8 +107,8 @@ public class TestUserInfoChange {
 
         List<PlatformUserRO> platformUserROList = new ArrayList<>();
         PlatformUserRO platformUserRO = new PlatformUserRO();
-        platformUserRO.setUsername("xuelijiaoyuTest1");
-        platformUserRO.setPassword("xuelijiaoyuTest12023@");
+        platformUserRO.setUsername("dudao2");
+        platformUserRO.setPassword("dudao22024@");
         platformUserRO.setRoleId(3L);
         platformUserROList.add(platformUserRO);
         platformUserService.batchCreateUser(platformUserROList);

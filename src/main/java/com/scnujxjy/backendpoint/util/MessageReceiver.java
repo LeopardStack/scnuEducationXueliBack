@@ -171,8 +171,12 @@ public class MessageReceiver {
                 });
                 String userId = message.getString("userId");
                 log.info("拿到学籍数据筛选条件 " + pageRO.getEntity().toString());
+
+                // 生成下载消息 但是没有消息附件内容 需要异步生成
+                PlatformMessagePO platformMessagePO = scnuXueliTools.generateMessage(userId);
+
                 // 处理pageRO
-                studentStatusService.generateBatchStudentStatusData(pageRO, filter, userId);
+                studentStatusService.generateBatchStudentStatusData(pageRO, filter, userId, platformMessagePO);
             } else if ("com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO".equals(type)) {
                 // 下载成绩数据，获取成绩筛选参数
                 PageRO<ScoreInformationFilterRO> pageRO = JSON.parseObject(message.getString("data"),

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.platform_message.AnnouncementMessageMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.platform_message.AnnouncementMessagePO">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="content" property="content" />
+
+        <result column="due_date" property="dueDate" />
+        <result column="created_at" property="createdAt" />
+        <result column="attachment_ids" property="attachmentIds"
+                jdbcType="VARCHAR"
+                typeHandler="com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, title, content, due_date, created_at, attachment_ids
+    </sql>
+
+    <update id="updateUser">
+        UPDATE announcement_message
+        SET attachment_ids = #{announcementMessagePO.attachment_ids,typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler}
+        WHERE id = #{announcementMessagePO.id}
+    </update>
+
+</mapper>

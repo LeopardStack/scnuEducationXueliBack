@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.*;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
@@ -345,7 +346,7 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
      * @param pageRO
      * @param filter
      */
-    public void generateBatchStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, AbstractFilter filter, String userId) {
+    public void generateBatchStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, AbstractFilter filter, String userId, PlatformMessagePO platformMessagePO) {
         // 校验参数
         if (Objects.isNull(pageRO)) {
             log.error("导出学籍数据参数缺失");
@@ -353,7 +354,7 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
         }
 
 
-        filter.exportStudentStatusData(pageRO, userId);
+        filter.exportStudentStatusData(pageRO, userId, platformMessagePO);
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.scnujxjy.backendpoint.dao.entity.platform_message;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +13,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <p>
@@ -25,7 +28,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("announcement_message")
+@TableName(value = "announcement_message", autoResultMap = true)
 public class AnnouncementMessagePO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -47,9 +50,15 @@ public class AnnouncementMessagePO implements Serializable {
     private String content;
 
     /**
-     * 附件ID
+     * 附件 集合
      */
-    private Long attachmentId;
+    @TableField(typeHandler = LongTypeHandler.class)
+    private List<Long> attachmentIds;
+
+    /**
+     * 公告的截止日期 可以为空
+     */
+    private Date dueDate;
 
     /**
      * 生成时间

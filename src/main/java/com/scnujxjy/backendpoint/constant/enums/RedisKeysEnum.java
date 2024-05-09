@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public enum RedisKeysEnum {
 
     STUDENT_STATUS_QUERY_PREFIX("students_status_query_"),
+    PLATFORM_MANAGER_INFO("platform_manager_info"),
     GRADE_INFO_QUERY_PREFIX("grade_info_query_"),;
 
     String redisKeyOrPrefix;

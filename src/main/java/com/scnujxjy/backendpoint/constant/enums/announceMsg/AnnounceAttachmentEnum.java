@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.constant.enums;
+package com.scnujxjy.backendpoint.constant.enums.announceMsg;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

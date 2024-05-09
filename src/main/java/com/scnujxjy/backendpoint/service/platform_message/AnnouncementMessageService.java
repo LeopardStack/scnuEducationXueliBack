@@ -29,6 +29,7 @@ import com.scnujxjy.backendpoint.inverter.platform_message.AnnouncementMessageIn
 import com.scnujxjy.backendpoint.inverter.platform_message.AttachmentInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMessageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMessageUsersRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -309,4 +310,12 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         return Long.valueOf(count);
     }
 
+    /**
+     * 创建公告 升级版
+     * @param announcementMessageRO
+     * @return
+     */
+    public AnnouncementMessageVO createAnnouncementMsg(AnnouncementMessageUsersRO announcementMessageRO) {
+        return null;
+    }
 }

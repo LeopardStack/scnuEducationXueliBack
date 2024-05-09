@@ -164,6 +164,9 @@ public enum ResultCode {
     COURSE_POST_MATERIALS_FAI6(25206,"查询课程资料失败，根据课程 ID 找不到课程信息"),
     COURSE_POST_MATERIALS_FAI7(25207,"删除课程资料失败，数据库删除失败"),
 
+    ANNOUNCEMENT_MSG_FAIL1(25301,"创建公告消息失败，公告标题不能为空"),
+    ANNOUNCEMENT_MSG_FAIL2(25302,"创建公告消息失败，附件不能超过3个 大小不能超过 100M"),
+
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
     ADD_NEW_ROLE_FAIL(30002, "添加新的角色信息失败"),

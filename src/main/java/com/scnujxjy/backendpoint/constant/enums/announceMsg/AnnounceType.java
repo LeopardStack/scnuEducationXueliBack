@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.constant.enums;
+package com.scnujxjy.backendpoint.constant.enums.announceMsg;
 
 import org.apache.xmlbeans.impl.xb.xsdschema.All;
 

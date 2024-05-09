@@ -202,7 +202,7 @@ public abstract class AbstractFilter {
      *
      * @param pageRO
      */
-    public void exportStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, String username) {
+    public void exportStudentStatusData(PageRO<StudentStatusFilterRO> pageRO, String username, PlatformMessagePO platformMessagePO) {
     }
 
     /**

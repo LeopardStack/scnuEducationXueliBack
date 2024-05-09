@@ -24,6 +24,8 @@ import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.ManagerFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import com.scnujxjy.backendpoint.util.filter.TeachingPointFilter;
+import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -43,6 +45,7 @@ import static com.scnujxjy.backendpoint.exception.DataException.*;
  * @author leopard
  * @since 2023-08-04
  */
+@Slf4j
 @RestController
 @RequestMapping("/student-status")
 public class StudentStatusController {
@@ -68,6 +71,9 @@ public class StudentStatusController {
 
     @Resource
     private TeachingPointFilter teachingPointFilter;
+
+    @Resource
+    private ScnuXueliTools scnuXueliTools;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -476,9 +482,26 @@ public class StudentStatusController {
         } else {
             if (roleList.contains(SECOND_COLLEGE_ADMIN.getRoleName())) {
                 // 二级学院管理员
-
+                log.info(StpUtil.getLoginIdAsString() + " 角色为 " + roleList + "\n"
+                        + "导出了学籍数据，入参为 " + studentStatusROPageRO.getEntity());
+                studentStatusROPageRO.getEntity().setCollege(scnuXueliTools.getUserBelongCollege().getCollegeName());
+                boolean send = messageSender.sendExportMsg(studentStatusROPageRO, managerFilter, userId);
+                if (send) {
+                    return SaResult.ok("导出学籍数据成功");
+                }
             } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
                 // 继续教育学院管理员
+                log.info(StpUtil.getLoginIdAsString() + " 角色为 " + roleList + "\n"
+                        + "导出了学籍数据，入参为 " + studentStatusROPageRO.getEntity());
+                boolean send = messageSender.sendExportMsg(studentStatusROPageRO, managerFilter, userId);
+                if (send) {
+                    return SaResult.ok("导出学籍数据成功");
+                }
+            }else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+                // 教学点管理员
+                log.info(StpUtil.getLoginIdAsString() + " 角色为 " + roleList + "\n"
+                        + "导出了学籍数据，入参为 " + studentStatusROPageRO.getEntity());
+                studentStatusROPageRO.getEntity().setClassNames(scnuXueliTools.getTeachingPointClassNameSet());
                 boolean send = messageSender.sendExportMsg(studentStatusROPageRO, managerFilter, userId);
                 if (send) {
                     return SaResult.ok("导出学籍数据成功");
