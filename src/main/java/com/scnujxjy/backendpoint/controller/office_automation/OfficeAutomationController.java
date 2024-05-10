@@ -9,6 +9,7 @@ import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalT
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import com.scnujxjy.backendpoint.service.office_automation.handler.OfficeAutomationService;
 import org.springframework.web.bind.annotation.*;
@@ -58,7 +59,7 @@ public class OfficeAutomationController {
         if (Objects.isNull(approvalRecordPOPageRO)) {
             throw dataMissError();
         }
-        PageVO<ApprovalRecordAllInformation> approvalRecordAllInformationPageVO = officeAutomationService.pageQueryApprovalRecordAllInformation(approvalRecordPOPageRO);
+        PageVO<ApprovalRecordVO> approvalRecordAllInformationPageVO = officeAutomationService.pageQueryApprovalRecordAllInformation(approvalRecordPOPageRO);
         if (isPageVONull(approvalRecordAllInformationPageVO)) {
             return SaResult.error("查询数据为空");
         }
