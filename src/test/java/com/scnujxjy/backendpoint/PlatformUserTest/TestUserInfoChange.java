@@ -356,6 +356,52 @@ public class TestUserInfoChange {
         log.info("生成学生账号  \n 插入结果 " + insert);
     }
 
+    /**
+     * 更新近五年的学生账号信息
+     */
+    @Test
+    @Transactional
+    public void updateStudentAccountsInfo(){
+        for(int grade = 2024; grade >= 2020; grade--){
+            List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(new LambdaQueryWrapper<StudentStatusPO>()
+                    .eq(StudentStatusPO::getGrade, "" + grade));
+            for(StudentStatusPO studentStatusPO : studentStatusPOS){
+                String idNumber = studentStatusPO.getIdNumber();
+                PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectByUserName(idNumber);
+                PersonalInfoPO personalInfoPO = personalInfoMapper.selectOne(new LambdaQueryWrapper<PersonalInfoPO>()
+                        .eq(PersonalInfoPO::getGrade, "" + grade)
+                        .eq(PersonalInfoPO::getIdNumber, idNumber)
+                );
+                if(platformUserPO == null){
+                    // 没有账号 插入账号
+                    PlatformUserPO po = new PlatformUserPO()
+                            .setRoleId(1L)
+                            .setUsername(idNumber)
+                            .setPassword(sm3.digestHex(idNumber.
+                                    substring(idNumber.length() - 6)))
+                            .setName(personalInfoPO.getName())
+                            ;
+                    int insert = platformUserService.getBaseMapper().insert(po);
+                    if(insert < 0){
+                        throw new RuntimeException("插入学生账号信息失败 " + po);
+                    }
+                    log.info("成功添加学生新账号 " + po);
+                }else{
+                    // 有账号 校验姓名
+                    if(platformUserPO.getName() == null ||
+                            !personalInfoPO.getName().equals(platformUserPO.getName())){
+                        platformUserPO.setName(personalInfoPO.getName());
+                        int i = platformUserService.getBaseMapper().updateById(platformUserPO);
+                        if(i < 0){
+                            throw new RuntimeException("更新学生账号信息失败 " + platformUserPO);
+                        }
+                        log.info("成功更新学生账号 " + platformUserPO);
+                    }
+                }
+            }
+        }
+    }
+
 
     private void deleteStudentAccountByGrade(String grade) {
         // 获取指定年级的所有学生的账号

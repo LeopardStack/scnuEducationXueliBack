@@ -170,7 +170,7 @@ public class Test1 {
     @Test
     public void test9(){
         try {
-            oldDataSynchronize.synchronizeGradeInformationData(2024, 2021, true);
+            oldDataSynchronize.synchronizeGradeInformationData(2024, 2022, true);
         }catch (Exception e){
             log.info("同步新旧系统成绩数据失败 " + e.toString());
         }

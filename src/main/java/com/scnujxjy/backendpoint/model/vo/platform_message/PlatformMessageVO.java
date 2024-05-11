@@ -19,7 +19,12 @@ public class PlatformMessageVO {
     private List<DownloadMessageVO> downloadMessagePOList = new ArrayList<>();
 
     /**
-     *
+     * 上传消息列表
      */
     private List<UserUploadsPO> userUploadsPOList = new ArrayList<>();
+
+    /**
+     * 公告消息列表
+     */
+    private List<AnnouncementMessageVO> announcementMessageVOList = new ArrayList<>();
 }

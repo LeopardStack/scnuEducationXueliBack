@@ -6,22 +6,26 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.DownloadMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.*;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.AnnouncementMessageMapper;
+import com.scnujxjy.backendpoint.dao.mapper.platform_message.AttachmentMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.DownloadMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.UserUploadsMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.DownloadMessageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -48,14 +52,19 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
     @Resource
     private PlatformUserService platformUserService;
 
+    @Resource
+    private AnnouncementMessageMapper announcementMessageMapper;
+    @Resource
+    private AttachmentMapper attachmentMapper;
+
     public PlatformMessageVO getUserMsg(String msgType) {
         PlatformMessageVO platformMessageVO = new PlatformMessageVO();
-        Long userName = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
+        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
 
 
         // 获取与用户相关的所有PlatformMessagePO
         List<PlatformMessagePO> platformMessagePOS = baseMapper.selectList(
-                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userName));
+                new LambdaQueryWrapper<PlatformMessagePO>().eq(PlatformMessagePO::getUserId, userId));
 
         if (msgType.equals(MessageEnum.DOWNLOAD_MSG.getMessageName())) {
             List<Long> relatedMessageIds = platformMessagePOS.stream()
@@ -98,14 +107,58 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
         } else if (msgType.equals(MessageEnum.UPLOAD_MSG.getMessageName())) {
             // 处理上传消息
             List<UserUploadsPO> userUploadsPOS = userUploadsMapper.selectList(new LambdaQueryWrapper<UserUploadsPO>()
-                    .eq(UserUploadsPO::getUserName, userName));
+                    .eq(UserUploadsPO::getUserName, userId));
             // 按照时间顺序 新的时间在前面
             List<UserUploadsPO> sortedList = userUploadsPOS.stream()
                     .sorted(Comparator.comparing(UserUploadsPO::getUploadTime).reversed())
                     .collect(Collectors.toList());
             platformMessageVO.setUserUploadsPOList(sortedList);
         }else if(msgType.equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
-            log.info("查询公告消息");
+            log.info(StpUtil.getLoginIdAsString() +  " 查询公告消息");
+
+            List<AnnouncementMessageVO> announcementMessageVOList = new ArrayList<>();
+
+            List<PlatformMessagePO> platformMessagePOList = getBaseMapper()
+                    .selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+                            .eq(PlatformMessagePO::getUserId, userId)
+                            .eq(PlatformMessagePO::getMessageType, MessageEnum.ANNOUNCEMENT_MSG.getMessageName())
+                    );
+            for(PlatformMessagePO platformMessagePO: platformMessagePOList){
+                Long relatedMessageId = platformMessagePO.getRelatedMessageId();
+                AnnouncementMessagePO announcementMessagePO = announcementMessageMapper.selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
+                        .eq(AnnouncementMessagePO::getId, relatedMessageId));
+
+                AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
+                BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
+                announcementMessageVO.getCreatedAt();
+                announcementMessagePO.getCreatedAt();
+
+                List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
+                List<AttachmentVO> attachmentVOList = new ArrayList<>();
+                if(attachmentIds != null && !attachmentIds.isEmpty()){
+                    for(Long attachmentId : attachmentIds){
+                        AttachmentPO attachmentPO = attachmentMapper.selectOne(new LambdaQueryWrapper<AttachmentPO>()
+                                .eq(AttachmentPO::getId, attachmentId));
+                        AttachmentVO attachmentVO = new AttachmentVO()
+                                .setUsername(attachmentPO.getUsername())
+                                .setAttachmentOrder(attachmentPO.getAttachmentOrder())
+                                .setRelatedId(attachmentPO.getRelatedId())
+                                .setAttachmentSize(attachmentPO.getAttachmentSize())
+                                .setAttachmentType(attachmentPO.getAttachmentType())
+                                .setAttachmentMinioPath(attachmentPO.getAttachmentMinioPath())
+                                .setId(attachmentPO.getId())
+                                .setAttachmentName(attachmentPO.getAttachmentName())
+                                ;
+                        attachmentVOList.add(attachmentVO);
+                    }
+                }
+                announcementMessageVO.setAttachmentVOS(attachmentVOList);
+                announcementMessageVOList.add(announcementMessageVO);
+            }
+            List<AnnouncementMessageVO> sortedList = announcementMessageVOList.stream()
+                    .sorted(Comparator.comparing(AnnouncementMessageVO::getCreatedAt).reversed())
+                    .collect(Collectors.toList());
+            platformMessageVO.setAnnouncementMessageVOList(sortedList);
         }
         return platformMessageVO;
     }
