@@ -166,6 +166,19 @@ public enum ResultCode {
 
     ANNOUNCEMENT_MSG_FAIL1(25301,"创建公告消息失败，公告标题不能为空"),
     ANNOUNCEMENT_MSG_FAIL2(25302,"创建公告消息失败，附件不能超过3个 大小不能超过 100M"),
+    ANNOUNCEMENT_MSG_FAIL3(25303,"创建公告消息失败，公告消息插入数据库失败"),
+    ANNOUNCEMENT_MSG_FAIL4(25304,"创建公告消息失败，解析筛选实体失败"),
+    ANNOUNCEMENT_MSG_FAIL5(25305,"创建公告消息失败，发布公告的时间不能在当下时间之前"),
+    ANNOUNCEMENT_MSG_FAIL6(25306,"创建公告消息失败，处理文件上传到 Minio 时出错"),
+    ANNOUNCEMENT_MSG_FAIL7(25307,"删除公告消息失败，无法删除公告消息的附件记录"),
+    ANNOUNCEMENT_MSG_FAIL8(25308,"删除公告消息失败，无法删除公告消息数据库记录"),
+    ANNOUNCEMENT_MSG_FAIL9(25309,"获取公告消息失败，找不到登录用户信息"),
+    ANNOUNCEMENT_MSG_FAIL10(25310,"更新公告消息失败，公告标题不能为空"),
+    ANNOUNCEMENT_MSG_FAIL11(25311,"更新公告消息失败，附件不能超过3个 大小不能超过 100M"),
+    ANNOUNCEMENT_MSG_FAIL12(25312,"更新公告消息失败，解析筛选实体失败"),
+    ANNOUNCEMENT_MSG_FAIL13(25313,"更新公告消息失败，发布公告的时间不能在当下时间之前"),
+    ANNOUNCEMENT_MSG_FAIL14(25314,"创建公告消息失败，发布公告的发布状态不合法"),
+    ANNOUNCEMENT_MSG_FAIL15(25315,"根据公告 ID 查询不到该公告"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

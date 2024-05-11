@@ -127,6 +127,7 @@ minio:
   bucketName: xuelistudentpictures
   courseCoverDir: xueli-course-resources
   importBucketName: dataimport
+  systemCommonBucket: xueli-system-common
 
 
 sa-token:

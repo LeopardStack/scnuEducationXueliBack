@@ -15,6 +15,7 @@ import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInfor
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.OldStudentRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
@@ -24,12 +25,14 @@ import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInforma
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.*;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
+import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
 import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.analysis.function.Abs;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -386,4 +389,5 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
     public FilterDataVO getStudentStatusInfoByTeacher(PageRO<StudentStatusTeacherFilterRO> studentStatusROPageRO, AbstractFilter filter) {
         return filter.getStudentStatusInfoByTeacher(studentStatusROPageRO);
     }
+
 }

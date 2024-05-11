@@ -50,7 +50,7 @@ public class AttachmentVO {
     private Long attachmentSize;
 
     /**
-     * 上传用户名称
+     * 上传用户名
      */
-    private String name;
+    private String username;
 }

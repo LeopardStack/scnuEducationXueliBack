@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.model.bo.course_learning.StudentWhiteListInfoBO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.OldStudentRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.vo.home.StatisticTableForStudentStatus;
@@ -65,7 +66,8 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<StudentStatusPO> selectStudentsByGrade(String grade);
 
 
-    List<StudentStatusAllVO> selectByFilterAndPageByManager0(@Param("entity") StudentStatusFilterRO entity, @Param("pageSize") Long pageSize, @Param("l") long l);
+    List<StudentStatusAllVO> selectByFilterAndPageByManager0(@Param("entity") StudentStatusFilterRO entity,
+                                                             @Param("pageSize") Long pageSize, @Param("l") long l);
 
     /**
      * 根据筛选条件获取学籍数据总数
@@ -521,5 +523,18 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
     List<String> getDistinctAcademicStatussByTeachingPoint(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
 
     List<StudentWhiteListInfoBO> selectLivingWhiteList(@Param("entity") StudentStatusFilterRO studentStatusFilterRO);
+
+    /**
+     * 获取公告 在籍生群体信息
+     * @param oldStudentRO
+     * @param pageNumber
+     * @param pageSize
+     * @return
+     */
+    List<StudentStatusAllVO> getAnnouncementMsgUsers(@Param("entity") OldStudentRO oldStudentRO,
+                                                     @Param("pageNumber") Long pageNumber,
+                                                     @Param("pageSize") Long pageSize);
+
+    Long getAnnouncementMsgUsersCount(@Param("entity") OldStudentRO oldStudentRO);
 }
 

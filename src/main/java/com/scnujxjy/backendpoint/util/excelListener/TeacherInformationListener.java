@@ -157,7 +157,7 @@ public class TeacherInformationListener extends AnalysisEventListener<TeacherInf
 
 
         return TeacherInformationPO.builder()
-                .userId(vo.getUserId())
+                .userId((long) vo.getUserId())
                 .name(vo.getName())
                 .gender(vo.getGender())
                 .birthDate(birthDate)

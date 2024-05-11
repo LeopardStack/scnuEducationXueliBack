@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public enum AnnounceAttachmentEnum {
-    NOW_NEW_STUDENT_ADMISSION("2024级新生录取公告");
+    NOW_NEW_STUDENT_ADMISSION("2024级新生录取公告"),
+    COMMON_ANNOUNCEMENT_MSG_PREFIX("system_announcement_msg")
+    ;
 
     String systemArg;
 }

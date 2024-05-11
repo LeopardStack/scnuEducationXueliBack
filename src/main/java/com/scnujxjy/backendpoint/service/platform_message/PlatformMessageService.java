@@ -104,6 +104,8 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                     .sorted(Comparator.comparing(UserUploadsPO::getUploadTime).reversed())
                     .collect(Collectors.toList());
             platformMessageVO.setUserUploadsPOList(sortedList);
+        }else if(msgType.equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
+            log.info("查询公告消息");
         }
         return platformMessageVO;
     }

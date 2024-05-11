@@ -3,7 +3,9 @@ package com.scnujxjy.backendpoint.util.tool;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.SM3;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.linuxense.javadbf.DBFDataType;
 import com.linuxense.javadbf.DBFField;
@@ -27,6 +29,7 @@ import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInf
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.exception.BusinessException;
 import com.scnujxjy.backendpoint.model.bo.platform_message.ManagerInfoBO;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.ClassInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.ClassInformationVO;
@@ -102,6 +105,8 @@ public class ScnuXueliTools {
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+
+    private final SM3 sm3 = new SM3();
 
     public PlatformMessagePO generateMessage(String username) {
         PlatformMessagePO platformMessagePO = new PlatformMessagePO();
@@ -537,20 +542,69 @@ public class ScnuXueliTools {
         // 获取全部的教师信息
         List<TeacherInformationPO> teacherInformationPOList = teacherInformationService.getBaseMapper().selectList(null);
         for(TeacherInformationPO teacherInformationPO : teacherInformationPOList){
-            log.info(teacherInformationPO.toString());
+//            log.info(teacherInformationPO.toString());
             PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
                     .eq(PlatformUserPO::getUserId, teacherInformationPO.getUserId()));
+            if(platformUserPO == null){
+                log.error("该教师没有平台账号 " + teacherInformationPO);
 
-            ManagerInfoBO managerInfoBO = new ManagerInfoBO()
-                    .setUsername(platformUserPO.getUsername())
-                    .setName(teacherInformationPO.getName())
-                    .setCollegeName(teacherInformationPO.getCollegeId())
-                    .setRoleName(RoleEnum.TEACHER.getRoleName())
-                    .setPhoneNumber(teacherInformationPO.getPhone())
-                    .setWorkNumber(teacherInformationPO.getWorkNumber())
-                    .setIdNumber(teacherInformationPO.getIdCardNumber())
-                    ;
-            managerInfoBOList.add(managerInfoBO);
+                if(!StringUtils.isBlank(teacherInformationPO.getTeacherUsername()) ){
+                    // 对于没有平台账号的老师 进行账号刷新
+                    if(teacherInformationPO.getTeacherUsername().length() < 6){
+                        log.error("无法给该老师生成账号 账号长度不能小于 6 " + teacherInformationPO);
+                    }else{
+                        // 创建账号
+                        log.info("给该老师生成账号");
+                        String teacherUsername = teacherInformationPO.getTeacherUsername();
+                        PlatformUserPO platformUserPO1 = new PlatformUserPO();
+                        platformUserPO1.setUsername(teacherUsername);
+                        platformUserPO1.setName(teacherInformationPO.getName());
+                        platformUserPO1.setPassword(sm3.digestHex(teacherUsername.
+                                substring(teacherUsername.length() - 6)));
+                        platformUserPO1.setRoleId(2L);
+
+
+                        int insert = platformUserService.getBaseMapper().insert(platformUserPO1);
+
+                        // 清除该老师 其他 username 账号 只留下 这一个 userId 的账号
+                        teacherInformationPO.setUserId(platformUserPO1.getUserId());
+                        int i = teacherInformationService.getBaseMapper().updateTeacherUserId(teacherInformationPO.getTeacherUsername(),
+                                platformUserPO1.getUserId());
+
+
+                        int delete = platformUserMapper.delete(new LambdaQueryWrapper<PlatformUserPO>()
+                                .eq(PlatformUserPO::getUsername, platformUserPO1.getUsername())
+                                .ne(PlatformUserPO::getUserId, platformUserPO1.getUserId())
+                        );
+                        log.info("删除了  该教师的多余的平台用户记录 " + delete);
+
+                        platformUserPO = platformUserPO1;
+                        ManagerInfoBO managerInfoBO = new ManagerInfoBO()
+                                .setUsername(platformUserPO.getUsername())
+                                .setName(teacherInformationPO.getName())
+                                .setCollegeName(teacherInformationPO.getCollegeId())
+                                .setRoleName(RoleEnum.TEACHER.getRoleName())
+                                .setPhoneNumber(teacherInformationPO.getPhone())
+                                .setWorkNumber(teacherInformationPO.getWorkNumber())
+                                .setIdNumber(teacherInformationPO.getIdCardNumber())
+                                ;
+                        managerInfoBOList.add(managerInfoBO);
+                    }
+                }
+
+            }else{
+                ManagerInfoBO managerInfoBO = new ManagerInfoBO()
+                        .setUsername(platformUserPO.getUsername())
+                        .setName(teacherInformationPO.getName())
+                        .setCollegeName(teacherInformationPO.getCollegeId())
+                        .setRoleName(RoleEnum.TEACHER.getRoleName())
+                        .setPhoneNumber(teacherInformationPO.getPhone())
+                        .setWorkNumber(teacherInformationPO.getWorkNumber())
+                        .setIdNumber(teacherInformationPO.getIdCardNumber())
+                        ;
+                managerInfoBOList.add(managerInfoBO);
+            }
+
         }
 
         return managerInfoBOList;

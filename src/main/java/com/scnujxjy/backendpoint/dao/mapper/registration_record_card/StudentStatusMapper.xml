@@ -230,4 +230,76 @@
         <include refid="commonFiltersForTeachingPoint" />
     </select>
 
+
+    <sql id="commonAnnouncementMsgJoin">
+        FROM student_status ss
+        LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number
+        LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier
+        LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade
+        LEFT JOIN teaching_point_information tpi
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
+    </sql>
+
+    <sql id="commonAnnouncementMsgFilters">
+        <if test='entity.studentNumber != null'>AND ss.student_number = #{entity.studentNumber}</if>
+        <if test='entity.idCardNumber != null'>AND ss.student_number = #{entity.idCardNumber}</if>
+        <if test='entity.name != null'>AND pi.name = #{entity.name}</if>
+        <if test='entity.grade != null'>AND ss.grade = #{entity.grade}</if>
+        <!-- Additional filter for majorNameList -->
+        <if test="entity.collegeList != null and entity.collegeList.size() > 0">
+            AND ss.college IN
+            <foreach item="item" collection="entity.collegeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.majorNameList != null and entity.majorNameList.size() > 0">
+            AND ss.major_name IN
+            <foreach item="item" collection="entity.majorNameList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.levelList != null and entity.levelList.size() > 0">
+            AND ss.level IN
+            <foreach item="item" collection="entity.levelList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.studyFormList != null and entity.studyFormList.size() > 0">
+            AND ss.study_form IN
+            <foreach item="item" collection="entity.studyFormList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.teachingPointList != null and entity.teachingPointList.size() > 0">
+            AND tpi.teaching_point_name IN
+            <foreach item="item" collection="entity.teachingPointList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.academicStatusList != null and entity.academicStatusList.size() > 0">
+            AND ss.academic_status IN
+            <foreach item="item" collection="entity.academicStatusList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <select id="getAnnouncementMsgUsers"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO">
+        SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name,
+        pi.gender, pi.birth_date, pi.political_status, pi.ethnicity, pi.phone_number,
+        pi.address, pi.entrance_photo, tpi.teaching_point_name
+        <include refid="commonAnnouncementMsgJoin" />
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgFilters" />
+        ORDER BY ss.grade DESC, ss.college, ss.major_name, ss.level, ci.class_name
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+    <select id="getAnnouncementMsgUsersCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        <include refid="commonAnnouncementMsgJoin" />
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgFilters" />
+    </select>
+
 </mapper>

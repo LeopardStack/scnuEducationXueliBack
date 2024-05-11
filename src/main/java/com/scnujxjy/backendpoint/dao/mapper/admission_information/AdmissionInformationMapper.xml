@@ -113,4 +113,59 @@
         <include refid="commonJoin" />
         WHERE ai.id_card_number=#{idNumber} and ai.grade=#{admissionYear}
     </select>
+
+
+    <sql id="commonAnnouncementMsgUsersFilters">
+<!--        <if test='entity.id != null'>AND ai.id = #{entity.id}</if>-->
+        <if test='entity.admissionNumber != null'>AND ai.admission_number = #{entity.admissionNumber}</if>
+        <if test='entity.grade != null'>AND ai.grade = #{entity.grade}</if>
+        <if test='entity.idCardNumber != null'>AND ai.id_card_number = #{entity.idCardNumber}</if>
+        <if test='entity.name != null'>AND ai.name = #{entity.name}</if>
+
+        <!-- Additional filter for majorNameList -->
+        <if test="entity.collegeList != null and entity.collegeList.size() > 0">
+            AND ai.college IN
+            <foreach item="item" collection="entity.collegeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.majorNameList != null and entity.majorNameList.size() > 0">
+            AND ai.major_name IN
+            <foreach item="item" collection="entity.majorNameList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.levelList != null and entity.levelList.size() > 0">
+            AND ai.level IN
+            <foreach item="item" collection="entity.levelList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.studyFormList != null and entity.studyFormList.size() > 0">
+            AND ai.study_form IN
+            <foreach item="item" collection="entity.studyFormList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.teachingPointList != null and entity.teachingPointList.size() > 0">
+            AND ai.teaching_point IN
+            <foreach item="item" collection="entity.teachingPointList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <select id="getAdmissionInformationByAnnouncementMsg"
+            resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO">
+        SELECT *  FROM admission_information ai
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgUsersFilters" />
+        ORDER BY ai.grade DESC, ai.college
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+
+    <select id="getAdmissionInformationByAnnouncementMsgCount" resultType="java.lang.Long">
+        SELECT COUNT(*)  FROM admission_information ai
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgUsersFilters" />
+    </select>
 </mapper>

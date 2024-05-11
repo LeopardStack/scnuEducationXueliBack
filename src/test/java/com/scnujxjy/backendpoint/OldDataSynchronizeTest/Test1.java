@@ -88,13 +88,13 @@ public class Test1 {
     @Test
     public void test5(){
         try {
-            for(int grade = 2018; grade >= 2018; grade--){
+            for(int grade = 2024; grade >= 2024; grade--){
                 int delete = paymentInfoMapper.delete(new LambdaQueryWrapper<PaymentInfoPO>()
                         .eq(PaymentInfoPO::getGrade, "" + grade));
                 log.info("删除 " + grade + " 的缴费数据 " + delete);
             }
             oldDataSynchronize.synchronizePaymentInfoDataByInterval(
-                    true, 2018, 2018,
+                    true, 2024, 2024,
                     new ArrayList<>());
         }catch (Exception e){
             log.info("同步成教缴费数据失败 " + e);

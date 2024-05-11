@@ -73,7 +73,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
      * @param teacherUsername 新的 teacher_username
      */
     @Update("UPDATE teacher_information SET teacher_username = #{teacherUsername} WHERE user_id = #{userId}")
-    void updateTeacherUsernameByUserId(@Param("userId") int userId, @Param("teacherUsername") String teacherUsername);
+    void updateTeacherUsernameByUserId(@Param("userId") Long userId, @Param("teacherUsername") String teacherUsername);
 
 
     List<TeacherInformationPO> selectTeacherInfo(@Param("entity") TeacherInformationSearchRO teacherInformationSearchRO);
@@ -88,4 +88,7 @@ public interface TeacherInformationMapper extends BaseMapper<TeacherInformationP
     Long selectTeacherInformationWithAccountInfoCount(@Param("entity") TeacherInformationRO entity);
 
     Set<String> getDistincetTeacherNames(@Param("entity") TeacherInformationRO teacherInformationRO);
+
+    @Update("UPDATE teacher_information SET user_id = #{newUserId} WHERE teacher_username = #{username}")
+    int updateTeacherUserId(@Param("username") String username, @Param("newUserId") Long newUserId);
 }

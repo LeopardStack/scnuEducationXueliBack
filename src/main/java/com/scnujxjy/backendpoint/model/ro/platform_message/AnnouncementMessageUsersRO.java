@@ -56,6 +56,12 @@ public class AnnouncementMessageUsersRO {
     @ApiModelProperty(value = "公告标题")
     private String content;
 
+    @ApiModelProperty(value = "是否弹框")
+    private Boolean isPopup;
+
+    @ApiModelProperty(value = "公告状态")
+    private String status;
+
     @ApiModelProperty(value = "公告截止时间 可以为空", example = "2024-05-18 19:00")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm") // 用于 Spring MVC 绑定
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm", timezone = "GMT+8") // 用于 JSON 序列化/反序列化
@@ -67,6 +73,12 @@ public class AnnouncementMessageUsersRO {
      */
     @ApiModelProperty(value = "公告附件集合")
     private List<MultipartFile> announcementAttachments;
+
+    /**
+     * 公告已有附件集合
+     */
+    @ApiModelProperty(value = "公告已有附件 ID 集合")
+    private List<Long> announcementAttachmentIds;
 
 
     public void setAnnouncementMsgUserFilterRO(String announcementMsgUserFilterRO) {

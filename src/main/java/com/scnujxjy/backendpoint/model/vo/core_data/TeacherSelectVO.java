@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 public class TeacherSelectVO {
     private String label;
 
-    private Integer value;
+    private Long value;
 }

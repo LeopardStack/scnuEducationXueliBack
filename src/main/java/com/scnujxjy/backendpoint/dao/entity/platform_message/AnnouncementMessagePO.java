@@ -78,5 +78,15 @@ public class AnnouncementMessagePO implements Serializable {
     /**
      * 状态：1-草稿，2-发布，3-撤销，4-删除
      */
-    private Integer status;
+    private String status;
+
+    /**
+     * 发布用户群体的筛选参数
+     */
+    private String filterArgs;
+
+    /**
+     * 公告群体的发布情况
+     */
+    private String remark;
 }

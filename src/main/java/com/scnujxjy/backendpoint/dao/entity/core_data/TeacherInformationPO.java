@@ -37,7 +37,7 @@ public class TeacherInformationPO implements Serializable {
      * 用户代码
      */
     @TableId(value = "user_id", type = IdType.AUTO)
-    private Integer userId;
+    private Long userId;
 
     /**
      * 姓名

@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.teaching_process;
 
+import com.alibaba.excel.annotation.ExcelIgnore;
 import com.alibaba.excel.annotation.ExcelProperty;
 import com.alibaba.excel.annotation.format.DateTimeFormat;
 import lombok.AllArgsConstructor;
@@ -169,6 +170,10 @@ public class StudentStatusAllVO implements Serializable {
      */
     @ExcelProperty(index = 23, value = "学费")
     private Double tuition;
+
+    @ExcelIgnore
+    private String teachingPointName;
+
     /**
      * 入学照片
      */

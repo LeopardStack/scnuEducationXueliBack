@@ -3,7 +3,7 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.springframework.context.event.EventListener;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -46,6 +46,7 @@ import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Reque
 import net.polyv.live.v2.entity.channel.state.LiveListChannelStreamStatusV2Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -334,9 +335,30 @@ public class HealthCheckTask {
     /**
      * 预热课程数据 便于查询和搜索
      */
-//    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        refreshCourseSectionsInRedis();
+        log.info("应用启动完成，开始加载管理员信息到Redis");
+        try {
+            retryUpdateManagerInfoBO(0);
+        } catch (Exception e) {
+            log.error("管理员信息加载失败: " + e.getMessage(), e);
+        }
+    }
+
+    private void retryUpdateManagerInfoBO(int attempt) throws InterruptedException {
+        try {
+            updateManagerInfoBO();
+        } catch (Exception e) {
+            if (attempt < 3) {  // 尝试次数，这里尝试3次
+                long delay = (long) Math.pow(10, attempt + 1) * 30; // 计算延时，30秒、300秒、3000秒
+                log.warn("加载失败, 将在 {} 秒后重试", delay / 1000);
+                Thread.sleep(delay); // 等待一定时间后重试
+                retryUpdateManagerInfoBO(attempt + 1); // 递归调用，增加尝试次数
+            } else {
+                log.error("重试加载管理员信息失败", e);
+                throw e;  // 最终失败抛出异常
+            }
+        }
     }
 
     //    @Scheduled(cron = "0 */1 * * * *") // 每分钟执行一次
@@ -388,17 +410,13 @@ public class HealthCheckTask {
     }
 
 
-    @Scheduled(cron = "0 0 1 * * ?") // 每天凌晨1点触发
-    @Async
-    public void updateManagerInfoBO(){
-        log.info("更新 平台的管理员信息");
+
+    public void updateManagerInfoBO() {
         String tempKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix() + ":temp";
         String mainKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
 
         List<ManagerInfoBO> managerInfoList = scnuXueliTools.getManagerInfoList();
         redisTemplate.opsForValue().set(tempKey, managerInfoList);
-
-        // 使用 Redis 的 RENAME 命令，这个操作是原子的
         redisTemplate.rename(tempKey, mainKey);
     }
 

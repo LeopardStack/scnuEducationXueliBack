@@ -17,6 +17,12 @@ public class PlatformUserFilterRO {
     @ApiModelProperty(value = "筛选实体", notes = "这是JSON字符串")
     private String announcementMsgUserFilterRO; // 存储JSON字符串
 
+    @ApiModelProperty(value = "页码")
+    private Long pageNumber = 1L;
+
+    @ApiModelProperty(value = "一页数据量")
+    private Long pageSize = 10L;
+
     private transient AnnouncementMsgUserFilterRO parsedAnnouncementMsgUserFilterRO; // 不进行序列化
 
     public void parseUserFilter() throws Exception {

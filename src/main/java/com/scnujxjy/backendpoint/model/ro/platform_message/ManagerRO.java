@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.ro.platform_message;
 
+import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceMsgUserTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,4 +53,11 @@ public class ManagerRO extends AnnouncementMsgUserFilterRO{
      * 教学点
      */
     private String teachingPointName;
+
+    @Override
+    public String filterArgs() {
+        return AnnounceMsgUserTypeEnum.MANAGER.getUserType() + " "
+                + toString()
+                ;
+    }
 }

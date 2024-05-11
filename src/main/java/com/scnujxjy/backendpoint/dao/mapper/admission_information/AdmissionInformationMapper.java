@@ -3,6 +3,7 @@ package com.scnujxjy.backendpoint.dao.mapper.admission_information;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.NewStudentRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.PersonalInfoVO;
@@ -48,4 +49,13 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     List<AdmissionInformationVO> batchSelectData(@Param("entity")AdmissionInformationRO entity);
 
     AdmissionInformationVO selectSingleAdmissionInfo(@Param("idNumber")String idNumber, @Param("admissionYear")String admissionYear);
+
+    /**
+     * 获取公告发布的新生群体信息
+     * @return
+     */
+    List<AdmissionInformationPO> getAdmissionInformationByAnnouncementMsg(@Param("entity") NewStudentRO entity,
+                                                                          @Param("pageNumber")Long pageNumber, @Param("pageSize")Long pageSize);
+
+    Long getAdmissionInformationByAnnouncementMsgCount(@Param("entity") NewStudentRO newStudentRO);
 }
