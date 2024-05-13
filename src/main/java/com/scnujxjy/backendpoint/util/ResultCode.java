@@ -179,6 +179,7 @@ public enum ResultCode {
     ANNOUNCEMENT_MSG_FAIL13(25313,"更新公告消息失败，发布公告的时间不能在当下时间之前"),
     ANNOUNCEMENT_MSG_FAIL14(25314,"创建公告消息失败，发布公告的发布状态不合法"),
     ANNOUNCEMENT_MSG_FAIL15(25315,"根据公告 ID 查询不到该公告"),
+    ANNOUNCEMENT_MSG_FAIL16(25316,"获取不同用户群体的筛选项时，userType 不能为空"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

@@ -536,5 +536,7 @@ public interface StudentStatusMapper extends BaseMapper<StudentStatusPO> {
                                                      @Param("pageSize") Long pageSize);
 
     Long getAnnouncementMsgUsersCount(@Param("entity") OldStudentRO oldStudentRO);
+
+    List<StudentStatusAllVO> getAllAnnouncementMsgUsers(@Param("entity") OldStudentRO oldStudentRO);
 }
 

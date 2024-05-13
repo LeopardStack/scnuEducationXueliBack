@@ -12,10 +12,8 @@ import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.annotation.Resource;
@@ -60,6 +58,20 @@ public class PlatformMessageController {
             throw new RuntimeException("数据未找到");
         }
         return SaResult.data(platformMessageVO);
+    }
+
+
+    /**
+     * 获取用户下载消息列表 限制为 10条
+     *
+     * @return 下载消息列表
+     */
+    @GetMapping("/get_system_msg")
+    public SaResult getUserSystemMessages() {
+        // 查询
+        PlatformMessageVO platformMessageVO = platformMessageService.getUserSystemMsg();
+
+        return SaResult.ok().setData(platformMessageVO);
     }
 
     /**

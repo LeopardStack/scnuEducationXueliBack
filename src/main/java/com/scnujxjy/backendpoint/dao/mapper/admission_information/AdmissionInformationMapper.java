@@ -58,4 +58,21 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
                                                                           @Param("pageNumber")Long pageNumber, @Param("pageSize")Long pageSize);
 
     Long getAdmissionInformationByAnnouncementMsgCount(@Param("entity") NewStudentRO newStudentRO);
+
+    @Select("select distinct college from admission_information;")
+    List<String> selectDistinctCollegeList();
+
+    @Select("select distinct major_name from admission_information;")
+    List<String> selectDistinctMajorNameList();
+
+    @Select("select distinct level from admission_information;")
+    List<String> selectDistinctLevelList();
+
+    @Select("select distinct study_form from admission_information;")
+    List<String> selectDistinctStudyFormList();
+
+    @Select("select distinct teaching_point from admission_information;")
+    List<String> selectDistinctTeachingPointNameList();
+
+    List<AdmissionInformationPO> getAllAdmissionInformationByAnnouncementMsg(@Param("entity") NewStudentRO newStudentRO);
 }

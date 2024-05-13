@@ -168,4 +168,10 @@
         WHERE 1=1
         <include refid="commonAnnouncementMsgUsersFilters" />
     </select>
+    <select id="getAllAdmissionInformationByAnnouncementMsg"
+            resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO">
+        SELECT *  FROM admission_information ai
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgUsersFilters" />
+    </select>
 </mapper>

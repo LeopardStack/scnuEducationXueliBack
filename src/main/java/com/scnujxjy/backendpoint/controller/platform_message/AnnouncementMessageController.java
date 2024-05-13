@@ -21,6 +21,7 @@ import com.scnujxjy.backendpoint.model.ro.platform_message.*;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgFilterArgsVO;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -185,7 +186,7 @@ public class AnnouncementMessageController {
     }
 
     @DeleteMapping("/delete_announcement")
-    @ApiOperation(value = "按照不同的用户群体创建公告")
+    @ApiOperation(value = "删除公告")
     public SaResult createAnnouncement(Long announcementMessageId) {
         if (Objects.isNull(announcementMessageId)) {
             return SaResult.error("公告消息 ID 不能为空");
@@ -261,15 +262,19 @@ public class AnnouncementMessageController {
     }
 
     /**
+     * 根据 不同的用户群体类型
      * 获取不同用户群体的筛选项
      * @return
      */
     @GetMapping("/get_user_filter_items")
     @ApiOperation(value = "获取不同用户群体的筛选项")
-    public SaResult getUserFilterItems() {
+    public SaResult getUserFilterItems(String userType) {
+        if(StringUtils.isBlank(userType)){
+            return ResultCode.ANNOUNCEMENT_MSG_FAIL16.generateErrorResultInfo();
+        }
+        AnnouncementMsgFilterArgsVO announcementMsgFilterArgsVO = announcementMessageService.getUserFilterItems(userType);
 
-
-        return SaResult.ok("获取不同用户群体的筛选项成功").setData(null);
+        return SaResult.ok("获取不同用户群体的筛选项成功").setData(announcementMsgFilterArgsVO);
     }
 
 
@@ -287,7 +292,8 @@ public class AnnouncementMessageController {
         if (Objects.isNull(announcementMessageRO)) {
             return SaResult.error("公告参数缺失，无法插入");
         }
-        AnnouncementMessageVO announcementMessageVO = announcementMessageService.create(announcementMessageRO, files);
+        AnnouncementMessageVO announcementMessageVO = announcementMessageService.
+                create(announcementMessageRO, files);
         return SaResult.data(announcementMessageVO);
     }
 

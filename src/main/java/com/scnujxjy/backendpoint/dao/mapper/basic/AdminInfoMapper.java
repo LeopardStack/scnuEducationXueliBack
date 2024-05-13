@@ -2,6 +2,9 @@ package com.scnujxjy.backendpoint.dao.mapper.basic;
 
 import com.scnujxjy.backendpoint.dao.entity.basic.AdminInfoPO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +15,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @since 2023-12-15
  */
 public interface AdminInfoMapper extends BaseMapper<AdminInfoPO> {
+
+    @Select("select distinct department from admin_info;")
+    List<String> getAllDepartments();
 
 }

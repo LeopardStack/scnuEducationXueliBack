@@ -18,4 +18,7 @@ public interface CollegeInformationMapper extends BaseMapper<CollegeInformationP
 
     @Select("SELECT * FROM college_information WHERE college_name=#{collegeName}")
     List<CollegeInformationPO> selectByCollegeName(String collegeName);
+
+    @Select("SELECT college_name FROM college_information;")
+    List<String> getAllCollegeNames();
 }

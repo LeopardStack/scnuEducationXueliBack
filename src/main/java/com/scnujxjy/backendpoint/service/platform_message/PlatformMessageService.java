@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
+import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnouncementMsgStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.*;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.AnnouncementMessageMapper;
 import com.scnujxjy.backendpoint.dao.mapper.platform_message.AttachmentMapper;
@@ -25,10 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -124,9 +122,19 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                             .eq(PlatformMessagePO::getMessageType, MessageEnum.ANNOUNCEMENT_MSG.getMessageName())
                     );
             for(PlatformMessagePO platformMessagePO: platformMessagePOList){
+
                 Long relatedMessageId = platformMessagePO.getRelatedMessageId();
                 AnnouncementMessagePO announcementMessagePO = announcementMessageMapper.selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
                         .eq(AnnouncementMessagePO::getId, relatedMessageId));
+
+                // 获取公告消息时 要记得看 是否有公告截止时间 有的话 只能获取 公告截止时间之前 以及公告消息为 已发布状态的
+                Date dueDate = announcementMessagePO.getDueDate();
+                if(dueDate != null && dueDate.before(new Date())){
+                    continue;
+                }
+                if(!announcementMessagePO.getStatus().equals(AnnouncementMsgStatusEnum.PUBLISHED.getStatus())){
+                    continue;
+                }
 
                 AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
                 BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
@@ -184,5 +192,71 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
         return platformMessageVO;
     }
 
+    /**
+     * 获取用户系统消息
+     * @return
+     */
+    public PlatformMessageVO getUserSystemMsg() {
+        PlatformMessageVO platformMessageVO = new PlatformMessageVO();
+        Long userId = platformUserService.getUserIdByUsername(StpUtil.getLoginIdAsString());
+        List<AnnouncementMessageVO> announcementMessageVOList = new ArrayList<>();
+
+        // 获取与用户相关的所有PlatformMessagePO
+        List<PlatformMessagePO> platformMessagePOList = baseMapper.selectList(
+                new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getUserId, userId)
+                        .eq(PlatformMessagePO::getMessageType, MessageEnum.ANNOUNCEMENT_MSG.getMessageName())
+                        );
+        for(PlatformMessagePO platformMessagePO: platformMessagePOList){
+
+            Long relatedMessageId = platformMessagePO.getRelatedMessageId();
+            AnnouncementMessagePO announcementMessagePO = announcementMessageMapper.selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
+                    .eq(AnnouncementMessagePO::getId, relatedMessageId));
+
+            // 获取公告消息时 要记得看 是否有公告截止时间 有的话 只能获取 公告截止时间之前 以及公告消息为 已发布状态的
+            Date dueDate = announcementMessagePO.getDueDate();
+            if(dueDate != null && dueDate.before(new Date())){
+                continue;
+            }
+            if(!announcementMessagePO.getStatus().equals(AnnouncementMsgStatusEnum.PUBLISHED.getStatus())){
+                continue;
+            }
+
+            AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
+            BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
+            announcementMessageVO.getCreatedAt();
+            announcementMessagePO.getCreatedAt();
+
+            List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
+            List<AttachmentVO> attachmentVOList = new ArrayList<>();
+            if(attachmentIds != null && !attachmentIds.isEmpty()){
+                for(Long attachmentId : attachmentIds){
+                    AttachmentPO attachmentPO = attachmentMapper.selectOne(new LambdaQueryWrapper<AttachmentPO>()
+                            .eq(AttachmentPO::getId, attachmentId));
+                    AttachmentVO attachmentVO = new AttachmentVO()
+                            .setUsername(attachmentPO.getUsername())
+                            .setAttachmentOrder(attachmentPO.getAttachmentOrder())
+                            .setRelatedId(attachmentPO.getRelatedId())
+                            .setAttachmentSize(attachmentPO.getAttachmentSize())
+                            .setAttachmentType(attachmentPO.getAttachmentType())
+                            .setAttachmentMinioPath(attachmentPO.getAttachmentMinioPath())
+                            .setId(attachmentPO.getId())
+                            .setAttachmentName(attachmentPO.getAttachmentName())
+                            ;
+                    attachmentVOList.add(attachmentVO);
+                }
+            }
+            announcementMessageVO.setAttachmentVOS(attachmentVOList);
+            announcementMessageVOList.add(announcementMessageVO);
+        }
+        List<AnnouncementMessageVO> sortedList = announcementMessageVOList.stream()
+                .sorted(Comparator.comparing(AnnouncementMessageVO::getCreatedAt).reversed())
+                .limit(10) // 限制最大数量为 10
+                .collect(Collectors.toList());
+        platformMessageVO.setAnnouncementMessageVOList(sortedList);
+
+
+        return new PlatformMessageVO();
+    }
 }
 

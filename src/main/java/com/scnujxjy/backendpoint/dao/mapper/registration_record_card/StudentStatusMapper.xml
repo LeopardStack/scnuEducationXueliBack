@@ -301,5 +301,14 @@
         WHERE 1=1
         <include refid="commonAnnouncementMsgFilters" />
     </select>
+    <select id="getAllAnnouncementMsgUsers"
+            resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO">
+        SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name,
+        pi.gender, pi.birth_date, pi.political_status, pi.ethnicity, pi.phone_number,
+        pi.address, pi.entrance_photo, tpi.teaching_point_name
+        <include refid="commonAnnouncementMsgJoin" />
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgFilters" />
+    </select>
 
 </mapper>

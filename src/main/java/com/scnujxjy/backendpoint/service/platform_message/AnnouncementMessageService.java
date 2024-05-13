@@ -39,11 +39,15 @@ import com.scnujxjy.backendpoint.inverter.platform_message.AttachmentInverter;
 import com.scnujxjy.backendpoint.model.bo.platform_message.ManagerInfoBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.*;
+import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgFilterArgsVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
+import com.scnujxjy.backendpoint.service.basic.AdminInfoService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.MinioUtil;
@@ -103,6 +107,11 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
     @Resource
     private AdmissionInformationMapper admissionInformationMapper;
+
+    @Resource
+    private AdminInfoService adminInfoService;
+    @Resource
+    private CollegeInformationService collegeInformationService;
 
     @Resource
     private StudentStatusService studentStatusService;
@@ -388,17 +397,97 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                 !announcementMessageRO.getUserNameList().isEmpty()){
             // 单个挑选出来的用户群体
             log.info("开始生成公告 , 用户群体筛选参数为 " + announcementMessageRO.getUserNameList());
-            List<String> userNameList = announcementMessageRO.getUserNameList();
-            insertPlatformMsgForUserList(announcementMessageRO, announcementMessagePO, userNameList);
+            List<String> originalUserNames = announcementMessageRO.getUserNameList();
+
+            // 使用 Set 检测并去除重复用户名
+            Set<String> userNameSet = new HashSet<>();
+            List<String> duplicateUserNames = new ArrayList<>();
+
+            for (String userName : originalUserNames) {
+                if (!userNameSet.add(userName)) {
+                    duplicateUserNames.add(userName); // 如果添加失败，说明是重复的
+                }
+            }
+
+            // 打印重复的用户名
+            if (!duplicateUserNames.isEmpty()) {
+                log.error("公告发布群体存在重复的用户名: " + duplicateUserNames);
+            }
+            insertPlatformMsgForUserList(announcementMessageRO, announcementMessagePO, new ArrayList<>(userNameSet));
         }else{
             if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(announcementMessageRO.getUserType())){
                 // 当用户群体为 管理员时  根据 这个去筛选
                 ManagerRO managerRO = (ManagerRO)announcementMessageRO.getParsedAnnouncementMsgUserFilterRO();
                 log.info("开始生成公告 , 用户群体筛选参数为 " + managerRO);
+                // 获取符合公告群体筛选条件的用户
+                try {
+                    List<ManagerInfoBO> allManagersInfo = getAllManagersInfo(managerRO);
+                    // 收集所有用户名
+                    List<String> allUserNames = allManagersInfo.stream()
+                            .map(ManagerInfoBO::getUsername)
+                            .collect(Collectors.toList());
+
+                    // 使用 Set 去重，并收集重复的用户名
+                    Set<String> uniqueUserNames = new HashSet<>();
+                    List<String> duplicateUserNames = allUserNames.stream()
+                            .filter(name -> !uniqueUserNames.add(name)) // 如果 name 不能被添加，则说明它是重复的
+                            .collect(Collectors.toList());
+
+                    // 打印重复的用户名
+                    if (!duplicateUserNames.isEmpty()) {
+                        log.error("公告发布群体存在重复的用户名: " + duplicateUserNames);
+                    }
+
+                    // 将去重后的用户名转换为 List
+                    List<String> distinctUserNames = new ArrayList<>(uniqueUserNames);
+                    insertPlatformMsgForUserList(announcementMessageRO, announcementMessagePO, distinctUserNames);
+                }catch (Exception e){
+                    log.error(StpUtil.getLoginIdAsString() + " 为公告发布群体生成公告消息失败 " + e);
+                }
             }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(announcementMessageRO.getUserType())){
                 // 当用户群体为 在籍生时  根据 这个去筛选
+                OldStudentRO oldStudentRO = (OldStudentRO) announcementMessageRO.getParsedAnnouncementMsgUserFilterRO();
+
+                List<StudentStatusAllVO> studentStatusAllVOList = studentStatusService.getBaseMapper()
+                        .getAllAnnouncementMsgUsers(oldStudentRO);
+                List<String> allUserNames = studentStatusAllVOList.stream().map(StudentStatusAllVO::getIdNumber)
+                        .collect(Collectors.toList());
+
+
+                Set<String> uniqueUserNames = new HashSet<>();
+                List<String> duplicateUserNames = allUserNames.stream()
+                        .filter(name -> !uniqueUserNames.add(name)) // 如果 name 不能被添加，则说明它是重复的
+                        .collect(Collectors.toList());
+
+                // 打印重复的用户名
+                if (!duplicateUserNames.isEmpty()) {
+                    log.error("公告发布群体存在重复的用户名: " + duplicateUserNames);
+                }
+
+                // 将去重后的用户名转换为 List
+                List<String> distinctUserNames = new ArrayList<>(uniqueUserNames);
+                insertPlatformMsgForUserList(announcementMessageRO, announcementMessagePO, distinctUserNames);
             }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(announcementMessageRO.getUserType())){
                 // 当用户群体为 新生时  根据 这个去筛选
+                NewStudentRO newStudentRO = (NewStudentRO) announcementMessageRO.getParsedAnnouncementMsgUserFilterRO();
+                List<AdmissionInformationPO> admissionInformationPOList = admissionInformationMapper
+                        .getAllAdmissionInformationByAnnouncementMsg(newStudentRO);
+                List<String> allUserNames = admissionInformationPOList.stream().map(AdmissionInformationPO::getIdCardNumber)
+                        .collect(Collectors.toList());
+
+                Set<String> uniqueUserNames = new HashSet<>();
+                List<String> duplicateUserNames = allUserNames.stream()
+                        .filter(name -> !uniqueUserNames.add(name)) // 如果 name 不能被添加，则说明它是重复的
+                        .collect(Collectors.toList());
+
+                // 打印重复的用户名
+                if (!duplicateUserNames.isEmpty()) {
+                    log.error("公告发布群体存在重复的用户名: " + duplicateUserNames);
+                }
+
+                // 将去重后的用户名转换为 List
+                List<String> distinctUserNames = new ArrayList<>(uniqueUserNames);
+                insertPlatformMsgForUserList(announcementMessageRO, announcementMessagePO, distinctUserNames);
             }
         }
 
@@ -489,6 +578,11 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         return SaResult.ok("成功发布公告");
     }
 
+    /**
+     * 获取不同的用户群体信息
+     * @param platformUserFilterRO
+     * @return
+     */
     public PageVO getUsersInfo(PlatformUserFilterRO platformUserFilterRO) {
 
         if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(platformUserFilterRO.getUserType())){
@@ -661,12 +755,99 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         return pageVO;
     }
 
+    private List<ManagerInfoBO> getAllManagersInfo(ManagerRO managerRO) throws Exception {
+
+        // 从Redis获取数据
+        String key = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
+        List<ManagerInfoBO> allManagers = (List<ManagerInfoBO>) redisTemplate.opsForValue().get(key);
+
+        // 过滤数据
+        List<ManagerInfoBO> filteredManagers = allManagers.stream()
+                .filter(manager -> {
+                    boolean matches = true;
+                    try{
+                        if (StringUtils.isNotBlank(managerRO.getUsername())) {
+                            matches &= manager.getUsername().equals(managerRO.getUsername());
+                        }
+                        if (StringUtils.isNotBlank(managerRO.getName())) {
+                            if(StringUtils.isBlank(manager.getName()) ){
+                                matches = false;
+                            }else{
+                                matches &= manager.getName().equals(managerRO.getName());
+                            }
+
+                        }
+                        if (StringUtils.isNotBlank(managerRO.getPhoneNumber())) {
+                            if(StringUtils.isBlank(manager.getPhoneNumber()) ){
+                                matches = false;
+                            }else{
+                                matches &= manager.getPhoneNumber().equals(managerRO.getPhoneNumber());
+                            }
+
+                        }
+                        if (StringUtils.isNotBlank(managerRO.getWorkNumber())) {
+                            if(StringUtils.isBlank(manager.getWorkNumber()) ){
+                                matches = false;
+                            }else{
+                                matches &= manager.getWorkNumber().equals(managerRO.getWorkNumber());
+                            }
+                        }
+                        if (StringUtils.isNotBlank(managerRO.getIdNumber())) {
+                            if(StringUtils.isBlank(manager.getIdNumber()) ){
+                                matches = false;
+                            }else{
+                                matches &= manager.getIdNumber().equals(managerRO.getIdNumber());
+                            }
+                        }
+
+
+                        if (managerRO.getDepartment() != null && !managerRO.getDepartment().isEmpty()) {
+                            if(manager.getDepartment() == null){
+                                matches = false;
+                            }else{
+                                matches &= manager.getDepartment().equals(managerRO.getDepartment());
+                            }
+                        }
+
+                        if (managerRO.getCollegeName() != null && !managerRO.getCollegeName().isEmpty()) {
+                            if(manager.getCollegeName() == null){
+                                matches = false;
+                            }else{
+                                matches &= manager.getCollegeName().equals(managerRO.getCollegeName());
+                            }
+                        }
+
+                        if (managerRO.getTeachingPointName() != null && !managerRO.getTeachingPointName().isEmpty()) {
+                            if(manager.getTeachingPointName() == null){
+                                matches = false;
+                            }else{
+                                matches &= manager.getTeachingPointName().equals(managerRO.getTeachingPointName());
+                            }
+                        }
+                        // 可以根据需要继续添加其他字段的检查
+
+                    }catch (Exception e){
+                        log.error("获取筛选参数条件 失败 " + e);
+                        matches = false;
+                    }
+                    return matches;
+                })
+                .collect(Collectors.toList());
+
+        return filteredManagers;
+    }
+
     /**
      * 删除公告消息
      * @param announcementMessagePO
      * @return
      */
     public SaResult deleteMsg(AnnouncementMessagePO announcementMessagePO) {
+
+        // 先删除该公告消息关联的用户
+        deleteAnnouncementRelatedUsers(announcementMessagePO.getId());
+
+
         List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
         if(attachmentIds != null && attachmentIds.size() > 0){
             // 删除附件信息
@@ -687,6 +868,15 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         }else{
             return ResultCode.ANNOUNCEMENT_MSG_FAIL8.generateErrorResultInfo();
         }
+    }
+
+    @Async
+    protected void deleteAnnouncementRelatedUsers(Long announcementMessagePOId){
+        int delete = platformMessageMapper.delete(new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePOId)
+        );
+        log.error("删除了 公告 ID 为 " + announcementMessagePOId +  " 的公告消息用户记录 " + delete + " 条");
     }
 
     /**
@@ -785,7 +975,26 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                 getParsedAnnouncementMsgUserFilterRO().filterArgs();
         if(!filterArgs.equals(announcementMessagePO.getFilterArgs())){
             announcementMessagePO.setFilterArgs(filterArgs);
+
+            // 根据这个最新的群体 来更新群体的用户公告消息记录
+            log.info("删除公告消息之前关联的用户消息记录");
+            deleteAnnouncementRelatedUsers(announcementMessagePO.getId());
+            log.info("更新修改后的公告消息之前关联的用户消息记录");
+            generatePlatformUserAnnouncementMsg(announcementMessageRO, announcementMessagePO);
         }
+
+        // 修改了弹框消息 比如由弹框改为非弹框
+//        List<PlatformMessagePO> platformMessagePOList = platformMessageMapper.selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+//                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+//                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+//        );
+//        if(platformMessagePOList != null && !platformMessagePOList.isEmpty()){
+//            String isPopup = platformMessagePOList.get(0).getIsPopup();
+//            if(announcementMessageRO.getIsPopup() != null && isPopup == null){
+//
+//            }
+//        }
+
 
         // 根据前端传递过来的 附件 ID 集合 来更新附件信息
         List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
@@ -804,10 +1013,17 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         // 将 attachmentIds 的东西保存 即可
         // 再将 新的附件 进行写入就行 announcementAttachments 并且进行排序
         if(announcementMessageRO.getAnnouncementAttachments() != null && !announcementMessageRO.getAnnouncementAttachments().isEmpty()){
+
             int order = announcementAttachmentIds.size() + 1;
             List<Long> attachmentPOList = new ArrayList<>();
+            boolean fileIsValid = true;
             for (MultipartFile multipartFile : announcementMessageRO.getAnnouncementAttachments()) {
                 log.info("收到了这些文件 " + multipartFile.getOriginalFilename());
+                if(StringUtils.isBlank(multipartFile.getOriginalFilename())){
+                    fileIsValid = false;
+                    continue;
+                }
+
                 log.info("\n文件的信息 " + multipartFile.getContentType() + " " + multipartFile.getSize());
                 try {
                     String minioUrl = AnnounceAttachmentEnum.COMMON_ANNOUNCEMENT_MSG_PREFIX
@@ -840,6 +1056,8 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                     return ResultCode.ANNOUNCEMENT_MSG_FAIL6.generateErrorResultInfo();
                 }
             }
+
+
 
             // 更新一下 原来两个附件的顺序
             int newIndex = 1;
@@ -889,4 +1107,71 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         return difference;
     }
 
+    /**
+     * 获取不同用户群体的筛选项
+     * @param userType
+     * @return
+     */
+    public AnnouncementMsgFilterArgsVO getUserFilterItems(String userType) {
+        AnnouncementMsgFilterArgsVO announcementMsgFilterArgsVO = new AnnouncementMsgFilterArgsVO();
+        if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(userType)){
+            List<String> departments = adminInfoService.getBaseMapper().getAllDepartments();
+            List<String> collegeNames = collegeInformationService.getBaseMapper().getAllCollegeNames();
+            List<String> teachingPointNames = teachingPointInformationMapper.getAllTeachingPointNames();
+            announcementMsgFilterArgsVO.setDepartmentList(departments);
+            announcementMsgFilterArgsVO.setCollegeNameList(collegeNames);
+            announcementMsgFilterArgsVO.setTeachingPointNameList(teachingPointNames);
+            return announcementMsgFilterArgsVO;
+        }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(userType)){
+            // 获取近五年的新生筛选项信息
+            // 获取数据并移除 null 值
+            List<String> collegeNames = admissionInformationMapper.selectDistinctCollegeList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+            List<String> majorNames = admissionInformationMapper.selectDistinctMajorNameList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+            List<String> levels = admissionInformationMapper.selectDistinctLevelList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+            List<String> studyForms = admissionInformationMapper.selectDistinctStudyFormList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+            List<String> teachingPointNames = admissionInformationMapper.selectDistinctTeachingPointNameList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+
+            announcementMsgFilterArgsVO.setNewStudentCollegeList(collegeNames);
+            announcementMsgFilterArgsVO.setOldStudentMajorNameList(majorNames);
+            announcementMsgFilterArgsVO.setNewStudentLevelList(levels);
+            announcementMsgFilterArgsVO.setNewStudentStudyFormList(studyForms);
+            announcementMsgFilterArgsVO.setNewStudentTeachingPointList(teachingPointNames);
+            return announcementMsgFilterArgsVO;
+        }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(userType)){
+            // 获取近五年的旧生筛选项信息
+            List<String> distinctColleges = studentStatusService.getBaseMapper().getDistinctColleges(new StudentStatusFilterRO());
+            List<String> distinctMajorNames = studentStatusService.getBaseMapper().getDistinctMajorNames(new StudentStatusFilterRO());
+            List<String> distinctLevels = studentStatusService.getBaseMapper().getDistinctLevels(new StudentStatusFilterRO());
+            List<String> distinctStudyForms = studentStatusService.getBaseMapper().getDistinctStudyForms(new StudentStatusFilterRO());
+            List<String> distinctTeachingPointNames = teachingPointInformationMapper.getAllTeachingPointNames();
+            List<String> distinctAcademicStatuss = studentStatusService.getBaseMapper().getDistinctAcademicStatuss(new StudentStatusFilterRO());
+            List<String> distinctStudyDurations = studentStatusService.getBaseMapper().getDistinctStudyDurations(new StudentStatusFilterRO());
+            announcementMsgFilterArgsVO.setOldStudentCollegeList(distinctColleges);
+            announcementMsgFilterArgsVO.setOldStudentMajorNameList(distinctMajorNames);
+            announcementMsgFilterArgsVO.setOldStudentLevelList(distinctLevels);
+            announcementMsgFilterArgsVO.setOldStudentStudyFormList(distinctStudyForms);
+            announcementMsgFilterArgsVO.setOldStudentTeachingPointList(distinctTeachingPointNames);
+            announcementMsgFilterArgsVO.setOldStudentAcademicStatusList(distinctAcademicStatuss);
+            announcementMsgFilterArgsVO.setOldStudentStudyDurationList(distinctStudyDurations);
+            return announcementMsgFilterArgsVO;
+        }else{
+            log.error("获取公告用户群体筛选项， 传入了错误的用户群体类型 " + userType);
+            return null;
+        }
+    }
 }
