@@ -4,6 +4,7 @@ import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalR
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepPO;
 import com.scnujxjy.backendpoint.dao.entity.office_automation.approval.ApprovalStepRecordPO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepRecordWithStepInformation;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecord;
 import org.mapstruct.Mapper;
@@ -18,6 +19,9 @@ public interface ApprovalInverter {
             @Mapping(target = "approvalStepWithRecordList", source = "approvalStepWithRecordList")
     })
     ApprovalRecordAllInformation approvalRecordStep2Information(ApprovalRecordPO approvalRecordPO, List<ApprovalStepWithRecord> approvalStepWithRecordList);
+
+    @Mappings({})
+    List<ApprovalRecordVO> approvalRecordPO2ApprovalRecordVO(List<ApprovalRecordPO> approvalRecordPOList);
 
     @Mappings({
             @Mapping(target = "stepRecordId", source = "approvalStepRecordPO.id"),

@@ -21,10 +21,13 @@ import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordAllInformation;
+import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalRecordVO;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalStepWithRecord;
 import com.scnujxjy.backendpoint.model.vo.office_automation.ApprovalTypeAllInformation;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.office_automation.approval.ApprovalTypeService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +60,8 @@ public class OfficeAutomationService {
 
     @Resource
     private PlatformUserService platformUserService;
+    @Autowired
+    private ApprovalTypeService approvalTypeService;
 
     public OfficeAutomationService(List<OfficeAutomationHandler> officeAutomationList, List<MongoRepository> mongoRepositories) {
         officeAutomationHandlers = officeAutomationList.stream()
@@ -141,7 +146,7 @@ public class OfficeAutomationService {
      * @param approvalRecordPOPageRO
      * @return
      */
-    public PageVO<ApprovalRecordAllInformation> pageQueryApprovalRecordAllInformation(PageRO<ApprovalRecordPO> approvalRecordPOPageRO) {
+    public PageVO<ApprovalRecordVO> pageQueryApprovalRecordAllInformation(PageRO<ApprovalRecordPO> approvalRecordPOPageRO) {
         if (Objects.isNull(approvalRecordPOPageRO)) {
             throw new BusinessException("分页参数为空，无法查询");
         }
@@ -149,7 +154,7 @@ public class OfficeAutomationService {
         if (Objects.isNull(approvalRecordPO)) {
             approvalRecordPO = new ApprovalRecordPO();
         }
-        Long count = approvalRecordMapper.selectApprovalRecordCount(approvalRecordPOPageRO.getEntity());
+        Long count = approvalRecordMapper.selectApprovalRecordCount(approvalRecordPO);
         if (count == 0) {
             return new PageVO<>(approvalRecordPOPageRO.getPage(), Collections.emptyList());
         }
@@ -157,23 +162,13 @@ public class OfficeAutomationService {
         if (CollUtil.isEmpty(approvalRecordPOS)) {
             throw new BusinessException("OA 记录数据查询为空");
         }
-        List<ApprovalRecordAllInformation> result = approvalRecordPOS.stream()
-                .map(record -> {
-                    // 查询排序好的步骤
-                    List<ApprovalStepPO> approvalStepPOS = selectStepByType(record.getApprovalTypeId());
-                    List<ApprovalStepWithRecord> approvalStepWithRecords = new ArrayList<>();
-                    if (CollUtil.isNotEmpty(approvalStepPOS)) {
-                        approvalStepPOS.forEach(step -> {
-                            List<ApprovalStepRecordPO> approvalStepRecordPOS = approvalStepRecordMapper.selectList(Wrappers.<ApprovalStepRecordPO>lambdaQuery()
-                                    .eq(ApprovalStepRecordPO::getStepId, step.getId())
-                                    .eq(ApprovalStepRecordPO::getApprovalRecordId, record.getId()));
-                            approvalStepWithRecords.add(approvalInverter.step2ApprovalStepWithRecordList(step, approvalStepRecordPOS));
-                        });
-                    }
-                    return approvalInverter.approvalRecordStep2Information(record, approvalStepWithRecords);
-                })
-                .collect(Collectors.toList());
-        return new PageVO<>(approvalRecordPOPageRO, count, result);
+        List<ApprovalRecordVO> approvalRecordVOS = approvalInverter.approvalRecordPO2ApprovalRecordVO(approvalRecordPOS);
+        // 填充类型名称、人名
+        approvalRecordVOS.forEach(approvalRecordVO -> {
+            approvalRecordVO.setApprovalTypeName(Optional.ofNullable(approvalTypeMapper.selectById(approvalRecordVO.getApprovalTypeId())).orElse(new ApprovalTypePO()).getDescription());
+            approvalRecordVO.setInitiatorName(Optional.ofNullable(platformUserService.detailByUsername(approvalRecordVO.getInitiatorUsername())).orElse(new PlatformUserVO()).getName());
+        });
+        return new PageVO<>(approvalRecordPOPageRO, count, approvalRecordVOS);
     }
 
     /**

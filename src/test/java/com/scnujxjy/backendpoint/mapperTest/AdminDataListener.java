@@ -114,7 +114,7 @@ public class AdminDataListener implements ReadListener<ExcelAdminData> {
                 String collegeId = collegeInformationPO.getCollegeId();
                 po.setCollegeId(collegeId);
 
-                po.setUserId(userId);
+                po.setUserId(String.valueOf(userId));
                 log.info("读取到的原始教务员信息 " + data + "\n插入数据库中的信息 " + po);
                 int insert = collegeAdminInformationMapper.insert(po);
                 log.info("二级学院教务员插入结果 " + insert);
