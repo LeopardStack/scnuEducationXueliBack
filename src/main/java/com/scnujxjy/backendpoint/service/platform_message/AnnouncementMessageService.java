@@ -42,6 +42,7 @@ import com.scnujxjy.backendpoint.model.ro.platform_message.*;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgDetailVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgFilterArgsVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
@@ -509,6 +510,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                 .setContent(announcementMessageRO.getContent())
                 .setStatus(announcementMessageRO.getStatus())
                 .setName(platformUserPO.getName())
+                .setUserType(announcementMessageRO.getUserType())
                 .setFilterArgs(announcementMessageRO.getParsedAnnouncementMsgUserFilterRO().filterArgs())
                 .setUserId(platformUserPO.getUserId())
                 .setDueDate(announcementMessageRO.getDueDate() != null
@@ -519,13 +521,6 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         if(insert > 0){
             // 自己不需要收到该公告消息  用异步方法去一个个写 用户群体 公告映射记录
             announcementMessagePO.setRemark("生成公告中");
-//            PlatformMessagePO platformMessagePO = new PlatformMessagePO()
-//                    .setMessageType(ANNOUNCEMENT_MSG.getMessageName())
-//                    .setRelatedMessageId(announcementMessagePO.getId())
-//                    .set
-//                    .setIsPopup(announcementMessageRO.getIsPopup() == null ? "N"
-//                            : announcementMessageRO.getIsPopup() ? "Y" : "N")
-//                    ;
             if(announcementMessageRO.getAnnouncementAttachments() != null && !announcementMessageRO.getAnnouncementAttachments().isEmpty()){
                 int order = 1;
                 List<Long> attachmentPOList = new ArrayList<>();
@@ -572,9 +567,9 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             log.error("发布公告 公告消息插入数据库失败");
             return ResultCode.ANNOUNCEMENT_MSG_FAIL3.generateErrorResultInfo();
         }
-
+        log.info("异步生成平台用户公告，再去将附件信息更新1");
         generatePlatformUserAnnouncementMsg(announcementMessageRO, announcementMessagePO);
-        log.info("异步生成平台用户公告，再去将附件信息更新");
+        log.info("异步生成平台用户公告，再去将附件信息更新2");
         return SaResult.ok("成功发布公告");
     }
 
@@ -698,27 +693,27 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                         }
 
 
-                        if (managerRO.getDepartment() != null && !managerRO.getDepartment().isEmpty()) {
+                        if (managerRO.getDepartmentList() != null && !managerRO.getDepartmentList().isEmpty()) {
                             if(manager.getDepartment() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getDepartment().equals(managerRO.getDepartment());
+                                matches &= matchList(manager.getDepartment(), managerRO.getDepartmentList());
                             }
                         }
 
-                        if (managerRO.getCollegeName() != null && !managerRO.getCollegeName().isEmpty()) {
+                        if (managerRO.getCollegeNameList() != null && !managerRO.getCollegeNameList().isEmpty()) {
                             if(manager.getCollegeName() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getCollegeName().equals(managerRO.getCollegeName());
+                                matches &= matchList(manager.getCollegeName(), managerRO.getCollegeNameList());
                             }
                         }
 
-                        if (managerRO.getTeachingPointName() != null && !managerRO.getTeachingPointName().isEmpty()) {
+                        if (managerRO.getTeachingPointNameList() != null && !managerRO.getTeachingPointNameList().isEmpty()) {
                             if(manager.getTeachingPointName() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getTeachingPointName().equals(managerRO.getTeachingPointName());
+                                matches &= matchList(manager.getTeachingPointName(), managerRO.getTeachingPointNameList());
                             }
                         }
                         // 可以根据需要继续添加其他字段的检查
@@ -754,6 +749,11 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
         return pageVO;
     }
+
+    private boolean matchList(String element, List<String> elementList) {
+        return elementList.contains(element);
+    }
+
 
     private List<ManagerInfoBO> getAllManagersInfo(ManagerRO managerRO) throws Exception {
 
@@ -801,27 +801,27 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                         }
 
 
-                        if (managerRO.getDepartment() != null && !managerRO.getDepartment().isEmpty()) {
+                        if (managerRO.getDepartmentList() != null && !managerRO.getDepartmentList().isEmpty()) {
                             if(manager.getDepartment() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getDepartment().equals(managerRO.getDepartment());
+                                matches &= matchList(manager.getDepartment(), managerRO.getDepartmentList());
                             }
                         }
 
-                        if (managerRO.getCollegeName() != null && !managerRO.getCollegeName().isEmpty()) {
+                        if (managerRO.getCollegeNameList() != null && !managerRO.getCollegeNameList().isEmpty()) {
                             if(manager.getCollegeName() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getCollegeName().equals(managerRO.getCollegeName());
+                                matches &= matchList(manager.getCollegeName(), managerRO.getCollegeNameList());
                             }
                         }
 
-                        if (managerRO.getTeachingPointName() != null && !managerRO.getTeachingPointName().isEmpty()) {
+                        if (managerRO.getTeachingPointNameList() != null && !managerRO.getTeachingPointNameList().isEmpty()) {
                             if(manager.getTeachingPointName() == null){
                                 matches = false;
                             }else{
-                                matches &= manager.getTeachingPointName().equals(managerRO.getTeachingPointName());
+                                matches &= matchList(manager.getTeachingPointName(), managerRO.getTeachingPointNameList());
                             }
                         }
                         // 可以根据需要继续添加其他字段的检查
@@ -892,6 +892,22 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         for(AnnouncementMessagePO announcementMessagePO : announcementMessagePOS){
             AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
             BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
+
+            // 反序列化 筛选对象参数
+            if(announcementMessagePO.getUserType() != null){
+                AnnouncementMsgUserFilterRO announcementMsgUserFilterRO  = null;
+                if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(announcementMessagePO.getUserType())){
+                    ManagerRO managerRO = new ManagerRO();
+                    announcementMsgUserFilterRO = managerRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
+                }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(announcementMessagePO.getUserType())){
+                    NewStudentRO newStudentRO = new NewStudentRO();
+                    announcementMsgUserFilterRO = newStudentRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
+                }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(announcementMessagePO.getUserType())){
+                    OldStudentRO oldStudentRO = new OldStudentRO();
+                    announcementMsgUserFilterRO = oldStudentRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
+                }
+                announcementMessageVO.setParsedAnnouncementMsgUserFilterRO(announcementMsgUserFilterRO);
+            }
 
             List<AttachmentVO> attachmentVOList = new ArrayList<>();
             if(announcementMessagePO.getAttachmentIds() !=  null &&
@@ -999,6 +1015,11 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         // 根据前端传递过来的 附件 ID 集合 来更新附件信息
         List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
         List<Long> announcementAttachmentIds = announcementMessageRO.getAnnouncementAttachmentIds();
+
+        if(announcementAttachmentIds == null){
+            announcementAttachmentIds = new ArrayList<>();
+        }
+
         // 计算 announcementAttachmentIds 存在 但是 attachmentIds 不存在的附件 ID
         List<Long> difference = calculateDifference(announcementAttachmentIds, attachmentIds);
 
@@ -1006,8 +1027,10 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         // 删除差集里面的 附件信息
         for(Long deleteId : difference){
             AttachmentPO deleteAttachment = attachmentService.getById(deleteId);
-            minioService.deleteFileByAbsolutePath(deleteAttachment.getAttachmentMinioPath());
-            attachmentService.getBaseMapper().deleteById(deleteId);
+            if(deleteAttachment != null){
+                minioService.deleteFileByAbsolutePath(deleteAttachment.getAttachmentMinioPath());
+                attachmentService.getBaseMapper().deleteById(deleteId);
+            }
         }
 
         // 将 attachmentIds 的东西保存 即可
@@ -1173,5 +1196,95 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             log.error("获取公告用户群体筛选项， 传入了错误的用户群体类型 " + userType);
             return null;
         }
+    }
+
+    /**
+     * 获取用户自己发布的公告所涉及的群体
+     * @param announcementMsgUsersRO
+     * @param announcementMessagePO
+     * @return
+     */
+    public SaResult getUserCreatedAnnouncementMsgsUsers(PageRO<AnnouncementMsgUsersRO> announcementMsgUsersRO, AnnouncementMessagePO announcementMessagePO) {
+        int pageNumber = announcementMsgUsersRO.getPageNumber().intValue();
+        int pageSize = announcementMsgUsersRO.getPageSize().intValue();
+
+        // 分页查询
+        Page<PlatformMessagePO> page = new Page<>(pageNumber, pageSize);
+        List<PlatformMessagePO> platformMessagePOS = platformMessageMapper.selectPage(page,
+                new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                        .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+        ).getRecords();
+
+        // 统计
+        List<PlatformMessagePO> platformMessagePOS1 = platformMessageMapper.selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+        );
+        long total = platformMessagePOS1.size();
+        // 使用 Stream API 计算已读消息数量
+        long readCount = platformMessagePOS1.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getIsRead())) // 过滤出已读消息，安全地检查 Boolean 值
+                .count();
+        long unreadCount = total - readCount;
+
+        // 根据不同的用户类型 来获取用户的详细信息
+        List<String> userIds = platformMessagePOS.stream().map(PlatformMessagePO::getUserId).collect(Collectors.toList());
+
+        if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
+            // 管理员
+            // 从Redis获取数据
+            String key = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
+            List<ManagerInfoBO> allManagers = (List<ManagerInfoBO>) redisTemplate.opsForValue().get(key);
+
+            // 过滤数据
+            List<ManagerInfoBO> filteredManagers = allManagers.stream()
+                    .filter(manager -> {
+                        boolean matches = true;
+                        try{
+                            if (!userIds.isEmpty()) {
+                                matches &= matchList("" + manager.getUserId(), userIds);
+                            }
+
+                        }catch (Exception e){
+                            log.error("获取筛选参数条件 失败 " + e);
+                            matches = false;
+                        }
+                        return matches;
+                    })
+                    .collect(Collectors.toList());
+
+            PageVO<ManagerInfoBO> pageVO = new PageVO<>();
+
+            pageVO.setSize(announcementMsgUsersRO.getPageSize());
+            pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
+            pageVO.setRecords(filteredManagers);
+            pageVO.setTotal(total);
+
+            AnnouncementMsgDetailVO<ManagerInfoBO> result = new AnnouncementMsgDetailVO<>();
+            result.setUsers(pageVO);
+            result.setTotal(total);
+            result.setIsRead(readCount);
+            result.setUnRead(unreadCount);
+
+            return SaResult.ok("成功获取公告群体阅读公告情况").setData(result);
+
+        }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
+            // 新生
+        }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
+            // 旧生
+        }
+
+        return SaResult.ok("成功获取公告群体阅读公告情况");
+    }
+
+    /**
+     * 查看 userId 是否在集合里
+     * @param element
+     * @param elementList
+     * @return
+     */
+    private boolean matchList(Long element, List<Long> elementList) {
+        return elementList.contains(element);
     }
 }

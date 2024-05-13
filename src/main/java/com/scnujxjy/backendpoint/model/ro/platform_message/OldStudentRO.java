@@ -1,5 +1,7 @@
 package com.scnujxjy.backendpoint.model.ro.platform_message;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceMsgUserTypeEnum;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -66,8 +68,12 @@ public class OldStudentRO extends AnnouncementMsgUserFilterRO{
 
     @Override
     public String filterArgs() {
-        return AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType() + " "
-                + toString()
-                ;
+        return JSON.toJSONString(this, SerializerFeature.WriteClassName);
+    }
+
+
+    @Override
+    public AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString) {
+        return JSON.parseObject(jsonString, AnnouncementMsgUserFilterRO.class);
     }
 }

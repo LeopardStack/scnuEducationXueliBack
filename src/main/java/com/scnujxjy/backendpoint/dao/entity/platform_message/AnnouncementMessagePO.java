@@ -89,4 +89,9 @@ public class AnnouncementMessagePO implements Serializable {
      * 公告群体的发布情况
      */
     private String remark;
+
+    /**
+     * 用户类型 管理员、新生、在籍生
+     */
+    private String userType;
 }

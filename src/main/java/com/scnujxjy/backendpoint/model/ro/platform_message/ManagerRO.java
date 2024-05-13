@@ -1,11 +1,15 @@
 package com.scnujxjy.backendpoint.model.ro.platform_message;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceMsgUserTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -41,23 +45,27 @@ public class ManagerRO extends AnnouncementMsgUserFilterRO{
     /**
      * 部门
      */
-    private String department;
+    private List<String> departmentList;
 
 
     /**
      * 学院
      */
-    private String collegeName;
+    private List<String> collegeNameList;
 
     /**
      * 教学点
      */
-    private String teachingPointName;
+    private List<String> teachingPointNameList;
 
     @Override
     public String filterArgs() {
-        return AnnounceMsgUserTypeEnum.MANAGER.getUserType() + " "
-                + toString()
-                ;
+        return JSON.toJSONString(this, SerializerFeature.WriteClassName);
+    }
+
+
+    @Override
+    public AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString) {
+        return JSON.parseObject(jsonString, ManagerRO.class);
     }
 }

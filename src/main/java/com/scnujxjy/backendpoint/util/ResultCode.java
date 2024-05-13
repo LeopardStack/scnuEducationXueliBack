@@ -180,6 +180,9 @@ public enum ResultCode {
     ANNOUNCEMENT_MSG_FAIL14(25314,"创建公告消息失败，发布公告的发布状态不合法"),
     ANNOUNCEMENT_MSG_FAIL15(25315,"根据公告 ID 查询不到该公告"),
     ANNOUNCEMENT_MSG_FAIL16(25316,"获取不同用户群体的筛选项时，userType 不能为空"),
+    ANNOUNCEMENT_MSG_FAIL17(25317,"获取用户发布的公告消息所涉及的用户群体时，公告 ID 不能为空"),
+    ANNOUNCEMENT_MSG_FAIL18(25318,"获取用户发布的公告消息所涉及的用户群体时，根据公告 ID 无法查询到公告消息"),
+    ANNOUNCEMENT_MSG_FAIL19(25319,"获取用户发布的公告消息所涉及的用户群体时，参数错误，不能为空"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

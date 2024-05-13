@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.platform_message;
 
+import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMsgUserFilterRO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -60,5 +61,25 @@ public class AnnouncementMessageVO {
      * 附件集合（顺序）
      */
     private List<AttachmentVO> attachmentVOS;
+
+    /**
+     * 是否弹框
+     */
+    private boolean isPopUp;
+
+    /**
+     * 用户集合
+     */
+    private String userType;
+
+    /**
+     * 公告截止时间
+     */
+    private Date dueDate;
+
+    /**
+     * 筛选参数
+     */
+    private AnnouncementMsgUserFilterRO parsedAnnouncementMsgUserFilterRO;
 
 }

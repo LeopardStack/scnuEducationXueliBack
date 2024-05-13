@@ -4,12 +4,9 @@ package com.scnujxjy.backendpoint.controller.platform_message;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceAttachmentEnum;
 import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
+import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceAttachmentEnum;
 import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceMsgUserTypeEnum;
 import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnouncementMsgStatusEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
@@ -17,7 +14,10 @@ import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.AnnouncementMessagePO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.*;
+import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMessageRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMessageUsersRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.AnnouncementMsgUsersRO;
+import com.scnujxjy.backendpoint.model.ro.platform_message.PlatformUserFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
@@ -28,7 +28,6 @@ import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.AnnouncementMessageService;
 import com.scnujxjy.backendpoint.util.ResultCode;
-import com.scnujxjy.backendpoint.util.annotations.UserFilter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -215,9 +214,30 @@ public class AnnouncementMessageController {
 
 
         return announcementMessageService.getUserCreatedAnnouncementMsgs(platformUserPO);
+    }
 
 
-//        return SaResult.ok("成功获取创建的公告消息").setData(announcementMessagePOS);
+    @PostMapping("get_user_created_announcement_msgs_users")
+    @ApiOperation(value = "获取请求用户自己发布的公告消息的阅读情况")
+    public SaResult getUserCreatedAnnouncementMsgsUsers(@RequestBody PageRO<AnnouncementMsgUsersRO> announcementMsgUsersRO){
+
+        if(announcementMsgUsersRO == null){
+
+            return ResultCode.ANNOUNCEMENT_MSG_FAIL17.generateErrorResultInfo();
+        }
+
+        if(announcementMsgUsersRO.getEntity() == null){
+            return ResultCode.ANNOUNCEMENT_MSG_FAIL19.generateErrorResultInfo();
+        }
+
+        AnnouncementMessagePO announcementMessagePO = announcementMessageService.getBaseMapper().selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
+                .eq(AnnouncementMessagePO::getId, announcementMsgUsersRO.getEntity().getAnnouncementMsgId()));
+        if(announcementMessagePO == null){
+            return ResultCode.ANNOUNCEMENT_MSG_FAIL18.generateErrorResultInfo();
+        }
+
+
+        return announcementMessageService.getUserCreatedAnnouncementMsgsUsers(announcementMsgUsersRO, announcementMessagePO);
     }
 
     /**

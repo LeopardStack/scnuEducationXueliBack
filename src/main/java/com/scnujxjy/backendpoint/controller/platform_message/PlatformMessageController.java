@@ -1,12 +1,17 @@
 package com.scnujxjy.backendpoint.controller.platform_message;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsFilesGetRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.CourseScheduleFilterRO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
+import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +39,9 @@ public class PlatformMessageController {
     private PlatformMessageService platformMessageService;
 
     @Resource
+    private PlatformUserService platformUserService;
+
+    @Resource
     private MinioService minioService;
 
     @Value("${minio.importBucketName}")
@@ -58,6 +66,30 @@ public class PlatformMessageController {
             throw new RuntimeException("数据未找到");
         }
         return SaResult.data(platformMessageVO);
+    }
+
+    /**
+     * 设置消息已读
+     *
+     * @param msgId 消息类型
+     * @return 下载消息列表
+     */
+    @PostMapping("/set_msg_read")
+    public SaResult setMsgRead(Long msgId) {
+        String loginIdAsString = StpUtil.getLoginIdAsString();
+        PlatformUserPO platformUserPO = platformUserService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                .eq(PlatformUserPO::getUsername, loginIdAsString));
+
+        PlatformMessagePO platformMessagePO = platformMessageService.getBaseMapper().selectOne(new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getRelatedMessageId, msgId)
+                .eq(PlatformMessagePO::getUserId, platformUserPO.getUserId())
+        );
+        if(platformMessagePO == null){
+            return SaResult.error("设置消息已读未读错误，根据 消息 ID 找不到该消息");
+        }
+        platformMessagePO.setIsRead(true);
+        int i = platformMessageService.getBaseMapper().updateById(platformMessagePO);
+        return SaResult.ok("设置成功");
     }
 
 

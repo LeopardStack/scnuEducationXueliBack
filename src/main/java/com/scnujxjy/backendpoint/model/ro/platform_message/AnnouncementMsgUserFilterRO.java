@@ -6,4 +6,5 @@ package com.scnujxjy.backendpoint.model.ro.platform_message;
  */
 public abstract class AnnouncementMsgUserFilterRO {
     public abstract String filterArgs();
+    public abstract AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString);
 }
