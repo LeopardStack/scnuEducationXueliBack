@@ -3,7 +3,10 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+<<<<<<< HEAD
 import org.springframework.context.event.EventListener;
+=======
+>>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -54,7 +57,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -162,7 +164,7 @@ public class HealthCheckTask {
     /**
      * 使用@PostConstruct注解确保在SpringBoot启动时执行此方法
      */
-    @PostConstruct
+//    @PostConstruct
     public void clearRedisDataOnStartup() {
         try {
             // 清除Redis中的所有数据
@@ -415,6 +417,7 @@ public class HealthCheckTask {
         String tempKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix() + ":temp";
         String mainKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
 
+<<<<<<< HEAD
         List<ManagerInfoBO> managerInfoList = scnuXueliTools.getManagerInfoList();
         redisTemplate.opsForValue().set(tempKey, managerInfoList);
         redisTemplate.rename(tempKey, mainKey);
@@ -423,6 +426,8 @@ public class HealthCheckTask {
 
 
 
+=======
+>>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 //    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
 //    @Async
     public void updateWhiteList() {

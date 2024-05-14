@@ -25,6 +25,8 @@ public class PlatformUserRO {
      */
     private Long roleId;
 
+    private List<Long> roleIds;
+
     /**
      * 用户头像地址
      */

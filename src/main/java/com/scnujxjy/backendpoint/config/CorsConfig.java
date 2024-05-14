@@ -28,11 +28,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(new IPWhiteListInterceptor()).addPathPatterns("/**");
 
         registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**")
         .excludePathPatterns("/platform-user/login")
         ;
+
     }
 
     @Override

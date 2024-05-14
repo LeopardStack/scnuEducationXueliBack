@@ -8,11 +8,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
+<<<<<<< HEAD
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.*;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
+=======
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
+>>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
+import com.scnujxjy.backendpoint.inverter.admission_information.AdmissionInformationInverter;
+import com.scnujxjy.backendpoint.inverter.registration_record_card.ClassInformationInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.OldStudentRO;
@@ -21,21 +28,20 @@ import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatus
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_process.ScoreInformationFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.*;
-import com.scnujxjy.backendpoint.model.vo.teaching_process.CourseInformationSelectArgs;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.FilterDataVO;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
-import com.scnujxjy.backendpoint.util.filter.CollegeAdminFilter;
-import com.scnujxjy.backendpoint.util.filter.TeacherFilter;
 import lombok.extern.slf4j.Slf4j;
+<<<<<<< HEAD
 import org.apache.commons.math3.analysis.function.Abs;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.BeanUtils;
+=======
+import org.springframework.beans.factory.annotation.Autowired;
+>>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -80,6 +86,10 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private AdmissionInformationInverter admissionInformationInverter;
+    @Autowired
+    private ClassInformationInverter classInformationInverter;
 
     /**
      * 根据id查询学籍信息
@@ -187,124 +197,86 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
     /**
      * 根据学生的身份证号码查询其学籍信息，包含：
      * 班级信息、学籍信息、原学历信息、毕业信息、学位信息、入学照片与毕业照片
+     *
      * @param studentId 学生证件号码
      * @return
      */
     public List<StudentAllStatusInfoVO> statusInfoByIdNumber(String studentId) {
         // 尝试从Redis中获取数据
         String redisKey = "studentStatus:" + studentId;
-        List<StudentAllStatusInfoVO> cachedData = (List<StudentAllStatusInfoVO>)redisTemplate.opsForValue().get(redisKey);
-
+        List<StudentAllStatusInfoVO> cachedData = (List<StudentAllStatusInfoVO>) redisTemplate.opsForValue().get(redisKey);
         if (cachedData != null) {
             // 如果Redis中有数据，直接返回
-
             return cachedData;
         }
-
-
-
         List<StudentAllStatusInfoVO> studentAllStatusInfoVOS = new ArrayList<>();
-
         List<StudentStatusVO> studentStatusPOS = studentStatusMapper.selectStudentByidNumber(studentId);
-        for(StudentStatusVO studentStatusVO: studentStatusPOS){
+        for (StudentStatusVO studentStatusVO : studentStatusPOS) {
             String grade = studentStatusVO.getGrade();
-            List<PersonalInfoVO> personalInfoVOS = personalInfoMapper.
-                    selectInfoByGradeAndIdNumber(grade, studentId);
-            if(personalInfoVOS.size() > 1){
-                throw new RuntimeException("该学生的个人信息在 同一个年级中出现了两条记录 " + studentId);
-            }else{
-                List<OriginalEducationInfoVO> originalEducationInfoVOS = originalEducationInfoMapper.
-                        selectInfoByGradeAndIdNumber(grade, studentId);
-                if(originalEducationInfoVOS.size() > 1){
-                    throw new RuntimeException("该学生的原学历信息在 同一个年级中出现了两条记录 " + studentId);
-                }else {
-                    List<GraduationInfoVO> graduationInfoVOS = graduationInfoMapper.
-                            selectInfoByGradeAndIdNumber(grade, studentId);
-                    if (graduationInfoVOS.size() > 1) {
-                        throw new RuntimeException("该学生的毕业信息在 同一个年级中出现了两条记录 " + studentId);
-                    } else {
-                        List<DegreeInfoVO> degreeInfoVOS = degreeInfoMapper.
-                                selectInfoByGradeAndIdNumber(studentStatusVO.getStudentNumber());
-                        if (degreeInfoVOS.size() > 1) {
-                            throw new RuntimeException("该学生的学位信息在 同一个年级中出现了两条记录 " + studentId);
-                        } else {
-                            List<AdmissionInformationPO> admissionInformationPOS =
-                                    admissionInformationMapper.selectInfoByGradeAndIdNumber(grade, studentId);
-                            if (admissionInformationPOS.size() > 1) {
-                                throw new RuntimeException("该学生的新生录取信息在 同一个年级中出现了两条记录 " + studentId);
-                            } else {
-                                StudentAllStatusInfoVO studentAllStatusInfoVO = new StudentAllStatusInfoVO();
-                                studentAllStatusInfoVO.setStudentStatusVO(studentStatusVO);
-                                studentAllStatusInfoVO.setPersonalInfoVO(
-                                        personalInfoVOS.size() > 0 ? personalInfoVOS.get(0) : null);
-                                studentAllStatusInfoVO.setOriginalEducationInfoVO(
-                                        originalEducationInfoVOS.size() > 0 ? originalEducationInfoVOS.get(0) : null);
-                                studentAllStatusInfoVO.setGraduationInfoVO(
-                                        graduationInfoVOS.size() > 0 ? graduationInfoVOS.get(0) : null);
-                                studentAllStatusInfoVO.setDegreeInfoVO(
-                                        degreeInfoVOS.size() > 0 ? degreeInfoVOS.get(0) : null);
-
-                                AdmissionInformationVO admissionInformationVO = new AdmissionInformationVO();
-                                if (admissionInformationPOS.size() > 0) {
-                                    // 获取录取信息
-                                    BeanUtils.copyProperties(admissionInformationPOS.get(0), admissionInformationVO);
-                                    studentAllStatusInfoVO.setAdmissionInformationVO(admissionInformationVO);
-                                } else {
-                                    studentAllStatusInfoVO.setAdmissionInformationVO(null);
-                                }
-
-                                List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(studentStatusVO.getClassIdentifier());
-                                if(classInformationPOS.size() > 0){
-                                    // 获取班级信息
-                                    ClassInformationVO classInformationVO = new ClassInformationVO();
-                                    BeanUtils.copyProperties(classInformationPOS.get(0), classInformationVO);
-                                    studentAllStatusInfoVO.setClassInformationVO(classInformationVO);
-                                }
-
-
-                                studentAllStatusInfoVOS.add(studentAllStatusInfoVO);
-
-
-
-                            }
-                        }
-
-                    }
-                }
+            // 查询个人信息
+            PersonalInfoVO personalInfoVO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(grade, studentId);
+            List<OriginalEducationInfoVO> originalEducationInfoVOS = originalEducationInfoMapper.selectInfoByGradeAndIdNumber(grade, studentId);
+            if (originalEducationInfoVOS.size() > 1) {
+                throw new RuntimeException("该学生的原学历信息在 同一个年级中出现了两条记录 " + studentId);
             }
-        }
+            // 查询毕业信息
+            List<GraduationInfoVO> graduationInfoVOS = graduationInfoMapper.selectInfoByGradeAndIdNumber(grade, studentId);
+            if (graduationInfoVOS.size() > 1) {
+                throw new RuntimeException("该学生的毕业信息在 同一个年级中出现了两条记录 " + studentId);
+            }
+            // 查询学位信息
+            List<DegreeInfoVO> degreeInfoVOS = degreeInfoMapper.selectInfoByGradeAndIdNumber(studentStatusVO.getStudentNumber());
+            if (degreeInfoVOS.size() > 1) {
+                throw new RuntimeException("该学生的学位信息在 同一个年级中出现了两条记录 " + studentId);
+            }
+            // 查询新生录取信息
+            List<AdmissionInformationPO> admissionInformationPOS = admissionInformationMapper.selectInfoByGradeAndIdNumber(grade, studentId);
+            if (admissionInformationPOS.size() > 1) {
+                throw new RuntimeException("该学生的新生录取信息在 同一个年级中出现了两条记录 " + studentId);
+            }
+            StudentAllStatusInfoVO vo = new StudentAllStatusInfoVO();
+            vo.setStudentStatusVO(studentStatusVO);
+            vo.setPersonalInfoVO(personalInfoVO);
+            vo.setOriginalEducationInfoVO(!originalEducationInfoVOS.isEmpty() ? originalEducationInfoVOS.get(0) : null);
+            vo.setGraduationInfoVO(!graduationInfoVOS.isEmpty() ? graduationInfoVOS.get(0) : null);
+            vo.setDegreeInfoVO(!degreeInfoVOS.isEmpty() ? degreeInfoVOS.get(0) : null);
+            // 填充新生录取信息
+            if (!admissionInformationPOS.isEmpty()) {
+                vo.setAdmissionInformationVO(admissionInformationInverter.po2VO(admissionInformationPOS.get(0)));
+            }
+            // 填充班级信息
+            List<ClassInformationPO> classInformationPOS = classInformationMapper.selectClassByclassIdentifier(studentStatusVO.getClassIdentifier());
+            if (!classInformationPOS.isEmpty()) {
+                vo.setClassInformationVO(classInformationInverter.po2VO(classInformationPOS.get(0)));
+            }
+            studentAllStatusInfoVOS.add(vo);
 
+        }
         // 将查询结果存入Redis，设置过期时间为1小时（可根据需要调整）
         redisTemplate.opsForValue().set(redisKey, studentAllStatusInfoVOS, 100, TimeUnit.HOURS);
-
         return studentAllStatusInfoVOS;
     }
 
-    public byte[] getImportPhoto(String grade){
+    public byte[] getImportPhoto(String grade) {
         String userName = (String) StpUtil.getLoginId();
-        List<PersonalInfoVO> personalInfoVOS = personalInfoMapper.selectInfoByGradeAndIdNumber(grade, userName);
-        if(personalInfoVOS.size() == 0){
-            return null;
-        }else if(personalInfoVOS.size() == 1){
-            PersonalInfoVO personalInfoVO = personalInfoVOS.get(0);
+        PersonalInfoVO personalInfoVO = personalInfoMapper.selectInfoByGradeAndIdNumberOne(grade, userName);
+        if (Objects.nonNull(personalInfoVO)) {
             String entrancePhoto = personalInfoVO.getEntrancePhoto();
             String bucketName = minioService.getBucketName();
             // 去掉桶名
             entrancePhoto = entrancePhoto.replace("./" + bucketName + "/", "");
-
             // 现在你可以使用修改后的entrancePhoto路径
             return minioService.getImageAsBytes(entrancePhoto);
-        }else{
-            throw new RuntimeException("出现了多张入学照片 " + grade + " 证件号码 " + userName);
         }
+        return null;
     }
 
-    public byte[] getExportPhoto(String grade){
+    public byte[] getExportPhoto(String grade) {
         String userName = (String) StpUtil.getLoginId();
         List<GraduationInfoVO> graduationInfoVOS = graduationInfoMapper.selectInfoByGradeAndIdNumber(grade, userName);
-        if(graduationInfoVOS.size() == 0){
+        if (graduationInfoVOS.size() == 0) {
             return null;
-        }else if(graduationInfoVOS.size() == 1){
+        } else if (graduationInfoVOS.size() == 1) {
             GraduationInfoVO graduationInfoVO = graduationInfoVOS.get(0);
             String entrancePhoto = graduationInfoVO.getGraduationPhoto();
             String bucketName = minioService.getBucketName();
@@ -313,13 +285,14 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
 
             // 现在你可以使用修改后的entrancePhoto路径
             return minioService.getImageAsBytes(entrancePhoto);
-        }else{
+        } else {
             throw new RuntimeException("出现了多张入学照片 " + grade + " 证件号码 " + userName);
         }
     }
 
     /**
      * 根据 Minio 路径获取文件
+     *
      * @param degreePhotoUrl 学位图片文件地址
      * @return
      */
@@ -329,8 +302,9 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
 
     /**
      * 根据传入的筛选参数 和角色筛选器来获取对应的学籍数据
+     *
      * @param studentStatusROPageRO 筛选参数
-     * @param filter 角色筛选器
+     * @param filter                角色筛选器
      * @return
      */
     public FilterDataVO allPageQueryStudentStatusFilter(PageRO<StudentStatusFilterRO> studentStatusROPageRO, AbstractFilter filter) {
@@ -339,13 +313,13 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
             log.error("参数缺失");
             return null;
         }
-
         // 根据角色 来调整筛选参数了
         return filter.filterStudentStatus(studentStatusROPageRO);
     }
 
     /**
      * 为不同角色导出学籍数据
+     *
      * @param pageRO
      * @param filter
      */
@@ -355,15 +329,20 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
             log.error("导出学籍数据参数缺失");
 
         }
+<<<<<<< HEAD
 
 
         filter.exportStudentStatusData(pageRO, userId, platformMessagePO);
+=======
+        filter.exportStudentStatusData(pageRO, userId);
+>>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
     }
 
     /**
      * 获取学籍数据的筛选参数
+     *
      * @param loginId 登录用户名
-     * @param filter 筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
+     * @param filter  筛选参数（如果是其他用户则需要额外的限制参数，二级学院、教师、教学点）
      * @return
      */
     public StudentStatusSelectArgs getStudentStatusArgs(String loginId, AbstractFilter filter) {
@@ -372,6 +351,7 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
 
     /**
      * 为不同角色导出成绩数据
+     *
      * @param pageRO
      * @param filter
      */
@@ -379,10 +359,7 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
         // 校验参数
         if (Objects.isNull(pageRO)) {
             log.error("导出学籍数据参数缺失");
-
         }
-
-
         filter.exportScoreInformationData(pageRO, userId);
     }
 
