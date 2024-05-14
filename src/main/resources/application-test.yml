@@ -141,6 +141,7 @@ minio:
   bucketName: xuelistudentpictures
   courseCoverDir: xueli-course-resources-test
   importBucketName: dataimport-test
+  systemCommonBucket: xueli-system-common
 
 #minio:
 #  url: http://124.71.34.208:9000/

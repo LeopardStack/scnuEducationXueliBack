@@ -3,10 +3,7 @@ package com.scnujxjy.backendpoint.util;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-<<<<<<< HEAD
 import org.springframework.context.event.EventListener;
-=======
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -417,17 +414,12 @@ public class HealthCheckTask {
         String tempKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix() + ":temp";
         String mainKey = RedisKeysEnum.PLATFORM_MANAGER_INFO.getRedisKeyOrPrefix();
 
-<<<<<<< HEAD
         List<ManagerInfoBO> managerInfoList = scnuXueliTools.getManagerInfoList();
         redisTemplate.opsForValue().set(tempKey, managerInfoList);
         redisTemplate.rename(tempKey, mainKey);
     }
 
 
-
-
-=======
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 //    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
 //    @Async
     public void updateWhiteList() {

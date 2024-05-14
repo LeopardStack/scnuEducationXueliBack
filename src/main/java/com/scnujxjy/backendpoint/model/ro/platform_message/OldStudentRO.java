@@ -73,7 +73,7 @@ public class OldStudentRO extends AnnouncementMsgUserFilterRO{
 
 
     @Override
-    public AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString) {
-        return JSON.parseObject(jsonString, AnnouncementMsgUserFilterRO.class);
+    public OldStudentRO parseFilterArgs(String jsonString) {
+        return JSON.parseObject(jsonString, OldStudentRO.class);
     }
 }

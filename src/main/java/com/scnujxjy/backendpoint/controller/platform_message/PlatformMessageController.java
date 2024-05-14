@@ -2,41 +2,31 @@ package com.scnujxjy.backendpoint.controller.platform_message;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-<<<<<<< HEAD
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.platform_message.UserUploadsPO;
-=======
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
+
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.SystemMessageRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsFilesGetRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.UserUploadsRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformMessageVO;
-<<<<<<< HEAD
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
-=======
 import com.scnujxjy.backendpoint.model.vo.platform_message.SystemMessageVO;
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import com.scnujxjy.backendpoint.service.platform_message.SystemMessageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-<<<<<<< HEAD
 import org.springframework.web.bind.annotation.*;
-
-=======
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -56,11 +46,10 @@ public class PlatformMessageController {
     private PlatformMessageService platformMessageService;
 
     @Resource
-<<<<<<< HEAD
     private PlatformUserService platformUserService;
-=======
+    @Resource
+
     private SystemMessageService systemMessageService;
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 
     @Resource
     private MinioService minioService;

@@ -68,4 +68,9 @@ public class ManagerInfoBO implements Serializable {
     private String teachingPointName;
 
 
+    /**
+     * 已读未读
+     */
+    private boolean isRead;
+
 }

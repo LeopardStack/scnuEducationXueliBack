@@ -245,8 +245,9 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
                             ;
                     attachmentVOList.add(attachmentVO);
                 }
+                announcementMessageVO.setAttachmentVOS(attachmentVOList);
             }
-            announcementMessageVO.setAttachmentVOS(attachmentVOList);
+
             announcementMessageVOList.add(announcementMessageVO);
         }
         List<AnnouncementMessageVO> sortedList = announcementMessageVOList.stream()
@@ -256,7 +257,7 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
         platformMessageVO.setAnnouncementMessageVOList(sortedList);
 
 
-        return new PlatformMessageVO();
+        return platformMessageVO;
     }
 }
 

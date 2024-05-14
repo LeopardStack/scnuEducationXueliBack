@@ -15,7 +15,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ExamTeachersInfoVO implements Serializable {
+public class
+ExamTeachersInfoVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

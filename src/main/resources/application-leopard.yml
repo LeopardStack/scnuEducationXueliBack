@@ -135,28 +135,26 @@ logging:
 #    com.scnujxjy.backendpoint.dao.mapper: DEBUG
 
 
-minio:
-  #  url: http://113.108.140.173:8000/
-  url: https://scnuXueliBack.gdou.com/
-  accessKey: WU2D2LUC4BM0KHDLESAH
-  secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
-  bucketName: xuelistudentpictures
-<<<<<<< HEAD
-  courseCoverDir: xueli-course-resources
-  importBucketName: dataimport
-  systemCommonBucket: xueli-system-common
-=======
-  courseCoverDir: xueli-course-resources-test
-  importBucketName: dataimport-test
-
 #minio:
-#  url: http://124.71.34.208:9000/
-#  accessKey: LZUTGX5G7ESR7UPBQ6XG
-#  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
+#  #  url: http://113.108.140.173:8000/
+#  url: https://scnuXueliBack.gdou.com/
+#  accessKey: WU2D2LUC4BM0KHDLESAH
+#  secretKey: WkRxnF+X6icslZObAqT0xB6L6+yUQIMgMx082pDD
 #  bucketName: xuelistudentpictures
 #  courseCoverDir: xueli-course-resources
 #  importBucketName: dataimport
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
+#  systemCommonBucket: xueli-system-common
+#  courseCoverDir: xueli-course-resources-test
+#  importBucketName: dataimport-test
+
+minio:
+  url: http://124.71.34.208:9000/
+  accessKey: LZUTGX5G7ESR7UPBQ6XG
+  secretKey: 14Bvfn57LFQ64LEP1J7cw3SOEkoMru9YV9faOzNc
+  bucketName: xuelistudentpictures
+  courseCoverDir: xueli-course-resources
+  importBucketName: dataimport
+  systemCommonBucket: xueli-system-common
 
 
 sa-token:

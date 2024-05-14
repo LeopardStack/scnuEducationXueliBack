@@ -1,35 +1,26 @@
-package com.scnujxjy.backendpoint.dao.entity.platform_message;
+package com.scnujxjy.backendpoint.model.vo.platform_message;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
- * <p>
- * 平台消息表
- * </p>
- *
- * @author 谢辉龙
- * @since 2023-09-23
+ * 这个类 主要为了存储 每个用户的弹框 未读系统消息
+ * 目前主要是公告
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-@TableName("platform_message")
-public class PlatformMessagePO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
+public class PlatformPopupMsgVO {
     /**
      * 自增主键
      */
@@ -66,4 +57,8 @@ public class PlatformMessagePO implements Serializable {
      */
     private String isPopup;
 
+    /**
+     * 消息主体
+     */
+    private Object msgBody;
 }

@@ -1,5 +1,6 @@
 package com.scnujxjy.backendpoint.model.vo.basic;
 
+import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformPopupMsgVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -65,5 +66,15 @@ public class PlatformUserVO implements Serializable {
      * 新生录取公告
      */
     private String newStudentAnnouncement;
+
+    /**
+     * 系统消息
+     */
+    private List<PlatformPopupMsgVO> platformPopupMsgVOList;
+
+    /**
+     * 未读消息总条数
+     */
+    private Integer unReadMsgCount;
 
 }

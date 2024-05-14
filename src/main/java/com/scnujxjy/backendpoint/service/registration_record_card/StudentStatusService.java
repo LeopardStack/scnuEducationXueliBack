@@ -8,21 +8,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
-<<<<<<< HEAD
 import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
-import com.scnujxjy.backendpoint.dao.entity.registration_record_card.*;
-import com.scnujxjy.backendpoint.dao.entity.teaching_process.ScoreInformationPO;
-=======
+
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.ClassInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.*;
 import com.scnujxjy.backendpoint.inverter.admission_information.AdmissionInformationInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.ClassInformationInverter;
 import com.scnujxjy.backendpoint.inverter.registration_record_card.StudentStatusInverter;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
-import com.scnujxjy.backendpoint.model.ro.platform_message.OldStudentRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusRO;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusTeacherFilterRO;
@@ -34,13 +29,7 @@ import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
 import com.scnujxjy.backendpoint.util.filter.AbstractFilter;
 import lombok.extern.slf4j.Slf4j;
-<<<<<<< HEAD
-import org.apache.commons.math3.analysis.function.Abs;
-import org.apache.ibatis.annotations.Param;
-import org.springframework.beans.BeanUtils;
-=======
 import org.springframework.beans.factory.annotation.Autowired;
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -329,13 +318,9 @@ public class StudentStatusService extends ServiceImpl<StudentStatusMapper, Stude
             log.error("导出学籍数据参数缺失");
 
         }
-<<<<<<< HEAD
-
 
         filter.exportStudentStatusData(pageRO, userId, platformMessagePO);
-=======
-        filter.exportStudentStatusData(pageRO, userId);
->>>>>>> a0b1e80ec3937ad2a1988746b271c73bec165953
+
     }
 
     /**

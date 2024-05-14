@@ -62,6 +62,11 @@ public class NewStudentRO extends AnnouncementMsgUserFilterRO{
      */
     private List<String> teachingPointList;
 
+    /**
+     * 新生身份证号码列表 即平台用户名
+     */
+    private List<String> usernames;
+
     @Override
     public String filterArgs() {
         return JSON.toJSONString(this, SerializerFeature.WriteClassName);
@@ -69,7 +74,7 @@ public class NewStudentRO extends AnnouncementMsgUserFilterRO{
 
 
     @Override
-    public AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString) {
-        return JSON.parseObject(jsonString, AnnouncementMsgUserFilterRO.class);
+    public NewStudentRO parseFilterArgs(String jsonString) {
+        return JSON.parseObject(jsonString, NewStudentRO.class);
     }
 }

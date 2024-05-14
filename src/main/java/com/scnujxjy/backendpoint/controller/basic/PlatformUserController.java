@@ -9,12 +9,16 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.constant.enums.MessageEnum;
 import com.scnujxjy.backendpoint.constant.enums.announceMsg.AnnounceAttachmentEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.SystemEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.AnnouncementMessagePO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.AttachmentPO;
+import com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO;
 import com.scnujxjy.backendpoint.dao.entity.registration_record_card.StudentStatusPO;
 import com.scnujxjy.backendpoint.model.bo.UserRolePermissionBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
@@ -24,22 +28,26 @@ import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInforma
 import com.scnujxjy.backendpoint.model.vo.basic.OnlineCount;
 import com.scnujxjy.backendpoint.model.vo.basic.PlatformUserVO;
 import com.scnujxjy.backendpoint.model.vo.basic.UserLoginVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.PlatformPopupMsgVO;
 import com.scnujxjy.backendpoint.service.admission_information.AdmissionInformationService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
+import com.scnujxjy.backendpoint.service.platform_message.AnnouncementMessageService;
+import com.scnujxjy.backendpoint.service.platform_message.AttachmentService;
+import com.scnujxjy.backendpoint.service.platform_message.PlatformMessageService;
 import com.scnujxjy.backendpoint.service.registration_record_card.StudentStatusService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.annotations.CheckIPWhiteList;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
@@ -68,6 +76,15 @@ public class PlatformUserController {
 
     @Resource
     private StudentStatusService studentStatusService;
+
+    @Resource
+    private PlatformMessageService platformMessageService;
+
+    @Resource
+    private AnnouncementMessageService announcementMessageService;
+
+    @Resource
+    private AttachmentService attachmentService;
 
     @Resource
     protected RedisTemplate<String, Object> redisTemplate;
@@ -206,7 +223,7 @@ public class PlatformUserController {
     }
 
     /**
-     * 根据用户id查询数据
+     * 根据用户id查询
      *
      * @param userId 用户id
      * @return 用户信息
@@ -224,7 +241,8 @@ public class PlatformUserController {
     }
 
     /**
-     * 根据用户id查询数据
+     * 根据用户id查询数据 用户的基础数据 比如 未读消息总数
+     * 是否有弹框消息
      *
      * @return 用户信息
      */
@@ -243,6 +261,57 @@ public class PlatformUserController {
         boolean isNewStudent = false;
         // 查询数据
         PlatformUserVO platformUserVO = platformUserService.detailByUsername(userName);
+
+        // 查询未读消息
+        List<PlatformMessagePO> platformMessagePOList = platformMessageService.getBaseMapper().selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getUserId, platformUserVO.getUserId())
+                .eq(PlatformMessagePO::getIsRead, Boolean.FALSE)
+        );
+        platformUserVO.setUnReadMsgCount(platformMessagePOList.size());
+
+        List<PlatformPopupMsgVO> platformPopupMsgVOList = new ArrayList<>();
+        for(PlatformMessagePO platformMessagePO : platformMessagePOList){
+            // 公告消息 如果是弹框需要加入进来
+            AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
+            PlatformPopupMsgVO platformPopupMsgVO = new PlatformPopupMsgVO();
+            BeanUtils.copyProperties(platformMessagePO, platformPopupMsgVO);
+
+            if(platformMessagePO.getIsPopup().equals("N")){
+                // 非弹框消息直接跳过
+            }
+            if(platformMessagePO.getMessageType().equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
+
+                AnnouncementMessagePO announcementMessagePO = announcementMessageService.getBaseMapper().selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
+                        .eq(AnnouncementMessagePO::getId, platformMessagePO.getRelatedMessageId()));
+
+                BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
+
+                List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
+                List<AttachmentVO> attachmentVOList = new ArrayList<>();
+                if(attachmentIds != null && !attachmentIds.isEmpty()) {
+                    for(Long attachmentId : attachmentIds){
+                        AttachmentPO attachmentPO = attachmentService.getBaseMapper().selectOne(new LambdaQueryWrapper<AttachmentPO>()
+                                .eq(AttachmentPO::getId, attachmentId));
+                        AttachmentVO attachmentVO = new AttachmentVO()
+                                .setId(attachmentPO.getId())
+                                .setRelatedId(attachmentPO.getRelatedId())
+                                .setAttachmentType(attachmentPO.getAttachmentType())
+                                .setAttachmentOrder(attachmentPO.getAttachmentOrder())
+                                .setAttachmentMinioPath(attachmentPO.getAttachmentMinioPath())
+                                .setAttachmentName(attachmentPO.getAttachmentName())
+                                .setAttachmentSize(attachmentPO.getAttachmentSize())
+                                .setUsername(attachmentPO.getUsername())
+                                ;
+                        attachmentVOList.add(attachmentVO);
+
+                    }
+
+                }
+                announcementMessageVO.setAttachmentVOS(attachmentVOList);
+            }
+
+            platformPopupMsgVO.setMsgBody(announcementMessageVO);
+        }
 
 
         if(roleList.contains(RoleEnum.STUDENT.getRoleName())){

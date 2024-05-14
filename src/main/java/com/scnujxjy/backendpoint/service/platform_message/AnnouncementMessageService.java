@@ -60,6 +60,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,6 +71,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.scnujxjy.backendpoint.config.AsyncConfig.getIOTaskExecutor;
 import static com.scnujxjy.backendpoint.constant.enums.AttachmentType.ANNOUNCEMENT;
 import static com.scnujxjy.backendpoint.constant.enums.MessageEnum.ANNOUNCEMENT_MSG;
 import static com.scnujxjy.backendpoint.constant.enums.MessageStatus.PUBLISH;
@@ -357,7 +359,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         return Long.valueOf(count);
     }
 
-    @Transactional(rollbackFor = RuntimeException.class)
+
     public void insertPlatformMsgForUserList(AnnouncementMessageUsersRO announcementMessageRO,
                                              AnnouncementMessagePO announcementMessagePO,
                                              List<String> userNameList){
@@ -391,8 +393,9 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
      * 该方法 是一个异步方法 用来 生成用户群体的公告消息
      * @param announcementMessageRO
      */
-    @Async
-    protected void generatePlatformUserAnnouncementMsg(AnnouncementMessageUsersRO announcementMessageRO,
+
+    @Transactional
+    public void generatePlatformUserAnnouncementMsg(AnnouncementMessageUsersRO announcementMessageRO,
                                                        AnnouncementMessagePO announcementMessagePO){
         if(announcementMessageRO.getUserNameList() != null &&
                 !announcementMessageRO.getUserNameList().isEmpty()){
@@ -568,7 +571,9 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             return ResultCode.ANNOUNCEMENT_MSG_FAIL3.generateErrorResultInfo();
         }
         log.info("异步生成平台用户公告，再去将附件信息更新1");
-        generatePlatformUserAnnouncementMsg(announcementMessageRO, announcementMessagePO);
+        getIOTaskExecutor().execute(()->
+                generatePlatformUserAnnouncementMsg(announcementMessageRO,
+                        announcementMessagePO));;
         log.info("异步生成平台用户公告，再去将附件信息更新2");
         return SaResult.ok("成功发布公告");
     }
@@ -1204,7 +1209,8 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
      * @param announcementMessagePO
      * @return
      */
-    public SaResult getUserCreatedAnnouncementMsgsUsers(PageRO<AnnouncementMsgUsersRO> announcementMsgUsersRO, AnnouncementMessagePO announcementMessagePO) {
+    public SaResult getUserCreatedAnnouncementMsgsUsers(PageRO<AnnouncementMsgUsersRO> announcementMsgUsersRO,
+                                                        AnnouncementMessagePO announcementMessagePO) {
         int pageNumber = announcementMsgUsersRO.getPageNumber().intValue();
         int pageSize = announcementMsgUsersRO.getPageSize().intValue();
 
@@ -1231,6 +1237,13 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         // 根据不同的用户类型 来获取用户的详细信息
         List<String> userIds = platformMessagePOS.stream().map(PlatformMessagePO::getUserId).collect(Collectors.toList());
 
+        List<String> usernames = new ArrayList<>();
+        for(String userId : userIds){
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(new LambdaQueryWrapper<PlatformUserPO>()
+                    .eq(PlatformUserPO::getUserId, Long.parseLong(userId)));
+            usernames.add(platformUserPO.getUsername());
+        }
+
         if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
             // 管理员
             // 从Redis获取数据
@@ -1256,6 +1269,17 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
             PageVO<ManagerInfoBO> pageVO = new PageVO<>();
 
+            // 更新已读未读情况
+            for(ManagerInfoBO managerInfoBO : filteredManagers){
+                Long userId = managerInfoBO.getUserId();
+                PlatformMessagePO platformMessagePO = platformMessageMapper.selectOne(new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getUserId, userId)
+                        .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                        .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+                );
+                managerInfoBO.setRead(platformMessagePO.getIsRead());
+            }
+
             pageVO.setSize(announcementMsgUsersRO.getPageSize());
             pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
             pageVO.setRecords(filteredManagers);
@@ -1271,6 +1295,29 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
         }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
             // 新生
+            NewStudentRO newStudentRO = new NewStudentRO();
+
+            newStudentRO = newStudentRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
+
+
+            List<AdmissionInformationPO> admissionInformationPOList = admissionInformationMapper
+                    .getAllAdmissionInformationByAnnouncementMsg(new NewStudentRO().setUsernames(usernames));
+
+
+            PageVO<AdmissionInformationPO> pageVO = new PageVO<>();
+
+            pageVO.setSize(announcementMsgUsersRO.getPageSize());
+            pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
+            pageVO.setRecords(admissionInformationPOList);
+            pageVO.setTotal(total);
+
+            AnnouncementMsgDetailVO<AdmissionInformationPO> result = new AnnouncementMsgDetailVO<>();
+            result.setUsers(pageVO);
+            result.setTotal(total);
+            result.setIsRead(readCount);
+            result.setUnRead(unreadCount);
+
+            return SaResult.ok("成功获取公告群体阅读公告情况").setData(result);
         }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
             // 旧生
         }

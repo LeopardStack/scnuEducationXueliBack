@@ -65,7 +65,7 @@ public class ManagerRO extends AnnouncementMsgUserFilterRO{
 
 
     @Override
-    public AnnouncementMsgUserFilterRO parseFilterArgs(String jsonString) {
+    public ManagerRO parseFilterArgs(String jsonString) {
         return JSON.parseObject(jsonString, ManagerRO.class);
     }
 }

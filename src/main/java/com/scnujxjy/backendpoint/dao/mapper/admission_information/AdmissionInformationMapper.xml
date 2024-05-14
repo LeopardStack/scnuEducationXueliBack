@@ -153,6 +153,12 @@
                 #{item}
             </foreach>
         </if>
+        <if test="entity.usernames != null and entity.usernames.size() > 0">
+            AND ai.id_card_number IN
+            <foreach item="item" collection="entity.usernames" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
     </sql>
     <select id="getAdmissionInformationByAnnouncementMsg"
             resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO">
