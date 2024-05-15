@@ -57,6 +57,7 @@ import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -83,6 +84,11 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
     @Resource
     private AnnouncementMessageInverter announcementMessageInverter;
+
+
+    @Resource
+    @Lazy
+    private AnnouncementMessageService announcementMessageService;
 
     @Resource
     private PlatformUserService platformUserService;
@@ -572,7 +578,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         }
         log.info("异步生成平台用户公告，再去将附件信息更新1");
         getIOTaskExecutor().execute(()->
-                generatePlatformUserAnnouncementMsg(announcementMessageRO,
+                announcementMessageService.generatePlatformUserAnnouncementMsg(announcementMessageRO,
                         announcementMessagePO));;
         log.info("异步生成平台用户公告，再去将附件信息更新2");
         return SaResult.ok("成功发布公告");
@@ -992,29 +998,64 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         }
 
         // 更新公告的筛选群体参数
+        // 设置是否需要覆盖写用户 - 公告消息映射记录
+        boolean overwriteIdent = false;
         String filterArgs = announcementMessageRO.
                 getParsedAnnouncementMsgUserFilterRO().filterArgs();
         if(!filterArgs.equals(announcementMessagePO.getFilterArgs())){
             announcementMessagePO.setFilterArgs(filterArgs);
+            overwriteIdent = true;
+        }
 
+        // 修改了弹框消息 比如由弹框改为非弹框
+        boolean isPopupChangeIdent = false;
+        // 创建一个分页对象，限制查询结果为 5 条记录
+        Page<PlatformMessagePO> page = new Page<>(1, 5);
+
+        // 执行分页查询
+        Page<PlatformMessagePO> platformMessagePOPage = platformMessageMapper.selectPage(page, new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+        );
+
+        // 获取分页查询的结果列表
+        List<PlatformMessagePO> platformMessagePOList = platformMessagePOPage.getRecords();
+        if (platformMessagePOList != null && !platformMessagePOList.isEmpty()) {
+            // 生成一个随机索引
+            Random random = new Random();
+            int randomIndex = random.nextInt(platformMessagePOList.size());
+
+            // 获取随机的一条记录
+            PlatformMessagePO randomMessage = platformMessagePOList.get(randomIndex);
+
+            // 处理随机取出的记录
+            String isPopup = randomMessage.getIsPopup();
+            if ((isPopup == null || isPopup.equals("N")) && announcementMessageRO.getIsPopup() != null &&
+            announcementMessageRO.getIsPopup().equals(true)) {
+                // 如果用户的 PlatformMessagePO 里面的弹框属性为 N 或者为 null 并且
+                // announcementMessageRO.getIsPopup() 不为 null 并且它也不为 false 那么就要替换
+                // 反之也要替换
+                // 此时要设置用户的平台消息弹框属性为 Y
+                isPopupChangeIdent = true;
+            }else if(isPopup != null && isPopup.equals("Y") && (announcementMessageRO.getIsPopup() == null ||
+                    announcementMessageRO.getIsPopup().equals(false))){
+                // 此时要设置用户的平台消息弹框属性为 N
+                isPopupChangeIdent = true;
+            }
+        }
+
+        if(overwriteIdent){
             // 根据这个最新的群体 来更新群体的用户公告消息记录
             log.info("删除公告消息之前关联的用户消息记录");
             deleteAnnouncementRelatedUsers(announcementMessagePO.getId());
             log.info("更新修改后的公告消息之前关联的用户消息记录");
             generatePlatformUserAnnouncementMsg(announcementMessageRO, announcementMessagePO);
+        }else{
+            if(isPopupChangeIdent){
+                // 仅更新用户-公告消息记录的 弹框属性
+                announcementMessageService.updatePlatformUserAnnouncementMsg(announcementMessageRO, announcementMessagePO);
+            }
         }
-
-        // 修改了弹框消息 比如由弹框改为非弹框
-//        List<PlatformMessagePO> platformMessagePOList = platformMessageMapper.selectList(new LambdaQueryWrapper<PlatformMessagePO>()
-//                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
-//                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
-//        );
-//        if(platformMessagePOList != null && !platformMessagePOList.isEmpty()){
-//            String isPopup = platformMessagePOList.get(0).getIsPopup();
-//            if(announcementMessageRO.getIsPopup() != null && isPopup == null){
-//
-//            }
-//        }
 
 
         // 根据前端传递过来的 附件 ID 集合 来更新附件信息
@@ -1114,6 +1155,12 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
 
         return SaResult.ok("更新公告消息成功");
+    }
+
+    @Transactional
+    public void updatePlatformUserAnnouncementMsg(AnnouncementMessageUsersRO announcementMessageRO,
+                                                   AnnouncementMessagePO announcementMessagePO){
+
     }
 
     private List<Long> calculateDifference(List<Long> attachmentIds, List<Long> announcementAttachmentIds) {
