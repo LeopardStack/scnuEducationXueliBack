@@ -283,6 +283,12 @@
                 #{item}
             </foreach>
         </if>
+        <if test="entity.usernames != null and entity.usernames.size() > 0">
+            AND ss.id_number IN
+            <foreach item="item" collection="entity.usernames" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
     </sql>
     <select id="getAnnouncementMsgUsers"
             resultType="com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO">
@@ -307,6 +313,22 @@
         pi.gender, pi.birth_date, pi.political_status, pi.ethnicity, pi.phone_number,
         pi.address, pi.entrance_photo, tpi.teaching_point_name
         <include refid="commonAnnouncementMsgJoin" />
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgFilters" />
+    </select>
+    <select id="getAllAnnouncementMsgUsersVO"
+            resultType="com.scnujxjy.backendpoint.model.vo.platform_message.StudentStatusAllVO">
+        SELECT ss.*, gi.graduation_date, gi.graduation_photo, ci.class_name, pi.name,
+        pi.gender, pi.birth_date, pi.political_status, pi.ethnicity, pi.phone_number,
+        pi.address, pi.entrance_photo, tpi.teaching_point_name, pu.user_id
+        FROM student_status ss
+        LEFT JOIN graduation_info gi ON ss.student_number = gi.student_number
+        LEFT JOIN class_information ci ON ss.class_identifier = ci.class_identifier
+        LEFT JOIN personal_info pi ON ss.id_number = pi.id_number AND ss.grade = pi.grade
+        LEFT JOIN platform_user pu ON ss.id_number = pu.username
+        LEFT JOIN teaching_point_information tpi
+        ON (ci.class_name = '校内' AND tpi.teaching_point_name = ci.college)
+        OR (ci.class_name != '校内' AND tpi.alias = REGEXP_REPLACE(ci.class_name, '\\d', ''))
         WHERE 1=1
         <include refid="commonAnnouncementMsgFilters" />
     </select>

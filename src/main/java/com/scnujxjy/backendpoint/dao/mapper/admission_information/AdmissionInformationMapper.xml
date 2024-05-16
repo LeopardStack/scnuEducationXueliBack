@@ -180,4 +180,12 @@
         WHERE 1=1
         <include refid="commonAnnouncementMsgUsersFilters" />
     </select>
+    <select id="getAllAdmissionInformationByAnnouncementMsgVO"
+            resultType="com.scnujxjy.backendpoint.model.vo.platform_message.AdmissionInformationVO">
+        SELECT ai.*, pu.user_id  FROM admission_information ai
+        LEFT JOIN platform_user pu
+        ON ai.id_card_number = pu.username
+        WHERE 1=1
+        <include refid="commonAnnouncementMsgUsersFilters" />
+    </select>
 </mapper>

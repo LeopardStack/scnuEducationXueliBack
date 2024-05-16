@@ -58,6 +58,11 @@ public class ManagerRO extends AnnouncementMsgUserFilterRO{
      */
     private List<String> teachingPointNameList;
 
+    /**
+     * 角色
+     */
+    private List<String> roleNameList;
+
     @Override
     public String filterArgs() {
         return JSON.toJSONString(this, SerializerFeature.WriteClassName);

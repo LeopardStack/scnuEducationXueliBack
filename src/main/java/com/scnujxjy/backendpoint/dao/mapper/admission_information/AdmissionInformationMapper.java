@@ -4,9 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.AdmissionInformationRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.NewStudentRO;
-import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.AdmissionInformationVO;
-import com.scnujxjy.backendpoint.model.vo.registration_record_card.PersonalInfoVO;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -75,4 +73,6 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     List<String> selectDistinctTeachingPointNameList();
 
     List<AdmissionInformationPO> getAllAdmissionInformationByAnnouncementMsg(@Param("entity") NewStudentRO newStudentRO);
+
+    List<com.scnujxjy.backendpoint.model.vo.platform_message.AdmissionInformationVO > getAllAdmissionInformationByAnnouncementMsgVO(@Param("entity") NewStudentRO newStudentRO);
 }

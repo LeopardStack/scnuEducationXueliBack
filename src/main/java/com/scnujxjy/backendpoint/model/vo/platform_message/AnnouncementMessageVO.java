@@ -78,6 +78,21 @@ public class AnnouncementMessageVO {
     private Date dueDate;
 
     /**
+     * 公告发布状态
+     */
+    private String status;
+
+    /**
+     * 公告群体写入状态
+     */
+    private String remark;
+
+    /**
+     * 用户名 列表
+     */
+    private List<String> usernameList;
+
+    /**
      * 筛选参数
      */
     private AnnouncementMsgUserFilterRO parsedAnnouncementMsgUserFilterRO;

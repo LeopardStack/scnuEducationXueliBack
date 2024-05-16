@@ -1,4 +1,4 @@
-package com.scnujxjy.backendpoint.model.bo.platform_message;
+package com.scnujxjy.backendpoint.model.vo.platform_message;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @Builder
 @Accessors(chain = true)
-public class ManagerInfoBO implements Serializable {
+public class ManagerInfoVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -66,5 +66,11 @@ public class ManagerInfoBO implements Serializable {
      * 教学点名称
      */
     private String teachingPointName;
+
+
+    /**
+     * 已读未读
+     */
+    private boolean isRead;
 
 }

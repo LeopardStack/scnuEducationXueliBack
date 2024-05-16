@@ -85,7 +85,7 @@ public class AnnouncementMessageController {
 
         List<MultipartFile> announcementAttachments = announcementMessageRO.getAnnouncementAttachments();
         if(announcementAttachments != null){
-            if (announcementAttachments.size() > 3) {
+            if (announcementAttachments.size() > 5) {
                 return ResultCode.ANNOUNCEMENT_MSG_FAIL2.generateErrorResultInfo();
             }
 

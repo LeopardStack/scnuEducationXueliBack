@@ -252,10 +252,10 @@ public class PlatformUserController {
         String cacheKey = "userDetail_" + userName;
 
         // 尝试从缓存中获取数据
-        PlatformUserVO cachedPlatformUserVO = (PlatformUserVO) redisTemplate.opsForValue().get(cacheKey);
-        if (cachedPlatformUserVO != null) {
-            return SaResult.data(cachedPlatformUserVO);
-        }
+//        PlatformUserVO cachedPlatformUserVO = (PlatformUserVO) redisTemplate.opsForValue().get(cacheKey);
+//        if (cachedPlatformUserVO != null) {
+//            return SaResult.data(cachedPlatformUserVO);
+//        }
 
         List<String> roleList = StpUtil.getRoleList();
         boolean isNewStudent = false;
@@ -278,6 +278,7 @@ public class PlatformUserController {
 
             if(platformMessagePO.getIsPopup().equals("N")){
                 // 非弹框消息直接跳过
+                continue;
             }
             if(platformMessagePO.getMessageType().equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
 
@@ -311,8 +312,10 @@ public class PlatformUserController {
             }
 
             platformPopupMsgVO.setMsgBody(announcementMessageVO);
-        }
 
+            platformPopupMsgVOList.add(platformPopupMsgVO);
+        }
+        platformUserVO.setPlatformPopupMsgVOList(platformPopupMsgVOList);
 
         if(roleList.contains(RoleEnum.STUDENT.getRoleName())){
             // 学生需要区分是否是新生
@@ -340,7 +343,7 @@ public class PlatformUserController {
         platformUserVO.setIsNewStudent(isNewStudent);
 
         // 将结果存入 Redis 缓存，并设置适当的过期时间
-        redisTemplate.opsForValue().set(cacheKey, platformUserVO, 10, TimeUnit.HOURS);
+//        redisTemplate.opsForValue().set(cacheKey, platformUserVO, 10, TimeUnit.HOURS);
 
         return SaResult.data(platformUserVO);
     }

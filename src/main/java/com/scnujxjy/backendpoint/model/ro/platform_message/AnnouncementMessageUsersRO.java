@@ -99,6 +99,7 @@ public class AnnouncementMessageUsersRO {
     private Class<? extends AnnouncementMsgUserFilterRO> getClassFromUserType(String userType) throws IllegalArgumentException {
         switch (userType) {
             case "管理员":
+            case "":
                 return ManagerRO.class;
             case "新生":
                 return NewStudentRO.class;

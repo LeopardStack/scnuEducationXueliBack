@@ -183,6 +183,7 @@ public enum ResultCode {
     ANNOUNCEMENT_MSG_FAIL17(25317,"获取用户发布的公告消息所涉及的用户群体时，公告 ID 不能为空"),
     ANNOUNCEMENT_MSG_FAIL18(25318,"获取用户发布的公告消息所涉及的用户群体时，根据公告 ID 无法查询到公告消息"),
     ANNOUNCEMENT_MSG_FAIL19(25319,"获取用户发布的公告消息所涉及的用户群体时，参数错误，不能为空"),
+    ANNOUNCEMENT_MSG_FAIL20(25320,"获取用户发布的公告消息所涉及的用户群体时，由于用户群体类型不合法，结果为空"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),

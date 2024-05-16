@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapper">
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.platform_message.PlatformMessagePO">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="user_id" jdbcType="VARCHAR" property="userId" />
+        <result column="message_type" jdbcType="VARCHAR" property="messageType" />
+        <result column="related_message_id" jdbcType="BIGINT" property="relatedMessageId" />
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt" />
+        <result column="is_read" jdbcType="TINYINT" property="isRead" />
+        <result column="is_popup" jdbcType="TIMESTAMP" property="isPopup" />
+    </resultMap>
+
+</mapper>

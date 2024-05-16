@@ -47,6 +47,11 @@ public class PlatformUserRO {
      */
     private String name;
 
+    /**
+     * 用户 ID 集合
+     */
+    private List<Long> userIdList;
+
 
     /**
      * 微信 openId

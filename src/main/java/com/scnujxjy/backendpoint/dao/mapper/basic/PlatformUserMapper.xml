@@ -31,5 +31,11 @@
             OR JSON_CONTAINS(supplementary_role_id_set,
             #{entity.roleIds, typeHandler=com.scnujxjy.backendpoint.handler.type_handler.LongTypeHandler})
         </if>
+        <if test="entity.userIdList != null and entity.userIdList.size() > 0">
+            AND user_id IN
+            <foreach item="item" collection="entity.userIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
     </select>
 </mapper>

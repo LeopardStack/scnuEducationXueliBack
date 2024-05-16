@@ -38,13 +38,11 @@ import com.scnujxjy.backendpoint.inverter.platform_message.AnnouncementMessageIn
 import com.scnujxjy.backendpoint.inverter.platform_message.AttachmentInverter;
 import com.scnujxjy.backendpoint.model.bo.platform_message.ManagerInfoBO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
+import com.scnujxjy.backendpoint.model.ro.basic.PlatformUserRO;
 import com.scnujxjy.backendpoint.model.ro.platform_message.*;
 import com.scnujxjy.backendpoint.model.ro.registration_record_card.StudentStatusFilterRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
-import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMessageVO;
-import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgDetailVO;
-import com.scnujxjy.backendpoint.model.vo.platform_message.AnnouncementMsgFilterArgsVO;
-import com.scnujxjy.backendpoint.model.vo.platform_message.AttachmentVO;
+import com.scnujxjy.backendpoint.model.vo.platform_message.*;
 import com.scnujxjy.backendpoint.model.vo.teaching_process.StudentStatusAllVO;
 import com.scnujxjy.backendpoint.service.basic.AdminInfoService;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
@@ -103,6 +101,9 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
     @Resource
     private PlatformMessageMapper platformMessageMapper;
+
+    @Resource
+    private PlatformMessageService platformMessageService;
 
     @Resource
     private TeachingPointInformationMapper teachingPointInformationMapper;
@@ -667,75 +668,47 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
         // 过滤数据
         List<ManagerInfoBO> filteredManagers = allManagers.stream()
                 .filter(manager -> {
-                    boolean matches = true;
-                    try{
+                    try {
+                        boolean matches = true;
+
                         if (StringUtils.isNotBlank(managerRO.getUsername())) {
                             matches &= manager.getUsername().equals(managerRO.getUsername());
                         }
                         if (StringUtils.isNotBlank(managerRO.getName())) {
-                            if(StringUtils.isBlank(manager.getName()) ){
-                                matches = false;
-                            }else{
-                                matches &= manager.getName().equals(managerRO.getName());
-                            }
-
+                            matches &= StringUtils.isNotBlank(manager.getName()) && manager.getName().equals(managerRO.getName());
                         }
                         if (StringUtils.isNotBlank(managerRO.getPhoneNumber())) {
-                            if(StringUtils.isBlank(manager.getPhoneNumber()) ){
-                                matches = false;
-                            }else{
-                                matches &= manager.getPhoneNumber().equals(managerRO.getPhoneNumber());
-                            }
-
+                            matches &= StringUtils.isNotBlank(manager.getPhoneNumber()) && manager.getPhoneNumber().equals(managerRO.getPhoneNumber());
                         }
                         if (StringUtils.isNotBlank(managerRO.getWorkNumber())) {
-                            if(StringUtils.isBlank(manager.getWorkNumber()) ){
-                                matches = false;
-                            }else{
-                                matches &= manager.getWorkNumber().equals(managerRO.getWorkNumber());
-                            }
+                            matches &= StringUtils.isNotBlank(manager.getWorkNumber()) && manager.getWorkNumber().equals(managerRO.getWorkNumber());
                         }
                         if (StringUtils.isNotBlank(managerRO.getIdNumber())) {
-                            if(StringUtils.isBlank(manager.getIdNumber()) ){
-                                matches = false;
-                            }else{
-                                matches &= manager.getIdNumber().equals(managerRO.getIdNumber());
-                            }
+                            matches &= StringUtils.isNotBlank(manager.getIdNumber()) && manager.getIdNumber().equals(managerRO.getIdNumber());
                         }
-
-
                         if (managerRO.getDepartmentList() != null && !managerRO.getDepartmentList().isEmpty()) {
-                            if(manager.getDepartment() == null){
-                                matches = false;
-                            }else{
-                                matches &= matchList(manager.getDepartment(), managerRO.getDepartmentList());
-                            }
+                            matches &= manager.getDepartment() != null && matchList(manager.getDepartment(), managerRO.getDepartmentList());
                         }
-
                         if (managerRO.getCollegeNameList() != null && !managerRO.getCollegeNameList().isEmpty()) {
-                            if(manager.getCollegeName() == null){
-                                matches = false;
-                            }else{
-                                matches &= matchList(manager.getCollegeName(), managerRO.getCollegeNameList());
-                            }
+                            matches &= manager.getCollegeName() != null && matchList(manager.getCollegeName(), managerRO.getCollegeNameList());
+                        }
+                        if (managerRO.getTeachingPointNameList() != null && !managerRO.getTeachingPointNameList().isEmpty()) {
+                            matches &= manager.getTeachingPointName() != null && matchList(manager.getTeachingPointName(), managerRO.getTeachingPointNameList());
+                        }
+                        if (managerRO.getRoleNameList() != null && !managerRO.getRoleNameList().isEmpty()) {
+                            matches &= manager.getRoleName() != null && matchList(manager.getRoleName(), managerRO.getRoleNameList());
                         }
 
-                        if (managerRO.getTeachingPointNameList() != null && !managerRO.getTeachingPointNameList().isEmpty()) {
-                            if(manager.getTeachingPointName() == null){
-                                matches = false;
-                            }else{
-                                matches &= matchList(manager.getTeachingPointName(), managerRO.getTeachingPointNameList());
-                            }
-                        }
                         // 可以根据需要继续添加其他字段的检查
 
-                    }catch (Exception e){
-                        log.error("获取筛选参数条件 失败 " + e);
-                        matches = false;
+                        return matches;
+                    } catch (Exception e) {
+                        log.error("获取筛选参数条件失败", e);
+                        return false;
                     }
-                    return matches;
                 })
                 .collect(Collectors.toList());
+
 
 
         // 分页计算
@@ -905,7 +878,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
 
             // 反序列化 筛选对象参数
-            if(announcementMessagePO.getUserType() != null){
+            if(announcementMessagePO.getUserType() != null && !announcementMessagePO.getUserType().isEmpty()){
                 AnnouncementMsgUserFilterRO announcementMsgUserFilterRO  = null;
                 if(AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(announcementMessagePO.getUserType())){
                     ManagerRO managerRO = new ManagerRO();
@@ -918,6 +891,20 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                     announcementMsgUserFilterRO = oldStudentRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
                 }
                 announcementMessageVO.setParsedAnnouncementMsgUserFilterRO(announcementMsgUserFilterRO);
+            }else{
+                // 为空 时 说明用户传递的是 userNameList
+                List<PlatformMessagePO> platformMessagePOList = platformMessageMapper.selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                        .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+                );
+                List<Long> userIdList = platformMessagePOList.stream()
+                        .map(PlatformMessagePO::getUserId)
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+
+                List<PlatformUserPO> platformUserPOS = platformUserMapper.selectPlatformUserList(new PlatformUserRO().setUserIdList(userIdList));
+                List<String> usernameList = platformUserPOS.stream().map(PlatformUserPO::getUsername).collect(Collectors.toList());
+                announcementMessageVO.setUsernameList(usernameList);
             }
 
             List<AttachmentVO> attachmentVOList = new ArrayList<>();
@@ -1160,7 +1147,18 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
     @Transactional
     public void updatePlatformUserAnnouncementMsg(AnnouncementMessageUsersRO announcementMessageRO,
                                                    AnnouncementMessagePO announcementMessagePO){
+        List<PlatformMessagePO> platformMessagePOList = platformMessageMapper.selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+                .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+        );
+        // 更新 isPopup 字段
+        platformMessagePOList.forEach(platformMessagePO -> {
+            platformMessagePO.setIsPopup(announcementMessageRO.getIsPopup() == null ? "N" :
+                    announcementMessageRO.getIsPopup().equals(Boolean.TRUE) ? "Y" : "N");
+        });
 
+        boolean updateResult = platformMessageService.saveOrUpdateBatch(platformMessagePOList);
+        log.info("更新了 " + platformMessagePOList.size() + " 条用户公告消息记录，更新结果 " + updateResult);
     }
 
     private List<Long> calculateDifference(List<Long> attachmentIds, List<Long> announcementAttachmentIds) {
@@ -1314,25 +1312,28 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                     })
                     .collect(Collectors.toList());
 
-            PageVO<ManagerInfoBO> pageVO = new PageVO<>();
+            PageVO<ManagerInfoVO> pageVO = new PageVO<>();
 
             // 更新已读未读情况
+            List<ManagerInfoVO> managerInfoVOList = new ArrayList<>();
             for(ManagerInfoBO managerInfoBO : filteredManagers){
+                ManagerInfoVO managerInfoVO = new ManagerInfoVO();
+                BeanUtils.copyProperties(managerInfoBO, managerInfoVO);
                 Long userId = managerInfoBO.getUserId();
                 PlatformMessagePO platformMessagePO = platformMessageMapper.selectOne(new LambdaQueryWrapper<PlatformMessagePO>()
                         .eq(PlatformMessagePO::getUserId, userId)
                         .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
                         .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
                 );
-                managerInfoBO.setRead(platformMessagePO.getIsRead());
+                managerInfoVO.setRead(platformMessagePO.getIsRead());
             }
 
             pageVO.setSize(announcementMsgUsersRO.getPageSize());
             pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
-            pageVO.setRecords(filteredManagers);
+            pageVO.setRecords(managerInfoVOList);
             pageVO.setTotal(total);
 
-            AnnouncementMsgDetailVO<ManagerInfoBO> result = new AnnouncementMsgDetailVO<>();
+            AnnouncementMsgDetailVO<ManagerInfoVO> result = new AnnouncementMsgDetailVO<>();
             result.setUsers(pageVO);
             result.setTotal(total);
             result.setIsRead(readCount);
@@ -1342,23 +1343,29 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
 
         }else if(AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
             // 新生
-            NewStudentRO newStudentRO = new NewStudentRO();
-
-            newStudentRO = newStudentRO.parseFilterArgs(announcementMessagePO.getFilterArgs());
-
-
-            List<AdmissionInformationPO> admissionInformationPOList = admissionInformationMapper
-                    .getAllAdmissionInformationByAnnouncementMsg(new NewStudentRO().setUsernames(usernames));
+            List<AdmissionInformationVO> admissionInformationPOList = admissionInformationMapper
+                    .getAllAdmissionInformationByAnnouncementMsgVO(
+                            new NewStudentRO().setUsernames(usernames));
 
 
-            PageVO<AdmissionInformationPO> pageVO = new PageVO<>();
+            PageVO<AdmissionInformationVO> pageVO = new PageVO<>();
+
+            for(AdmissionInformationVO admissionInformationVO : admissionInformationPOList){
+                Long userId = admissionInformationVO.getUserId();
+                PlatformMessagePO platformMessagePO = platformMessageMapper.selectOne(new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getUserId, userId)
+                        .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                        .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+                );
+                admissionInformationVO.setRead(platformMessagePO.getIsRead());
+            }
 
             pageVO.setSize(announcementMsgUsersRO.getPageSize());
             pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
             pageVO.setRecords(admissionInformationPOList);
             pageVO.setTotal(total);
 
-            AnnouncementMsgDetailVO<AdmissionInformationPO> result = new AnnouncementMsgDetailVO<>();
+            AnnouncementMsgDetailVO<AdmissionInformationVO> result = new AnnouncementMsgDetailVO<>();
             result.setUsers(pageVO);
             result.setTotal(total);
             result.setIsRead(readCount);
@@ -1367,9 +1374,36 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             return SaResult.ok("成功获取公告群体阅读公告情况").setData(result);
         }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(announcementMsgUsersRO.getEntity().getUserType())){
             // 旧生
+            List<com.scnujxjy.backendpoint.model.vo.platform_message.StudentStatusAllVO> studentStatusAllVOList = studentStatusService.getBaseMapper()
+                    .getAllAnnouncementMsgUsersVO(new OldStudentRO().setUsernames(usernames));
+            PageVO<com.scnujxjy.backendpoint.model.vo.platform_message.StudentStatusAllVO> pageVO = new PageVO<>();
+
+            for(com.scnujxjy.backendpoint.model.vo.platform_message.StudentStatusAllVO studentStatusAllVO :
+                    studentStatusAllVOList){
+                Long userId = studentStatusAllVO.getUserId();
+                PlatformMessagePO platformMessagePO = platformMessageMapper.selectOne(new LambdaQueryWrapper<PlatformMessagePO>()
+                        .eq(PlatformMessagePO::getUserId, userId)
+                        .eq(PlatformMessagePO::getMessageType, ANNOUNCEMENT_MSG.getMessageName())
+                        .eq(PlatformMessagePO::getRelatedMessageId, announcementMessagePO.getId())
+                );
+                studentStatusAllVO.setRead(platformMessagePO.getIsRead());
+            }
+
+            pageVO.setSize(announcementMsgUsersRO.getPageSize());
+            pageVO.setCurrent(announcementMsgUsersRO.getPageNumber());
+            pageVO.setRecords(studentStatusAllVOList);
+            pageVO.setTotal(total);
+
+            AnnouncementMsgDetailVO<com.scnujxjy.backendpoint.model.vo.platform_message.StudentStatusAllVO> result = new AnnouncementMsgDetailVO<>();
+            result.setUsers(pageVO);
+            result.setTotal(total);
+            result.setIsRead(readCount);
+            result.setUnRead(unreadCount);
+
+            return SaResult.ok("成功获取公告群体阅读公告情况").setData(result);
         }
 
-        return SaResult.ok("成功获取公告群体阅读公告情况");
+        return ResultCode.ANNOUNCEMENT_MSG_FAIL20.generateErrorResultInfo();
     }
 
     /**

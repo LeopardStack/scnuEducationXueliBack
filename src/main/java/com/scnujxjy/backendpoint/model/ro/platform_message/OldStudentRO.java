@@ -66,6 +66,11 @@ public class OldStudentRO extends AnnouncementMsgUserFilterRO{
      */
     private List<String> academicStatusList;
 
+    /**
+     * 旧生身份证号码列表 即平台用户名
+     */
+    private List<String> usernames;
+
     @Override
     public String filterArgs() {
         return JSON.toJSONString(this, SerializerFeature.WriteClassName);
