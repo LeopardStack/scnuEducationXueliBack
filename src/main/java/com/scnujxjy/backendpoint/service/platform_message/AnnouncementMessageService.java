@@ -68,6 +68,10 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.config.AsyncConfig.getIOTaskExecutor;
@@ -1219,11 +1223,17 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
                     .filter(name -> name != null)
                     .collect(Collectors.toList());
 
+            List<String> grades = admissionInformationMapper.selectDistinctGradeList()
+                    .stream()
+                    .filter(name -> name != null)
+                    .collect(Collectors.toList());
+
             announcementMsgFilterArgsVO.setNewStudentCollegeList(collegeNames);
             announcementMsgFilterArgsVO.setOldStudentMajorNameList(majorNames);
             announcementMsgFilterArgsVO.setNewStudentLevelList(levels);
             announcementMsgFilterArgsVO.setNewStudentStudyFormList(studyForms);
             announcementMsgFilterArgsVO.setNewStudentTeachingPointList(teachingPointNames);
+            announcementMsgFilterArgsVO.setGradeList(grades);
             return announcementMsgFilterArgsVO;
         }else if(AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(userType)){
             // 获取近五年的旧生筛选项信息
@@ -1231,6 +1241,7 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             List<String> distinctMajorNames = studentStatusService.getBaseMapper().getDistinctMajorNames(new StudentStatusFilterRO());
             List<String> distinctLevels = studentStatusService.getBaseMapper().getDistinctLevels(new StudentStatusFilterRO());
             List<String> distinctStudyForms = studentStatusService.getBaseMapper().getDistinctStudyForms(new StudentStatusFilterRO());
+            List<String> distinctGrades = studentStatusService.getBaseMapper().getDistinctGrades(new StudentStatusFilterRO());
             List<String> distinctTeachingPointNames = teachingPointInformationMapper.getAllTeachingPointNames();
             List<String> distinctAcademicStatuss = studentStatusService.getBaseMapper().getDistinctAcademicStatuss(new StudentStatusFilterRO());
             List<String> distinctStudyDurations = studentStatusService.getBaseMapper().getDistinctStudyDurations(new StudentStatusFilterRO());
@@ -1238,12 +1249,95 @@ public class AnnouncementMessageService extends ServiceImpl<AnnouncementMessageM
             announcementMsgFilterArgsVO.setOldStudentMajorNameList(distinctMajorNames);
             announcementMsgFilterArgsVO.setOldStudentLevelList(distinctLevels);
             announcementMsgFilterArgsVO.setOldStudentStudyFormList(distinctStudyForms);
+            announcementMsgFilterArgsVO.setGradeList(distinctGrades);
             announcementMsgFilterArgsVO.setOldStudentTeachingPointList(distinctTeachingPointNames);
             announcementMsgFilterArgsVO.setOldStudentAcademicStatusList(distinctAcademicStatuss);
             announcementMsgFilterArgsVO.setOldStudentStudyDurationList(distinctStudyDurations);
             return announcementMsgFilterArgsVO;
         }else{
             log.error("获取公告用户群体筛选项， 传入了错误的用户群体类型 " + userType);
+            return null;
+        }
+    }
+
+    @Resource
+    private Executor taskExecutor;
+
+    public AnnouncementMsgFilterArgsVO parallelGetUserFilterItems(String userType) {
+        AnnouncementMsgFilterArgsVO announcementMsgFilterArgsVO = new AnnouncementMsgFilterArgsVO();
+        if (AnnounceMsgUserTypeEnum.MANAGER.getUserType().equals(userType)) {
+            List<String> departments = adminInfoService.getBaseMapper().getAllDepartments();
+            List<String> collegeNames = collegeInformationService.getBaseMapper().getAllCollegeNames();
+            List<String> teachingPointNames = teachingPointInformationMapper.getAllTeachingPointNames();
+            announcementMsgFilterArgsVO.setDepartmentList(departments);
+            announcementMsgFilterArgsVO.setCollegeNameList(collegeNames);
+            announcementMsgFilterArgsVO.setTeachingPointNameList(teachingPointNames);
+            return announcementMsgFilterArgsVO;
+        } else if (AnnounceMsgUserTypeEnum.NEW_STUDENT.getUserType().equals(userType)) {
+            CompletableFuture<List<String>> collegeNamesFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctCollegeList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+            CompletableFuture<List<String>> majorNamesFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctMajorNameList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+            CompletableFuture<List<String>> levelsFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctLevelList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+            CompletableFuture<List<String>> studyFormsFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctStudyFormList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+            CompletableFuture<List<String>> teachingPointNamesFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctTeachingPointNameList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+            CompletableFuture<List<String>> gradesFuture = CompletableFuture.supplyAsync(() ->
+                    admissionInformationMapper.selectDistinctGradeList().stream().filter(name -> name != null).collect(Collectors.toList()), taskExecutor);
+
+            CompletableFuture.allOf(collegeNamesFuture, majorNamesFuture, levelsFuture, studyFormsFuture, teachingPointNamesFuture, gradesFuture).join();
+
+            try {
+                announcementMsgFilterArgsVO.setNewStudentCollegeList(collegeNamesFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentMajorNameList(majorNamesFuture.get());
+                announcementMsgFilterArgsVO.setNewStudentLevelList(levelsFuture.get());
+                announcementMsgFilterArgsVO.setNewStudentStudyFormList(studyFormsFuture.get());
+                announcementMsgFilterArgsVO.setNewStudentTeachingPointList(teachingPointNamesFuture.get());
+                announcementMsgFilterArgsVO.setGradeList(gradesFuture.get());
+            } catch (Exception e) {
+                log.error("Error fetching new student filter items", e);
+            }
+
+            return announcementMsgFilterArgsVO;
+        } else if (AnnounceMsgUserTypeEnum.OLD_STUDENT.getUserType().equals(userType)) {
+            CompletableFuture<List<String>> distinctCollegesFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctColleges(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctMajorNamesFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctMajorNames(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctLevelsFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctLevels(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctStudyFormsFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctStudyForms(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctGradesFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctGrades(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctTeachingPointNamesFuture = CompletableFuture.supplyAsync(() ->
+                    teachingPointInformationMapper.getAllTeachingPointNames(), taskExecutor);
+            CompletableFuture<List<String>> distinctAcademicStatusFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctAcademicStatuss(new StudentStatusFilterRO()), taskExecutor);
+            CompletableFuture<List<String>> distinctStudyDurationsFuture = CompletableFuture.supplyAsync(() ->
+                    studentStatusService.getBaseMapper().getDistinctStudyDurations(new StudentStatusFilterRO()), taskExecutor);
+
+            CompletableFuture.allOf(distinctCollegesFuture, distinctMajorNamesFuture, distinctLevelsFuture, distinctStudyFormsFuture, distinctGradesFuture,
+                    distinctTeachingPointNamesFuture, distinctAcademicStatusFuture, distinctStudyDurationsFuture).join();
+
+            try {
+                announcementMsgFilterArgsVO.setOldStudentCollegeList(distinctCollegesFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentMajorNameList(distinctMajorNamesFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentLevelList(distinctLevelsFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentStudyFormList(distinctStudyFormsFuture.get());
+                announcementMsgFilterArgsVO.setGradeList(distinctGradesFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentTeachingPointList(distinctTeachingPointNamesFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentAcademicStatusList(distinctAcademicStatusFuture.get());
+                announcementMsgFilterArgsVO.setOldStudentStudyDurationList(distinctStudyDurationsFuture.get());
+            } catch (Exception e) {
+                log.error("Error fetching old student filter items", e);
+            }
+
+            return announcementMsgFilterArgsVO;
+        } else {
+            log.error("获取公告用户群体筛选项，传入了错误的用户群体类型 " + userType);
             return null;
         }
     }

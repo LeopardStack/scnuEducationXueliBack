@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.admission_information.EnrollmentPlanMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO">
+        <id column="id" property="id" />
+        <result column="year" property="year" />
+        <result column="major_name" property="majorName" />
+        <result column="study_form" property="studyForm" />
+        <result column="education_length" property="educationLength" />
+        <result column="training_level" property="trainingLevel" />
+        <result column="enrollment_number" property="enrollmentNumber" />
+        <result column="target_students" property="targetStudents" />
+        <result column="enrollment_region" property="enrollmentRegion" />
+        <result column="school_location" property="schoolLocation" />
+        <result column="contact_number" property="contactNumber" />
+        <result column="department" property="department" />
+        <result column="teaching_location" property="teachingLocation" />
+        <result column="enrollment_subject" property="enrollmentSubject" />
+        <result column="tuition" property="tuition" />
+        <result column="remarks" property="remarks" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, year, major_name, study_form, education_length, training_level, enrollment_number, target_students, enrollment_region, school_location, contact_number, department, teaching_location, enrollment_subject, tuition, remarks, created_at, updated_at
+    </sql>
+
+    <sql id="commonFilters">
+        <if test='entity.id != null'>AND ep.id = #{entity.id}</if>
+        <if test='entity.year != null'>AND ep.year = #{entity.year}</if>
+        <if test='entity.majorName != null'>AND ep.major_name = #{entity.majorName}</if>
+        <if test='entity.studyForm != null'>AND ep.study_form = #{entity.studyForm}</if>
+        <if test='entity.educationLength != null'>AND ep.education_length = #{entity.educationLength}</if>
+        <if test='entity.trainingLevel != null'>AND ep.training_level = #{entity.trainingLevel}</if>
+        <if test='entity.enrollmentRegion != null'>AND ep.enrollment_region = #{entity.enrollmentRegion}</if>
+        <if test='entity.college != null'>AND ep.college = #{entity.college}</if>
+        <if test='entity.teachingPointName != null'>AND tpi.teaching_point_name = #{entity.teachingPointName}</if>
+
+        <!-- Additional filter for majorNameList -->
+        <if test="entity.majorNameList != null and entity.majorNameList.size() > 0">
+            AND ep.major_name IN
+            <foreach item="item" collection="entity.majorNameList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.studyFormList != null and entity.studyFormList.size() > 0">
+            AND ep.study_form IN
+            <foreach item="item" collection="entity.studyFormList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.trainingLevelList != null and entity.trainingLevelList.size() > 0">
+            AND ep.training_level IN
+            <foreach item="item" collection="entity.trainingLevelList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.collegeList != null and entity.collegeList.size() > 0">
+            AND ep.college IN
+            <foreach item="item" collection="entity.collegeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="entity.teachingPointNameList != null and entity.teachingPointNameList.size() > 0">
+            AND tpi.teaching_point_name IN
+            <foreach item="item" collection="entity.teachingPointNameList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="queryEnrollmentPlan"
+            resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO">
+        SELECT * FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+        ORDER BY ep.year DESC, ep.college, ep.enrollment_region
+        LIMIT #{pageNumber}, #{pageSize}
+    </select>
+    <select id="queryEnrollmentPlanSize" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctGradeList" resultType="java.lang.String">
+        SELECT ep.year FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctMajorNameList" resultType="java.lang.String">
+        SELECT ep.major_name FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctStudyFormList" resultType="java.lang.String">
+        SELECT ep.study_form FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctTrainingLevelList" resultType="java.lang.String">
+        SELECT ep.training_level FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
+    </select>
+    <select id="getDistinctTrainingCollegeList" resultType="java.lang.String">
+        SELECT ci.college_name FROM college_information ci
+    </select>
+    <select id="getDistinctTeachingPointNameList" resultType="java.lang.String">
+        SELECT tpi.teaching_point_name FROM teaching_point_information tpi
+    </select>
+
+</mapper>

@@ -346,7 +346,7 @@ public class TestUserInfoChange {
         log.info("生成学生账号");
 
         PlatformUserPO platformUserPO = new PlatformUserPO();
-        platformUserPO.setUsername("441284200002293423");
+        platformUserPO.setUsername("440183198908157126");
         platformUserPO.setPassword(sm3.digestHex(platformUserPO.getUsername().
                 substring(platformUserPO.getUsername().length() - 6)));
         platformUserPO.setRoleId(1L);

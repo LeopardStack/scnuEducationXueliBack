@@ -292,7 +292,7 @@ public class AnnouncementMessageController {
         if(StringUtils.isBlank(userType)){
             return ResultCode.ANNOUNCEMENT_MSG_FAIL16.generateErrorResultInfo();
         }
-        AnnouncementMsgFilterArgsVO announcementMsgFilterArgsVO = announcementMessageService.getUserFilterItems(userType);
+        AnnouncementMsgFilterArgsVO announcementMsgFilterArgsVO = announcementMessageService.parallelGetUserFilterItems(userType);
 
         return SaResult.ok("获取不同用户群体的筛选项成功").setData(announcementMsgFilterArgsVO);
     }

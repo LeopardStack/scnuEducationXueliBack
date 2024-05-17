@@ -30,6 +30,11 @@ public class AnnouncementMsgFilterArgsVO {
     List<String> teachingPointNameList;
 
     /**
+     * 新旧生的年级筛选项
+     */
+    List<String> gradeList;
+
+    /**
      * 新生所涉及的所有学院
      */
     List<String> newStudentCollegeList;

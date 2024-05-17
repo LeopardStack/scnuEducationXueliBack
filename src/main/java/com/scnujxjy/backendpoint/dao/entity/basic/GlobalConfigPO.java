@@ -36,6 +36,10 @@ public class GlobalConfigPO implements Serializable {
 
     private String configValue;
 
+    private String args1;
+
+    private String args2;
+
     private String description;
 
     private Date updatedAt;

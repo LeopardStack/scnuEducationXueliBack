@@ -60,6 +60,9 @@ public interface AdmissionInformationMapper extends BaseMapper<AdmissionInformat
     @Select("select distinct college from admission_information;")
     List<String> selectDistinctCollegeList();
 
+    @Select("select distinct grade from admission_information;")
+    List<String> selectDistinctGradeList();
+
     @Select("select distinct major_name from admission_information;")
     List<String> selectDistinctMajorNameList();
 
