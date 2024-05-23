@@ -1399,6 +1399,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             if (sectionsPOS.size() == 0) {
                 log.error("该课程不含有节点id，请联系管理员");
             }
+            String collegeName ="";
 
             for (SectionsPO sectionsPO : sectionsPOS) {
                 //获取该排课表的频道直播间id
@@ -1422,7 +1423,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     }
                 }
 
-                String collegeName ="";
                 if (teacherInformationPO!=null && teacherInformationPO.getCollegeId()!=null) {
                     collegeName = teacherInformationPO.getCollegeId();
                 }
@@ -1674,7 +1674,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(exportAttendanceVOList);
 
             // 构建文件名
-            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
+            String fileName = "考勤表" + "/" + collegeName +"_"+ loginId + "_考勤表导出.xlsx";
             String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
 
             boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
