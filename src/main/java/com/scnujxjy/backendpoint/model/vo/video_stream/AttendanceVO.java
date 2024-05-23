@@ -26,6 +26,12 @@ public class AttendanceVO {
     @ExcelProperty(value = {describe,"姓名"})
     private String name;
 
+    @ExcelProperty(value = {describe,"课程名称"})
+    private String courseName;
+
+    @ExcelProperty(value = {describe,"主讲老师"})
+    private String teacherName;
+
     @ExcelProperty(value = {describe,"行政班别"})
     private String className;
 

@@ -373,6 +373,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", appId);
         requestMap.put("timestamp", timestamp);
+
+        if (StrUtil.isNotBlank(channelViewRequest.getViewLogType())){
+            requestMap.put("viewLogType", channelViewRequest.getViewLogType());
+        }
+        if (StrUtil.isNotBlank(channelViewRequest.getSessionIds())){
+            requestMap.put("sessionIds",channelViewRequest.getSessionIds());
+        }
+
         if (StrUtil.isNotBlank(channelViewRequest.getCurrentDay())) {
             String currentDay = channelViewRequest.getCurrentDay();
             requestMap.put("currentDay", currentDay);
@@ -1095,6 +1103,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             String startTime = format.format(exportStartTime);
             String endTime = format.format(exportEndTime);
 
+
+            //拿一下这节课的场次信息
+            ChannelInfoRequest channelInfoRequest=new ChannelInfoRequest();
+            channelInfoRequest.setChannelId(live.getChannelId());
+            channelInfoRequest.setStartDate(minusSubtractOneHour(sectionsPO.getStartTime()));
+            channelInfoRequest.setEndDate(sectionsPO.getDeadline());
+            SaResult channelSessionInfo = getChannelSessionInfo(channelInfoRequest);
+            LiveListChannelSessionInfoResponse data = (LiveListChannelSessionInfoResponse) channelSessionInfo.getData();
+            List<LiveListChannelSessionInfoResponse.ChannelSessionInfo> contents1 = data.getContents();
+
             //先拿到回放的数据
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             List<ViewLogResponse> viewLogResponseAllList=new ArrayList<>();
@@ -1111,6 +1129,14 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 channelViewRequest1.setEndTime(endDate.format(formatter));
                 channelViewRequest1.setParam3("vod");
                 channelViewRequest1.setPageSize("10000");
+
+                //查询点播列表的
+                channelViewRequest1.setViewLogType("vod");
+                //只获取该堂课场次的回放数据
+                if (contents1!=null && contents1.size()!=0) {
+                    channelViewRequest1.setSessionIds(contents1.get(0).getSessionId());
+                }
+
                 // 处理channelViewRequest1，比如发送请求
                 SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
                 List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
@@ -1169,6 +1195,21 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 viewLogResponse.setPlayDuration(viewResult.get(viewLogResponse.getParam1()));
             }
 
+            //获取老师的名字
+            String teacherName="";
+            TeacherInformationPO teacherInformationPO =null;
+            if (StringUtils.isNotBlank(sectionsPO.getMainTeacherUsername())) {
+                teacherInformationPO = teacherInformationMapper.selectByTeacherUserName(sectionsPO.getMainTeacherUsername());
+                if (teacherInformationPO != null && StringUtils.isNotBlank(teacherInformationPO.getTeacherUsername())) {
+                    teacherName=teacherInformationPO.getName();
+                }
+            }
+
+            String collegeName ="";
+            if (teacherInformationPO!=null && teacherInformationPO.getCollegeId()!=null) {
+                collegeName = teacherInformationPO.getCollegeId();
+            }
+
             //考勤导出attendanceVOList,拥有出勤的所有学生数据
             // 需要根据下载用户的身份来确定哪些数据需要显示 这里是拿到教学点的身份
             List<String> roleList = StpUtil.getRoleList(loginId);
@@ -1188,6 +1229,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
                 attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(viewLogResponse.getParam2());
+                attendanceVO.setCourseName(coursesLearningPO.getCourseName());
+                attendanceVO.setTeacherName(teacherName);
                 attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
                 if (vodMap.containsKey(viewLogResponse.getParam1())){
@@ -1268,6 +1311,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 attendanceVO.setName(channelWhiteList.getName());
                 attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
+                attendanceVO.setCourseName(coursesLearningPO.getCourseName());
+                attendanceVO.setTeacherName(teacherName);
                 if (vodMap.containsKey(channelWhiteList.getPhone())){
                     attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
                 }else {
@@ -1311,7 +1356,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             EasyExcel.write(outputStream, AttendanceVO.class).sheet("Sheet1").doWrite(attendanceVOList);
 
             // 构建文件名
-            String fileName = "考勤表" + "/" +loginId+"_"+ currentDateTime + "_课程考勤数据.xlsx";
+            String fileName = "考勤表" + "/" + collegeName +"_"+ loginId + "_考勤表导出.xlsx";
             String bucketName = MinioBucketEnum.DATA_DOWNLOAD_STUDENT_FEES.getBucketName();
 
             boolean uploadSuccess = minioService.uploadStreamToMinio(new ByteArrayInputStream(outputStream.toByteArray()), fileName, bucketName);
@@ -1367,6 +1412,32 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     continue;
                 }
 
+                //获取老师的名字
+                String teacherName="";
+                TeacherInformationPO teacherInformationPO =null;
+                if (StringUtils.isNotBlank(sectionsPO.getMainTeacherUsername())) {
+                    teacherInformationPO = teacherInformationMapper.selectByTeacherUserName(sectionsPO.getMainTeacherUsername());
+                    if (teacherInformationPO != null && StringUtils.isNotBlank(teacherInformationPO.getTeacherUsername())) {
+                        teacherName=teacherInformationPO.getName();
+                    }
+                }
+
+                String collegeName ="";
+                if (teacherInformationPO!=null && teacherInformationPO.getCollegeId()!=null) {
+                    collegeName = teacherInformationPO.getCollegeId();
+                }
+
+
+                //拿一下这节课的场次信息
+                ChannelInfoRequest channelInfoRequest=new ChannelInfoRequest();
+                channelInfoRequest.setChannelId(live.getChannelId());
+                channelInfoRequest.setStartDate(minusSubtractOneHour(sectionsPO.getStartTime()));
+                channelInfoRequest.setEndDate(sectionsPO.getDeadline());
+                SaResult channelSessionInfo = getChannelSessionInfo(channelInfoRequest);
+                LiveListChannelSessionInfoResponse data = (LiveListChannelSessionInfoResponse) channelSessionInfo.getData();
+                List<LiveListChannelSessionInfoResponse.ChannelSessionInfo> contents1 = data.getContents();
+
+
                 CoursesLearningPO coursesLearningPO = coursesLearningMapper.selectById(live.getCourseId());
 
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -1392,6 +1463,11 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     channelViewRequest1.setEndTime(endDate.format(formatter));
                     channelViewRequest1.setParam3("vod");
                     channelViewRequest1.setPageSize("10000");
+                    channelViewRequest1.setViewLogType("vod");
+
+                    if (contents1!=null && contents1.size()!=0) {
+                        channelViewRequest1.setSessionIds(contents1.get(0).getSessionId());
+                    }
                     // 处理channelViewRequest1，比如发送请求
                     SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
                     List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
@@ -1475,6 +1551,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setName(viewLogResponse.getParam2());
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
+                    attendanceVO.setTeacherName(teacherName);
+                    attendanceVO.setCourseName(collegeName);
                     if (vodMap.containsKey(viewLogResponse.getParam1())){
                         attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
                     }else {
@@ -1553,7 +1631,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setName(channelWhiteList.getName());
                     attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
-
+                    attendanceVO.setTeacherName(teacherName);
+                    attendanceVO.setCourseName(collegeName);
                     if (vodMap.containsKey(channelWhiteList.getPhone())){
                         attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
                     }else {

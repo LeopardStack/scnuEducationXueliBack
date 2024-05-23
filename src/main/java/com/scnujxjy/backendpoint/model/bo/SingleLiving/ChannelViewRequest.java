@@ -18,6 +18,7 @@ public class ChannelViewRequest {
     private String startTime;//"2023-11-04 23:00"
     private String endTime;//"2023-11-04 23:00"
 
+    private String viewLogType;
     private String sessionIds;
     private String page;
     private String pageSize;
