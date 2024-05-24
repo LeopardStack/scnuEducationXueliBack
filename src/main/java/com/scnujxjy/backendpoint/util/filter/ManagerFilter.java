@@ -1445,15 +1445,6 @@ public class ManagerFilter extends AbstractFilter {
         // 获取数据
         List<ExamTeachersInfoVO> examTeachersInfoVOS = new ArrayList<>();
 
-        @Data
-        class DateInfo {
-            private String year;
-            private String month;
-            private String day;
-
-            // 构造器、getters 和 setters
-        }
-
         // 获取当前日期
         LocalDate now = LocalDate.now();
 
@@ -1462,12 +1453,6 @@ public class ManagerFilter extends AbstractFilter {
         int monthValue = now.getMonthValue();
         String month = String.format("%02d", now.getMonthValue()); // 保证月份是两位数字
         String day = String.format("%02d", now.getDayOfMonth()); // 保证天数是两位数字
-
-        // 设置填表时间到 DateInfo 对象
-        DateInfo dateInfo = new DateInfo();
-        dateInfo.setYear(year);
-        dateInfo.setMonth(month);
-        dateInfo.setDay(day);
 
         String season;
         if (monthValue >= 2 && monthValue <= 7) {

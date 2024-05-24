@@ -91,38 +91,45 @@
         <include refid="commonFilters" />
     </select>
     <select id="getDistinctGradeList" resultType="java.lang.String">
-        SELECT ep.year FROM enrollment_plan ep
+        SELECT DISTINCT ep.year FROM enrollment_plan ep
         LEFT JOIN college_information ci ON ep.college_id=ci.college_id
         LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
     <select id="getDistinctMajorNameList" resultType="java.lang.String">
-        SELECT ep.major_name FROM enrollment_plan ep
+        SELECT DISTINCT ep.major_name FROM enrollment_plan ep
         LEFT JOIN college_information ci ON ep.college_id=ci.college_id
         LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
     <select id="getDistinctStudyFormList" resultType="java.lang.String">
-        SELECT ep.study_form FROM enrollment_plan ep
+        SELECT DISTINCT ep.study_form FROM enrollment_plan ep
         LEFT JOIN college_information ci ON ep.college_id=ci.college_id
         LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
     <select id="getDistinctTrainingLevelList" resultType="java.lang.String">
-        SELECT ep.training_level FROM enrollment_plan ep
+        SELECT DISTINCT ep.training_level FROM enrollment_plan ep
         LEFT JOIN college_information ci ON ep.college_id=ci.college_id
         LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
         WHERE 1=1
         <include refid="commonFilters" />
     </select>
     <select id="getDistinctTrainingCollegeList" resultType="java.lang.String">
-        SELECT ci.college_name FROM college_information ci
+        SELECT DISTINCT ci.college_name FROM college_information ci
     </select>
     <select id="getDistinctTeachingPointNameList" resultType="java.lang.String">
-        SELECT tpi.teaching_point_name FROM teaching_point_information tpi
+        SELECT DISTINCT tpi.teaching_point_name FROM teaching_point_information tpi
+    </select>
+    <select id="queryAllEnrollmentPlans" resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO">
+        SELECT * FROM enrollment_plan ep
+        LEFT JOIN college_information ci ON ep.college_id=ci.college_id
+        LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
+        WHERE 1=1
+        <include refid="commonFilters" />
     </select>
 
 </mapper>

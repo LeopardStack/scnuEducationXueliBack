@@ -21,6 +21,7 @@ public interface EnrollmentPlanMapper extends BaseMapper<EnrollmentPlanPO> {
                                                @Param("pageNumber") Long pageNumber, @Param("pageSize")Long pageSize);
 
     Long queryEnrollmentPlanSize(@Param("entity") EnrollmentPlanApplyRO entity);
+    List<EnrollmentPlanPO> queryAllEnrollmentPlans(@Param("entity") EnrollmentPlanApplyRO entity);
 
     List<String> getDistinctGradeList(@Param("entity") EnrollmentPlanApplyRO enrollmentPlanApplyRO);
 
