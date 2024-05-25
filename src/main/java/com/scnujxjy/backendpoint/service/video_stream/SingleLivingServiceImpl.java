@@ -1552,7 +1552,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
                     attendanceVO.setTeacherName(teacherName);
-                    attendanceVO.setCourseName(collegeName);
+                    attendanceVO.setCourseName(coursesLearningPO.getCourseName());
                     if (vodMap.containsKey(viewLogResponse.getParam1())){
                         attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
                     }else {
@@ -1632,7 +1632,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
                     attendanceVO.setTeacherName(teacherName);
-                    attendanceVO.setCourseName(collegeName);
+                    attendanceVO.setCourseName(coursesLearningPO.getCourseName());
                     if (vodMap.containsKey(channelWhiteList.getPhone())){
                         attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
                     }else {
