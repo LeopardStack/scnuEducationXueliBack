@@ -276,7 +276,7 @@ public class PlatformUserController {
             PlatformPopupMsgVO platformPopupMsgVO = new PlatformPopupMsgVO();
             BeanUtils.copyProperties(platformMessagePO, platformPopupMsgVO);
 
-            if(platformMessagePO.getIsPopup().equals("N")){
+            if(platformMessagePO.getIsPopup() == null || platformMessagePO.getIsPopup().equals("N")){
                 // 非弹框消息直接跳过
                 continue;
             }

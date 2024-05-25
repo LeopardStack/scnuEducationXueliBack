@@ -346,7 +346,7 @@ public class TestUserInfoChange {
         log.info("生成学生账号");
 
         PlatformUserPO platformUserPO = new PlatformUserPO();
-        platformUserPO.setUsername("440183198908157126");
+        platformUserPO.setUsername("440882199601064028");
         platformUserPO.setPassword(sm3.digestHex(platformUserPO.getUsername().
                 substring(platformUserPO.getUsername().length() - 6)));
         platformUserPO.setRoleId(1L);
@@ -362,7 +362,7 @@ public class TestUserInfoChange {
     @Test
     @Transactional
     public void updateStudentAccountsInfo(){
-        for(int grade = 2024; grade >= 2020; grade--){
+        for(int grade = 2024; grade >= 2022; grade--){
             List<StudentStatusPO> studentStatusPOS = studentStatusMapper.selectList(new LambdaQueryWrapper<StudentStatusPO>()
                     .eq(StudentStatusPO::getGrade, "" + grade));
             for(StudentStatusPO studentStatusPO : studentStatusPOS){

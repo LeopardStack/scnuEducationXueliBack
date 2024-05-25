@@ -127,4 +127,10 @@ public class EnrollmentPlanApplyRO implements Serializable {
      */
     @ApiModelProperty(value = "教学点名称集合 用于筛选", example = "广州达德教学点")
     private List<String> teachingPointNameList;
+
+    /**
+     * 打回角色
+     */
+    @ApiModelProperty(value = "打回给某个角色", example = "教学点管理员")
+    private String roleName;
 }
