@@ -102,7 +102,9 @@ public class PlatformMessageService extends ServiceImpl<PlatformMessageMapper, P
             }
 
             // 对整个downloadMessagePOList列表按照时间降序排序
-            platformMessageVO.getDownloadMessagePOList().sort(Comparator.comparing(DownloadMessageVO::getCreatedAt).reversed());
+            // 这个方法有问题  对时间排序 会产生时间的 8 小时差额
+            platformMessageVO.getDownloadMessagePOList().
+                    sort(Comparator.comparing(DownloadMessageVO::getCreatedAt).reversed());
         } else if (msgType.equals(MessageEnum.UPLOAD_MSG.getMessageName())) {
             // 处理上传消息
             List<UserUploadsPO> userUploadsPOS = userUploadsMapper.selectList(new LambdaQueryWrapper<UserUploadsPO>()

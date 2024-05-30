@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.scnujxjy.backendpoint.dao.mapper.admission_information.ClassScheduleMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.scnujxjy.backendpoint.dao.entity.admission_information.ClassSchedulePO">
+        <id column="id" property="id" />
+        <result column="grade" property="grade" />
+        <result column="enrollment_date" property="enrollmentDate" />
+        <result column="graduation_date" property="graduationDate" />
+        <result column="college" property="college" />
+        <result column="class_name" property="className" />
+        <result column="major_name" property="majorName" />
+        <result column="admission_code" property="admissionCode" />
+        <result column="level" property="level" />
+        <result column="study_duration" property="studyDuration" />
+        <result column="study_form" property="studyForm" />
+        <result column="tuition_fee" property="tuitionFee" />
+        <result column="student_id_prefix" property="studentIdPrefix" />
+        <result column="class_identifier" property="classIdentifier" />
+        <result column="class_status" property="classStatus" />
+        <result column="class_index" property="classIndex" />
+        <result column="admission_count" property="admissionCount" />
+        <result column="is_open_class" property="isOpenClass" />
+        <result column="remark" property="remark" />
+        <result column="created_at" property="createdAt" />
+        <result column="updated_at" property="updatedAt" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, grade, enrollment_date, graduation_date, college, class_name, major_name, admission_code, level, study_duration, study_form, tuition_fee, student_id_prefix, class_identifier, class_status, class_index, admission_count, is_open_class, remark, created_at, updated_at
+    </sql>
+
+</mapper>

@@ -54,6 +54,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -161,7 +162,7 @@ public class HealthCheckTask {
     /**
      * 使用@PostConstruct注解确保在SpringBoot启动时执行此方法
      */
-//    @PostConstruct
+    @PostConstruct
     public void clearRedisDataOnStartup() {
         try {
             // 清除Redis中的所有数据

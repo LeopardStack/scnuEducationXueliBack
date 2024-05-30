@@ -252,10 +252,10 @@ public class PlatformUserController {
         String cacheKey = "userDetail_" + userName;
 
         // 尝试从缓存中获取数据
-//        PlatformUserVO cachedPlatformUserVO = (PlatformUserVO) redisTemplate.opsForValue().get(cacheKey);
-//        if (cachedPlatformUserVO != null) {
-//            return SaResult.data(cachedPlatformUserVO);
-//        }
+        PlatformUserVO cachedPlatformUserVO = (PlatformUserVO) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedPlatformUserVO != null) {
+            return SaResult.data(cachedPlatformUserVO);
+        }
 
         List<String> roleList = StpUtil.getRoleList();
         boolean isNewStudent = false;
@@ -263,59 +263,59 @@ public class PlatformUserController {
         PlatformUserVO platformUserVO = platformUserService.detailByUsername(userName);
 
         // 查询未读消息
-        List<PlatformMessagePO> platformMessagePOList = platformMessageService.getBaseMapper().selectList(new LambdaQueryWrapper<PlatformMessagePO>()
-                .eq(PlatformMessagePO::getUserId, platformUserVO.getUserId())
-                .eq(PlatformMessagePO::getIsRead, Boolean.FALSE)
-        );
-        platformUserVO.setUnReadMsgCount(platformMessagePOList.size());
-
-        List<PlatformPopupMsgVO> platformPopupMsgVOList = new ArrayList<>();
-        for(PlatformMessagePO platformMessagePO : platformMessagePOList){
-            // 公告消息 如果是弹框需要加入进来
-            AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
-            PlatformPopupMsgVO platformPopupMsgVO = new PlatformPopupMsgVO();
-            BeanUtils.copyProperties(platformMessagePO, platformPopupMsgVO);
-
-            if(platformMessagePO.getIsPopup() == null || platformMessagePO.getIsPopup().equals("N")){
-                // 非弹框消息直接跳过
-                continue;
-            }
-            if(platformMessagePO.getMessageType().equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
-
-                AnnouncementMessagePO announcementMessagePO = announcementMessageService.getBaseMapper().selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
-                        .eq(AnnouncementMessagePO::getId, platformMessagePO.getRelatedMessageId()));
-
-                BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
-
-                List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
-                List<AttachmentVO> attachmentVOList = new ArrayList<>();
-                if(attachmentIds != null && !attachmentIds.isEmpty()) {
-                    for(Long attachmentId : attachmentIds){
-                        AttachmentPO attachmentPO = attachmentService.getBaseMapper().selectOne(new LambdaQueryWrapper<AttachmentPO>()
-                                .eq(AttachmentPO::getId, attachmentId));
-                        AttachmentVO attachmentVO = new AttachmentVO()
-                                .setId(attachmentPO.getId())
-                                .setRelatedId(attachmentPO.getRelatedId())
-                                .setAttachmentType(attachmentPO.getAttachmentType())
-                                .setAttachmentOrder(attachmentPO.getAttachmentOrder())
-                                .setAttachmentMinioPath(attachmentPO.getAttachmentMinioPath())
-                                .setAttachmentName(attachmentPO.getAttachmentName())
-                                .setAttachmentSize(attachmentPO.getAttachmentSize())
-                                .setUsername(attachmentPO.getUsername())
-                                ;
-                        attachmentVOList.add(attachmentVO);
-
-                    }
-
-                }
-                announcementMessageVO.setAttachmentVOS(attachmentVOList);
-            }
-
-            platformPopupMsgVO.setMsgBody(announcementMessageVO);
-
-            platformPopupMsgVOList.add(platformPopupMsgVO);
-        }
-        platformUserVO.setPlatformPopupMsgVOList(platformPopupMsgVOList);
+//        List<PlatformMessagePO> platformMessagePOList = platformMessageService.getBaseMapper().selectList(new LambdaQueryWrapper<PlatformMessagePO>()
+//                .eq(PlatformMessagePO::getUserId, platformUserVO.getUserId())
+//                .eq(PlatformMessagePO::getIsRead, Boolean.FALSE)
+//        );
+//        platformUserVO.setUnReadMsgCount(platformMessagePOList.size());
+//
+//        List<PlatformPopupMsgVO> platformPopupMsgVOList = new ArrayList<>();
+//        for(PlatformMessagePO platformMessagePO : platformMessagePOList){
+//            // 公告消息 如果是弹框需要加入进来
+//            AnnouncementMessageVO announcementMessageVO = new AnnouncementMessageVO();
+//            PlatformPopupMsgVO platformPopupMsgVO = new PlatformPopupMsgVO();
+//            BeanUtils.copyProperties(platformMessagePO, platformPopupMsgVO);
+//
+//            if(platformMessagePO.getIsPopup() == null || platformMessagePO.getIsPopup().equals("N")){
+//                // 非弹框消息直接跳过
+//                continue;
+//            }
+//            if(platformMessagePO.getMessageType().equals(MessageEnum.ANNOUNCEMENT_MSG.getMessageName())){
+//
+//                AnnouncementMessagePO announcementMessagePO = announcementMessageService.getBaseMapper().selectOne(new LambdaQueryWrapper<AnnouncementMessagePO>()
+//                        .eq(AnnouncementMessagePO::getId, platformMessagePO.getRelatedMessageId()));
+//
+//                BeanUtils.copyProperties(announcementMessagePO, announcementMessageVO);
+//
+//                List<Long> attachmentIds = announcementMessagePO.getAttachmentIds();
+//                List<AttachmentVO> attachmentVOList = new ArrayList<>();
+//                if(attachmentIds != null && !attachmentIds.isEmpty()) {
+//                    for(Long attachmentId : attachmentIds){
+//                        AttachmentPO attachmentPO = attachmentService.getBaseMapper().selectOne(new LambdaQueryWrapper<AttachmentPO>()
+//                                .eq(AttachmentPO::getId, attachmentId));
+//                        AttachmentVO attachmentVO = new AttachmentVO()
+//                                .setId(attachmentPO.getId())
+//                                .setRelatedId(attachmentPO.getRelatedId())
+//                                .setAttachmentType(attachmentPO.getAttachmentType())
+//                                .setAttachmentOrder(attachmentPO.getAttachmentOrder())
+//                                .setAttachmentMinioPath(attachmentPO.getAttachmentMinioPath())
+//                                .setAttachmentName(attachmentPO.getAttachmentName())
+//                                .setAttachmentSize(attachmentPO.getAttachmentSize())
+//                                .setUsername(attachmentPO.getUsername())
+//                                ;
+//                        attachmentVOList.add(attachmentVO);
+//
+//                    }
+//
+//                }
+//                announcementMessageVO.setAttachmentVOS(attachmentVOList);
+//            }
+//
+//            platformPopupMsgVO.setMsgBody(announcementMessageVO);
+//
+//            platformPopupMsgVOList.add(platformPopupMsgVO);
+//        }
+//        platformUserVO.setPlatformPopupMsgVOList(platformPopupMsgVOList);
 
         if(roleList.contains(RoleEnum.STUDENT.getRoleName())){
             // 学生需要区分是否是新生
@@ -343,7 +343,7 @@ public class PlatformUserController {
         platformUserVO.setIsNewStudent(isNewStudent);
 
         // 将结果存入 Redis 缓存，并设置适当的过期时间
-//        redisTemplate.opsForValue().set(cacheKey, platformUserVO, 10, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(cacheKey, platformUserVO, 10, TimeUnit.HOURS);
 
         return SaResult.data(platformUserVO);
     }

@@ -61,7 +61,7 @@ public class Test1 {
     public void test4(){
         try{
             oldDataSynchronize.synchronizeStudentStatusData(2024,
-                    2021, true, false);
+                    2022, true, false);
         }catch (Exception e){
             log.info("同步学籍数据失败");
         }
