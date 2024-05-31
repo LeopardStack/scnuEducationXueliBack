@@ -282,6 +282,23 @@ public class EnrollmentPlanController {
         return enrollmentPlanService.editEnrollmentPlan(enrollmentPlanApplyRO);
     }
 
+    @PostMapping("/delete_enrollment_plan")
+    @SaCheckLogin
+    @ApiOperation(value = "编辑招生计划")
+    public SaResult editEnrollmentPlan(Integer id ) {
+        if (id == null) {
+            return ResultCode.ENROLLMENT_PLAN_FAIL54.generateErrorResultInfo();
+        }
+
+        int delete = enrollmentPlanService.getBaseMapper().delete(new LambdaQueryWrapper<EnrollmentPlanPO>()
+                .eq(EnrollmentPlanPO::getId, id));
+        if(delete > 0){
+            return SaResult.ok("删除成功");
+        }
+
+        return ResultCode.ENROLLMENT_PLAN_FAIL55.generateErrorResultInfo();
+    }
+
     @PostMapping("/query_enrollment_plan")
     @SaCheckLogin
     @ApiOperation(value = "查询招生计划")
@@ -399,7 +416,7 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功下载");
     }
 
-    @PostMapping("/download_approval_plan_summary2")
+    @GetMapping("/download_approval_plan_summary2")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划汇总表")
     public ResponseEntity<InputStreamResource> downloadApprovalPlanSummary2(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {

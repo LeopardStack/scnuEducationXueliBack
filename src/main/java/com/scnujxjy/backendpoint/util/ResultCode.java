@@ -238,6 +238,8 @@ public enum ResultCode {
     ENROLLMENT_PLAN_FAIL51(254051,"招生计划提交失败，教学点只能提交本教学点的招生计划"),
     ENROLLMENT_PLAN_FAIL52(254052,"招生计划提交失败，二级学院只能提交本二级学院的招生计划"),
     ENROLLMENT_PLAN_FAIL53(254053,"招生计划打回失败，该招生计划不处于当前角色状态"),
+    ENROLLMENT_PLAN_FAIL54(254054,"招生计划删除失败，ID 不能为空"),
+    ENROLLMENT_PLAN_FAIL55(254055,"招生计划删除失败，数据库删除失败"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
