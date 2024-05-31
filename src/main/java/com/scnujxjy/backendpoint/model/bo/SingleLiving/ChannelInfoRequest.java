@@ -22,6 +22,8 @@ public class ChannelInfoRequest {
     private String channelName;
     private String ImgUrl;
     private List<String> channelIds;
+    private Long sectionId;
+    private Long courseId;
 
     //以下用于添加单个白名单字段
     private String code;

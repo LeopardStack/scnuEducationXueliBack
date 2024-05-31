@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.LiveRequestBody;
@@ -15,6 +17,7 @@ import com.scnujxjy.backendpoint.dao.entity.video_stream.livingCreate.ChannelRes
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelInfoData;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.playback.ChannelPlayBackInfoResponse;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.LiveResourceMapper;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
@@ -46,6 +49,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -75,6 +80,9 @@ public class Test2 {
 
     @Resource
     private VideoInformationMapper videoInformationMapper;
+
+    @Resource
+    private SectionsMapper sectionsMapper;
 
     /**
      * 获取指定频道 id 下的所有角色信息
@@ -356,7 +364,7 @@ public class Test2 {
     }
 
     @Test
-    public void putAllVideoInformation() throws IOException, NoSuchAlgorithmException {
+    public void putAllVideoInformation() throws IOException, NoSuchAlgorithmException, ParseException {
 
         //先获取所有频道id
         List<String> channelIds = liveResourceMapper.selectAllChannelId();
@@ -390,8 +398,26 @@ public class Test2 {
                         if (sessionIds.contains(object.getString("channelSessionId"))) {
                             continue;
                         }
-                        //只有完整回放才需要下载哈
+                        String startTime = object.getString("startTime");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+                        Date date = sdf.parse(startTime);
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(date);
+                        calendar.add(Calendar.HOUR_OF_DAY, -1);
+                        Date previousHour = calendar.getTime();
+                        calendar.add(Calendar.HOUR_OF_DAY, 2); // 加2小时，因为前面减了1小时，这里需要补回来
+                        Date nextHour = calendar.getTime();
+                        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        String previousHourStr = outputFormat.format(previousHour);
+                        String nextHourStr = outputFormat.format(nextHour);
+
+                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr);
+
                         VideoInformation videoInformation = new VideoInformation();
+                        if (sectionsPOS!=null){
+                            videoInformation.setSectionId(sectionsPOS.getId());
+                        }
+                        //只有完整回放才需要下载哈
                         videoInformation.setChannelId(channelId);
                         videoInformation.setSessionId(object.getString("channelSessionId"));
                         videoInformation.setStatus(0);
@@ -504,5 +530,69 @@ public class Test2 {
         log.info("下载完成2");
     }
 
+    @Test
+    public void GetChannelRecordInfo() throws InterruptedException {
 
+//        String uuid = UUID.randomUUID().toString();
+//        uuid = uuid.replace("-", "");
+//        String traceId = uuid.substring(0, 10);
+//        log.info(traceId + "下载视频开始，本次下载视频数量最大为" + size, "视频存入地址为:" + savePath);
+
+        List<VideoInformation> videoInformations = videoInformationMapper.seletctVideoUrl(10);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(20);
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(cm)
+                .build();
+
+        for (VideoInformation videoInformation : videoInformations) {
+            executor.submit(() -> {
+                try {
+                    String fileName = videoInformation.getChannelId() + "_" + videoInformation.getSessionId() + ".mp4";
+                    HttpGet httpGet = new HttpGet(videoInformation.getUrl());
+                    RequestConfig requestConfig = RequestConfig.custom()
+                            .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
+                            .build();
+                    httpGet.setConfig(requestConfig);
+
+                    try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+                        HttpEntity entity = response.getEntity();
+                        if (entity != null) {
+                            Path filePath = Paths.get("/home/video", fileName);
+                            try (InputStream in = entity.getContent();
+                                 FileOutputStream out = new FileOutputStream(filePath.toFile())) {
+                                byte[] buffer = new byte[4096];
+                                int bytesRead;
+                                while ((bytesRead = in.read(buffer)) != -1) {
+                                    out.write(buffer, 0, bytesRead);
+                                }
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            UpdateWrapper<VideoInformation> queryWrapper = new UpdateWrapper<>();
+                            queryWrapper.eq("id", videoInformation.getId()).set("status", 1).set("update_time", new Date());
+                            int update = videoInformationMapper.update(null, queryWrapper);
+                        }
+                    }
+                } catch (IOException e) {
+                    log.error("下载视频发生错误" + videoInformation.getChannelId() + " " + videoInformation.getSessionId());
+                    e.printStackTrace();
+                }
+            });
+        }
+
+        executor.shutdown(); // Shut down executor
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        log.info("下载视频完成");
+
+
+    }
 }

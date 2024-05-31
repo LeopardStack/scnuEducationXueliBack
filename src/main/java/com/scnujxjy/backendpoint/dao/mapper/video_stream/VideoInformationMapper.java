@@ -13,4 +13,7 @@ public interface VideoInformationMapper extends BaseMapper<VideoInformation> {
 
     @Select("select session_id from video_information")
     List<String> selectAllSession();
+
+    @Select("select * from video_information where section_id=#{sectionId}")
+    VideoInformation selectBySectionId(Long sectionId);
 }

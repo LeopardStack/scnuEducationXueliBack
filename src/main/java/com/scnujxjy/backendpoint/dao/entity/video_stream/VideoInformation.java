@@ -11,30 +11,19 @@ import java.util.Date;
 @TableName("video_information")
 public class VideoInformation {
 
-    /**
-     * 主键id
-     */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 频道id
-     */
     private String channelId;
 
-    /**
-     * 助教名称
-     */
+    private Long sectionId;
+
     private String sessionId;
 
-    /**
-     * 频道链接
-     */
     private String url;
 
-    /**
-     * 频道密码
-     */
+    private String cdnUrl;
+
     private Integer status;
 
     private Date createTime;

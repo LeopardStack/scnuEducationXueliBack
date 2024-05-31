@@ -6,10 +6,13 @@ import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoInformation;
+import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
@@ -43,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.scnujxjy.backendpoint.exception.DataException.dataMissError;
 
@@ -71,6 +75,36 @@ public class SingleLivingController {
 
     @Resource
     private VideoInformationMapper videoInformationMapper;
+
+    @Resource
+    private SectionsMapper sectionsMapper;
+
+
+    @PostMapping("/queryVideoInformation")
+    public SaResult queryVideoInformation(@RequestBody ChannelInfoRequest channelInfoRequest) {
+        if (channelInfoRequest.getCourseId() != null) {
+            List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByCourseId(channelInfoRequest.getCourseId());
+            List<Long> idList = sectionsPOS.stream()
+                    .map(SectionsPO::getId)
+                    .collect(Collectors.toList());
+
+            QueryWrapper<VideoInformation> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("status", 1).in("section_id", idList);
+            int offset = (channelInfoRequest.getCurrentPage() - 1) * channelInfoRequest.getPageSize();
+            int limit = channelInfoRequest.getPageSize();
+            queryWrapper.last("LIMIT " + offset + "," + limit);
+            List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
+
+            return SaResult.data(videoInformations);
+
+        } else if (channelInfoRequest.getSectionId() != null) {
+            VideoInformation videoInformation = videoInformationMapper.selectBySectionId(channelInfoRequest.getSectionId());
+            return SaResult.data(videoInformation);
+        }
+
+        return SaResult.error("缺少必要参数课程id或者节点id");
+
+    }
 
     @PostMapping("/download")
     @ResponseBody
@@ -115,7 +149,9 @@ public class SingleLivingController {
                             }
 
                             UpdateWrapper<VideoInformation> queryWrapper = new UpdateWrapper<>();
-                            queryWrapper.eq("id", videoInformation.getId()).set("status", 1).set("update_time", new Date());
+                            queryWrapper.eq("id", videoInformation.getId()).set("status", 1)
+                                    .set("update_time", new Date())
+                                    .set("cdn_url", "https://w-gdou.webtrncdn.com/livevod/cdn/cce/" + fileName);
                             int update = videoInformationMapper.update(null, queryWrapper);
                         }
                     }
