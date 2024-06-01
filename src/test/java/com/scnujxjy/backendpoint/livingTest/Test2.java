@@ -403,9 +403,9 @@ public class Test2 {
                         Date date = sdf.parse(startTime);
                         Calendar calendar = Calendar.getInstance();
                         calendar.setTime(date);
-                        calendar.add(Calendar.HOUR_OF_DAY, -1);
+                        calendar.add(Calendar.HOUR_OF_DAY, -2);
                         Date previousHour = calendar.getTime();
-                        calendar.add(Calendar.HOUR_OF_DAY, 2); // 加2小时，因为前面减了1小时，这里需要补回来
+                        calendar.add(Calendar.HOUR_OF_DAY, 4); // 加2小时，因为前面减了1小时，这里需要补回来
                         Date nextHour = calendar.getTime();
                         SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         String previousHourStr = outputFormat.format(previousHour);

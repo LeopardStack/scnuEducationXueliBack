@@ -43,4 +43,8 @@ public class ChannelInfoRequest {
     private String viewerId;//观众id
     //开始日期。格式为yyyy-MM-dd
 
+    private String studentNumber;
+    private Integer videoId;
+    private Integer watched;//1已观看
+
 }

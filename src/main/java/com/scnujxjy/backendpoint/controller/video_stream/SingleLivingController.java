@@ -10,9 +10,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
+import com.scnujxjy.backendpoint.dao.entity.video_stream.StudentRecords;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.TutorAllInformation;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.VideoInformation;
 import com.scnujxjy.backendpoint.dao.mapper.courses_learning.SectionsMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.StudentRecordsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
@@ -79,17 +81,51 @@ public class SingleLivingController {
     @Resource
     private SectionsMapper sectionsMapper;
 
+    @Resource
+    private StudentRecordsMapper studentRecordsMapper;
+
+    @PostMapping("/countStudentVideo")
+    public SaResult countStudentVideo(@RequestBody ChannelInfoRequest channelInfoRequest) {
+        if (channelInfoRequest.getStudentNumber() == null || channelInfoRequest.getVideoId() == null || channelInfoRequest.getWatched() == null) {
+            return SaResult.error("缺少必要参数");
+        }
+
+        try {
+
+            StudentRecords studentRecords1 = studentRecordsMapper.selectByNumberAndVideoId(channelInfoRequest.getStudentNumber(), channelInfoRequest.getVideoId());
+            if (studentRecords1 != null){
+                //说明之前已经观看过，无需插入了
+                return SaResult.ok("该学生本堂课已观看过");
+            }
+
+            StudentRecords studentRecords = new StudentRecords();
+            studentRecords.setStudentNumber(channelInfoRequest.getStudentNumber());
+            studentRecords.setVideoId(channelInfoRequest.getVideoId());
+            studentRecords.setWatched(channelInfoRequest.getWatched());
+            studentRecordsMapper.insert(studentRecords);
+            return SaResult.ok("记录该学生本堂课观看成功");
+        } catch (Exception e) {
+            log.error("记录学生是否观看过该视频异常，入参为" + channelInfoRequest, e);
+            return SaResult.error("记录学生是否观看该视频异常，请联系管理员");
+        }
+
+    }
 
     @PostMapping("/queryVideoInformation")
     public SaResult queryVideoInformation(@RequestBody ChannelInfoRequest channelInfoRequest) {
+
         if (channelInfoRequest.getCourseId() != null) {
+            if (channelInfoRequest.getPageSize() == null || channelInfoRequest.getCurrentPage() == null) {
+                return SaResult.error("分页参数缺失");
+            }
+
             List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByCourseId(channelInfoRequest.getCourseId());
             List<Long> idList = sectionsPOS.stream()
                     .map(SectionsPO::getId)
                     .collect(Collectors.toList());
 
             QueryWrapper<VideoInformation> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("status", 1).in("section_id", idList);
+            queryWrapper.eq("status", 1).in("section_id", idList).orderByAsc("id");
             int offset = (channelInfoRequest.getCurrentPage() - 1) * channelInfoRequest.getPageSize();
             int limit = channelInfoRequest.getPageSize();
             queryWrapper.last("LIMIT " + offset + "," + limit);
@@ -107,7 +143,6 @@ public class SingleLivingController {
     }
 
     @PostMapping("/download")
-    @ResponseBody
     public void downloadFile(String savePath, Integer size) throws InterruptedException {
         String uuid = UUID.randomUUID().toString();
         uuid = uuid.replace("-", "");
