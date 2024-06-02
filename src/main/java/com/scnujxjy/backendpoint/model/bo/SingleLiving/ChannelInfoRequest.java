@@ -22,6 +22,8 @@ public class ChannelInfoRequest {
     private String channelName;
     private String ImgUrl;
     private List<String> channelIds;
+    private Long sectionId;
+    private Long courseId;
 
     //以下用于添加单个白名单字段
     private String code;
@@ -40,5 +42,9 @@ public class ChannelInfoRequest {
 
     private String viewerId;//观众id
     //开始日期。格式为yyyy-MM-dd
+
+    private String studentNumber;
+    private Integer videoId;
+    private Integer watched;//1已观看
 
 }
