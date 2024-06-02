@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.List;
+
 /**
  * <p>
  *  Mapper 接口
@@ -29,4 +31,8 @@ public interface LiveResourceMapper extends BaseMapper<LiveResourcesPO> {
      * @return
      */
     LiveResourcesPO selectLiveResource(Long courseId);
+
+    @Select("select distinct channel_id from live_resources")
+    List<String> selectAllChannelId();
+
 }
