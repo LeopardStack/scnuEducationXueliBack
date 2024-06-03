@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.MajorInformationEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import javax.management.relation.Role;
+import java.math.BigDecimal;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -112,10 +114,11 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             if("校内".equals(enrollmentPlanApplyRO.getTeachingPointName())){
                 teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
                         .eq(TeachingPointInformationPO::getTeachingPointName, userBelongCollege.getCollegeName()));
+            }else {
+                teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                        .eq(TeachingPointInformationPO::getTeachingPointName, enrollmentPlanApplyRO.getTeachingPointName()));
             }
 
-            teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                    .eq(TeachingPointInformationPO::getTeachingPointName, enrollmentPlanApplyRO.getTeachingPointName()));
             if (teachingPointInformationPO == null) {
                 return ResultCode.ENROLLMENT_PLAN_FAIL17.generateErrorResultInfo();
             }
@@ -159,6 +162,17 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             return ResultCode.ENROLLMENT_PLAN_FAIL18.generateErrorResultInfo();
         }
 
+        //学费关联
+        String majorName = enrollmentPlanApplyRO.getMajorName();
+        String trainingLevel = enrollmentPlanApplyRO.getTrainingLevel();
+        boolean b = MajorInformationEnum.existsByMajorNameAndLevel(majorName, trainingLevel);
+        if (!b){
+            return ResultCode.ENROLLMENT_PLAN_FAIL56.generateErrorResultInfo();
+        }
+
+        MajorInformationEnum byMajorNameAndLevel = MajorInformationEnum.getByMajorNameAndLevel(majorName, trainingLevel);
+        enrollmentPlanPO.setTuition(new BigDecimal(byMajorNameAndLevel.getTuitionFee()));
+        enrollmentPlanPO.setEnrollmentSubject(byMajorNameAndLevel.getMajorCategory());
         int insert = getBaseMapper().insert(enrollmentPlanPO);
         if(insert <= 0){
             return ResultCode.ENROLLMENT_PLAN_FAIL15.generateErrorResultInfo();

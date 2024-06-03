@@ -4,6 +4,7 @@ import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlan
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanApplyRO;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -34,4 +35,7 @@ public interface EnrollmentPlanMapper extends BaseMapper<EnrollmentPlanPO> {
     List<String> getDistinctTrainingCollegeList(@Param("entity") EnrollmentPlanApplyRO enrollmentPlanApplyRO);
 
     List<String> getDistinctTeachingPointNameList(@Param("entity") EnrollmentPlanApplyRO enrollmentPlanApplyRO);
+
+    @Select("select * from enrollment_plan where college=#{collegeName} and status='招生部管理员' ")
+    List<EnrollmentPlanPO> queryCollegeEnrollmentPlans(String collegeName);
 }
