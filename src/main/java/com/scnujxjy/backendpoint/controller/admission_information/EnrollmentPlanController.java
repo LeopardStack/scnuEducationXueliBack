@@ -332,7 +332,6 @@ public class EnrollmentPlanController {
     @ApiOperation(value = "获取招生计划筛选项")
     public SaResult getEnrollmentPlanFilterItems(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
 
-
         List<String> roleList = StpUtil.getRoleList();
         if (roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
             // 招生部管理员 不受任何限制 直接获取所有的招生计划
@@ -379,7 +378,7 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功获取打回角色列表").setData(retRoleList);
     }
 
-    @GetMapping("/download_approval_plan_application")
+    @PostMapping("/download_approval_plan_application")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划申报表")
     public SaResult downloadApprovalPlanApplication(HttpServletResponse httpServletResponse) throws IOException {
@@ -492,7 +491,7 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功下载");
     }
 
-    @GetMapping("/download_approval_plan_summary")
+    @PostMapping("/download_approval_plan_summary")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划汇总表")
     public SaResult downloadApprovalPlanSummary(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO, HttpServletResponse response) throws IOException {
