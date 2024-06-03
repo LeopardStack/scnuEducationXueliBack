@@ -421,8 +421,8 @@ public class HealthCheckTask {
     }
 
 
-//    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
-//    @Async
+    @Scheduled(fixedRate = 3600_000) // 每1h触发一次
+    @Async
     public void updateWhiteList() {
         List<LiveChannelWhiteListResponse.ChannelWhiteList> whiteLists = new ArrayList<>();
         try {
