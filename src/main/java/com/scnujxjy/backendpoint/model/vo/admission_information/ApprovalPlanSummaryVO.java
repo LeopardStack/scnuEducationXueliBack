@@ -47,4 +47,7 @@ public class ApprovalPlanSummaryVO implements Serializable {
 
     @ExcelProperty(index = 10, value = "备注")
     private String remarks;
+
+    @ExcelProperty(value = "年")
+    private String year;
 }

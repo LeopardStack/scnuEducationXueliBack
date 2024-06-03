@@ -3,23 +3,25 @@ package com.scnujxjy.backendpoint.service.admission_information;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.scnujxjy.backendpoint.constant.enums.MajorInformationEnum;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
-import com.scnujxjy.backendpoint.dao.entity.admission_information.AdmissionInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
-import com.scnujxjy.backendpoint.dao.mapper.admission_information.AdmissionInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.EnrollmentPlanMapper;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanApplyRO;
-import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanRO;
 import com.scnujxjy.backendpoint.model.vo.PageVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.ApprovalPlanSummaryVO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.EnrollmentPlanFilterItemsVO;
 import com.scnujxjy.backendpoint.service.college.CollegeInformationService;
-import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
@@ -28,7 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import javax.management.relation.Role;
+import java.math.BigDecimal;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +57,15 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
 
     @Resource
     private ScnuXueliTools scnuXueliTools;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
+
+    @Resource
+    private TeachingPointInformationMapper teachingPointInformationMapper;
 
     /**
      * 上报招生计划
@@ -112,10 +123,11 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             if("校内".equals(enrollmentPlanApplyRO.getTeachingPointName())){
                 teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
                         .eq(TeachingPointInformationPO::getTeachingPointName, userBelongCollege.getCollegeName()));
+            }else {
+                teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                        .eq(TeachingPointInformationPO::getTeachingPointName, enrollmentPlanApplyRO.getTeachingPointName()));
             }
 
-            teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
-                    .eq(TeachingPointInformationPO::getTeachingPointName, enrollmentPlanApplyRO.getTeachingPointName()));
             if (teachingPointInformationPO == null) {
                 return ResultCode.ENROLLMENT_PLAN_FAIL17.generateErrorResultInfo();
             }
@@ -159,6 +171,17 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             return ResultCode.ENROLLMENT_PLAN_FAIL18.generateErrorResultInfo();
         }
 
+        //学费关联
+        String majorName = enrollmentPlanApplyRO.getMajorName();
+        String trainingLevel = enrollmentPlanApplyRO.getTrainingLevel();
+        boolean b = MajorInformationEnum.existsByMajorNameAndLevel(majorName, trainingLevel);
+        if (!b){
+            return ResultCode.ENROLLMENT_PLAN_FAIL56.generateErrorResultInfo();
+        }
+
+        MajorInformationEnum byMajorNameAndLevel = MajorInformationEnum.getByMajorNameAndLevel(majorName, trainingLevel);
+        enrollmentPlanPO.setTuition(new BigDecimal(byMajorNameAndLevel.getTuitionFee()));
+        enrollmentPlanPO.setEnrollmentSubject(byMajorNameAndLevel.getMajorCategory());
         int insert = getBaseMapper().insert(enrollmentPlanPO);
         if(insert <= 0){
             return ResultCode.ENROLLMENT_PLAN_FAIL15.generateErrorResultInfo();
@@ -207,6 +230,61 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         enrollmentPlanFilterItemsVO.setMajorNameList(majorNameList);
         enrollmentPlanFilterItemsVO.setStudyFormList(studyFormList);
         enrollmentPlanFilterItemsVO.setTrainingLevelList(trainingLevelList);
+        enrollmentPlanFilterItemsVO.setCollegeList(collegeList);
+        enrollmentPlanFilterItemsVO.setTeachingPointNameList(teachingPointNameList);
+
+        return SaResult.ok("成功获取招生计划筛选项").setData(enrollmentPlanFilterItemsVO);
+    }
+
+    public SaResult getEnrollmentPlanFilter(EnrollmentPlanApplyRO enrollmentPlanApplyRO,List<String> roleList) {
+        EnrollmentPlanFilterItemsVO enrollmentPlanFilterItemsVO = new EnrollmentPlanFilterItemsVO();
+        List<String> collegeList=new ArrayList<>();
+        List<String> teachingPointNameList=new ArrayList<>();
+
+        if (roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
+            // 招生部管理员 可以获取所有学院，所有教学点
+             collegeList = getBaseMapper().getDistinctTrainingCollegeList(enrollmentPlanApplyRO);
+             teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
+
+        } else if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
+            // 二级学院教务员 只能获取本学院，所有教学点
+            CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
+            collegeList.add(userBelongCollege.getCollegeName());
+            teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
+
+        } else if (roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())) {
+            // 教学点教务员获取 获取所有学院，本教学点
+            collegeList = getBaseMapper().getDistinctTrainingCollegeList(enrollmentPlanApplyRO);
+            //如果教学点是这两个天河越平，南方人才，能获取的教学点不止是本身，而是List<String>{天河越平，南方人才}, 学院是获取所有学院
+            String loginId = (String) StpUtil.getLoginId();
+            PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+            LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+
+            //如果查出来管理的教学点超过了一个，说明是这两个天河越平，南方人才
+            List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
+            if (teachingPointAdminInformationPOS.size()>1){
+                teachingPointNameList.add("广州天河越平教学点");
+                teachingPointNameList.add("广州南方人才教学点");
+            }else {
+                //否则则是本身
+                TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPOS.get(0).getTeachingPointId());
+                teachingPointNameList.add(teachingPointInformationPO.getTeachingPointName());
+                //                enrollmentPlanApplyRO.setTeachingPointName(teachingPointAdminInformationPOS.get(0).getName());
+//                teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
+            }
+
+//            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+//            if("广州天河越平教学点".equals(userBelongTeachingPoint.getTeachingPointName()) || "广州南方人才教学点".equals(userBelongTeachingPoint.getTeachingPointName())){
+//                teachingPointNameList.add("广州天河越平教学点");
+//                teachingPointNameList.add("广州南方人才教学点");
+//            }else {
+//                enrollmentPlanApplyRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+//                teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
+//            }
+
+        }
+
         enrollmentPlanFilterItemsVO.setCollegeList(collegeList);
         enrollmentPlanFilterItemsVO.setTeachingPointNameList(teachingPointNameList);
 
@@ -270,6 +348,14 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             }else{
                 return ResultCode.ENROLLMENT_PLAN_FAIL38.generateErrorResultInfo();
             }
+        }else if(roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())){
+            //如果是招生办管理员，需要更新状态为已完成
+            enrollmentPlanPO.setStatus("已完成");
+            int i = getBaseMapper().updateById(enrollmentPlanPO);
+            if(i > 0){
+                return SaResult.ok("提交成功");
+            }
+
         }
 
         return ResultCode.ENROLLMENT_PLAN_FAIL38.generateErrorResultInfo();
@@ -393,6 +479,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             if(enrollmentPlanApplyRO.getContactNumber() != enrollmentPlanPO.getContactNumber()){
                 enrollmentPlanPO.setContactNumber(enrollmentPlanApplyRO.getContactNumber());
             }
+
 
             int i = getBaseMapper().updateById(enrollmentPlanPO);
             if(i > 0){

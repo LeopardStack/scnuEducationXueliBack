@@ -240,6 +240,7 @@ public enum ResultCode {
     ENROLLMENT_PLAN_FAIL53(254053,"招生计划打回失败，该招生计划不处于当前角色状态"),
     ENROLLMENT_PLAN_FAIL54(254054,"招生计划删除失败，ID 不能为空"),
     ENROLLMENT_PLAN_FAIL55(254055,"招生计划删除失败，数据库删除失败"),
+    ENROLLMENT_PLAN_FAIL56(254056,"招生计划申报失败，学费找不到匹配项"),
 
     // 获取所有角色信息失败
     ROLE_ALL_INFO_GET_FAIL(30001, "获取全部角色信息失败"),
