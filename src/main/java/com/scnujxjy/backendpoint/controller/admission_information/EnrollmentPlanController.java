@@ -349,6 +349,15 @@ public class EnrollmentPlanController {
         return enrollmentPlanService.getEnrollmentPlanFilterItems(enrollmentPlanApplyRO);
     }
 
+    @PostMapping("/get_enrollment_plan_filter")
+    @SaCheckLogin
+    @ApiOperation(value = "获取申报招生计划的筛选项")
+    public SaResult getEnrollmentPlanFilter(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+
+        List<String> roleList = StpUtil.getRoleList();
+        return enrollmentPlanService.getEnrollmentPlanFilter(enrollmentPlanApplyRO,roleList);
+    }
+
     @GetMapping("/get_enrollment_plan_approval_rollback_items")
     @SaCheckLogin
     @ApiOperation(value = "获取打回角色筛选项")
