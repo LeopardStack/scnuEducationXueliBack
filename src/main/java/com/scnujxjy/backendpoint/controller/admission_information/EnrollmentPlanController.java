@@ -9,6 +9,7 @@ import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
@@ -43,8 +44,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Year;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.SECOND_COLLEGE_ADMIN;
+import static com.scnujxjy.backendpoint.constant.enums.RoleEnum.*;
 
 /**
  * <p>
@@ -127,18 +129,25 @@ public class EnrollmentPlanController {
     }
 
     /**
-     * @param enrollmentPlanId
-     * @param roleName         打回给谁
+//     * @param enrollmentPlanId
+//     * @param roleName         打回给谁
      * @return
      */
     @PostMapping("approval_rollback")
     @SaCheckLogin
     @ApiOperation(value = "打回招生计划")
-    public SaResult approvalRollbackEnrollmentPlan(Long enrollmentPlanId, String roleName) {
-        //
-        if (enrollmentPlanId == null) {
+    public SaResult approvalRollbackEnrollmentPlan(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+
+        if (enrollmentPlanApplyRO.getId() == null) {
             return ResultCode.ENROLLMENT_PLAN_FAIL19.generateErrorResultInfo();
         }
+        if (StringUtils.isBlank(enrollmentPlanApplyRO.getRemarks())){
+            return ResultCode.ENROLLMENT_PLAN_FAIL57.generateErrorResultInfo();
+        }
+        Long enrollmentPlanId=(long)enrollmentPlanApplyRO.getId();
+        String roleName=enrollmentPlanApplyRO.getRoleName();
+        String remarks = enrollmentPlanApplyRO.getRemarks();
+        //
 
         EnrollmentPlanPO enrollmentPlanPO = enrollmentPlanService.getBaseMapper().selectOne(new LambdaQueryWrapper<EnrollmentPlanPO>()
                 .eq(EnrollmentPlanPO::getId, enrollmentPlanId));
@@ -152,7 +161,7 @@ public class EnrollmentPlanController {
             return ResultCode.ENROLLMENT_PLAN_FAIL21.generateErrorResultInfo();
         }
 
-        return enrollmentPlanService.approvalRollbackEnrollmentPlan(enrollmentPlanId, roleName);
+        return enrollmentPlanService.approvalRollbackEnrollmentPlan(enrollmentPlanId, roleName,remarks);
     }
 
     @PostMapping("batch_approval_rollback_enrollment_plan")
@@ -292,7 +301,7 @@ public class EnrollmentPlanController {
 
     @PostMapping("/delete_enrollment_plan")
     @SaCheckLogin
-    @ApiOperation(value = "编辑招生计划")
+    @ApiOperation(value = "删除招生计划")
     public SaResult editEnrollmentPlan(Integer id) {
         if (id == null) {
             return ResultCode.ENROLLMENT_PLAN_FAIL54.generateErrorResultInfo();
@@ -394,93 +403,48 @@ public class EnrollmentPlanController {
                 if (userBelongCollege == null) {
                     return SaResult.error("未获取到学院名称，请联系管理员");
                 }
+                String fileName = userBelongCollege.getCollegeName() + "招生计划申报表";
 
                 List<EnrollmentPlanPO> enrollmentPlanPOS = enrollmentPlanMapper.queryCollegeEnrollmentPlans(userBelongCollege.getCollegeName());
                 if (enrollmentPlanPOS == null || enrollmentPlanPOS.size() == 0) {
                     return SaResult.error("该学院不存在招生计划申请，无需导出");
                 }
 
-                List<EnrollmentPlanExcelVO> enrollmentPlanExcelVOS = new ArrayList<>();
-                for (EnrollmentPlanPO enrollmentPlanPO : enrollmentPlanPOS) {
-                    EnrollmentPlanExcelVO enrollmentPlanExcelVO = new EnrollmentPlanExcelVO();
-                    enrollmentPlanExcelVO.setMajorName(enrollmentPlanPO.getMajorName());
-                    enrollmentPlanExcelVO.setStudyForm(enrollmentPlanPO.getStudyForm());
-                    enrollmentPlanExcelVO.setEducationLength(enrollmentPlanPO.getEducationLength());
-                    enrollmentPlanExcelVO.setTrainingLevel(enrollmentPlanPO.getTrainingLevel());
-                    enrollmentPlanExcelVO.setEnrollmentNumber(enrollmentPlanPO.getEnrollmentNumber());
+                downloadApprovalPlan(httpServletResponse, fileName, enrollmentPlanPOS);
 
-                    enrollmentPlanExcelVO.setTargerStudents(enrollmentPlanPO.getTargetStudents());
-                    enrollmentPlanExcelVO.setSchoolLocation(enrollmentPlanPO.getSchoolLocation());
-                    enrollmentPlanExcelVO.setEnrollmentRegion(enrollmentPlanPO.getEnrollmentRegion());
-                    enrollmentPlanExcelVO.setContactNumber(enrollmentPlanPO.getContactNumber());
-                    enrollmentPlanExcelVOS.add(enrollmentPlanExcelVO);
+            } else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
+                //教学点只可以导出自己教学点的申报表，申报表只能是已完成
+                TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
+                String teachingPointName = userBelongTeachingPoint.getTeachingPointName();
+                String fileName = teachingPointName+ "招生计划申报表";
+
+                List<EnrollmentPlanPO> enrollmentPlanPOS = enrollmentPlanMapper.queryTeachingEnrollmentPlans(teachingPointName);
+                if (enrollmentPlanPOS == null || enrollmentPlanPOS.size() == 0) {
+                    return SaResult.error("该教学点不存在已完成的招生计划申请，无需导出");
                 }
 
-                String configValue = globalConfigService.getBaseMapper().selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
-                        .eq(GlobalConfigPO::getConfigKey, "招生计划申报表模板")).getConfigValue();
+                List<EnrollmentPlanPO> aggregatedEnrollmentPlans = enrollmentPlanPOS.stream()
+                        .collect(Collectors.groupingBy(EnrollmentPlanPO::getCollege))
+                        .values().stream()
+                        .flatMap(plans -> plans.stream()
+                                .collect(Collectors.toMap(EnrollmentPlanPO::getTrainingLevel, plan -> plan, (first, second) -> first))
+                                .values().stream()
+                                .sorted(Comparator.comparingInt(plan -> {
+                                    // 根据trainingLevel字段的特定顺序指定排序值
+                                    String trainingLevel = plan.getTrainingLevel();
+                                    if ("专升本".equals(trainingLevel)) {
+                                        return 1;
+                                    } else if ("高起专".equals(trainingLevel)) {
+                                        return 2;
+                                    } else {
+                                        return 0;
+                                    }
+                                }))
+                        )
+                        .collect(Collectors.toList());
 
-                InputStream fileInputStreamFromMinio = minioService.getFileInputStreamFromMinio(configValue);
+                downloadApprovalPlan(httpServletResponse, fileName, aggregatedEnrollmentPlans);
 
-                // 使用 ByteArrayOutputStream 将数据写入到流中
-//                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                // 配置 Excel 写入操作
-                ExcelWriter excelWriter = null;
-
-                LocalDate today = LocalDate.now();
-                int year = today.getYear();
-                int month = today.getMonthValue();
-                int day = today.getDayOfMonth();
-
-                // 把年月日转换成字符串
-                String yearStr = String.valueOf(year);
-                String monthStr = String.valueOf(month);
-                String dayStr = String.valueOf(day);
-
-                Map<String, Object> basicInfo = new HashMap<>();
-                basicInfo.put("year", yearStr);
-                basicInfo.put("month", monthStr);
-                basicInfo.put("day", dayStr);
-
-                String fileName = userBelongCollege.getCollegeName() + "招生计划申报表";
-                httpServletResponse.setContentType("application/vnd.ms-excel");
-                httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName + ".xlsx");
-
-                // 获取输出流
-                OutputStream outputStream = httpServletResponse.getOutputStream();
-
-                // 使用 EasyExcel 将 Excel 文件写入输出流
-                excelWriter = EasyExcel.write(outputStream, EnrollmentPlanExcelVO.class)
-                        .withTemplate(fileInputStreamFromMinio)
-                        .build();
-                WriteSheet writeSheet = EasyExcel.writerSheet().build();
-                FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
-                excelWriter.fill(enrollmentPlanExcelVOS, fillConfig, writeSheet);
-                // 填充填表时间
-                excelWriter.fill(basicInfo, writeSheet);
-                excelWriter.finish();
-
-                // 关闭输出流
-                outputStream.flush();
-                outputStream.close();
-
-//                try {
-//                    excelWriter = EasyExcel.write(outputStream, EnrollmentPlanExcelVO.class)
-//                            .withTemplate(fileInputStreamFromMinio)
-//                            .build();
-//
-//                    WriteSheet writeSheet = EasyExcel.writerSheet().build();
-//                    FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
-//                    excelWriter.fill(enrollmentPlanExcelVOS, fillConfig, writeSheet);
-//                    // 填充填表时间
-//                    excelWriter.fill(basicInfo, writeSheet);  // 如果使用 Map
-//                    excelWriter.finish();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                } finally {
-//                    if (excelWriter != null) {
-//                        excelWriter.finish();
-//                    }
-//                }
 
             } else {
                 return SaResult.error("导出招生计划表仅限给二级学院使用");
@@ -491,10 +455,76 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功下载");
     }
 
+    private void downloadApprovalPlan(HttpServletResponse httpServletResponse, String fileName, List<EnrollmentPlanPO> enrollmentPlanPOS) throws IOException {
+        List<EnrollmentPlanExcelVO> enrollmentPlanExcelVOS = new ArrayList<>();
+        for (EnrollmentPlanPO enrollmentPlanPO : enrollmentPlanPOS) {
+            EnrollmentPlanExcelVO enrollmentPlanExcelVO = new EnrollmentPlanExcelVO();
+            enrollmentPlanExcelVO.setMajorName(enrollmentPlanPO.getMajorName());
+            enrollmentPlanExcelVO.setStudyForm(enrollmentPlanPO.getStudyForm());
+            enrollmentPlanExcelVO.setEducationLength(enrollmentPlanPO.getEducationLength());
+            enrollmentPlanExcelVO.setTrainingLevel(enrollmentPlanPO.getTrainingLevel());
+            enrollmentPlanExcelVO.setEnrollmentNumber(enrollmentPlanPO.getEnrollmentNumber());
+
+            enrollmentPlanExcelVO.setTargerStudents(enrollmentPlanPO.getTargetStudents());
+            enrollmentPlanExcelVO.setSchoolLocation(enrollmentPlanPO.getSchoolLocation());
+            enrollmentPlanExcelVO.setEnrollmentRegion(enrollmentPlanPO.getEnrollmentRegion());
+            enrollmentPlanExcelVO.setContactNumber(enrollmentPlanPO.getContactNumber());
+            enrollmentPlanExcelVOS.add(enrollmentPlanExcelVO);
+        }
+
+        String configValue = globalConfigService.getBaseMapper().selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
+                .eq(GlobalConfigPO::getConfigKey, "招生计划申报表模板")).getConfigValue();
+
+        InputStream fileInputStreamFromMinio = minioService.getFileInputStreamFromMinio(configValue);
+
+        ExcelWriter excelWriter = null;
+
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        int month = today.getMonthValue();
+        int day = today.getDayOfMonth();
+
+        // 把年月日转换成字符串
+        String yearStr = String.valueOf(year);
+        String monthStr = String.valueOf(month);
+        String dayStr = String.valueOf(day);
+
+        Map<String, Object> basicInfo = new HashMap<>();
+        basicInfo.put("year", yearStr);
+        basicInfo.put("month", monthStr);
+        basicInfo.put("day", dayStr);
+
+        httpServletResponse.setContentType("application/vnd.ms-excel");
+        httpServletResponse.setHeader("Content-Disposition", "attachment; filename=" + fileName + ".xlsx");
+
+        // 获取输出流
+        OutputStream outputStream = httpServletResponse.getOutputStream();
+
+        // 使用 EasyExcel 将 Excel 文件写入输出流
+        excelWriter = EasyExcel.write(outputStream, EnrollmentPlanExcelVO.class)
+                .withTemplate(fileInputStreamFromMinio)
+                .build();
+        WriteSheet writeSheet = EasyExcel.writerSheet().build();
+        FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
+        excelWriter.fill(enrollmentPlanExcelVOS, fillConfig, writeSheet);
+        // 填充填表时间
+        excelWriter.fill(basicInfo, writeSheet);
+        excelWriter.finish();
+
+        // 关闭输出流
+        outputStream.flush();
+        outputStream.close();
+    }
+
     @PostMapping("/download_approval_plan_summary")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划汇总表")
     public SaResult downloadApprovalPlanSummary(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO, HttpServletResponse response) throws IOException {
+
+        List<String> roleList = StpUtil.getRoleList();
+        if (!roleList.contains(SUPER_ADMIN.getRoleName()) && !roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
+            return SaResult.error("招生计划汇总表只能招生办管理员才能导出");
+        }
 
         List<ApprovalPlanSummaryVO> approvalPlanSummaryVOList =
                 enrollmentPlanService.downloadApprovalPlanSummary(enrollmentPlanApplyRO);
@@ -555,7 +585,7 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功下载");
     }
 
-    @GetMapping("/download_approval_plan_summary2")
+//    @GetMapping("/download_approval_plan_summary2")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划汇总表")
     public ResponseEntity<InputStreamResource> downloadApprovalPlanSummary2(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {

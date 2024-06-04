@@ -133,4 +133,10 @@ public class EnrollmentPlanApplyRO implements Serializable {
      */
     @ApiModelProperty(value = "打回给某个角色", example = "教学点管理员")
     private String roleName;
+
+    @ApiModelProperty(value = "打回拒绝的理由", example = "审核不通过：招生人数过多")
+    private String remarks;
+
+    @ApiModelProperty(value = "状态", example = "已完成")
+    private String status;
 }

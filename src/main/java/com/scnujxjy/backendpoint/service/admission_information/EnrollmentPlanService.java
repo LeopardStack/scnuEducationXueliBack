@@ -32,10 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.Year;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -182,6 +179,9 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         MajorInformationEnum byMajorNameAndLevel = MajorInformationEnum.getByMajorNameAndLevel(majorName, trainingLevel);
         enrollmentPlanPO.setTuition(new BigDecimal(byMajorNameAndLevel.getTuitionFee()));
         enrollmentPlanPO.setEnrollmentSubject(byMajorNameAndLevel.getMajorCategory());
+
+        //如果是申报时，就设为空
+        enrollmentPlanPO.setRemarks(null);
         int insert = getBaseMapper().insert(enrollmentPlanPO);
         if(insert <= 0){
             return ResultCode.ENROLLMENT_PLAN_FAIL15.generateErrorResultInfo();
@@ -240,20 +240,25 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         EnrollmentPlanFilterItemsVO enrollmentPlanFilterItemsVO = new EnrollmentPlanFilterItemsVO();
         List<String> collegeList=new ArrayList<>();
         List<String> teachingPointNameList=new ArrayList<>();
+        List<String> majorNameList = new ArrayList<>();
 
         if (roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
-            // 招生部管理员 可以获取所有学院，所有教学点
+            // 招生部管理员 可以获取所有学院，所有教学点,所有专业
              collegeList = getBaseMapper().getDistinctTrainingCollegeList(enrollmentPlanApplyRO);
              teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
-
+             majorNameList=getBaseMapper().getDistinctMajorNameList(enrollmentPlanApplyRO);
         } else if (roleList.contains(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName())) {
-            // 二级学院教务员 只能获取本学院，所有教学点
+            // 二级学院教务员 只能获取本学院，所有教学点,本学院的专业
             CollegeInformationPO userBelongCollege = scnuXueliTools.getUserBelongCollege();
             collegeList.add(userBelongCollege.getCollegeName());
             teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
 
+            enrollmentPlanApplyRO.setCollege(userBelongCollege.getCollegeName());
+            majorNameList=getBaseMapper().getDistinctMajorNameList(enrollmentPlanApplyRO);
+
         } else if (roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())) {
-            // 教学点教务员获取 获取所有学院，本教学点
+            // 教学点教务员获取 获取所有学院，本教学点，所有专业
+            majorNameList=getBaseMapper().getDistinctMajorNameList(enrollmentPlanApplyRO);
             collegeList = getBaseMapper().getDistinctTrainingCollegeList(enrollmentPlanApplyRO);
             //如果教学点是这两个天河越平，南方人才，能获取的教学点不止是本身，而是List<String>{天河越平，南方人才}, 学院是获取所有学院
             String loginId = (String) StpUtil.getLoginId();
@@ -270,21 +275,10 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
                 //否则则是本身
                 TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPOS.get(0).getTeachingPointId());
                 teachingPointNameList.add(teachingPointInformationPO.getTeachingPointName());
-                //                enrollmentPlanApplyRO.setTeachingPointName(teachingPointAdminInformationPOS.get(0).getName());
-//                teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
-            }
-
-//            TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-//            if("广州天河越平教学点".equals(userBelongTeachingPoint.getTeachingPointName()) || "广州南方人才教学点".equals(userBelongTeachingPoint.getTeachingPointName())){
-//                teachingPointNameList.add("广州天河越平教学点");
-//                teachingPointNameList.add("广州南方人才教学点");
-//            }else {
-//                enrollmentPlanApplyRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
-//                teachingPointNameList = getBaseMapper().getDistinctTeachingPointNameList(enrollmentPlanApplyRO);
-//            }
+           }
 
         }
-
+        enrollmentPlanFilterItemsVO.setMajorNameList(majorNameList);
         enrollmentPlanFilterItemsVO.setCollegeList(collegeList);
         enrollmentPlanFilterItemsVO.setTeachingPointNameList(teachingPointNameList);
 
@@ -367,13 +361,14 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
      * @param roleName
      * @return
      */
-    public SaResult approvalRollbackEnrollmentPlan(Long enrollmentPlanId, String roleName) {
+    public SaResult approvalRollbackEnrollmentPlan(Long enrollmentPlanId, String roleName,String remarks ) {
         List<String> roleList = StpUtil.getRoleList();
         EnrollmentPlanPO enrollmentPlanPO = getBaseMapper().selectById(enrollmentPlanId);
         if(roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())){
             // 招生办管理员 它可以选择打回给 教学点/二级学院管理员
             if(enrollmentPlanPO.getStatus().equals(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())){
                 EnrollmentPlanPO enrollmentPlanPO1 = enrollmentPlanPO.setStatus(roleName);
+                enrollmentPlanPO1.setRemarks(remarks);
                 int i = getBaseMapper().updateById(enrollmentPlanPO1);
                 if(i > 0){
                     return SaResult.ok("打回成功");
@@ -398,6 +393,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
 
                 if(roleName.equals(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())){
                     EnrollmentPlanPO enrollmentPlanPO1 = enrollmentPlanPO.setStatus(roleName);
+                    enrollmentPlanPO1.setRemarks(remarks);
                     int i = getBaseMapper().updateById(enrollmentPlanPO1);
                     if(i > 0){
                         return SaResult.ok("打回成功");
@@ -610,7 +606,25 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
      * @return
      */
     public List<ApprovalPlanSummaryVO> downloadApprovalPlanSummary(EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+        enrollmentPlanApplyRO.setStatus("已完成");
         List<EnrollmentPlanPO> enrollmentPlanPOList = getBaseMapper().queryAllEnrollmentPlans(enrollmentPlanApplyRO);
+
+        List<EnrollmentPlanPO> aggregatedEnrollmentPlans = enrollmentPlanPOList.stream()
+                .collect(Collectors.groupingBy(EnrollmentPlanPO::getCollege))
+                .values().stream()
+                .flatMap(plans -> plans.stream()
+                        .sorted(Comparator.comparing(plan -> { // 先按照trainingLevel进行排序
+                            String trainingLevel = plan.getTrainingLevel();
+                            if ("专升本".equals(trainingLevel)) {
+                                return 1;
+                            } else if ("高起专".equals(trainingLevel)) {
+                                return 2;
+                            } else {
+                                return 0;
+                            }
+                        }))
+                )
+                .collect(Collectors.toList());
 
         List<ApprovalPlanSummaryVO> approvalPlanSummaryVOList = new ArrayList<>();
         int index = 1;
@@ -618,7 +632,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         Map<String, String> collegeMap = new HashMap<>();
         Map<String, String> teachingPointMap = new HashMap<>();
 
-        for(EnrollmentPlanPO enrollmentPlanPO : enrollmentPlanPOList){
+        for(EnrollmentPlanPO enrollmentPlanPO : aggregatedEnrollmentPlans){
 
             if(!collegeMap.containsKey(enrollmentPlanPO.getCollegeId())){
                 CollegeInformationPO collegeInformationPO = collegeInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()

@@ -39,6 +39,7 @@
         <if test='entity.enrollmentRegion != null'>AND ep.enrollment_region = #{entity.enrollmentRegion}</if>
         <if test='entity.college != null'>AND ep.college = #{entity.college}</if>
         <if test='entity.teachingPointName != null'>AND tpi.teaching_point_name = #{entity.teachingPointName}</if>
+        <if test='entity.status != null'>AND ep.status = #{entity.status}</if>
 
         <!-- Additional filter for majorNameList -->
         <if test="entity.majorNameList != null and entity.majorNameList.size() > 0">
@@ -80,7 +81,8 @@
         LEFT JOIN teaching_point_information tpi ON ep.teaching_point_id=tpi.teaching_point_id
         WHERE 1=1
         <include refid="commonFilters" />
-        ORDER BY ep.year DESC, ep.college, ep.enrollment_region
+        order by id desc
+--         ORDER BY ep.year DESC, ep.college, ep.enrollment_region
         LIMIT #{pageNumber}, #{pageSize}
     </select>
     <select id="queryEnrollmentPlanSize" resultType="java.lang.Long">
