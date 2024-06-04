@@ -77,6 +77,18 @@ public class EnrollmentPlanController {
     @Resource
     private EnrollmentPlanMapper enrollmentPlanMapper;
 
+    @PostMapping("/getCollegeMajor")
+    @SaCheckLogin
+    @ApiOperation(value = "根据学院返回专业名称")
+    public SaResult getCollegeMajor(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+       if (StringUtils.isBlank(enrollmentPlanApplyRO.getCollege())){
+           return SaResult.error("学院信息不能为空");
+       }
+        List<String> distinctMajorNameList = enrollmentPlanMapper.getDistinctMajorNameList(enrollmentPlanApplyRO);
+
+        return SaResult.data(distinctMajorNameList);
+    }
+
     @PostMapping("/setup_enrollment_plan_apply")
     @SaCheckLogin
     @ApiOperation(value = "设置招生计划申报")
@@ -114,6 +126,25 @@ public class EnrollmentPlanController {
         }
 
         return enrollmentPlanService.approvalEnrollmentPlan(enrollmentPlanId);
+    }
+
+    @PostMapping("refuse_enrollment_plan")
+    @SaCheckLogin
+    @ApiOperation(value = "招生计划审核不通过")
+    public SaResult refuseEnrollmentPlan(Long enrollmentPlanId) {
+
+        // 往下推一步
+        if (enrollmentPlanId == null) {
+            return ResultCode.ENROLLMENT_PLAN_FAIL19.generateErrorResultInfo();
+        }
+
+        EnrollmentPlanPO enrollmentPlanPO = enrollmentPlanService.getBaseMapper().selectOne(new LambdaQueryWrapper<EnrollmentPlanPO>()
+                .eq(EnrollmentPlanPO::getId, enrollmentPlanId));
+        if (enrollmentPlanPO == null) {
+            return ResultCode.ENROLLMENT_PLAN_FAIL20.generateErrorResultInfo();
+        }
+
+        return enrollmentPlanService.refuseEnrollmentPlan(enrollmentPlanId);
     }
 
     @PostMapping("batch_approval_enrollment_plan")
@@ -427,10 +458,7 @@ public class EnrollmentPlanController {
                         .collect(Collectors.groupingBy(EnrollmentPlanPO::getCollege))
                         .values().stream()
                         .flatMap(plans -> plans.stream()
-                                .collect(Collectors.toMap(EnrollmentPlanPO::getTrainingLevel, plan -> plan, (first, second) -> first))
-                                .values().stream()
-                                .sorted(Comparator.comparingInt(plan -> {
-                                    // 根据trainingLevel字段的特定顺序指定排序值
+                                .sorted(Comparator.comparing(plan -> { // 先按照trainingLevel进行排序
                                     String trainingLevel = plan.getTrainingLevel();
                                     if ("专升本".equals(trainingLevel)) {
                                         return 1;
@@ -563,25 +591,6 @@ public class EnrollmentPlanController {
         outputStream.flush();
         outputStream.close();
 
-//        try {
-//            // ExcelDataUtil.setResponseHeader(response, errorFileName);
-//            excelWriter = EasyExcel.write(outputStream, ExamTeachersInfoVO.class)
-//                    .withTemplate(fileInputStreamFromMinio)
-//                    .build();
-//
-//            WriteSheet writeSheet = EasyExcel.writerSheet().build();
-//            FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
-//            excelWriter.fill(approvalPlanSummaryVOList, fillConfig, writeSheet);
-//            // 填充填表时间
-//            excelWriter.fill(basicInfo, writeSheet);  // 如果使用 Map
-//            excelWriter.finish();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (excelWriter != null) {
-//                excelWriter.finish();
-//            }
-//        }
         return SaResult.ok("成功下载");
     }
 

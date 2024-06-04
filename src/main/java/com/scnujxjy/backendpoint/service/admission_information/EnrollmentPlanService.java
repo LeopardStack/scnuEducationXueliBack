@@ -311,6 +311,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
 
                 // 往下推一级 来到二级学院管理员
                 enrollmentPlanPO.setStatus(RoleEnum.SECOND_COLLEGE_ADMIN.getRoleName());
+                enrollmentPlanPO.setRemarks("");
                 int i = getBaseMapper().updateById(enrollmentPlanPO);
                 if(i > 0){
                     return SaResult.ok("提交成功");
@@ -333,6 +334,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
 
                 // 往下推一级 来到招生办管理员
                 enrollmentPlanPO.setStatus(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName());
+                enrollmentPlanPO.setRemarks("");
                 int i = getBaseMapper().updateById(enrollmentPlanPO);
                 if(i > 0){
                     return SaResult.ok("提交成功");
@@ -345,6 +347,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         }else if(roleList.contains(RoleEnum.ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())){
             //如果是招生办管理员，需要更新状态为已完成
             enrollmentPlanPO.setStatus("已完成");
+            enrollmentPlanPO.setRemarks("");
             int i = getBaseMapper().updateById(enrollmentPlanPO);
             if(i > 0){
                 return SaResult.ok("提交成功");
@@ -353,6 +356,18 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         }
 
         return ResultCode.ENROLLMENT_PLAN_FAIL38.generateErrorResultInfo();
+    }
+
+    public SaResult refuseEnrollmentPlan(Long enrollmentPlanId) {
+        EnrollmentPlanPO enrollmentPlanPO = getBaseMapper().selectById(enrollmentPlanId);
+        enrollmentPlanPO.setStatus("审核不通过");
+        int i = getBaseMapper().updateById(enrollmentPlanPO);
+        if(i > 0){
+            return SaResult.ok("提交成功");
+        }else{
+            return ResultCode.ENROLLMENT_PLAN_FAIL38.generateErrorResultInfo();
+        }
+
     }
 
     /**
