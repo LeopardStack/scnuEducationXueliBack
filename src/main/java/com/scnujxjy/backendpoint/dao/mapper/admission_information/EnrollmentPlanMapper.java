@@ -36,6 +36,8 @@ public interface EnrollmentPlanMapper extends BaseMapper<EnrollmentPlanPO> {
 
     List<String> getDistinctTeachingPointNameList(@Param("entity") EnrollmentPlanApplyRO enrollmentPlanApplyRO);
 
-    @Select("select * from enrollment_plan where college=#{collegeName} and status='招生部管理员' ")
+    @Select("SELECT * FROM enrollment_plan WHERE college=#{collegeName} AND status='已完成' ORDER BY CASE WHEN training_level = '专升本' THEN 1 ELSE 2 END")
     List<EnrollmentPlanPO> queryCollegeEnrollmentPlans(String collegeName);
+    @Select("select * from enrollment_plan where teaching_location=#{teachingPointName} and status='已完成' ORDER BY CASE WHEN training_level = '专升本' THEN 1 ELSE 2 END")
+    List<EnrollmentPlanPO> queryTeachingEnrollmentPlans(String teachingPointName);
 }
