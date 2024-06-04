@@ -292,7 +292,7 @@ public class EnrollmentPlanController {
 
     @PostMapping("/delete_enrollment_plan")
     @SaCheckLogin
-    @ApiOperation(value = "编辑招生计划")
+    @ApiOperation(value = "删除招生计划")
     public SaResult editEnrollmentPlan(Integer id) {
         if (id == null) {
             return ResultCode.ENROLLMENT_PLAN_FAIL54.generateErrorResultInfo();

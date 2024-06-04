@@ -489,7 +489,9 @@ public class StudentStatusController {
                 if (send) {
                     return SaResult.ok("导出学籍数据成功");
                 }
-            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName()) || roleList.contains(CAIWUBU_ADMIN.getRoleName())) {
+            } else if (roleList.contains(XUELIJIAOYUBU_ADMIN.getRoleName())
+                    || roleList.contains(CAIWUBU_ADMIN.getRoleName())
+                    || roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
                 // 继续教育学院管理员
                 log.info(StpUtil.getLoginIdAsString() + " 角色为 " + roleList + "\n"
                         + "导出了学籍数据，入参为 " + studentStatusROPageRO.getEntity());
