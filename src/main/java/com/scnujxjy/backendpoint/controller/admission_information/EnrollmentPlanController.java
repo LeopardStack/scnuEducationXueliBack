@@ -11,6 +11,7 @@ import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
+import com.scnujxjy.backendpoint.constant.enums.TeachingPointInformationEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
@@ -77,16 +78,37 @@ public class EnrollmentPlanController {
     @Resource
     private EnrollmentPlanMapper enrollmentPlanMapper;
 
-    @PostMapping("/getCollegeMajor")
+    @PostMapping("/getAddress")
+    @SaCheckLogin
+    @ApiOperation(value = "根据教学点返回区域信息")
+    public SaResult getAddress(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+        if (StringUtils.isBlank(enrollmentPlanApplyRO.getSchoolLocation())){
+            return SaResult.error("教学点的信息不能为空");
+        }
+
+        String addressByTeachingPointName = TeachingPointInformationEnum.getAddressByTeachingPointName(enrollmentPlanApplyRO.getSchoolLocation());
+        if (StringUtils.isBlank(addressByTeachingPointName)){
+            return SaResult.error("不存在该教学点的区域信息");
+        }
+        return SaResult.data(addressByTeachingPointName);
+    }
+
+    @PostMapping("/getStudyFrom")
     @SaCheckLogin
     @ApiOperation(value = "根据学院返回专业名称")
-    public SaResult getCollegeMajor(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
-       if (StringUtils.isBlank(enrollmentPlanApplyRO.getCollege())){
-           return SaResult.error("学院信息不能为空");
+    public SaResult getStudyFrom(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+       if (StringUtils.isBlank(enrollmentPlanApplyRO.getCollege()) || StringUtils.isBlank(enrollmentPlanApplyRO.getMajorName())){
+           return SaResult.error("学院信息和专业信息不能为空");
        }
-        List<String> distinctMajorNameList = enrollmentPlanMapper.getDistinctMajorNameList(enrollmentPlanApplyRO);
+       if (("外国语言文化学院".equals(enrollmentPlanApplyRO.getCollege()) && "英语".equals(enrollmentPlanApplyRO.getMajorName())) ||
+               ("教育信息技术学院".equals(enrollmentPlanApplyRO.getCollege()) && "传播学".equals(enrollmentPlanApplyRO.getMajorName())) ||
+               ("经济与管理学院".equals(enrollmentPlanApplyRO.getCollege()) && "人力资源管理".equals(enrollmentPlanApplyRO.getMajorName())) ||
+               ("哲学与社会发展学院".equals(enrollmentPlanApplyRO.getCollege()) && "行政管理".equals(enrollmentPlanApplyRO.getMajorName()))){
 
-        return SaResult.data(distinctMajorNameList);
+           return SaResult.data("业余");
+       }else {
+           return SaResult.data("函授");
+       }
     }
 
     @PostMapping("/setup_enrollment_plan_apply")
