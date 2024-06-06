@@ -5,6 +5,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.scnujxjy.backendpoint.dao.entity.core_data.TeacherInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.courses_learning.LiveResourcesPO;
 import com.scnujxjy.backendpoint.dao.entity.courses_learning.SectionsPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_process.CourseSchedulePO;
 import com.scnujxjy.backendpoint.dao.entity.video_stream.ChannelResponse;
@@ -411,12 +413,13 @@ public class Test2 {
                         String previousHourStr = outputFormat.format(previousHour);
                         String nextHourStr = outputFormat.format(nextHour);
 
-                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr);
+                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr,2L);
 
                         VideoInformation videoInformation = new VideoInformation();
                         if (sectionsPOS!=null){
                             videoInformation.setSectionId(sectionsPOS.getId());
                         }
+
                         //只有完整回放才需要下载哈
                         videoInformation.setChannelId(channelId);
                         videoInformation.setSessionId(object.getString("channelSessionId"));
@@ -433,6 +436,87 @@ public class Test2 {
 
 
     }
+
+
+    @Test
+    public void updateAllVideoInformation() throws IOException, NoSuchAlgorithmException, ParseException {
+
+        List<String> channelIds = liveResourceMapper.selectAllChannelId();
+        int count=0;
+        for (String channelId : channelIds) {
+
+            LiveResourcesPO liveResourcesPO = liveResourceMapper.queryCourseId(channelId);
+            Long courseId = liveResourcesPO.getCourseId();
+
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String url = "http://api.polyv.net/live/v2/channels/%s/recordFiles";
+            String startDate = "2024-03-01";
+            String endDate = "2024-07-31";
+            url = String.format(url, channelId);
+
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("appId", "gj95rpxjhf");
+            requestMap.put("timestamp", timestamp);
+            requestMap.put("startDate", startDate);
+            requestMap.put("endDate", endDate);
+            requestMap.put("userId", "27b07c2dc9");
+            requestMap.put("sign", LiveSignUtil.getSign(requestMap, "a642eb8a7e8f425995d9aead5bdd83ea"));
+            String response = HttpUtil.get(url, requestMap);
+            log.info("查询频道录制视频信息，返回值：{}", response);
+            JSONObject jsonObject = JSON.parseObject(response, JSONObject.class);
+
+            if (200 == jsonObject.getInteger("code")) {
+                JSONArray data = jsonObject.getJSONArray("data");
+                Iterator<Object> iterator = data.iterator();
+                while (iterator.hasNext()) {
+                    JSONObject object = (JSONObject) iterator.next();
+                    if ("complete".equals(object.getString("recordFileType"))) {
+
+                        String startTime = object.getString("startTime");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+                        Date date = sdf.parse(startTime);
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTime(date);
+                        calendar.add(Calendar.HOUR_OF_DAY, -2);
+                        Date previousHour = calendar.getTime();
+                        calendar.add(Calendar.HOUR_OF_DAY, 4); // 加2小时，因为前面减了1小时，这里需要补回来
+                        Date nextHour = calendar.getTime();
+                        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        String previousHourStr = outputFormat.format(previousHour);
+                        String nextHourStr = outputFormat.format(nextHour);
+
+                        //找出该堂课的时间节点
+                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr,courseId);
+
+                        if (sectionsPOS!=null) {
+                            UpdateWrapper<VideoInformation> updateWrapper = new UpdateWrapper<>();
+                            updateWrapper.set("section_id", sectionsPOS.getId())
+                                    .set("update_time",new Date())
+                                    .eq("session_id", object.getString("channelSessionId"));
+                            count++;
+                        }
+//                        videoInformationMapper.update()
+//                        //只有完整回放才需要下载哈
+//                        videoInformation.setChannelId(channelId);
+//                        videoInformation.setSessionId(object.getString("channelSessionId"));
+//                        videoInformation.setStatus(0);
+//                        videoInformation.setCreateTime(new Date());
+//                        videoInformation.setUrl(object.getString("url"));
+//                        videoInformationMapper.insert(videoInformation);
+                    }
+
+                }
+
+            }
+
+            log.info("更新数量为"+count);
+        }
+
+
+    }
+
+
+
 
     /**
      * 查询频道录制视频信息
