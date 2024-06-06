@@ -493,7 +493,10 @@ public class Test2 {
                             updateWrapper.set("section_id", sectionsPOS.getId())
                                     .set("update_time",new Date())
                                     .eq("session_id", object.getString("channelSessionId"));
-                            count++;
+                            int update = videoInformationMapper.update(null, updateWrapper);
+                            if (update>0) {
+                                count++;
+                            }
                         }
 //                        videoInformationMapper.update()
 //                        //只有完整回放才需要下载哈

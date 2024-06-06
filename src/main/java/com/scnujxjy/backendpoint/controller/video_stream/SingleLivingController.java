@@ -125,7 +125,10 @@ public class SingleLivingController {
                     .collect(Collectors.toList());
 
             QueryWrapper<VideoInformation> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("status", 1).in("section_id", idList).orderByAsc("id");
+            queryWrapper.eq("status", 1)
+                    .in("section_id", idList)
+                    .orderByAsc("video_information.section_id");
+
             int offset = (channelInfoRequest.getCurrentPage() - 1) * channelInfoRequest.getPageSize();
             int limit = channelInfoRequest.getPageSize();
             queryWrapper.last("LIMIT " + offset + "," + limit);
