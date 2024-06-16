@@ -374,6 +374,9 @@ public class Test2 {
 
         for (String channelId : channelIds) {
 
+            LiveResourcesPO liveResourcesPO = liveResourceMapper.queryCourseId(channelId);
+            Long courseId = liveResourcesPO.getCourseId();
+
             String timestamp = String.valueOf(System.currentTimeMillis());
             String url = "http://api.polyv.net/live/v2/channels/%s/recordFiles";
             String startDate = "2024-03-01";
@@ -413,7 +416,7 @@ public class Test2 {
                         String previousHourStr = outputFormat.format(previousHour);
                         String nextHourStr = outputFormat.format(nextHour);
 
-                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr,2L);
+                        SectionsPO sectionsPOS = sectionsMapper.selectSectionsByTime(previousHourStr, nextHourStr,courseId);
 
                         VideoInformation videoInformation = new VideoInformation();
                         if (sectionsPOS!=null){
