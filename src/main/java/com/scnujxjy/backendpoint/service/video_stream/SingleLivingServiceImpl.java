@@ -1113,7 +1113,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             LiveListChannelSessionInfoResponse data = (LiveListChannelSessionInfoResponse) channelSessionInfo.getData();
             List<LiveListChannelSessionInfoResponse.ChannelSessionInfo> contents1 = data.getContents();
 
-            //先拿到回放的数据
+            //先拿到3-7月份的所有回放数据
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             List<ViewLogResponse> viewLogResponseAllList=new ArrayList<>();
             for (int month = 3; month <= 7; month++) {
@@ -1142,6 +1142,33 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                 List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
                 viewLogResponseAllList.addAll(viewLogResponseList1);
             }
+            for (int month = 3; month <= 7; month++) {
+                LocalDateTime startDate = LocalDate.of(2024, month, 1).atStartOfDay();
+                LocalDate endDateLocalDate = LocalDate.of(2024, month, 1)
+                        .with(TemporalAdjusters.lastDayOfMonth());
+                LocalTime endOfDayTime = LocalTime.of(23, 59); // 设置为23:59
+                LocalDateTime endDate = endDateLocalDate.atTime(endOfDayTime);
+
+                ChannelViewRequest channelViewRequest1 = new ChannelViewRequest();
+                channelViewRequest1.setChannelId(live.getChannelId());
+                channelViewRequest1.setStartTime(startDate.format(formatter));
+                channelViewRequest1.setEndTime(endDate.format(formatter));
+                channelViewRequest1.setParam3("vod");
+                channelViewRequest1.setPageSize("10000");
+
+                //查询直播的回放
+                channelViewRequest1.setViewLogType("live");
+                //只获取该堂课场次的回放数据
+                if (contents1!=null && contents1.size()!=0) {
+                    channelViewRequest1.setSessionIds(contents1.get(0).getSessionId());
+                }
+
+                // 处理channelViewRequest1，比如发送请求
+                SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
+                List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
+                viewLogResponseAllList.addAll(viewLogResponseList1);
+            }
+
             if (viewLogResponseAllList.size() == 0) {
                 log.error("该排课时间段内没有学生观看回放数据，请联系管理员");
             }
@@ -1390,6 +1417,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
         }
     }
 
+
     @Override
     public void exportAllCourseSituation(Long courseId, String loginId, PlatformMessagePO platformMessagePO) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1473,6 +1501,29 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
                     viewLogResponseAllList.addAll(viewLogResponseList1);
                 }
+                for (int month = 3; month <= 7; month++) {
+                    LocalDateTime startDate = LocalDate.of(2024, month, 1).atStartOfDay();
+                    LocalDate endDateLocalDate = LocalDate.of(2024, month, 1)
+                            .with(TemporalAdjusters.lastDayOfMonth());
+                    LocalTime endOfDayTime = LocalTime.of(23, 59); // 设置为23:59
+                    LocalDateTime endDate = endDateLocalDate.atTime(endOfDayTime);
+
+                    ChannelViewRequest channelViewRequest1 = new ChannelViewRequest();
+                    channelViewRequest1.setChannelId(live.getChannelId());
+                    channelViewRequest1.setStartTime(startDate.format(formatter));
+                    channelViewRequest1.setEndTime(endDate.format(formatter));
+                    channelViewRequest1.setParam3("vod");
+                    channelViewRequest1.setPageSize("10000");
+                    channelViewRequest1.setViewLogType("live");
+
+                    if (contents1!=null && contents1.size()!=0) {
+                        channelViewRequest1.setSessionIds(contents1.get(0).getSessionId());
+                    }
+                    // 处理channelViewRequest1，比如发送请求
+                    SaResult channelCardPush1 = getChannelCardPush(channelViewRequest1);
+                    List<ViewLogResponse> viewLogResponseList1 = (List<ViewLogResponse>) channelCardPush1.getData();
+                    viewLogResponseAllList.addAll(viewLogResponseList1);
+                }
                 if (viewLogResponseAllList.size() == 0) {
                     log.error("该排课时间段内没有学生观看回放数据，请联系管理员");
                 }
@@ -1490,7 +1541,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             .sum();
                     vodMap.put(entry.getKey(), totalPlayDuration);
                 }
-
 
                 ChannelViewRequest channelViewRequest = new ChannelViewRequest();
                 channelViewRequest.setChannelId(live.getChannelId());

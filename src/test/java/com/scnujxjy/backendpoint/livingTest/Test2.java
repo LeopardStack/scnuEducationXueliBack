@@ -407,7 +407,7 @@ public class Test2 {
                         calendar.setTime(date);
                         calendar.add(Calendar.HOUR_OF_DAY, -2);
                         Date previousHour = calendar.getTime();
-                        calendar.add(Calendar.HOUR_OF_DAY, 4); // 加2小时，因为前面减了1小时，这里需要补回来
+                        calendar.add(Calendar.HOUR_OF_DAY, 4); // 加4小时，因为前面减了2小时，这里需要补回来
                         Date nextHour = calendar.getTime();
                         SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         String previousHourStr = outputFormat.format(previousHour);
@@ -520,101 +520,66 @@ public class Test2 {
 
 
 
-
-    /**
-     * 查询频道录制视频信息
-     *
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     */
     @Test
-    public void testGetChannelRecordInfo() throws Exception {
-
-
-//        String url = "https://playback-tc.videocc.net/polyvlive/bd5622771253642697657188792/f0.mp4";
-//        String timestamp = String.valueOf(System.currentTimeMillis()).substring(0, 10);
-//        String fileName =  "test" + timestamp+".mp4";;
-//        URL fileUrl = new URL(url);
-//        HttpURLConnection connection = (HttpURLConnection) fileUrl.openConnection();
-//        connection.setRequestMethod("GET");
+    public void addRecordTask() throws Exception {
 //
-//        InputStream inputStream = connection.getInputStream();
+//        String timestamp = String.valueOf(System.currentTimeMillis());
+//        String url = "http://api.polyv.net/live/v2/channels/%s/recordFiles";
+//        String startDate = "2024-03-01";
+//        String endDate = "2024-07-31";
+//        url = String.format(url, "4766896");
 //
-//        String savePath = "/home/video";
-//        Path filePath = Paths.get(savePath, fileName);
+//        Map<String, String> requestMap = new HashMap<>();
+//        requestMap.put("appId", "gj95rpxjhf");
+//        requestMap.put("timestamp", timestamp);
+//        requestMap.put("startDate", startDate);
+//        requestMap.put("endDate", endDate);
+//        requestMap.put("userId", "27b07c2dc9");
+//        requestMap.put("sign", LiveSignUtil.getSign(requestMap, "a642eb8a7e8f425995d9aead5bdd83ea"));
+//        String response = HttpUtil.get(url, requestMap);
+//        log.info("查询频道录制视频信息，返回值：{}", response);
+//        JSONObject jsonObject = JSON.parseObject(response, JSONObject.class);
+
+//        String appId = "gj95rpxjhf";
+//        String appSecret ="a642eb8a7e8f425995d9aead5bdd83ea";
+//        String userId = "27b07c2dc9";
+//        String timestamp = String.valueOf(System.currentTimeMillis());
 //
-//        try (BufferedInputStream in = new BufferedInputStream(inputStream);
-//             FileOutputStream out = new FileOutputStream(filePath.toFile())) {
+//        //http 调用逻辑
+//        String url = "http://api.polyv.net/live/v3/channel/pptRecord/addRecordTask";
+//        String channelId = "4766896";
+//        String videoId = "ca155d63f8b7b63312e0b76761645cb6";
 //
-//            byte[] buffer = new byte[4096]; // 4KB缓冲区
-//            int bytesRead;
-//            while ((bytesRead = in.read(buffer)) != -1) {
-//                out.write(buffer, 0, bytesRead);
-//            }
-//        } finally {
-//            // 关闭连接
-//            connection.disconnect();
-//        }
-        log.info("下载开始");
-        String[] urls = {
-                "https://playback-tc.videocc.net/polyvlive/bd5622771253642697657188792/f0.mp4",
-                "https://playback-tc.videocc.net/polyvlive/fd149af21253642697627364983/f0.mp4",
-                "https://playback-tc.videocc.net/polyvlive/47ddd2f31253642697628284658/f0.mp4",
-                "https://playback-tc.videocc.net/polyvlive/f4c5b3b31253642697518837836/f0.mp4",
-                "https://playback-tc.videocc.net/polyvlive/6d2a351e1253642697513575101/f0.mp4"
-        };
-        ExecutorService executor = Executors.newFixedThreadPool(5); // Create a thread pool
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(20); // Increase total max connection to 20
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setConnectionManager(cm)
-                .build();
-        for (String url : urls) {
-            Thread.sleep(1000);
-            executor.submit(() -> {
-                try {
-                    String timestamp = String.valueOf(System.currentTimeMillis()).substring(0, 10);
-                    String fileName = "test" + timestamp + ".mp4";
-                    HttpGet httpGet = new HttpGet(url);
-                    RequestConfig requestConfig = RequestConfig.custom()
-                            .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
-                            .build();
-                    httpGet.setConfig(requestConfig);
+//        //http 调用逻辑
+//        Map<String, String> requestMap = new HashMap<>();
+//        requestMap.put("appId", appId);
+//        requestMap.put("timestamp", timestamp);
+//        requestMap.put("channelId", channelId);
+//        requestMap.put("videoId", videoId);
+//        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+//        String response = HttpUtil.postFormBody(url, requestMap);
+//        log.info("测试创建重制课件任务，返回值：{}", response);
+        //fileId -> d6a3f2fa2c514e1058a3b70189153611 fileId -> ca155d63f8b7b63312e0b76761645cb6
 
-                    try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-                        HttpEntity entity = response.getEntity();
-                        if (entity != null) {
-                            String savePath = "D://home";  // Modify to your server's target path
-                            Path filePath = Paths.get(savePath, fileName);
+        String url = "https://api.polyv.net/live/v3/user/playback/list";
+        String categoryIds="340019,345134";
+        String page = "2";
+        String pageSize="2";
+        String order="timeDesc";
+        String listType="playback";
 
-                            try (InputStream in = entity.getContent();
-                                 FileOutputStream out = new FileOutputStream(filePath.toFile())) {
-                                byte[] buffer = new byte[4096];
-                                int bytesRead;
-                                while ((bytesRead = in.read(buffer)) != -1) {
-                                    out.write(buffer, 0, bytesRead);
-                                }
-
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-
-        executor.shutdown(); // Shut down executor
-        log.info("下载完成1");
-        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS); // Wait for all tasks to complete
-        try {
-            httpClient.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        log.info("下载完成2");
+        //http 调用逻辑
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", "gj95rpxjhf");
+        requestMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        requestMap.put("categoryIds", categoryIds);
+        requestMap.put("page", page);
+        requestMap.put("pageSize", pageSize);
+        requestMap.put("order", order);
+        requestMap.put("listType", listType);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, "a642eb8a7e8f425995d9aead5bdd83ea"));
+        String response = HttpUtil.get(url, requestMap);
+        log.info("测试查询所有频道的回放视频，返回值：{}", response);
     }
 
     @Test
