@@ -50,20 +50,23 @@ public class CodeGenerator {
 
         // 数据源配置
         DataSourceConfig dsc = new DataSourceConfig();
-        dsc.setUrl("jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai");
+//        dsc.setUrl("jdbc:mysql://113.108.140.172:3308/adult_education_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai");
+        dsc.setUrl("jdbc:mysql://124.71.34.208:3308/adult_education_system_test02?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false");
         dsc.setDriverName("com.mysql.cj.jdbc.Driver");
-        dsc.setUsername("root");
-        dsc.setPassword("xhl2023@");
+//        dsc.setUsername("root");
+//        dsc.setPassword("xhl2023@");
+        dsc.setUsername("leopard");
+        dsc.setPassword("Leopard2024@");
         mpg.setDataSource(dsc);
         // fee_item_management,shared_materials,major_information,dropout_record,
         // major_change_record,resumption_record,retention_record,suspension_record
         // 包配置
         PackageConfig pc = new PackageConfig();
         pc.setParent("com.scnujxjy.backendpoint");
-        pc.setMapper("dao.mapper.admission_information");
-        pc.setEntity("dao.entity.admission_information");
-        pc.setController("controller.admission_information");
-        pc.setXml("dao.mapper.admission_information");
+        pc.setMapper("dao.mapper.basic");
+        pc.setEntity("dao.entity.basic");
+        pc.setController("controller.basic");
+        pc.setXml("dao.mapper.basic");
         mpg.setPackageInfo(pc);
 
         // 策略配置

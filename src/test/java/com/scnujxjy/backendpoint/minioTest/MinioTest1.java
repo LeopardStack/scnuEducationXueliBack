@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
+import io.minio.messages.Bucket;
 import io.minio.messages.Item;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -155,7 +156,7 @@ public class MinioTest1 {
     }
 
 
-    @Autowired
+    @javax.annotation.Resource
     private ResourceLoader resourceLoader;
 
     /**
@@ -304,6 +305,18 @@ public class MinioTest1 {
             logger.info("该文件存在 " + exists);
         }catch (Exception e){
             logger.error("该文件不存在 " + e.toString());
+        }
+    }
+
+    @Test
+    public void listAllBuckets() {
+        try {
+            List<Bucket> bucketList = minioClient.listBuckets();
+            for (Bucket bucket : bucketList) {
+                logger.info("Bucket name: " + bucket.name());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred: " + e.toString());
         }
     }
 

@@ -1,8 +1,14 @@
 package com.scnujxjy.backendpoint.enrollmentPlanTest;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.read.builder.ExcelReaderBuilder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.scnujxjy.backendpoint.basicTest.CourseMetaDataListener;
+import com.scnujxjy.backendpoint.basicTest.CourseMetaDataRO;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
+import com.scnujxjy.backendpoint.dao.mapper.core_data.TeacherInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.service.admission_information.EnrollmentPlanService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +27,9 @@ public class Test1 {
 
     @Resource
     private GlobalConfigService globalConfigService;
+
+    @Resource
+    private TeachingPointInformationMapper teachingPointInformationMapper;
 
     @Test
     public void test1(){
@@ -45,5 +54,22 @@ public class Test1 {
                 .setTuition(BigDecimal.valueOf(3000.0))
                 ;
         enrollmentPlanService.getBaseMapper().insert(enrollmentPlanPO);
+    }
+
+    /**
+     * 使用 easyExcel 读取最新的教学点信息
+     */
+    @Test
+    public  void test2(){
+
+        String fileName = "D:\\ScnuWork\\xueliBackEnd\\src\\main\\resources\\data\\华南师范大学2024年高等学历继续教育校外教学点一览表(0424)(1).xlsx";
+        int headRowNumber = 2;  // 根据你的 Excel 调整这个值
+        // 使用ExcelReaderBuilder注册自定义的日期转换器
+        TeachingPointInformationListener teachingPointInformationListener = new TeachingPointInformationListener(teachingPointInformationMapper);
+
+        ExcelReaderBuilder readerBuilder = EasyExcel.read(fileName, TeachingPointDataRO.class,teachingPointInformationListener);
+
+        // 继续你的读取操作
+        readerBuilder.sheet().headRowNumber(headRowNumber).doRead();
     }
 }

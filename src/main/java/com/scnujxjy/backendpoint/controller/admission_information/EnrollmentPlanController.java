@@ -22,10 +22,12 @@ import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanAp
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanExcelVO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanRO;
 import com.scnujxjy.backendpoint.model.vo.admission_information.ApprovalPlanSummaryVO;
+import com.scnujxjy.backendpoint.model.vo.basic.SelectItemVO;
 import com.scnujxjy.backendpoint.model.vo.exam.ExamTeachersInfoVO;
 import com.scnujxjy.backendpoint.service.admission_information.EnrollmentPlanService;
 import com.scnujxjy.backendpoint.service.basic.GlobalConfigService;
 import com.scnujxjy.backendpoint.service.minio.MinioService;
+import com.scnujxjy.backendpoint.service.teaching_point.TeachingPointInformationService;
 import com.scnujxjy.backendpoint.util.ResultCode;
 import com.scnujxjy.backendpoint.util.tool.ScnuXueliTools;
 import io.swagger.annotations.Api;
@@ -72,6 +74,8 @@ public class EnrollmentPlanController {
     @Resource
     private EnrollmentPlanService enrollmentPlanService;
 
+    @Resource
+    private TeachingPointInformationService teachingPointInformationService;
     @Resource
     private MinioService minioService;
 
@@ -670,6 +674,41 @@ public class EnrollmentPlanController {
                 .contentLength(outputStream.size())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);
+    }
+
+
+    /**
+     * 获取有资格参加招生计划上报的教学点名单
+     *
+     * @return 有资格参加招生计划上报的教学点名单
+     */
+    @GetMapping("/get_enrollment_qualification_point")
+    public SaResult getEnrollmentQualificationPoint() {
+        List<TeachingPointInformationPO> teachingPointInformationPOS = teachingPointInformationService.getBaseMapper().selectList(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getQualification, true));
+
+
+        // 使用 Stream API 转换为 List<SelectItemVO>
+        List<SelectItemVO> selectItemVOList = teachingPointInformationPOS.stream()
+                .map(po -> new SelectItemVO()
+                        .setLabel(po.getTeachingPointName())
+                        .setValue(po.getTeachingPointId()))
+                .collect(Collectors.toList());
+        // 返回数据
+        return SaResult.ok("成功获取当前可参与招生计划申报的教学点数据").setData(selectItemVOList);
+    }
+
+    /**
+     * 根据教学点名称获取教学点详细信息
+     *
+     * @return 教学点详细信息
+     */
+    @GetMapping("/get_detail_point_information")
+    public SaResult getDetailPointInformation(String teachingPointName) {
+        TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getTeachingPointName, teachingPointName));
+        // 返回数据
+        return SaResult.ok("成功获取教学点详细信息").setData(teachingPointInformationPO);
     }
 
 

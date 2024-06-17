@@ -7,7 +7,7 @@ run:
   checkLivingStatusScan: false  # 开启直播状态
 
 scnu-cors:
-  open: true
+  open: false
 
 kkfifleViewPath: http://116.205.190.9:8012/
 

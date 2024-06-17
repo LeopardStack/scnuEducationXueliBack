@@ -60,5 +60,15 @@ public class TeachingPointInformationPO implements Serializable {
      */
     private String alias;
 
+    /**
+     * 招生资格
+     */
+    private Boolean qualification;
+
+    /**
+     * 招生区域
+     */
+    private String enrollmentArea;
+
 
 }

@@ -4,7 +4,9 @@ package com.scnujxjy.backendpoint.controller.teaching_point;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointAdminInformationRO;
 import com.scnujxjy.backendpoint.model.ro.teaching_point.TeachingPointInformationRO;
@@ -17,6 +19,7 @@ import com.scnujxjy.backendpoint.util.ResultCode;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.Objects;
 
 import static com.scnujxjy.backendpoint.exception.DataException.*;
