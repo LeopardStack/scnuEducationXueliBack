@@ -124,7 +124,7 @@
         SELECT DISTINCT ci.college_name FROM college_information ci
     </select>
     <select id="getDistinctTeachingPointNameList" resultType="java.lang.String">
-        SELECT DISTINCT tpi.teaching_point_name FROM teaching_point_information tpi
+        SELECT DISTINCT tpi.teaching_point_name FROM teaching_point_information tpi where tpi.qualification=1
     </select>
     <select id="queryAllEnrollmentPlans" resultType="com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO">
         SELECT * FROM enrollment_plan ep

@@ -17,6 +17,7 @@ import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.EnrollmentPlanMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanApplyRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanExcelVO;
@@ -82,6 +83,9 @@ public class EnrollmentPlanController {
     @Resource
     private EnrollmentPlanMapper enrollmentPlanMapper;
 
+    @Resource
+    private TeachingPointInformationMapper teachingPointInformationMapper;
+
     @PostMapping("/getAddress")
     @SaCheckLogin
     @ApiOperation(value = "根据教学点返回区域信息")
@@ -89,12 +93,12 @@ public class EnrollmentPlanController {
         if (StringUtils.isBlank(enrollmentPlanApplyRO.getSchoolLocation())){
             return SaResult.error("教学点的信息不能为空");
         }
-
-        String addressByTeachingPointName = TeachingPointInformationEnum.getAddressByTeachingPointName(enrollmentPlanApplyRO.getSchoolLocation());
-        if (StringUtils.isBlank(addressByTeachingPointName)){
+        String enrollmentArea = teachingPointInformationMapper.getEnrollmentArea(enrollmentPlanApplyRO.getSchoolLocation());
+//        String addressByTeachingPointName = TeachingPointInformationEnum.getAddressByTeachingPointName(enrollmentPlanApplyRO.getSchoolLocation());
+        if (StringUtils.isBlank(enrollmentArea)){
             return SaResult.error("不存在该教学点的区域信息");
         }
-        return SaResult.data(addressByTeachingPointName);
+        return SaResult.data(enrollmentArea);
     }
 
     @PostMapping("/getStudyFrom")
