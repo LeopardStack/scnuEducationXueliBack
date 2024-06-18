@@ -525,64 +525,91 @@ public class Test2 {
 
     @Test
     public void addRecordTask() throws Exception {
-//
-//        String timestamp = String.valueOf(System.currentTimeMillis());
-//        String url = "http://api.polyv.net/live/v2/channels/%s/recordFiles";
-//        String startDate = "2024-03-01";
-//        String endDate = "2024-07-31";
-//        url = String.format(url, "4766896");
-//
-//        Map<String, String> requestMap = new HashMap<>();
-//        requestMap.put("appId", "gj95rpxjhf");
-//        requestMap.put("timestamp", timestamp);
-//        requestMap.put("startDate", startDate);
-//        requestMap.put("endDate", endDate);
-//        requestMap.put("userId", "27b07c2dc9");
-//        requestMap.put("sign", LiveSignUtil.getSign(requestMap, "a642eb8a7e8f425995d9aead5bdd83ea"));
-//        String response = HttpUtil.get(url, requestMap);
-//        log.info("查询频道录制视频信息，返回值：{}", response);
-//        JSONObject jsonObject = JSON.parseObject(response, JSONObject.class);
+        String url="http://api.polyv.net/live/v3/channel/pptRecord/list";
+        String channelId="4782728";
+        String status="success";
+        String page=String.valueOf(1);
+        String pageSize=String.valueOf(100);
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String appSecret ="a642eb8a7e8f425995d9aead5bdd83ea";
 
-//        String appId = "gj95rpxjhf";
-//        String appSecret ="a642eb8a7e8f425995d9aead5bdd83ea";
-//        String userId = "27b07c2dc9";
-//        String timestamp = String.valueOf(System.currentTimeMillis());
-//
-//        //http 调用逻辑
-//        String url = "http://api.polyv.net/live/v3/channel/pptRecord/addRecordTask";
-//        String channelId = "4766896";
-//        String videoId = "ca155d63f8b7b63312e0b76761645cb6";
-//
-//        //http 调用逻辑
-//        Map<String, String> requestMap = new HashMap<>();
-//        requestMap.put("appId", appId);
-//        requestMap.put("timestamp", timestamp);
-//        requestMap.put("channelId", channelId);
-//        requestMap.put("videoId", videoId);
-//        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
-//        String response = HttpUtil.postFormBody(url, requestMap);
-//        log.info("测试创建重制课件任务，返回值：{}", response);
-        //fileId -> d6a3f2fa2c514e1058a3b70189153611 fileId -> ca155d63f8b7b63312e0b76761645cb6
-
-        String url = "https://api.polyv.net/live/v3/user/playback/list";
-        String categoryIds="340019,345134";
-        String page = "2";
-        String pageSize="2";
-        String order="timeDesc";
-        String listType="playback";
-
-        //http 调用逻辑
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", "gj95rpxjhf");
-        requestMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
-        requestMap.put("categoryIds", categoryIds);
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("status", status);
         requestMap.put("page", page);
         requestMap.put("pageSize", pageSize);
-        requestMap.put("order", order);
-        requestMap.put("listType", listType);
-        requestMap.put("sign", LiveSignUtil.getSign(requestMap, "a642eb8a7e8f425995d9aead5bdd83ea"));
-        String response = HttpUtil.get(url, requestMap);
-        log.info("测试查询所有频道的回放视频，返回值：{}", response);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        String response1 = HttpUtil.get(url, requestMap);
+        log.info("查询重制课件任务列表，返回值：{}", response1);
+
+        JSONObject jsonObject = JSON.parseObject(response1, JSONObject.class);
+        //说明查询成功
+        if (200==jsonObject.getInteger("code")){
+            JSONArray data = jsonObject.getJSONArray("contents");
+            if(data.isEmpty()){
+                return;
+            }
+
+            Iterator<Object> iterator = data.iterator();
+            ExecutorService executor = Executors.newFixedThreadPool(10);
+            PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+            cm.setMaxTotal(20);
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setConnectionManager(cm)
+                    .build();
+
+            while (iterator.hasNext()) {
+                JSONObject object = (JSONObject) iterator.next();
+                String sessionId = object.getString("sessionId");
+                String downloadUrl = object.getString("url");
+                executor.submit(() -> {
+                    try {
+                        String fileName = channelId+ "_" + sessionId + ".mp4";
+                        HttpGet httpGet = new HttpGet(downloadUrl);
+                        RequestConfig requestConfig = RequestConfig.custom()
+                                .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
+                                .build();
+                        httpGet.setConfig(requestConfig);
+
+                        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+                            HttpEntity entity = response.getEntity();
+                            if (entity != null) {
+                                Path filePath = Paths.get("/video", fileName);
+                                try (InputStream in = entity.getContent();
+                                     FileOutputStream out = new FileOutputStream(filePath.toFile())) {
+                                    byte[] buffer = new byte[4096];
+                                    int bytesRead;
+                                    while ((bytesRead = in.read(buffer)) != -1) {
+                                        out.write(buffer, 0, bytesRead);
+                                    }
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        }
+                    } catch (IOException e) {
+                        log.error(e+"下载视频发生错误" + channelId + " " + sessionId);
+                    }
+                });
+            }
+
+            executor.shutdown(); // Shut down executor
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            log.info("下载视频完成");
+
+
+        }
+
+
     }
 
     @Test
