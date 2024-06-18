@@ -518,10 +518,7 @@ public class Test2 {
             log.info("更新数量为"+count);
         }
 
-
     }
-
-
 
     @Test
     public void addRecordTask() throws Exception {
@@ -547,7 +544,8 @@ public class Test2 {
         JSONObject jsonObject = JSON.parseObject(response1, JSONObject.class);
         //说明查询成功
         if (200==jsonObject.getInteger("code")){
-            JSONArray data = jsonObject.getJSONArray("contents");
+            JSONObject jsonObject1=jsonObject.getJSONObject("data");
+            JSONArray data = jsonObject1.getJSONArray("contents");
             if(data.isEmpty()){
                 return;
             }
@@ -576,7 +574,7 @@ public class Test2 {
                         try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
                             HttpEntity entity = response.getEntity();
                             if (entity != null) {
-                                Path filePath = Paths.get("/video", fileName);
+                                Path filePath = Paths.get("D:\\video", fileName);
                                 try (InputStream in = entity.getContent();
                                      FileOutputStream out = new FileOutputStream(filePath.toFile())) {
                                     byte[] buffer = new byte[4096];

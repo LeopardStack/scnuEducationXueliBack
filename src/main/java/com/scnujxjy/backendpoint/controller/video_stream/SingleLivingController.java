@@ -5,6 +5,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -24,6 +27,8 @@ import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
 import com.scnujxjy.backendpoint.util.MessageSender;
 import com.scnujxjy.backendpoint.util.ResultCode;
+import com.scnujxjy.backendpoint.util.polyv.HttpUtil;
+import com.scnujxjy.backendpoint.util.polyv.LiveSignUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
@@ -41,10 +46,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -144,6 +146,98 @@ public class SingleLivingController {
         return SaResult.error("缺少必要参数课程id或者节点id");
 
     }
+    @PostMapping("/downloadCZ")
+    public void addRecordTask(String savePath,String channelId) throws Exception {
+        String uuid = UUID.randomUUID().toString();
+        uuid = uuid.replace("-", "");
+        String traceId = uuid.substring(0, 10);
+
+        String url="http://api.polyv.net/live/v3/channel/pptRecord/list";
+        String status="success";
+        String page=String.valueOf(1);
+        String pageSize=String.valueOf(100);
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String appSecret ="a642eb8a7e8f425995d9aead5bdd83ea";
+
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("appId", "gj95rpxjhf");
+        requestMap.put("timestamp", timestamp);
+        requestMap.put("channelId", channelId);
+        requestMap.put("status", status);
+        requestMap.put("page", page);
+        requestMap.put("pageSize", pageSize);
+        requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
+        String response1 = HttpUtil.get(url, requestMap);
+        log.info(traceId+"查询重制课件任务列表，返回值：{}", response1);
+
+        JSONObject jsonObject = JSON.parseObject(response1, JSONObject.class);
+        //说明查询成功
+        if (200==jsonObject.getInteger("code")){
+            JSONObject jsonObject1=jsonObject.getJSONObject("data");
+            JSONArray data = jsonObject1.getJSONArray("contents");
+            if(data.isEmpty()){
+                return;
+            }
+
+            Iterator<Object> iterator = data.iterator();
+            ExecutorService executor = Executors.newFixedThreadPool(10);
+            PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+            cm.setMaxTotal(20);
+            CloseableHttpClient httpClient = HttpClients.custom()
+                    .setConnectionManager(cm)
+                    .build();
+
+            while (iterator.hasNext()) {
+                JSONObject object = (JSONObject) iterator.next();
+                String sessionId = object.getString("sessionId");
+                String downloadUrl = object.getString("url");
+                executor.submit(() -> {
+                    try {
+                        String fileName = channelId+ "_" + sessionId + ".mp4";
+                        HttpGet httpGet = new HttpGet(downloadUrl);
+                        RequestConfig requestConfig = RequestConfig.custom()
+                                .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
+                                .build();
+                        httpGet.setConfig(requestConfig);
+
+                        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+                            HttpEntity entity = response.getEntity();
+                            if (entity != null) {
+                                Path filePath = Paths.get(savePath, fileName);
+                                try (InputStream in = entity.getContent();
+                                     FileOutputStream out = new FileOutputStream(filePath.toFile())) {
+                                    byte[] buffer = new byte[4096];
+                                    int bytesRead;
+                                    while ((bytesRead = in.read(buffer)) != -1) {
+                                        out.write(buffer, 0, bytesRead);
+                                    }
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        }
+                    } catch (IOException e) {
+                        log.error(e+traceId+"下载视频发生错误" + channelId + " " + sessionId);
+                    }
+                });
+            }
+            log.info(traceId+"等待所有视频完成中");
+            executor.shutdown(); // Shut down executor
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            try {
+                httpClient.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            log.info(traceId+"下载视频完成");
+
+        }
+
+
+    }
+
 
     @PostMapping("/download")
     public void downloadFile(String savePath, Integer size) throws InterruptedException {
