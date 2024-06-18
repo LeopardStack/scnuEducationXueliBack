@@ -2,6 +2,7 @@ package com.scnujxjy.backendpoint.dao.mapper.teaching_point;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -21,4 +22,7 @@ public interface TeachingPointInformationMapper extends BaseMapper<TeachingPoint
 
     @Select("SELECT teaching_point_name FROM teaching_point_information;")
     List<String> getAllTeachingPointNames();
+
+    @Select("SELECT enrollment_area FROM teaching_point_information where teaching_point_name=#{SchoolLocation} limit 1")
+    String getEnrollmentArea(@Param("SchoolLocation")String SchoolLocation);
 }

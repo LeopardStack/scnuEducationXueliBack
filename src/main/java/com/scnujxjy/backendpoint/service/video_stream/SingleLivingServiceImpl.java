@@ -1420,6 +1420,7 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 
     @Override
     public void exportAllCourseSituation(Long courseId, String loginId, PlatformMessagePO platformMessagePO) throws IOException {
+        log.info("传入的课程id为" + courseId);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             List<AttendanceVO> exportAttendanceVOList = new ArrayList<>();
