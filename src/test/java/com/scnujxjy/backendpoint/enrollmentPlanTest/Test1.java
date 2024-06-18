@@ -62,7 +62,7 @@ public class Test1 {
     @Test
     public  void test2(){
 
-        String fileName = "D:\\ScnuWork\\xueliBackEnd\\src\\main\\resources\\data\\华南师范大学2024年高等学历继续教育校外教学点一览表(0424)(1).xlsx";
+        String fileName = "D:\\ScnuWork\\xueli\\xueliBackEnd\\src\\main\\resources\\data\\教学点资格数据\\华南师范大学2024年高等学历继续教育校外教学点一览表(0424)(1).xlsx";
         int headRowNumber = 2;  // 根据你的 Excel 调整这个值
         // 使用ExcelReaderBuilder注册自定义的日期转换器
         TeachingPointInformationListener teachingPointInformationListener = new TeachingPointInformationListener(teachingPointInformationMapper);
