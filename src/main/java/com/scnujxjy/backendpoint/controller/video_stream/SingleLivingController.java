@@ -146,6 +146,7 @@ public class SingleLivingController {
         return SaResult.error("缺少必要参数课程id或者节点id");
 
     }
+
     @PostMapping("/downloadCZ")
     public void addRecordTask(String savePath,String channelId) throws Exception {
         String uuid = UUID.randomUUID().toString();
@@ -193,7 +194,7 @@ public class SingleLivingController {
                 String downloadUrl = object.getString("url");
                 executor.submit(() -> {
                     try {
-                        String fileName = channelId+ "_" + sessionId + ".mp4";
+                        String fileName = channelId+ "_" + sessionId + "_CZ"+".mp4";
                         HttpGet httpGet = new HttpGet(downloadUrl);
                         RequestConfig requestConfig = RequestConfig.custom()
                                 .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
@@ -215,6 +216,12 @@ public class SingleLivingController {
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
+
+                                UpdateWrapper<VideoInformation> queryWrapper = new UpdateWrapper<>();
+                                queryWrapper.eq("sessionId", sessionId)
+                                        .set("update_time", new Date())
+                                        .set("cdn_url", "https://w-gdou.webtrncdn.com/livevod/cdn/cce/" + fileName);
+                                int update = videoInformationMapper.update(null, queryWrapper);
 
                             }
                         }
