@@ -624,6 +624,57 @@ public class EnrollmentPlanController {
         return SaResult.ok("成功下载");
     }
 
+
+    @PostMapping("/download_all_approval_plans")
+    @SaCheckLogin
+    @ApiOperation(value = "下载所有的招生计划申报记录汇总表")
+    public SaResult downloadAllApprovalPlanSummary(@RequestBody EnrollmentPlanApplyRO enrollmentPlanApplyRO, HttpServletResponse response) throws IOException {
+
+        List<String> roleList = StpUtil.getRoleList();
+        if (!roleList.contains(SUPER_ADMIN.getRoleName()) && !roleList.contains(ADMISSIONS_DEPARTMENT_ADMINISTRATOR.getRoleName())) {
+            return SaResult.error("招生计划汇总表只能招生办管理员才能导出");
+        }
+
+        List<ApprovalPlanSummaryVO> approvalPlanSummaryVOList =
+                enrollmentPlanService.downloadAllApprovalPlanSummary(enrollmentPlanApplyRO);
+
+        String configValue = globalConfigService.getBaseMapper().selectOne(new LambdaQueryWrapper<GlobalConfigPO>()
+                .eq(GlobalConfigPO::getConfigKey, "招生计划申报记录汇总表模板")).getConfigValue();
+
+        InputStream fileInputStreamFromMinio = minioService.getFileInputStreamFromMinio(configValue);
+
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        // 配置 Excel 写入操作
+        ExcelWriter excelWriter = null;
+
+        String year = String.valueOf(Year.now().getValue());
+        Map<String, Object> basicInfo = new HashMap<>();
+        basicInfo.put("year", year);
+
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=" + "招生计划汇总表" + ".xlsx");
+
+        // 获取输出流
+        OutputStream outputStream = response.getOutputStream();
+
+        // 使用 EasyExcel 将 Excel 文件写入输出流
+        excelWriter = EasyExcel.write(outputStream, EnrollmentPlanExcelVO.class)
+                .withTemplate(fileInputStreamFromMinio)
+                .build();
+        WriteSheet writeSheet = EasyExcel.writerSheet().build();
+        FillConfig fillConfig = FillConfig.builder().forceNewRow(Boolean.TRUE).build();
+        excelWriter.fill(approvalPlanSummaryVOList, fillConfig, writeSheet);
+        // 填充填表时间
+        excelWriter.fill(basicInfo, writeSheet);
+        excelWriter.finish();
+
+        // 关闭输出流
+        outputStream.flush();
+        outputStream.close();
+
+        return SaResult.ok("成功下载");
+    }
+
 //    @GetMapping("/download_approval_plan_summary2")
     @SaCheckLogin
     @ApiOperation(value = "下载招生计划汇总表")

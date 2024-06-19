@@ -278,6 +278,22 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
            }
 
         }
+
+
+        // 针对学院做一次清洗
+        List<TeachingPointInformationPO> teachingPointInformationPOS = teachingPointInformationMapper.selectList(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                .eq(TeachingPointInformationPO::getQualification, "1")
+                .eq(TeachingPointInformationPO::getAlias, "校内")
+        );
+        // 获取所有 teachingPointName 的集合
+        List<String> teachingPointNames = teachingPointInformationPOS.stream()
+                .map(TeachingPointInformationPO::getTeachingPointName)
+                .collect(Collectors.toList());
+        // 过滤 collegeList 中不存在于 teachingPointNames 集合中的元素
+        collegeList = collegeList.stream()
+                .filter(teachingPointNames::contains)
+                .collect(Collectors.toList());
+
         enrollmentPlanFilterItemsVO.setMajorNameList(majorNameList);
         enrollmentPlanFilterItemsVO.setCollegeList(collegeList);
         enrollmentPlanFilterItemsVO.setTeachingPointNameList(teachingPointNameList);
@@ -673,6 +689,83 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
                     .setEducationLength(enrollmentPlanPO.getEducationLength())
                     .setTuition(enrollmentPlanPO.getTuition().intValue() + "元/学年")
                     .setRemarks(enrollmentPlanPO.getRemarks())
+                    ;
+            approvalPlanSummaryVOList.add(approvalPlanSummaryVO);
+            index += 1;
+        }
+
+        return approvalPlanSummaryVOList;
+    }
+
+
+    /**
+     * 下载招生计划汇总表
+     * @param enrollmentPlanApplyRO
+     * @return
+     */
+    public List<ApprovalPlanSummaryVO> downloadAllApprovalPlanSummary(EnrollmentPlanApplyRO enrollmentPlanApplyRO) {
+        List<EnrollmentPlanPO> enrollmentPlanPOList = getBaseMapper().queryAllEnrollmentPlans(enrollmentPlanApplyRO);
+
+        List<EnrollmentPlanPO> aggregatedEnrollmentPlans = enrollmentPlanPOList.stream()
+                .collect(Collectors.groupingBy(EnrollmentPlanPO::getCollege))
+                .values().stream()
+                .flatMap(plans -> plans.stream()
+                        .sorted(Comparator.comparing(plan -> { // 先按照trainingLevel进行排序
+                            String trainingLevel = plan.getTrainingLevel();
+                            if ("专升本".equals(trainingLevel)) {
+                                return 1;
+                            } else if ("高起专".equals(trainingLevel)) {
+                                return 2;
+                            } else {
+                                return 0;
+                            }
+                        }))
+                )
+                .collect(Collectors.toList());
+
+        List<ApprovalPlanSummaryVO> approvalPlanSummaryVOList = new ArrayList<>();
+        int index = 1;
+
+        Map<String, String> collegeMap = new HashMap<>();
+        Map<String, String> teachingPointMap = new HashMap<>();
+
+        for(EnrollmentPlanPO enrollmentPlanPO : aggregatedEnrollmentPlans){
+
+            if(!collegeMap.containsKey(enrollmentPlanPO.getCollegeId())){
+                CollegeInformationPO collegeInformationPO = collegeInformationService.getBaseMapper().selectOne(new LambdaQueryWrapper<CollegeInformationPO>()
+                        .eq(CollegeInformationPO::getCollegeId, enrollmentPlanPO.getCollegeId()));
+                collegeMap.put(enrollmentPlanPO.getCollegeId(), collegeInformationPO.getCollegeName());
+            }
+
+            if(!teachingPointMap.containsKey(enrollmentPlanPO.getTeachingPointId())){
+                TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationService.getBaseMapper().
+                        selectOne(new LambdaQueryWrapper<TeachingPointInformationPO>()
+                                .eq(TeachingPointInformationPO::getTeachingPointId, enrollmentPlanPO.getTeachingPointId()));
+                teachingPointMap.put(enrollmentPlanPO.getTeachingPointId(), teachingPointInformationPO.getTeachingPointName());
+            }
+
+
+
+            // 判断一下审核状态
+            String status = "";
+            if(enrollmentPlanPO.getStatus().contains("管理员")){
+                status = enrollmentPlanPO.getStatus() + " 审核中";
+            }else{
+                status = enrollmentPlanPO.getStatus();
+            }
+
+            ApprovalPlanSummaryVO approvalPlanSummaryVO = new ApprovalPlanSummaryVO()
+                    .setIndex(index)
+                    .setCollege(collegeMap.get(enrollmentPlanPO.getCollegeId()))
+                    .setLevel(enrollmentPlanPO.getTrainingLevel())
+                    .setMajorName(enrollmentPlanPO.getMajorName())
+                    .setSchoolLocation(enrollmentPlanPO.getSchoolLocation())
+                    .setEnrollmentSubject(enrollmentPlanPO.getEnrollmentSubject())
+                    .setStudyForm(enrollmentPlanPO.getStudyForm())
+                    .setEducationLength(enrollmentPlanPO.getEducationLength())
+                    .setTuition(enrollmentPlanPO.getTuition().intValue() + "元/学年")
+                    .setRemarks(enrollmentPlanPO.getRemarks())
+                    .setStatus(status)
                     ;
             approvalPlanSummaryVOList.add(approvalPlanSummaryVO);
             index += 1;
