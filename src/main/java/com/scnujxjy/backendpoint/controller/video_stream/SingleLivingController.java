@@ -22,6 +22,7 @@ import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoInformationMapper;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelInfoRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewRequest;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.ChannelViewStudentRequest;
+import com.scnujxjy.backendpoint.model.ro.video_stream.VideoInformationResponse;
 import com.scnujxjy.backendpoint.service.basic.PlatformUserService;
 import com.scnujxjy.backendpoint.service.core_data.TeacherInformationService;
 import com.scnujxjy.backendpoint.service.video_stream.SingleLivingService;
@@ -134,7 +135,9 @@ public class SingleLivingController {
             int offset = (channelInfoRequest.getCurrentPage() - 1) * channelInfoRequest.getPageSize();
             int limit = channelInfoRequest.getPageSize();
             queryWrapper.last("LIMIT " + offset + "," + limit);
+
             List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
+//            List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList,offset,limit);
 
             return SaResult.data(videoInformations);
 
