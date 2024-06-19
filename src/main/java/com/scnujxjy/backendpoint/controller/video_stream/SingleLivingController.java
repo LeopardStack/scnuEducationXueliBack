@@ -221,7 +221,7 @@ public class SingleLivingController {
                                 }
 
                                 UpdateWrapper<VideoInformation> queryWrapper = new UpdateWrapper<>();
-                                queryWrapper.eq("sessionId", sessionId)
+                                queryWrapper.eq("session_id", sessionId)
                                         .set("update_time", new Date())
                                         .set("cdn_url", "https://w-gdou.webtrncdn.com/livevod/cdn/cce/" + fileName);
                                 int update = videoInformationMapper.update(null, queryWrapper);
