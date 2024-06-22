@@ -136,8 +136,8 @@ public class SingleLivingController {
             int limit = channelInfoRequest.getPageSize();
             queryWrapper.last("LIMIT " + offset + "," + limit);
 
-            List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
-//            List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList,offset,limit);
+//            List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
+            List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList,offset,limit);
 
             return SaResult.data(videoInformations);
 
