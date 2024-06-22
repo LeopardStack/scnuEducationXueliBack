@@ -139,7 +139,19 @@ public class SingleLivingController {
 //            List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
             List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList,offset,limit);
 
-            return SaResult.data(videoInformations);
+            List<VideoInformationResponse> videosWithSectionName = new ArrayList<>();
+            List<VideoInformationResponse> videosWithoutSectionName = new ArrayList<>();
+
+            for (VideoInformationResponse video : videoInformations) {
+                if (StrUtil.isBlank(video.getSectionName())) {
+                    videosWithoutSectionName.add(video);
+                } else {
+                    videosWithSectionName.add(video);
+                }
+            }
+
+            videosWithSectionName.addAll(videosWithoutSectionName);
+            return SaResult.data(videosWithSectionName);
 
         } else if (channelInfoRequest.getSectionId() != null) {
             VideoInformation videoInformation = videoInformationMapper.selectBySectionId(channelInfoRequest.getSectionId());
