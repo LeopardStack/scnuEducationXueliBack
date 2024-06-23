@@ -19,4 +19,6 @@ public interface VideoInformationMapper extends BaseMapper<VideoInformation> {
     VideoInformation selectBySectionId(Long sectionId);
 
     List<VideoInformationResponse> selectLast(List<Long> idList, Integer offset, Integer pageSize);
+
+    List<String> selectAllSection(List<Long> idList);
 }

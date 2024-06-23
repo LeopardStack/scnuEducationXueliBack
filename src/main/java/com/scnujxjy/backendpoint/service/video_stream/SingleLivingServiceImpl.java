@@ -42,11 +42,14 @@ import com.scnujxjy.backendpoint.dao.mapper.platform_message.PlatformMessageMapp
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.ClassInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.registration_record_card.StudentStatusMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_process.CourseScheduleMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.StudentRecordsMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.TutorInformationMapper;
+import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.video_stream.VideoStreamRecordsMapper;
 import com.scnujxjy.backendpoint.inverter.video_stream.VideoStreamInverter;
 import com.scnujxjy.backendpoint.model.bo.SingleLiving.*;
 import com.scnujxjy.backendpoint.model.ro.core_data.PageBeanResult;
+import com.scnujxjy.backendpoint.model.ro.video_stream.VideoInformationResponse;
 import com.scnujxjy.backendpoint.model.vo.registration_record_card.StudentStatusVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.AttendanceVO;
 import com.scnujxjy.backendpoint.model.vo.video_stream.StudentWhiteListVO;
@@ -139,6 +142,12 @@ public class SingleLivingServiceImpl implements SingleLivingService {
     private DownloadMessageMapper downloadMessageMapper;
     @Resource
     private PlatformMessageMapper platformMessageMapper;
+
+    @Resource
+    private StudentRecordsMapper studentRecordsMapper;
+
+    @Resource
+    private VideoInformationMapper videoInformationMapper;
 
     @Override
     public SaResult getChannelBasicInformation(String channelId){
@@ -1249,22 +1258,13 @@ public class SingleLivingServiceImpl implements SingleLivingService {
             List<AttendanceVO> attendanceVOList = new ArrayList<>();
             for (ViewLogResponse viewLogResponse : distinctViewLogResponse) {
                 AttendanceVO attendanceVO = new AttendanceVO();
-//                attendanceVO.setGrade(schedulePO.getGrade());
-//                attendanceVO.setLevel(schedulePO.getLevel());
-//                attendanceVO.setMajorName(schedulePO.getMajorName());
-//                attendanceVO.setStudyForm(schedulePO.getStudyForm());
-//                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
+
                 attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(viewLogResponse.getParam2());
                 attendanceVO.setCourseName(coursesLearningPO.getCourseName());
                 attendanceVO.setTeacherName(teacherName);
-                attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
+//                attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                 attendanceVO.setAttendance("是");
-                if (vodMap.containsKey(viewLogResponse.getParam1())){
-                attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
-                }else {
-                    attendanceVO.setVodDuration("0");
-                }
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
                 if(studentStatusVO==null){
                     studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), "2023");
@@ -1288,9 +1288,27 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                     }
                 }
 
+                if (vodMap.containsKey(viewLogResponse.getParam1())){
+//                    attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
+                    attendanceVO.setIsVodDuration("是");
+                }else {
+                    if (StringUtils.isBlank(attendanceVO.getCode())){
+                        attendanceVO.setIsVodDuration("否");
+                    }else {
+                        List<Long> studentRecordsIds = studentRecordsMapper.selectAllVideos(attendanceVO.getCode());
+                        if (studentRecordsIds == null || studentRecordsIds.size() == 0) {
+                            attendanceVO.setIsVodDuration("否");
+                        } else {
+                            boolean watched = videoInformationMapper.selectAllSection(studentRecordsIds)
+                                    .contains(attendanceVO.getSection());
+                            attendanceVO.setIsVodDuration(watched ? "是" : "否");
+                        }
+//                    attendanceVO.setVodDuration("0");
+                    }
+                }
                 attendanceVOList.add(attendanceVO);
             }
-            attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
+//            attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
             log.info("获取所有观看的学生数据并降序排序完成" + attendanceVOList);
 
             //拿到直播间所有学生白名单数据whiteLists
@@ -1336,16 +1354,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
                 attendanceVO.setSection(sectionsPO.getSectionName());
                 attendanceVO.setName(channelWhiteList.getName());
-                attendanceVO.setPlayDuration("0");
+//                attendanceVO.setPlayDuration("0");
                 attendanceVO.setAttendance("否");
                 attendanceVO.setCourseName(coursesLearningPO.getCourseName());
                 attendanceVO.setTeacherName(teacherName);
-                if (vodMap.containsKey(channelWhiteList.getPhone())){
-                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
-                }else {
-                    attendanceVO.setVodDuration("0");
-                }
-
                 StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
                 if(studentStatusVO==null){
                     studentStatusVO=studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), "2023");
@@ -1367,6 +1379,24 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         continue;
                     }else{
                         continue;
+                    }
+                }
+                if (vodMap.containsKey(channelWhiteList.getPhone())){
+//                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
+                    attendanceVO.setIsVodDuration("是");
+                }else {
+                    if (StringUtils.isBlank(attendanceVO.getCode())){
+                        attendanceVO.setIsVodDuration("否");
+                    }else {
+                        List<Long> studentRecordsIds = studentRecordsMapper.selectAllVideos(attendanceVO.getCode());
+                        if (studentRecordsIds == null || studentRecordsIds.size() == 0) {
+                            attendanceVO.setIsVodDuration("否");
+                        } else {
+                            boolean watched = videoInformationMapper.selectAllSection(studentRecordsIds)
+                                    .contains(attendanceVO.getSection());
+                            attendanceVO.setIsVodDuration(watched ? "是" : "否");
+                        }
+//                    attendanceVO.setVodDuration("0");
                     }
                 }
                 attendanceVOList.add(attendanceVO);
@@ -1600,15 +1630,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
                     attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(viewLogResponse.getParam2());
-                    attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
+//                    attendanceVO.setPlayDuration(viewLogResponse.getPlayDuration().toString());
                     attendanceVO.setAttendance("是");
                     attendanceVO.setTeacherName(teacherName);
                     attendanceVO.setCourseName(coursesLearningPO.getCourseName());
-                    if (vodMap.containsKey(viewLogResponse.getParam1())){
-                        attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
-                    }else {
-                        attendanceVO.setVodDuration("0");
-                    }
 
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(viewLogResponse.getParam1(), coursesLearningPO.getGrade());
                     if(studentStatusVO==null){
@@ -1633,9 +1658,28 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             continue;
                         }
                     }
+
+                    if (vodMap.containsKey(viewLogResponse.getParam1())){
+//                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
+                        attendanceVO.setIsVodDuration("是");
+                    }else {
+                        if (StringUtils.isBlank(attendanceVO.getCode())){
+                            attendanceVO.setIsVodDuration("否");
+                        }else {
+                            List<Long> studentRecordsIds = studentRecordsMapper.selectAllVideos(attendanceVO.getCode());
+                            if (studentRecordsIds == null || studentRecordsIds.size() == 0) {
+                                attendanceVO.setIsVodDuration("否");
+                            } else {
+                                boolean watched = videoInformationMapper.selectAllSection(studentRecordsIds)
+                                        .contains(attendanceVO.getSection());
+                                attendanceVO.setIsVodDuration(watched ? "是" : "否");
+                            }
+//                    attendanceVO.setVodDuration("0");
+                        }
+                    }
                     attendanceVOList.add(attendanceVO);
                 }
-                attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
+//                attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
                 log.info("获取所有观看的学生数据并降序排序完成" + attendanceVOList);
 
                 //拿到直播间所有学生白名单数据whiteLists
@@ -1680,15 +1724,10 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                attendanceVO.setTeachingTime(sdf1.format(schedulePO.getTeachingDate()) + " " + teachingTime);
                     attendanceVO.setSection(sectionsPO.getSectionName());
                     attendanceVO.setName(channelWhiteList.getName());
-                    attendanceVO.setPlayDuration("0");
+//                    attendanceVO.setPlayDuration("0");
                     attendanceVO.setAttendance("否");
                     attendanceVO.setTeacherName(teacherName);
                     attendanceVO.setCourseName(coursesLearningPO.getCourseName());
-                    if (vodMap.containsKey(channelWhiteList.getPhone())){
-                        attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
-                    }else {
-                        attendanceVO.setVodDuration("0");
-                    }
 
                     StudentStatusVO studentStatusVO = studentStatusMapper.selectStudentByidNumberGrade(channelWhiteList.getPhone(), coursesLearningPO.getGrade());
                     if(studentStatusVO==null){
@@ -1710,6 +1749,24 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             continue;
                         }else{
                             continue;
+                        }
+                    }
+                    if (vodMap.containsKey(channelWhiteList.getPhone())){
+//                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
+                        attendanceVO.setIsVodDuration("是");
+                    }else {
+                        if (StringUtils.isBlank(attendanceVO.getCode())){
+                            attendanceVO.setIsVodDuration("否");
+                        }else {
+                            List<Long> studentRecordsIds = studentRecordsMapper.selectAllVideos(attendanceVO.getCode());
+                            if (studentRecordsIds == null || studentRecordsIds.size() == 0) {
+                                attendanceVO.setIsVodDuration("否");
+                            } else {
+                                boolean watched = videoInformationMapper.selectAllSection(studentRecordsIds)
+                                        .contains(attendanceVO.getSection());
+                                attendanceVO.setIsVodDuration(watched ? "是" : "否");
+                            }
+//                    attendanceVO.setVodDuration("0");
                         }
                     }
                     attendanceVOList.add(attendanceVO);
