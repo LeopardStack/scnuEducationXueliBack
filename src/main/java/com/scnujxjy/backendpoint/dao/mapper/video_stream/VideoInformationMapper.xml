@@ -34,7 +34,7 @@
         LEFT JOIN sections sec ON vi.section_id=sec.id
         WHERE 1=1
         <if test="idList != null and idList.size() > 0">
-            AND vi.section_id IN
+            AND vi.id IN
             <foreach item="item" collection="idList" open="(" separator="," close=")">
                 #{item}
             </foreach>

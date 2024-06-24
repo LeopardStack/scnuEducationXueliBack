@@ -1278,16 +1278,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
-                // 对教学点做筛选
-                if(!teachingPointClassIdetifierSet.isEmpty()){
-                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
-                        attendanceVOList.add(attendanceVO);
-                        continue;
-                    }else{
-                        continue;
-                    }
-                }
-
                 if (vodMap.containsKey(viewLogResponse.getParam1())){
 //                    attendanceVO.setVodDuration(vodMap.get(viewLogResponse.getParam1()).toString());
                     attendanceVO.setIsVodDuration("是");
@@ -1306,6 +1296,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                    attendanceVO.setVodDuration("0");
                     }
                 }
+                // 对教学点做筛选
+                if(!teachingPointClassIdetifierSet.isEmpty()){
+                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                        attendanceVOList.add(attendanceVO);
+                        continue;
+                    }else{
+                        continue;
+                    }
+                }
+
                 attendanceVOList.add(attendanceVO);
             }
 //            attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
@@ -1371,16 +1371,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                         attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                     }
                 }
-
-                // 对教学点做筛选
-                if(!teachingPointClassIdetifierSet.isEmpty()){
-                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
-                        attendanceVOList.add(attendanceVO);
-                        continue;
-                    }else{
-                        continue;
-                    }
-                }
                 if (vodMap.containsKey(channelWhiteList.getPhone())){
 //                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
                     attendanceVO.setIsVodDuration("是");
@@ -1399,6 +1389,17 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                    attendanceVO.setVodDuration("0");
                     }
                 }
+
+                // 对教学点做筛选
+                if(!teachingPointClassIdetifierSet.isEmpty()){
+                    if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                        attendanceVOList.add(attendanceVO);
+                        continue;
+                    }else{
+                        continue;
+                    }
+                }
+
                 attendanceVOList.add(attendanceVO);
             }
 
@@ -1649,15 +1650,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                         }
                     }
-                    // 对教学点做筛选
-                    if(!teachingPointClassIdetifierSet.isEmpty()){
-                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
-                            attendanceVOList.add(attendanceVO);
-                            continue;
-                        }else{
-                            continue;
-                        }
-                    }
 
                     if (vodMap.containsKey(viewLogResponse.getParam1())){
 //                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
@@ -1677,6 +1669,17 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                    attendanceVO.setVodDuration("0");
                         }
                     }
+
+                    // 对教学点做筛选
+                    if(!teachingPointClassIdetifierSet.isEmpty()){
+                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                            attendanceVOList.add(attendanceVO);
+                            continue;
+                        }else{
+                            continue;
+                        }
+                    }
+
                     attendanceVOList.add(attendanceVO);
                 }
 //                attendanceVOList.sort(Comparator.comparingInt(a -> Integer.parseInt(((AttendanceVO) a).getPlayDuration())).reversed());
@@ -1742,15 +1745,6 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             attendanceVO.setClassName(classInformationPOS.get(0).getClassName());//根据身份证拿到学生的学号，班别。
                         }
                     }
-                    // 对教学点做筛选
-                    if(!teachingPointClassIdetifierSet.isEmpty()){
-                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
-                            attendanceVOList.add(attendanceVO);
-                            continue;
-                        }else{
-                            continue;
-                        }
-                    }
                     if (vodMap.containsKey(channelWhiteList.getPhone())){
 //                    attendanceVO.setVodDuration(vodMap.get(channelWhiteList.getPhone()).toString());
                         attendanceVO.setIsVodDuration("是");
@@ -1762,6 +1756,8 @@ public class SingleLivingServiceImpl implements SingleLivingService {
                             if (studentRecordsIds == null || studentRecordsIds.size() == 0) {
                                 attendanceVO.setIsVodDuration("否");
                             } else {
+                                //找出这些节点的名称。
+                                //如果这些节点名称包含了当前节点的名称就代表有观看的。
                                 boolean watched = videoInformationMapper.selectAllSection(studentRecordsIds)
                                         .contains(attendanceVO.getSection());
                                 attendanceVO.setIsVodDuration(watched ? "是" : "否");
@@ -1769,6 +1765,16 @@ public class SingleLivingServiceImpl implements SingleLivingService {
 //                    attendanceVO.setVodDuration("0");
                         }
                     }
+                    // 对教学点做筛选
+                    if(!teachingPointClassIdetifierSet.isEmpty()){
+                        if(studentStatusVO != null && teachingPointClassIdetifierSet.contains(studentStatusVO.getClassIdentifier())){
+                            attendanceVOList.add(attendanceVO);
+                            continue;
+                        }else{
+                            continue;
+                        }
+                    }
+
                     attendanceVOList.add(attendanceVO);
                 }
                 exportAttendanceVOList.addAll(attendanceVOList);
