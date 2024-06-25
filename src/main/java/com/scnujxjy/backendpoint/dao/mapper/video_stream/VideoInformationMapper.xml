@@ -26,6 +26,7 @@
                 #{item}
             </foreach>
         </if>
+        order by sec.id desc
         LIMIT #{offset}, #{pageSize}
     </select>
 
