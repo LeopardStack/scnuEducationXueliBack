@@ -27,4 +27,8 @@ public class VideoInformationResponse {
 
     private String sectionName;
 
+    //0未观看，1已观看
+    private Integer isView;
+
+
 }

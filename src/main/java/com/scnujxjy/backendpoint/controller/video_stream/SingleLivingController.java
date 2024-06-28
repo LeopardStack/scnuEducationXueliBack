@@ -96,7 +96,7 @@ public class SingleLivingController {
         try {
 
             StudentRecords studentRecords1 = studentRecordsMapper.selectByNumberAndVideoId(channelInfoRequest.getStudentNumber(), channelInfoRequest.getVideoId());
-            if (studentRecords1 != null){
+            if (studentRecords1 != null) {
                 //说明之前已经观看过，无需插入了
                 return SaResult.ok("该学生本堂课已观看过");
             }
@@ -121,6 +121,9 @@ public class SingleLivingController {
             if (channelInfoRequest.getPageSize() == null || channelInfoRequest.getCurrentPage() == null) {
                 return SaResult.error("分页参数缺失");
             }
+//            if (StringUtils.isBlank(channelInfoRequest.getStudentNumber())){
+//                return SaResult.error("学生学号缺失");
+//            }
 
             List<SectionsPO> sectionsPOS = sectionsMapper.selectSectionsByCourseId(channelInfoRequest.getCourseId());
             List<Long> idList = sectionsPOS.stream()
@@ -137,7 +140,7 @@ public class SingleLivingController {
             queryWrapper.last("LIMIT " + offset + "," + limit);
 
 //            List<VideoInformation> videoInformations = videoInformationMapper.selectList(queryWrapper);
-            List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList,offset,limit);
+            List<VideoInformationResponse> videoInformations = videoInformationMapper.selectLast(idList, offset, limit);
 
             List<VideoInformationResponse> videosWithSectionName = new ArrayList<>();
             List<VideoInformationResponse> videosWithoutSectionName = new ArrayList<>();
@@ -149,8 +152,24 @@ public class SingleLivingController {
                     videosWithSectionName.add(video);
                 }
             }
-
             videosWithSectionName.addAll(videosWithoutSectionName);
+
+            //拿到该名学生看过的所有videoId，如果为空就全部设置0未观看
+            List<Long> allVideos = studentRecordsMapper.selectAllVideos(channelInfoRequest.getStudentNumber());
+            // 使用Map存储所有视频的ID和是否观看的映射关系
+            Map<Long, Integer> videoViewMap = allVideos.stream()
+                    .collect(Collectors.toMap(id -> id, id -> 1));
+
+            // 设置默认值为未观看
+            videosWithSectionName.forEach(videoInformationResponse -> videoInformationResponse.setIsView(0));
+            // 根据观看记录更新视频的观看状态
+            videosWithSectionName.forEach(videoInformationResponse -> {
+                if (videoViewMap.containsKey(videoInformationResponse.getId())) {
+                    videoInformationResponse.setIsView(1);
+                }
+            });
+
+
             return SaResult.data(videosWithSectionName);
 
         } else if (channelInfoRequest.getSectionId() != null) {
@@ -163,17 +182,17 @@ public class SingleLivingController {
     }
 
     @PostMapping("/downloadCZ")
-    public void addRecordTask(String savePath,String channelId) throws Exception {
+    public void addRecordTask(String savePath, String channelId) throws Exception {
         String uuid = UUID.randomUUID().toString();
         uuid = uuid.replace("-", "");
         String traceId = uuid.substring(0, 10);
 
-        String url="http://api.polyv.net/live/v3/channel/pptRecord/list";
-        String status="success";
-        String page=String.valueOf(1);
-        String pageSize=String.valueOf(100);
+        String url = "http://api.polyv.net/live/v3/channel/pptRecord/list";
+        String status = "success";
+        String page = String.valueOf(1);
+        String pageSize = String.valueOf(100);
         String timestamp = String.valueOf(System.currentTimeMillis());
-        String appSecret ="a642eb8a7e8f425995d9aead5bdd83ea";
+        String appSecret = "a642eb8a7e8f425995d9aead5bdd83ea";
 
         Map<String, String> requestMap = new HashMap<>();
         requestMap.put("appId", "gj95rpxjhf");
@@ -184,14 +203,14 @@ public class SingleLivingController {
         requestMap.put("pageSize", pageSize);
         requestMap.put("sign", LiveSignUtil.getSign(requestMap, appSecret));
         String response1 = HttpUtil.get(url, requestMap);
-        log.info(traceId+"查询重制课件任务列表，返回值：{}", response1);
+        log.info(traceId + "查询重制课件任务列表，返回值：{}", response1);
 
         JSONObject jsonObject = JSON.parseObject(response1, JSONObject.class);
         //说明查询成功
-        if (200==jsonObject.getInteger("code")){
-            JSONObject jsonObject1=jsonObject.getJSONObject("data");
+        if (200 == jsonObject.getInteger("code")) {
+            JSONObject jsonObject1 = jsonObject.getJSONObject("data");
             JSONArray data = jsonObject1.getJSONArray("contents");
-            if(data.isEmpty()){
+            if (data.isEmpty()) {
                 return;
             }
 
@@ -209,7 +228,7 @@ public class SingleLivingController {
                 String downloadUrl = object.getString("url");
                 executor.submit(() -> {
                     try {
-                        String fileName = channelId+ "_" + sessionId + "_CZ"+".mp4";
+                        String fileName = channelId + "_" + sessionId + "_CZ" + ".mp4";
                         HttpGet httpGet = new HttpGet(downloadUrl);
                         RequestConfig requestConfig = RequestConfig.custom()
                                 .setConnectTimeout(10 * 1000) // 10 seconds connect timeout
@@ -241,11 +260,11 @@ public class SingleLivingController {
                             }
                         }
                     } catch (IOException e) {
-                        log.error(e+traceId+"下载视频发生错误" + channelId + " " + sessionId);
+                        log.error(e + traceId + "下载视频发生错误" + channelId + " " + sessionId);
                     }
                 });
             }
-            log.info(traceId+"等待所有视频完成中");
+            log.info(traceId + "等待所有视频完成中");
             executor.shutdown(); // Shut down executor
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             try {
@@ -253,7 +272,7 @@ public class SingleLivingController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            log.info(traceId+"下载视频完成");
+            log.info(traceId + "下载视频完成");
 
         }
 

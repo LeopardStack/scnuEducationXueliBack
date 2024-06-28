@@ -11,7 +11,7 @@ public interface StudentRecordsMapper  extends BaseMapper<StudentRecords> {
     @Select("select * from student_records where student_number=#{studentNumber} and video_id=#{videoId} limit 1")
     StudentRecords selectByNumberAndVideoId(String studentNumber,Integer videoId);
 
-    @Select("select video_id from student_records where student_number=#{studentNumber}")
+    @Select("select distinct video_id from student_records where student_number=#{studentNumber}")
     List<Long> selectAllVideos(String studentNumber);
 
 }
