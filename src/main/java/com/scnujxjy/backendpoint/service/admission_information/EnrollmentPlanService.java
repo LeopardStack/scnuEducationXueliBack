@@ -199,19 +199,7 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         Long pageSize = enrollmentPlanApplyROPageRO.getPageSize();
         Long pageNumber = (enrollmentPlanApplyROPageRO.getPageNumber() - 1) * pageSize;
 
-        List<EnrollmentPlanPO> enrollmentPlanPOList=new ArrayList<>();
-        if (entity.getTeachingPointNameList()!=null){
-
-            for (String name:entity.getTeachingPointNameList()) {
-                List<EnrollmentPlanPO> enrollmentPlanPOList1=new ArrayList<>();
-                entity.setTeachingPointName(name);
-                enrollmentPlanPOList1 = getBaseMapper().queryEnrollmentPlan(entity,pageNumber, pageSize);
-                enrollmentPlanPOList.addAll(enrollmentPlanPOList1);
-            }
-
-        }else {
-            enrollmentPlanPOList = getBaseMapper().queryEnrollmentPlan(entity,pageNumber, pageSize);
-        }
+        List<EnrollmentPlanPO> enrollmentPlanPOList=getBaseMapper().queryEnrollmentPlan(entity,pageNumber, pageSize);
         Long enrollmentPlanSize = getBaseMapper().queryEnrollmentPlanSize(entity);
 
         PageVO<EnrollmentPlanPO> pageVO = new PageVO<>();
