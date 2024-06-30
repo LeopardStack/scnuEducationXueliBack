@@ -444,7 +444,29 @@ public class EnrollmentPlanController {
         } else if (roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())) {
             // 教学点教务员 只能获取 自己本教学点的招生计划
             TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-            enrollmentPlanApplyRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            if (userBelongTeachingPoint == null) {
+                //说明是两个的
+                List<String> teachingPointNameList=new ArrayList<>();
+                String loginId = (String) StpUtil.getLoginId();
+                PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+                LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+
+                //如果查出来管理的教学点超过了一个
+                List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
+                if (teachingPointAdminInformationPOS.size() > 1) {
+
+                    for (TeachingPointAdminInformationPO teachingPointAdminInformationPO : teachingPointAdminInformationPOS) {
+                        TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPO.getTeachingPointId());
+                        teachingPointNameList.add(teachingPointInformationPO.getTeachingPointName());
+                    }
+
+                }
+                
+                enrollmentPlanApplyRO.setTeachingPointNameList(teachingPointNameList);
+            }else {
+                enrollmentPlanApplyRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            }
         }
 
         return enrollmentPlanService.getEnrollmentPlanFilterItems(enrollmentPlanApplyRO);
