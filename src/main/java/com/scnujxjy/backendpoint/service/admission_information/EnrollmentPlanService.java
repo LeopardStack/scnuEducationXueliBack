@@ -198,9 +198,20 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
         EnrollmentPlanApplyRO entity = enrollmentPlanApplyROPageRO.getEntity();
         Long pageSize = enrollmentPlanApplyROPageRO.getPageSize();
         Long pageNumber = (enrollmentPlanApplyROPageRO.getPageNumber() - 1) * pageSize;
-        List<EnrollmentPlanPO> enrollmentPlanPOList = getBaseMapper().queryEnrollmentPlan(entity,
-                pageNumber, pageSize);
 
+        List<EnrollmentPlanPO> enrollmentPlanPOList=new ArrayList<>();
+        if (entity.getTeachingPointNameList()!=null){
+
+            for (String name:entity.getTeachingPointNameList()) {
+                List<EnrollmentPlanPO> enrollmentPlanPOList1=new ArrayList<>();
+                entity.setTeachingPointName(name);
+                enrollmentPlanPOList1 = getBaseMapper().queryEnrollmentPlan(entity,pageNumber, pageSize);
+                enrollmentPlanPOList.addAll(enrollmentPlanPOList1);
+            }
+
+        }else {
+            enrollmentPlanPOList = getBaseMapper().queryEnrollmentPlan(entity,pageNumber, pageSize);
+        }
         Long enrollmentPlanSize = getBaseMapper().queryEnrollmentPlanSize(entity);
 
         PageVO<EnrollmentPlanPO> pageVO = new PageVO<>();
@@ -269,8 +280,12 @@ public class EnrollmentPlanService extends ServiceImpl<EnrollmentPlanMapper, Enr
             //如果查出来管理的教学点超过了一个，说明是这两个天河越平，南方人才
             List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
             if (teachingPointAdminInformationPOS.size()>1){
-                teachingPointNameList.add("广州天河越平教学点");
-                teachingPointNameList.add("广州南方人才教学点");
+
+                for (TeachingPointAdminInformationPO teachingPointAdminInformationPO:teachingPointAdminInformationPOS) {
+                    TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPO.getTeachingPointId());
+                    teachingPointNameList.add(teachingPointInformationPO.getTeachingPointName());
+                }
+
             }else {
                 //否则则是本身
                 TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPOS.get(0).getTeachingPointId());

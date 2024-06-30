@@ -4,19 +4,25 @@ package com.scnujxjy.backendpoint.controller.admission_information;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import com.alibaba.excel.write.metadata.fill.FillConfig;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.scnujxjy.backendpoint.constant.enums.RoleEnum;
 import com.scnujxjy.backendpoint.constant.enums.TeachingPointInformationEnum;
 import com.scnujxjy.backendpoint.dao.entity.admission_information.EnrollmentPlanPO;
 import com.scnujxjy.backendpoint.dao.entity.basic.GlobalConfigPO;
+import com.scnujxjy.backendpoint.dao.entity.basic.PlatformUserPO;
 import com.scnujxjy.backendpoint.dao.entity.college.CollegeInformationPO;
+import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointAdminInformationPO;
 import com.scnujxjy.backendpoint.dao.entity.teaching_point.TeachingPointInformationPO;
 import com.scnujxjy.backendpoint.dao.mapper.admission_information.EnrollmentPlanMapper;
+import com.scnujxjy.backendpoint.dao.mapper.basic.PlatformUserMapper;
+import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointAdminInformationMapper;
 import com.scnujxjy.backendpoint.dao.mapper.teaching_point.TeachingPointInformationMapper;
 import com.scnujxjy.backendpoint.model.ro.PageRO;
 import com.scnujxjy.backendpoint.model.ro.admission_information.EnrollmentPlanApplyRO;
@@ -85,6 +91,12 @@ public class EnrollmentPlanController {
 
     @Resource
     private TeachingPointInformationMapper teachingPointInformationMapper;
+
+    @Resource
+    private PlatformUserMapper platformUserMapper;
+
+    @Resource
+    private TeachingPointAdminInformationMapper teachingPointAdminInformationMapper;
 
     @PostMapping("/getAddress")
     @SaCheckLogin
@@ -391,7 +403,27 @@ public class EnrollmentPlanController {
         } else if (roleList.contains(RoleEnum.TEACHING_POINT_ADMIN.getRoleName())) {
             // 教学点教务员 只能获取 自己本教学点的招生计划
             TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-            enrollmentPlanApplyROPageRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            if (userBelongTeachingPoint==null){
+                //说明查出来了两个。
+                String loginId = (String) StpUtil.getLoginId();
+                if (StrUtil.isBlank(loginId)) {
+                    return null;
+                }
+                PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+                LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+                // 执行查询
+                List<TeachingPointAdminInformationPO> adminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
+                List<String> list=new ArrayList<>();
+                for (TeachingPointAdminInformationPO teachingPointAdminInformationPO:adminInformationPOS) {
+                    TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.
+                            selectById(teachingPointAdminInformationPO.getTeachingPointId());
+                    list.add(teachingPointInformationPO.getTeachingPointName());
+                }
+                enrollmentPlanApplyROPageRO.getEntity().setTeachingPointNameList(list);
+            }else {
+                enrollmentPlanApplyROPageRO.getEntity().setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
+            }
         }
 
         return enrollmentPlanService.queryEnrollmentPlan(enrollmentPlanApplyROPageRO);
