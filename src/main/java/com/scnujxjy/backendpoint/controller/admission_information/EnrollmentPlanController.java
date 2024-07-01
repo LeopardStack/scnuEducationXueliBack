@@ -462,7 +462,7 @@ public class EnrollmentPlanController {
                     }
 
                 }
-                
+
                 enrollmentPlanApplyRO.setTeachingPointNameList(teachingPointNameList);
             }else {
                 enrollmentPlanApplyRO.setTeachingPointName(userBelongTeachingPoint.getTeachingPointName());
@@ -530,10 +530,30 @@ public class EnrollmentPlanController {
             } else if(roleList.contains(TEACHING_POINT_ADMIN.getRoleName())){
                 //教学点只可以导出自己教学点的申报表，申报表只能是已完成
                 TeachingPointInformationPO userBelongTeachingPoint = scnuXueliTools.getUserBelongTeachingPoint();
-                String teachingPointName = userBelongTeachingPoint.getTeachingPointName();
+                List<EnrollmentPlanPO> enrollmentPlanPOS =new ArrayList<>();
+                String teachingPointName="";
+                if (userBelongTeachingPoint==null){
+                    //说明是两个教学点的
+                    String loginId = (String) StpUtil.getLoginId();
+                    PlatformUserPO platformUserPO = platformUserMapper.selectOne(Wrappers.<PlatformUserPO>lambdaQuery().eq(PlatformUserPO::getUsername, loginId));
+                    LambdaQueryWrapper<TeachingPointAdminInformationPO> queryWrapper = new LambdaQueryWrapper<>();
+                    queryWrapper.eq(TeachingPointAdminInformationPO::getUserId, platformUserPO.getUserId());
+
+                    List<TeachingPointAdminInformationPO> teachingPointAdminInformationPOS = teachingPointAdminInformationMapper.selectList(queryWrapper);
+                    for (TeachingPointAdminInformationPO teachingPointAdminInformationPO:teachingPointAdminInformationPOS) {
+                        TeachingPointInformationPO teachingPointInformationPO = teachingPointInformationMapper.selectById(teachingPointAdminInformationPO.getTeachingPointId());
+                        if (StringUtils.isNotBlank(teachingPointInformationPO.getTeachingPointName())){
+                            List<EnrollmentPlanPO> enrollmentPlanPOS1 = enrollmentPlanMapper.queryTeachingEnrollmentPlans(teachingPointInformationPO.getTeachingPointName());
+                            enrollmentPlanPOS.addAll(enrollmentPlanPOS1);
+                        }
+                    }
+
+                }else {
+                    teachingPointName = userBelongTeachingPoint.getTeachingPointName();
+                    enrollmentPlanPOS = enrollmentPlanMapper.queryTeachingEnrollmentPlans(teachingPointName);
+                }
                 String fileName = teachingPointName+ "招生计划申报表";
 
-                List<EnrollmentPlanPO> enrollmentPlanPOS = enrollmentPlanMapper.queryTeachingEnrollmentPlans(teachingPointName);
                 if (enrollmentPlanPOS == null || enrollmentPlanPOS.size() == 0) {
                     return SaResult.error("该教学点不存在已完成的招生计划申请，无需导出");
                 }
@@ -578,8 +598,8 @@ public class EnrollmentPlanController {
             enrollmentPlanExcelVO.setEnrollmentNumber(enrollmentPlanPO.getEnrollmentNumber());
 
             enrollmentPlanExcelVO.setTargerStudents(enrollmentPlanPO.getTargetStudents());
-            enrollmentPlanExcelVO.setSchoolLocation(enrollmentPlanPO.getSchoolLocation());
-            enrollmentPlanExcelVO.setEnrollmentRegion(enrollmentPlanPO.getEnrollmentRegion());
+            enrollmentPlanExcelVO.setSchoolLocation(enrollmentPlanPO.getEnrollmentRegion());
+            enrollmentPlanExcelVO.setEnrollmentRegion(enrollmentPlanPO.getSchoolLocation());
             enrollmentPlanExcelVO.setContactNumber(enrollmentPlanPO.getContactNumber());
             enrollmentPlanExcelVOS.add(enrollmentPlanExcelVO);
         }
